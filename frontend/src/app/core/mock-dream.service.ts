@@ -1,0 +1,1176 @@
+import { Injectable, computed, signal } from '@angular/core';
+
+import {
+  AuditRun,
+  CodebaseFile,
+  ContextEvidence,
+  EvaluationDimension,
+  EvaluationScorecard,
+  HumanRating,
+  ImpactItem,
+  KnowledgeChunk,
+  KnowledgePack,
+  PrReviewInput,
+  PrReviewResult,
+  RequirementCase,
+  RequirementDraftInput,
+  RequirementDraftResult,
+  TestGenStubInput,
+  TestGenStubPlan,
+  TestGenStubResult,
+  WorkflowType,
+} from './dream-models';
+
+@Injectable({ providedIn: 'root' })
+export class MockDreamService {
+  private readonly auditRunsState = signal<AuditRun[]>(MOCK_AUDIT_RUNS);
+  private readonly ratingsState = signal<HumanRating[]>(MOCK_RATINGS);
+  private readonly requirementCasesState = signal<RequirementCase[]>(MOCK_REQUIREMENT_CASES);
+  private readonly scorecardsState = signal<EvaluationScorecard[]>(MOCK_SCORECARDS);
+
+  readonly auditRuns = this.auditRunsState.asReadonly();
+  readonly ratings = this.ratingsState.asReadonly();
+  readonly requirementCases = this.requirementCasesState.asReadonly();
+  readonly scorecards = this.scorecardsState.asReadonly();
+  readonly recentRuns = computed(() => this.auditRunsState().slice(0, 6));
+
+  readonly health = {
+    status: 'ok',
+    mode: 'mock',
+    apiBaseUrl: 'http://127.0.0.1:8000',
+    note: 'The Angular demo uses local DFP mock data until API integration is enabled.',
+  };
+
+  listTeams(): string[] {
+    return ['demo_team'];
+  }
+
+  listApps(): string[] {
+    return ['ForecastDemo', 'BatchJobDemo', 'OutputPreviewDemo'];
+  }
+
+  listDocTypes(): string[] {
+    return [
+      'domain',
+      'architecture',
+      'runbooks',
+      'incidents',
+      'historical-jira',
+      'historical-pr',
+      'testing',
+      'pr-review',
+      'concepts',
+    ];
+  }
+
+  listKnowledgePacks(): KnowledgePack[] {
+    return MOCK_PACKS;
+  }
+
+  listKnowledgeChunks(): KnowledgeChunk[] {
+    return MOCK_CHUNKS;
+  }
+
+  listCodebaseFiles(): CodebaseFile[] {
+    return MOCK_CODEBASE_FILES;
+  }
+
+  searchKnowledge(params: {
+    query: string;
+    app?: string;
+    component?: string;
+    docType?: string;
+    topK?: number;
+  }): KnowledgeChunk[] {
+    const terms = tokenize(params.query);
+    const topK = params.topK ?? 5;
+    return MOCK_CHUNKS.filter((chunk) => {
+      const appMatch = !params.app || chunk.metadata.app === params.app;
+      const componentMatch = !params.component || chunk.metadata.component === params.component;
+      const docTypeMatch = !params.docType || chunk.metadata.docType === params.docType;
+      return appMatch && componentMatch && docTypeMatch;
+    })
+      .map((chunk) => ({ chunk, score: scoreSearchText(searchTextForChunk(chunk), terms) }))
+      .filter((item) => item.score > 0 || terms.length === 0)
+      .sort((a, b) => b.score - a.score || a.chunk.title.localeCompare(b.chunk.title))
+      .slice(0, topK)
+      .map((item) => item.chunk);
+  }
+
+  searchCodebase(params: { query: string; topK?: number; layer?: string }): CodebaseFile[] {
+    const terms = tokenize(params.query);
+    const topK = params.topK ?? 8;
+    return MOCK_CODEBASE_FILES.filter((file) => !params.layer || file.layer === params.layer)
+      .map((file) => ({ file, score: scoreSearchText(searchTextForFile(file), terms) }))
+      .filter((item) => item.score > 0 || terms.length === 0)
+      .sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path))
+      .slice(0, topK)
+      .map((item) => item.file);
+  }
+
+  draftRequirement(input: RequirementDraftInput): RequirementDraftResult {
+    const sources = this.searchKnowledge({
+      query: input.roughBusinessRequest,
+      app: input.app,
+      component: input.component,
+      topK: input.topK,
+    });
+    const codeEvidence = this.searchCodebase({ query: input.roughBusinessRequest, topK: 6 });
+    const requirementCase = buildRequirementCase({
+      rawRequest: input.roughBusinessRequest,
+      role: input.role || 'BA',
+      sources,
+      codeEvidence,
+    });
+    this.requirementCasesState.update((cases) => [requirementCase, ...cases]);
+
+    const scorecard = createScorecard({
+      targetType: 'jira_draft',
+      targetId: requirementCase.caseId,
+      overallScore: 8.6,
+      sourcePaths: [...sources.map((source) => source.sourcePath), ...codeEvidence.map((file) => file.path)],
+      recommendations: [
+        'Confirm task-level status labels with BA and FE before implementation.',
+        'Add regression coverage for stuck RUNNING and PARTIAL_SUCCESS behavior.',
+      ],
+    });
+    this.scorecardsState.update((cards) => [scorecard, ...cards]);
+
+    const run = this.createRun('requirement_draft', input.teamId, input.app, 'success', sources, [
+      ...codeEvidence.map((file) => file.path),
+    ]);
+
+    return {
+      run,
+      markdown: requirementCase.jiraDraft,
+      sourcesUsed: sources,
+      warnings: ['This is a draft for human review.'],
+      requirementCase,
+      scorecard,
+    };
+  }
+
+  reviewPr(input: PrReviewInput): PrReviewResult {
+    const changedFiles = extractChangedFiles(input.diffText);
+    const relatedCode = relatedCodeForChangedFiles(changedFiles);
+    const sources = this.searchKnowledge({
+      query: `${input.diffText} ${input.jiraContext}`,
+      app: input.app,
+      component: input.component,
+      topK: input.topK,
+    });
+    const addedLines = countLines(input.diffText, '+');
+    const removedLines = countLines(input.diffText, '-');
+    const risk = addedLines + removedLines > 80 ? 'High' : addedLines > 25 ? 'Medium' : 'Low';
+    const run = this.createRun('pr_review_summary', input.teamId, input.app, 'needs_review', sources, [
+      ...changedFiles,
+      ...relatedCode.map((file) => file.path),
+    ]);
+    const scorecard = createScorecard({
+      targetType: 'pr_review',
+      targetId: run.runId,
+      overallScore: relatedCode.length ? 8.4 : 6.4,
+      sourcePaths: [...sources.map((source) => source.sourcePath), ...relatedCode.map((file) => file.path)],
+      recommendations: [
+        'Ask reviewers to confirm idempotency and retry boundaries.',
+        'Check that changed source files have matching tests or explicit test-gap notes.',
+      ],
+    });
+    this.scorecardsState.update((cards) => [scorecard, ...cards]);
+
+    const sourceLines = sources.map((source) => `- ${source.title} (${source.sourcePath})`).join('\n');
+    const codeLines = relatedCode.map((file) => `- ${file.path}: ${file.summary}`).join('\n');
+    const markdown = `# AI PR Review Summary
+
+This is an AI-generated review aid. It does not approve, reject, merge, or block the PR. Human review is required.
+
+## Overall Risk
+${risk}
+
+## Changed Files
+${changedFiles.map((file) => `- ${file}`).join('\n') || '- No changed files were detected in the synthetic diff.'}
+
+## Related Codebase Memory
+${codeLines || '- No codebase memory matched the changed files. Review used document and diff context only.'}
+
+## Business Logic Alignment
+The change should be reviewed against DFP Job, Workflow, Task, and Execution semantics. Status and output behavior must remain explicit at task level and execution level.
+
+## Component Impact
+- Backend services may affect StatusTracker, OutputCollector, and ExecutionService.
+- Frontend monitor behavior should align with polling and stale-state rules.
+- Operations runbooks may need an update if retry or stuck-state behavior changes.
+
+## Test Coverage Comments
+- Verify status transition tests for QUEUED, RUNNING, FAILED, COMPLETED, CANCELLED, and PARTIAL_SUCCESS.
+- Add or confirm duplicate-output and idempotency tests when OutputCollector changes.
+- Human review is required before any TestGen output is accepted.
+
+## Runtime / Operational Risk
+- Watch for stuck RUNNING states when processors finish but persistence fails.
+- Confirm BATCH_TASK timeout handling is visible to Operator workflows.
+
+## Suggested Reviewer Questions
+- Does this change preserve task-level status evidence for Analyst and Operator views?
+- Are retry/idempotency boundaries visible in tests?
+- Should a runbook or historical incident note be updated?
+
+## Sources Used
+${sourceLines || '- No matching sources were retrieved.'}
+`;
+
+    return {
+      run,
+      markdown,
+      risk,
+      sourcesUsed: sources,
+      warnings: ['Human review is required before using this summary.'],
+      changedFiles,
+      relatedCode,
+      scorecard,
+    };
+  }
+
+  planTestGenStub(input: TestGenStubInput): TestGenStubPlan {
+    return {
+      runId: `testgen-plan-${Date.now().toString(36)}`,
+      providerName: 'mock',
+      targetSummary: `${input.targetLanguage.toUpperCase()} repo at ${input.repoPath}`,
+      plannedActions: [
+        'Inspect target metadata using mock data only.',
+        'Prepare candidate test targets without modifying the repo.',
+        'Keep JTestGen or other engines behind the TestGenProvider contract.',
+      ],
+      warnings: ['Unit-test generation engine is intentionally excluded from this UI phase.'],
+    };
+  }
+
+  runTestGenStub(input: TestGenStubInput): TestGenStubResult {
+    const run = this.createRun('testgen_stub', input.teamId, 'BatchJobDemo', 'stub_only', []);
+    const warnings = [
+      'No target repository files were modified.',
+      'No unit-test generation engine was executed.',
+      'Human review is required for any future generated tests.',
+    ];
+    const scorecard = createScorecard({
+      targetType: 'testgen_report',
+      targetId: run.runId,
+      overallScore: 8,
+      sourcePaths: [],
+      recommendations: ['Keep test generation as a provider integration until JTestGen is explicitly configured.'],
+    });
+    this.scorecardsState.update((cards) => [scorecard, ...cards]);
+    return {
+      run,
+      status: 'stub_only',
+      generatedFiles: [],
+      warnings,
+      scorecard,
+      reportMarkdown: `# TestGen Stub Report
+
+Run ID: ${run.runId}
+Provider: mock
+Dry run: ${input.dryRun}
+Repo path: ${input.repoPath}
+Target language: ${input.targetLanguage}
+
+No unit tests were generated. This mock report only validates DREAM's plugin workflow surface.
+
+## Candidate Test Targets
+- StatusTrackerTest.java
+- ExecutionServiceTest.java
+- OutputCollectorTest.java
+
+## Warnings
+${warnings.map((warning) => `- ${warning}`).join('\n')}
+`,
+    };
+  }
+
+  addRating(rating: Omit<HumanRating, 'createdAt'>): HumanRating {
+    const created = {
+      ...rating,
+      createdAt: new Date().toISOString(),
+    };
+    this.ratingsState.update((ratings) => [created, ...ratings]);
+    return created;
+  }
+
+  private createRun(
+    useCase: WorkflowType,
+    teamId: string,
+    app: string,
+    status: AuditRun['status'],
+    sources: KnowledgeChunk[],
+    extraSources: string[] = [],
+  ): AuditRun {
+    const run: AuditRun = {
+      runId: `run_${Date.now().toString(36)}_${Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, '0')}`,
+      useCase,
+      teamId,
+      app: app || 'ForecastDemo',
+      status,
+      startedAt: new Date().toISOString(),
+      duration: '00:00:04',
+      modelProvider: useCase === 'testgen_stub' ? 'mock-testgen' : 'mock-llm',
+      modelName: useCase === 'testgen_stub' ? 'mock-testgen-v1' : 'mock-deterministic-v1',
+      outputPath: `artifacts/${useCase}-${Date.now().toString(36)}.md`,
+      warnings: [],
+      sourcesUsed: [...sources.map((source) => source.sourcePath), ...extraSources],
+    };
+    this.auditRunsState.update((runs) => [run, ...runs]);
+    return run;
+  }
+}
+
+function buildRequirementCase(input: {
+  rawRequest: string;
+  role: string;
+  sources: KnowledgeChunk[];
+  codeEvidence: CodebaseFile[];
+}): RequirementCase {
+  const caseId = `case_${Date.now().toString(36)}`;
+  const evidence: ContextEvidence[] = [
+    ...input.sources.map((source, index) => ({
+      evidenceId: `doc-${index + 1}`,
+      title: source.title,
+      sourcePath: source.sourcePath,
+      sourceType: source.sourceType,
+      excerpt: source.excerpt,
+      relevanceScore: Math.max(0.68, 0.95 - index * 0.05),
+      reason: `Matched concepts: ${source.concepts.slice(0, 3).join(', ')}`,
+    })),
+    ...input.codeEvidence.map((file, index) => ({
+      evidenceId: `code-${index + 1}`,
+      title: file.path.split('/').pop() || file.path,
+      sourcePath: file.path,
+      sourceType: file.role === 'test' ? ('test_file' as const) : ('code_file' as const),
+      excerpt: file.summary,
+      relevanceScore: Math.max(0.62, 0.9 - index * 0.04),
+      reason: `Code concepts: ${file.concepts.slice(0, 3).join(', ')}`,
+    })),
+  ];
+
+  const impactMap: ImpactItem[] = [
+    {
+      areaType: 'workflow',
+      name: 'Long-running execution workflow',
+      description: 'Clarify how Job, Workflow, Task, and Execution statuses progress across async work.',
+      confidence: 0.94,
+      sources: ['execution-model.md', 'status-tracking-design.md'],
+      reason: 'The request asks users to see which task is still running.',
+    },
+    {
+      areaType: 'frontend',
+      name: 'Execution Monitor',
+      description: 'Show task-level progress, stale polling state, retry affordance, and safe error copy.',
+      confidence: 0.88,
+      sources: ['execution-monitor.component.ts', 'PR-502'],
+      reason: 'DFP historical work added polling and reviewers flagged stale UI states.',
+    },
+    {
+      areaType: 'backend',
+      name: 'StatusTracker and ExecutionService',
+      description: 'Persist authoritative status transitions and expose task-level status to APIs.',
+      confidence: 0.92,
+      sources: ['StatusTracker.java', 'ExecutionService.java', 'INC-103'],
+      reason: 'Historical incident INC-103 was caused by a failed COMPLETED persistence update.',
+    },
+    {
+      areaType: 'api',
+      name: 'ExecutionController status endpoint',
+      description: 'Confirm response shape includes execution status, task statuses, timestamps, and terminal state.',
+      confidence: 0.84,
+      sources: ['ExecutionController.java', 'DFP-101'],
+      reason: 'Both UI polling and operator investigation depend on API contract stability.',
+    },
+    {
+      areaType: 'test',
+      name: 'Status transition regression tests',
+      description: 'Cover stuck RUNNING, failed BATCH_TASK, partial completion, and cancelled execution.',
+      confidence: 0.9,
+      sources: ['StatusTrackerTest.java', 'status-transition-test-plan.md'],
+      reason: 'Status behavior has repeated historical defects and explicit test plans.',
+    },
+    {
+      areaType: 'ops',
+      name: 'Stuck running runbook',
+      description: 'Update operator steps for processor completed but tracker persistence failed.',
+      confidence: 0.78,
+      sources: ['status-stuck-running-runbook.md', 'INC-103'],
+      reason: 'Operator needs a deterministic response when execution remains RUNNING.',
+    },
+  ];
+
+  const questions = buildQuestions();
+  const sourcesUsed = evidence.map((item) => `- ${item.title} (${item.sourcePath})`).join('\n');
+  const impactLines = impactMap
+    .map((item) => `- ${item.areaType.toUpperCase()} - ${item.name}: ${item.description}`)
+    .join('\n');
+  const questionLines = questions
+    .map((question) => `- ${question.targetRole}: ${question.question} (${question.whyItMatters})`)
+    .join('\n');
+
+  const engineeringBrief = `# Engineering Brief
+
+## 1. Request Summary
+${input.rawRequest}
+
+## 2. Interpreted Intent
+The user likely needs task-level async status visibility for long-running DFP forecast executions. This is a draft for human review.
+
+## 3. Current Understanding
+DREAM retrieved DFP domain, architecture, incident, historical Jira/PR, testing, and codebase memory. Evidence points to Execution Monitor, StatusTracker, ExecutionService, BatchJobAdapter, and status-transition tests.
+
+## 4. Impact Map
+${impactLines}
+
+## 5. Relevant Evidence
+${sourcesUsed}
+
+## 6. Role-specific Clarification Questions
+${questionLines}
+
+## 7. Proposed Implementation Notes
+- Prefer an explicit task-level status model shared by SERVICE_TASK and BATCH_TASK.
+- Persist status transitions through StatusTracker before updating UI polling state.
+- Include stale-state and retry rules in the API response contract.
+
+## 8. Test Strategy
+- Add StatusTracker regression tests for stuck RUNNING and terminal-state updates.
+- Add Execution Monitor UI tests for stale polling and task-level progress display.
+- Confirm BATCH_TASK timeout and PARTIAL_SUCCESS behavior.
+
+## 9. Risks and Unknowns
+- UI polling interval and timeout threshold are not yet defined.
+- Partial completion behavior may require BA and TL sign-off.
+- Operator runbook update may be needed before release.
+
+## 10. Review Checklist
+- Source-backed requirement language.
+- Codebase memory cites backend, frontend, and tests.
+- Historical incidents and PR comments are visible.
+
+## 11. Sources Used
+${sourcesUsed}
+`;
+
+  const jiraDraft = `# Jira Story Draft
+
+This is a draft for human review.
+
+## Title
+Show task-level async status for long-running forecast executions
+
+## User Story
+As an Analyst, I want to see which Task is currently running when a Job takes a long time, so that I can understand progress without asking an Operator.
+
+## Business Goal
+Reduce uncertainty during long-running DFP forecast executions and make stuck or failed work easier to triage.
+
+## In Scope
+- Execution Monitor displays job-level and task-level status.
+- Backend status endpoint includes task statuses and terminal state.
+- StatusTracker persists QUEUED, RUNNING, FAILED, COMPLETED, CANCELLED, and PARTIAL_SUCCESS transitions.
+- Operator runbook references stuck RUNNING detection.
+
+## Out of Scope
+- Production TestGen execution.
+- Real GitHub or Jira posting.
+- Replacing the DFP workflow engine.
+
+## Acceptance Criteria
+- Analyst can identify the current running Task for a long-running Execution.
+- UI clearly distinguishes PENDING, QUEUED, RUNNING, FAILED, COMPLETED, SKIPPED, and RETRYING task states.
+- Stuck RUNNING behavior has a defined timeout and Operator escalation note.
+- Status transition tests cover successful, failed, cancelled, and partial completion paths.
+
+## Dev Notes
+- Frontend: execution-monitor.component.ts and job-api.service.ts.
+- Backend: ExecutionController.java, ExecutionService.java, StatusTracker.java.
+- Batch integration: BatchJobAdapter.java.
+
+## Test Scenarios
+- SERVICE_TASK completes and UI updates without page refresh.
+- BATCH_TASK times out and status becomes FAILED with safe user message.
+- Processor finishes but StatusTracker persistence fails; runbook path is visible.
+- One Task fails after previous Tasks completed; PARTIAL_SUCCESS behavior is reviewed.
+
+## Open Questions
+- What status labels should Analysts see at job level versus task level?
+- Should the Execution Monitor poll or use a future subscription mechanism?
+- What timeout threshold defines stuck RUNNING?
+
+## Sources Used
+${sourcesUsed}
+`;
+
+  return {
+    caseId,
+    title: 'Async status tracking for long-running forecast executions',
+    rawRequest: input.rawRequest,
+    createdByRole: input.role,
+    status: 'brief_generated',
+    confidence: 0.86,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    evidence,
+    impactMap,
+    questions,
+    engineeringBrief,
+    jiraDraft,
+  };
+}
+
+function buildQuestions(): RequirementCase['questions'] {
+  return [
+    {
+      targetRole: 'BA',
+      question: 'What status labels should users see at job level, task level, or both?',
+      whyItMatters: 'Acceptance criteria depend on business-visible status language.',
+      relatedSources: ['job-lifecycle.md', 'execution-model.md'],
+    },
+    {
+      targetRole: 'TL',
+      question: 'Should SERVICE_TASK and BATCH_TASK share one persisted status model?',
+      whyItMatters: 'A split model can create cross-layer drift and review risk.',
+      relatedSources: ['service-vs-batch-task.md', 'StatusTracker.java'],
+    },
+    {
+      targetRole: 'FE',
+      question: 'Should the Execution Monitor poll, refresh manually, or later subscribe to updates?',
+      whyItMatters: 'Frontend behavior affects perceived freshness and API load.',
+      relatedSources: ['execution-monitor.component.ts', 'PR-502'],
+    },
+    {
+      targetRole: 'BE',
+      question: 'What is the authoritative source for task status after processor completion?',
+      whyItMatters: 'INC-103 showed that processor success and persisted status can diverge.',
+      relatedSources: ['INC-103', 'StatusTracker.java'],
+    },
+    {
+      targetRole: 'QA',
+      question: 'What regression tests prove stuck RUNNING and PARTIAL_SUCCESS behavior?',
+      whyItMatters: 'Historical defects cluster around terminal-state and partial-state transitions.',
+      relatedSources: ['status-transition-test-plan.md', 'partial-completion-test-plan.md'],
+    },
+    {
+      targetRole: 'OPS',
+      question: 'What runbook update is needed when execution remains RUNNING after processor completion?',
+      whyItMatters: 'Operators need deterministic triage steps and safe escalation guidance.',
+      relatedSources: ['status-stuck-running-runbook.md', 'INC-103'],
+    },
+  ];
+}
+
+function createScorecard(input: {
+  targetType: EvaluationScorecard['targetType'];
+  targetId: string;
+  overallScore: number;
+  sourcePaths: string[];
+  recommendations: string[];
+}): EvaluationScorecard {
+  const dimensions: EvaluationDimension[] = [
+    buildDimension('completeness', input.overallScore + 0.1, 'Required sections are present and specific.'),
+    buildDimension('evidence_quality', input.sourcePaths.length ? 8.8 : 5.2, 'Output cites retrievable DFP memory sources.'),
+    buildDimension('impact_accuracy', input.overallScore, 'Impact map covers UI, backend, workflow, tests, and ops.'),
+    buildDimension('test_awareness', 8.2, 'Status transition and output idempotency tests are called out.'),
+    buildDimension('historical_context', 8.4, 'Historical Jira, PR, and incident references are visible.'),
+    buildDimension('hallucination_risk', 8.7, 'Claims stay within synthetic DemoCorp evidence.'),
+  ];
+  return {
+    evaluationId: `eval_${Date.now().toString(36)}_${Math.floor(Math.random() * 100)}`,
+    targetType: input.targetType,
+    targetId: input.targetId,
+    overallScore: input.overallScore,
+    grade: gradeForScore(input.overallScore),
+    passStatus: input.overallScore >= 7 ? 'pass' : input.overallScore >= 5.5 ? 'warning' : 'fail',
+    sourceCoverage: buildSourceCoverage(input.sourcePaths),
+    dimensions,
+    missingCriticalItems: input.overallScore >= 7 ? [] : ['Insufficient codebase memory coverage.'],
+    recommendations: input.recommendations,
+  };
+}
+
+function buildDimension(name: string, score: number, rationale: string): EvaluationDimension {
+  return {
+    name,
+    score: Math.min(10, Math.max(0, Number(score.toFixed(1)))),
+    weight: 1,
+    passed: score >= 7,
+    rationale,
+    evidence: ['DFP mock data', 'source-backed markdown output'],
+    missingItems: score >= 7 ? [] : ['More source coverage required.'],
+    recommendations: score >= 7 ? [] : ['Retrieve additional knowledge and codebase memory before review.'],
+  };
+}
+
+function buildSourceCoverage(paths: string[]): Record<string, boolean> {
+  const joined = paths.join(' ').toLowerCase();
+  return {
+    domainDocs: joined.includes('/domain/'),
+    architectureDocs: joined.includes('/architecture/'),
+    runbooks: joined.includes('/runbooks/'),
+    incidents: joined.includes('/incidents/') || joined.includes('inc-'),
+    historicalJira: joined.includes('/historical-jira/') || joined.includes('dfp-'),
+    historicalPr: joined.includes('/historical-pr/') || joined.includes('pr-'),
+    testingDocs: joined.includes('/testing/') || joined.includes('test'),
+    conceptMemory: joined.includes('/concepts/'),
+    codeFiles: joined.includes('.java') || joined.includes('.ts') || joined.includes('.py'),
+    testFiles: joined.toLowerCase().includes('test'),
+  };
+}
+
+function gradeForScore(score: number): EvaluationScorecard['grade'] {
+  if (score >= 8.5) {
+    return 'A';
+  }
+  if (score >= 7) {
+    return 'B';
+  }
+  if (score >= 5.5) {
+    return 'C';
+  }
+  if (score >= 4) {
+    return 'D';
+  }
+  return 'F';
+}
+
+function tokenize(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+function searchTextForChunk(chunk: KnowledgeChunk): string {
+  return `${chunk.title} ${chunk.excerpt} ${chunk.sourcePath} ${chunk.concepts.join(' ')} ${chunk.metadata.component}`;
+}
+
+function searchTextForFile(file: CodebaseFile): string {
+  return `${file.path} ${file.summary} ${file.concepts.join(' ')} ${file.symbols.join(' ')} ${file.relatedTests.join(' ')}`;
+}
+
+function scoreSearchText(text: string, terms: string[]): number {
+  const haystack = text.toLowerCase();
+  return terms.reduce((score, term) => {
+    const occurrences = haystack.split(term).length - 1;
+    return score + occurrences * (term.length > 4 ? 2 : 1);
+  }, 0);
+}
+
+function countLines(diffText: string, prefix: '+' | '-'): number {
+  return diffText
+    .split('\n')
+    .filter((line) => line.startsWith(prefix) && !line.startsWith(`${prefix}${prefix}${prefix}`)).length;
+}
+
+function extractChangedFiles(diffText: string): string[] {
+  return Array.from(
+    new Set(
+      diffText
+        .split('\n')
+        .filter((line) => line.startsWith('diff --git '))
+        .map((line) => line.match(/ b\/(.+)$/)?.[1])
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+}
+
+function relatedCodeForChangedFiles(changedFiles: string[]): CodebaseFile[] {
+  const fileNames = changedFiles.map((file) => file.split('/').pop()?.toLowerCase() || file.toLowerCase());
+  const direct = MOCK_CODEBASE_FILES.filter((file) => fileNames.includes(file.path.split('/').pop()?.toLowerCase() || ''));
+  const conceptTerms = changedFiles.join(' ').toLowerCase();
+  const conceptMatches = MOCK_CODEBASE_FILES.filter((file) =>
+    file.concepts.some((concept) => conceptTerms.includes(concept.replace(/\s+/g, '-')) || conceptTerms.includes(concept)),
+  );
+  return Array.from(new Map([...direct, ...conceptMatches].map((file) => [file.id, file])).values()).slice(0, 6);
+}
+
+const MOCK_PACKS: KnowledgePack[] = [
+  {
+    id: 'dfp-domain',
+    name: 'DFP Domain Memory',
+    app: 'ForecastDemo',
+    component: 'job-workflow-task-execution',
+    docType: 'domain',
+    status: 'Healthy',
+    coverage: 96,
+    updatedAt: '2026-06-20',
+  },
+  {
+    id: 'dfp-architecture',
+    name: 'Architecture and Codebase Memory',
+    app: 'ForecastDemo',
+    component: 'platform',
+    docType: 'architecture',
+    status: 'Healthy',
+    coverage: 91,
+    updatedAt: '2026-06-20',
+  },
+  {
+    id: 'dfp-history',
+    name: 'Historical Jira, PR, and Incident Memory',
+    app: 'ForecastDemo',
+    component: 'delivery-history',
+    docType: 'historical',
+    status: 'Healthy',
+    coverage: 88,
+    updatedAt: '2026-06-20',
+  },
+  {
+    id: 'dfp-runbooks',
+    name: 'Operator Runbooks',
+    app: 'BatchJobDemo',
+    component: 'operations',
+    docType: 'runbooks',
+    status: 'Warning',
+    coverage: 74,
+    updatedAt: '2026-06-19',
+  },
+  {
+    id: 'dfp-evals',
+    name: 'Evaluation Profiles',
+    app: 'ForecastDemo',
+    component: 'quality-gates',
+    docType: 'eval_profiles',
+    status: 'Healthy',
+    coverage: 84,
+    updatedAt: '2026-06-20',
+  },
+];
+
+const MOCK_CHUNKS: KnowledgeChunk[] = [
+  {
+    id: 'chunk-job-lifecycle',
+    title: 'Job Lifecycle and Execution Workflow',
+    sourcePath: 'knowledge_packs/demo_team/docs/domain/job-lifecycle.md',
+    excerpt:
+      'A DFP Job is created by an Analyst, bound to a Workflow, executed asynchronously, and monitored through task-level Execution status including failure handling.',
+    concepts: ['job execution', 'workflow', 'task status', 'failure'],
+    sourceType: 'domain_doc',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'domain',
+    },
+  },
+  {
+    id: 'chunk-status-design',
+    title: 'Status Tracking Design',
+    sourcePath: 'knowledge_packs/demo_team/docs/architecture/status-tracking-design.md',
+    excerpt:
+      'Execution status is persisted by StatusTracker and displayed by Execution Monitor. Terminal states must not depend on transient processor memory.',
+    concepts: ['execution status', 'task status', 'async tracking', 'polling', 'status stuck running'],
+    sourceType: 'architecture_doc',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'architecture',
+    },
+  },
+  {
+    id: 'chunk-stuck-running',
+    title: 'INC-103 Status Stuck RUNNING',
+    sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md',
+    excerpt:
+      'Python processor completed successfully, but StatusTracker failed to persist COMPLETED. UI continued showing RUNNING and Operator investigation was delayed.',
+    concepts: ['status stuck running', 'status tracker', 'operator runbook', 'processor completion'],
+    sourceType: 'incident',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'incidents',
+    },
+  },
+  {
+    id: 'chunk-batch-job-failure',
+    title: 'Batch Job Failure Runbook',
+    sourcePath: 'knowledge_packs/demo_team/docs/runbooks/batch-job-failure-runbook.md',
+    excerpt:
+      'BatchJobDemo operators confirm job execution id, task status, failed batch reason, retry eligibility, and safe user-facing failure details.',
+    concepts: ['job execution failure', 'batch task', 'operator runbook', 'retry'],
+    sourceType: 'runbook',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'BatchJobDemo',
+      component: 'job-execution',
+      docType: 'runbooks',
+    },
+  },
+  {
+    id: 'chunk-output-idempotency',
+    title: 'INC-102 Duplicate Output',
+    sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-102-duplicate-output.md',
+    excerpt:
+      'OutputCollector retried after a transient storage error without an idempotency key, producing duplicate result files for one Execution.',
+    concepts: ['duplicate output', 'output collection', 'idempotency', 'storage retry'],
+    sourceType: 'incident',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'OutputPreviewDemo',
+      component: 'output-collection',
+      docType: 'incidents',
+    },
+  },
+  {
+    id: 'chunk-partial-completion',
+    title: 'INC-105 Partial Completion Undefined',
+    sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-105-partial-completion-undefined.md',
+    excerpt:
+      'One Task failed while other Tasks completed. Product behavior for PARTIAL_SUCCESS and partial result availability was not defined.',
+    concepts: ['partial completion', 'partial success', 'task failure', 'output availability'],
+    sourceType: 'incident',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'incidents',
+    },
+  },
+  {
+    id: 'chunk-dfp-101',
+    title: 'DFP-101 Add Execution Status Tracking',
+    sourcePath: 'knowledge_packs/demo_team/docs/historical-jira/DFP-101-add-execution-status-tracking.md',
+    excerpt:
+      'Historical story introduced async execution status, task status visibility, and acceptance criteria for Analyst progress monitoring.',
+    concepts: ['execution status', 'jira history', 'acceptance criteria', 'analyst'],
+    sourceType: 'historical_jira',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'historical-jira',
+    },
+  },
+  {
+    id: 'chunk-pr-502',
+    title: 'PR-502 Add Execution Status Polling',
+    sourcePath: 'knowledge_packs/demo_team/docs/historical-pr/PR-502-add-execution-status-polling.md',
+    excerpt:
+      'Reviewer noted backend status updates were present but Execution Monitor error and stale polling states needed follow-up.',
+    concepts: ['execution monitor', 'polling', 'frontend status', 'review comment'],
+    sourceType: 'historical_pr',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'historical-pr',
+    },
+  },
+  {
+    id: 'chunk-output-preview',
+    title: 'Output Preview Design',
+    sourcePath: 'knowledge_packs/demo_team/docs/architecture/output-preview-design.md',
+    excerpt:
+      'Large result files use paginated preview and Athena-style query paths. Full file loads are blocked after preview OOM incident INC-104.',
+    concepts: ['output preview', 'large file preview', 'pagination', 'athena preview'],
+    sourceType: 'architecture_doc',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'OutputPreviewDemo',
+      component: 'output-preview',
+      docType: 'architecture',
+    },
+  },
+  {
+    id: 'chunk-test-plan',
+    title: 'Status Transition Test Plan',
+    sourcePath: 'knowledge_packs/demo_team/docs/testing/status-transition-test-plan.md',
+    excerpt:
+      'Regression tests cover QUEUED, RUNNING, FAILED, COMPLETED, CANCELLED, PARTIAL_SUCCESS, and stuck RUNNING recovery paths.',
+    concepts: ['status transition tests', 'regression', 'partial success', 'stuck running'],
+    sourceType: 'testing_doc',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'testing',
+      docType: 'testing',
+    },
+  },
+  {
+    id: 'chunk-concept-execution',
+    title: 'Concept Memory: Execution Status',
+    sourcePath: 'knowledge_packs/demo_team/docs/concepts/execution-status-memory.md',
+    excerpt:
+      'Execution status links Analyst UI, Java StatusTracker, AWS orchestration, Python processors, incidents, PR history, and test plans.',
+    concepts: ['concept memory', 'execution status', 'codebase memory', 'role questions'],
+    sourceType: 'concept_memory',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'concepts',
+    },
+  },
+  {
+    id: 'chunk-review-checklist',
+    title: 'Async Execution Review Checklist',
+    sourcePath: 'knowledge_packs/demo_team/docs/pr-review/async-execution-review-checklist.md',
+    excerpt:
+      'Check requirement alignment, missing tests, status transition completeness, operational risk, UI polling, and runbook impact.',
+    concepts: ['pr review', 'async execution', 'missing tests', 'operational risk'],
+    sourceType: 'concept_memory',
+    metadata: {
+      teamId: 'demo_team',
+      app: 'ForecastDemo',
+      component: 'job-execution',
+      docType: 'pr-review',
+    },
+  },
+];
+
+const MOCK_CODEBASE_FILES: CodebaseFile[] = [
+  {
+    id: 'code-execution-monitor',
+    path: 'examples/dfp-demo-repo/frontend/src/app/execution/execution-monitor.component.ts',
+    layer: 'frontend',
+    language: 'typescript',
+    role: 'source',
+    summary: 'Angular component that renders job and task status, polling state, stale data warnings, and operator-facing retry hints.',
+    concepts: ['execution status', 'task status', 'polling', 'stuck running'],
+    symbols: ['ExecutionMonitorComponent', 'refreshStatus', 'renderTaskProgress'],
+    relatedTests: [],
+  },
+  {
+    id: 'code-job-api',
+    path: 'examples/dfp-demo-repo/frontend/src/app/services/job-api.service.ts',
+    layer: 'frontend',
+    language: 'typescript',
+    role: 'source',
+    summary: 'Angular service wrapper for Job, Execution, and Output Preview API calls used by DFP frontend pages.',
+    concepts: ['api contract', 'execution status', 'output preview'],
+    symbols: ['JobApiService', 'getExecutionStatus', 'previewOutput'],
+    relatedTests: [],
+  },
+  {
+    id: 'code-execution-controller',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/execution/ExecutionController.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Spring-style REST controller exposing job execution start, status lookup, cancellation, and task-level execution state.',
+    concepts: ['execution status', 'api', 'job execution', 'task status'],
+    symbols: ['ExecutionController', 'startExecution', 'getExecutionStatus'],
+    relatedTests: ['ExecutionServiceTest.java'],
+  },
+  {
+    id: 'code-execution-service',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/execution/ExecutionService.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Coordinates workflow tasks, status transitions, service task handling, batch adapter calls, and output collection.',
+    concepts: ['execution service', 'workflow', 'batch task', 'partial success'],
+    symbols: ['ExecutionService', 'start', 'markTaskComplete', 'markTaskFailed'],
+    relatedTests: ['ExecutionServiceTest.java'],
+  },
+  {
+    id: 'code-status-tracker',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/execution/StatusTracker.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Persists authoritative ExecutionStatus and TaskStatus transitions to prevent stale RUNNING state after processor completion.',
+    concepts: ['status tracker', 'execution status', 'task status', 'stuck running'],
+    symbols: ['StatusTracker', 'transitionExecution', 'transitionTask', 'isTerminal'],
+    relatedTests: ['StatusTrackerTest.java'],
+  },
+  {
+    id: 'code-batch-adapter',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/adapters/BatchJobAdapter.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Adapter for heavy BATCH_TASK orchestration with timeout, retry, and failure-status mapping hints.',
+    concepts: ['batch task', 'timeout', 'retry', 'operator runbook'],
+    symbols: ['BatchJobAdapter', 'submitBatchTask', 'readBatchStatus'],
+    relatedTests: ['ExecutionServiceTest.java'],
+  },
+  {
+    id: 'code-output-collector',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Collects output artifacts from storage and uses idempotency keys to prevent duplicate result files after retry.',
+    concepts: ['output collection', 'idempotency', 'duplicate output', 'storage retry'],
+    symbols: ['OutputCollector', 'collect', 'buildIdempotencyKey'],
+    relatedTests: ['OutputCollectorTest.java'],
+  },
+  {
+    id: 'code-output-preview',
+    path: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/output/OutputPreviewService.java',
+    layer: 'backend',
+    language: 'java',
+    role: 'source',
+    summary: 'Chooses paginated object preview or Athena-style query preview for large forecast output artifacts.',
+    concepts: ['output preview', 'athena preview', 'large file preview', 'pagination'],
+    symbols: ['OutputPreviewService', 'previewArtifact', 'choosePreviewMode'],
+    relatedTests: ['OutputPreviewServiceTest.java'],
+  },
+  {
+    id: 'code-input-validator',
+    path: 'examples/dfp-demo-repo/python-processors/processors/input_validator.py',
+    layer: 'python',
+    language: 'python',
+    role: 'source',
+    summary: 'Python processor validates task-level forecast config before execution and raises structured validation errors.',
+    concepts: ['task config validation', 'input validation', 'processor'],
+    symbols: ['InputValidator', 'validate_required_fields'],
+    relatedTests: ['test_input_validator.py'],
+  },
+  {
+    id: 'code-state-machine',
+    path: 'examples/dfp-demo-repo/aws/step-functions/job-execution-state-machine.asl.json',
+    layer: 'aws',
+    language: 'json',
+    role: 'config',
+    summary: 'Synthetic Step Functions-like orchestration for SERVICE_TASK and BATCH_TASK routing, retries, and output aggregation.',
+    concepts: ['aws orchestration', 'workflow', 'service task', 'batch task'],
+    symbols: ['ValidateInput', 'RunServiceTask', 'RunBatchTask', 'CollectOutput'],
+    relatedTests: [],
+  },
+  {
+    id: 'test-status-tracker',
+    path: 'examples/dfp-demo-repo/backend-api/src/test/java/com/democorp/dfp/execution/StatusTrackerTest.java',
+    layer: 'test',
+    language: 'java',
+    role: 'test',
+    summary: 'JUnit-style tests for legal status transitions, terminal-state behavior, and stuck RUNNING regression coverage.',
+    concepts: ['status transition tests', 'stuck running', 'terminal state'],
+    symbols: ['StatusTrackerTest', 'marksCompleted', 'rejectsInvalidTransition'],
+    relatedTests: [],
+  },
+  {
+    id: 'test-output-collector',
+    path: 'examples/dfp-demo-repo/backend-api/src/test/java/com/democorp/dfp/output/OutputCollectorTest.java',
+    layer: 'test',
+    language: 'java',
+    role: 'test',
+    summary: 'Tests output collection idempotency and duplicate output prevention after storage retry.',
+    concepts: ['output collection tests', 'idempotency', 'duplicate output'],
+    symbols: ['OutputCollectorTest', 'doesNotDuplicateArtifacts'],
+    relatedTests: [],
+  },
+];
+
+const MOCK_REQUIREMENT_CASES: RequirementCase[] = [
+  buildRequirementCase({
+    rawRequest: 'Users want to know which task is still running when a forecast job takes too long.',
+    role: 'BA',
+    sources: MOCK_CHUNKS.slice(0, 7),
+    codeEvidence: MOCK_CODEBASE_FILES.slice(0, 6),
+  }),
+];
+
+const MOCK_SCORECARDS: EvaluationScorecard[] = [
+  createScorecard({
+    targetType: 'engineering_brief',
+    targetId: MOCK_REQUIREMENT_CASES[0].caseId,
+    overallScore: 8.7,
+    sourcePaths: [
+      ...MOCK_CHUNKS.slice(0, 7).map((chunk) => chunk.sourcePath),
+      ...MOCK_CODEBASE_FILES.slice(0, 6).map((file) => file.path),
+    ],
+    recommendations: [
+      'Confirm UI polling interval before ticket grooming.',
+      'Add explicit partial completion acceptance criteria.',
+    ],
+  }),
+];
+
+const MOCK_AUDIT_RUNS: AuditRun[] = [
+  {
+    runId: 'run_20260620_0042',
+    useCase: 'eval_scorecard',
+    teamId: 'demo_team',
+    app: 'ForecastDemo',
+    status: 'completed',
+    startedAt: '2026-06-20T17:18:00.000Z',
+    duration: '00:00:31',
+    modelProvider: 'deterministic-eval',
+    modelName: 'rule-based-scorecard-v1',
+    outputPath: 'artifacts/evals/eval_async_status_tracking.md',
+    warnings: [],
+    sourcesUsed: ['knowledge_packs/demo_team/eval_profiles/async-status-tracking.yaml'],
+  },
+  {
+    runId: 'run_20260620_0041',
+    useCase: 'engineering_brief',
+    teamId: 'demo_team',
+    app: 'ForecastDemo',
+    status: 'needs_review',
+    startedAt: '2026-06-20T17:12:00.000Z',
+    duration: '00:01:52',
+    modelProvider: 'mock-llm',
+    modelName: 'mock-deterministic-v1',
+    outputPath: 'artifacts/requirement-cases/case_async_status/engineering-brief.md',
+    warnings: ['Clarify polling interval and stuck RUNNING timeout.'],
+    sourcesUsed: [
+      'knowledge_packs/demo_team/docs/architecture/status-tracking-design.md',
+      'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/execution/StatusTracker.java',
+    ],
+  },
+  {
+    runId: 'run_20260620_0040',
+    useCase: 'pr_review_summary',
+    teamId: 'demo_team',
+    app: 'OutputPreviewDemo',
+    status: 'needs_review',
+    startedAt: '2026-06-20T16:45:00.000Z',
+    duration: '00:02:08',
+    modelProvider: 'mock-llm',
+    modelName: 'mock-deterministic-v1',
+    outputPath: 'artifacts/pr-review-summary-DFP-110.md',
+    warnings: ['Human review required before PR comment posting.'],
+    sourcesUsed: [
+      'knowledge_packs/demo_team/docs/incidents/INC-102-duplicate-output.md',
+      'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java',
+    ],
+  },
+  {
+    runId: 'run_20260620_0039',
+    useCase: 'codebase_index',
+    teamId: 'demo_team',
+    app: 'ForecastDemo',
+    status: 'completed',
+    startedAt: '2026-06-20T16:18:00.000Z',
+    duration: '00:00:18',
+    modelProvider: 'local-indexer',
+    modelName: 'structured-keyword-index-v1',
+    outputPath: 'artifacts/codebase-indexes/demo_team/dfp-demo-repo.json',
+    warnings: [],
+    sourcesUsed: ['examples/dfp-demo-repo'],
+  },
+  {
+    runId: 'run_20260620_0038',
+    useCase: 'testgen_stub',
+    teamId: 'demo_team',
+    app: 'BatchJobDemo',
+    status: 'stub_only',
+    startedAt: '2026-06-20T16:02:00.000Z',
+    duration: '00:00:21',
+    modelProvider: 'mock-testgen',
+    modelName: 'mock-testgen-v1',
+    outputPath: 'artifacts/testgen-stub-run_20260620_0038.md',
+    warnings: ['No unit-test generation engine was executed.'],
+    sourcesUsed: [],
+  },
+];
+
+const MOCK_RATINGS: HumanRating[] = [
+  {
+    runId: 'run_20260620_0041',
+    usefulnessScore: 4,
+    correctnessScore: 4,
+    comments: 'Good engineering brief. Needs final BA decision on timeout threshold and status labels.',
+    createdAt: '2026-06-20T17:30:00.000Z',
+  },
+];

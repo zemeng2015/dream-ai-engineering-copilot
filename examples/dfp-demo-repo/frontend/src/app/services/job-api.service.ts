@@ -1,0 +1,1 @@
+import { Observable, of } from 'rxjs'; export class JobApiService { getExecutionStatus(executionId: string): Observable<unknown> { return of({ executionId, status: 'RUNNING', staleRunning: false }); } requestOutputPreview(executionId: string, artifactId: string, page: number): Observable<unknown> { return of({ executionId, artifactId, page, rows: [] }); } }

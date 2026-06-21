@@ -1,0 +1,53 @@
+profile_id: task-config-validation
+title: Task Config Validation
+query_patterns:
+  - task config
+  - config validation
+  - invalid config
+  - upload validation
+expected_concepts:
+  - task-level config
+  - validation
+  - required field
+  - execution-time failure
+expected_code:
+  - JobController.java
+  - TaskDefinition.java
+  - input_validator.py
+expected_tests:
+  - test_input_validator.py
+expected_docs:
+  - task-model.md
+  - config-validation-memory.md
+  - regression-test-matrix.md
+expected_incidents:
+  - INC-106
+expected_jira:
+  - DFP-107
+expected_pr:
+  - PR-506
+expected_roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - Which config fields are required before execution?
+  TL:
+    - Should validation happen at upload, execution, or both?
+  FE:
+    - Which validation errors should be displayed inline?
+  BE:
+    - Which endpoint owns task-level validation?
+  QA:
+    - What invalid config fixtures are required?
+  OPS:
+    - How should invalid config failures appear in monitoring?
+critical_risks:
+  - invalid config upload
+  - missing upload-time validation
+  - missing invalid config test fixtures
+minimum_score_to_pass: 7.0

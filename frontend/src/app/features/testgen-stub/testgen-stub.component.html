@@ -1,0 +1,88 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Provider interface only</span>
+      <h1>TestGen Stub</h1>
+      <p>
+        Validate the DREAM plugin surface without implementing or invoking a unit-test generation
+        engine.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>No repo writes</strong>
+      <small>mock provider</small>
+    </div>
+  </header>
+
+  <div class="warning-callout">
+    Unit-test generation is intentionally out of scope for this UI phase. A future JTestGen or
+    external engine can implement the provider contract after separate review.
+  </div>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Provider Stub Input</h2>
+        <span class="status-pill status-warning">No file writes</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form">
+          <div class="form-field">
+            <label for="tg-team">Team</label>
+            <input id="tg-team" formControlName="teamId" />
+          </div>
+          <div class="form-field">
+            <label for="tg-language">Target language</label>
+            <select id="tg-language" formControlName="targetLanguage">
+              <option value="java">java</option>
+              <option value="typescript">typescript</option>
+            </select>
+          </div>
+          <div class="form-field-full">
+            <label for="tg-repo">Repo path</label>
+            <input id="tg-repo" formControlName="repoPath" />
+            <span class="helper-text">Mock path only; this Angular UI does not inspect the filesystem.</span>
+          </div>
+          <label class="checkbox-line">
+            <input type="checkbox" formControlName="dryRun" />
+            Dry run only
+          </label>
+          <div class="form-field-full action-row">
+            <button class="secondary-button" type="button" (click)="createPlan()">Plan Stub</button>
+            <button class="primary-button" type="button" (click)="runStub()">Run Safe Stub</button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Plan / Result</h2>
+      </div>
+      <div class="panel-body">
+        @if (plan(); as currentPlan) {
+          <h3 class="section-title">{{ currentPlan.runId }}</h3>
+          <p>{{ currentPlan.targetSummary }}</p>
+          <ul>
+            @for (action of currentPlan.plannedActions; track action) {
+              <li>{{ action }}</li>
+            }
+          </ul>
+        } @else {
+          <div class="info-callout">Create a plan to preview the provider workflow.</div>
+        }
+      </div>
+    </article>
+  </section>
+
+  @if (result(); as runResult) {
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Safe Stub Report</h2>
+        <span class="status-pill status-warning">{{ runResult.status }}</span>
+      </div>
+      <pre class="markdown-preview">{{ runResult.reportMarkdown }}</pre>
+    </article>
+  }
+</section>

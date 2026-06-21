@@ -1,0 +1,131 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">DemoCorp Forecast Platform</span>
+      <h1>Mission Control</h1>
+      <p>
+        Codebase-aware engineering memory for rough requests, source-backed briefs, PR review,
+        evaluation scorecards, and audit trails.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>MockLLMProvider</strong>
+      <small>no external API required</small>
+    </div>
+  </header>
+
+  <section class="metric-strip" aria-label="DREAM workspace metrics">
+    @for (metric of missionMetrics(); track metric.label) {
+      <div class="metric-tile">
+        <span>{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.note }}</small>
+      </div>
+    }
+  </section>
+
+  <section class="grid-5" aria-label="Quick actions">
+    @for (action of quickActions; track action.title) {
+      <a class="quick-action" [routerLink]="action.route">
+        <app-ui-icon [name]="action.icon" />
+        <span>
+          <strong>{{ action.title }}</strong>
+          <small>{{ action.description }}</small>
+        </span>
+      </a>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Recent Audit Runs</h2>
+        <a class="link-button" routerLink="/audit">View all runs</a>
+      </div>
+      <div class="table-wrap">
+        <table aria-label="Recent DREAM runs">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Workflow</th>
+              <th>Application</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (run of runs(); track run.runId) {
+              <tr>
+                <td>{{ run.runId }}</td>
+                <td>{{ run.useCase }}</td>
+                <td>{{ run.app }}</td>
+                <td>
+                  <span class="status-pill" [class]="run.status === 'failed' ? 'status-error' : run.status === 'needs_review' || run.status === 'stub_only' ? 'status-warning' : 'status-success'">
+                    {{ run.status }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <div class="side-stack">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Knowledge Pack Health</h2>
+          <a class="link-button" routerLink="/knowledge">Search packs</a>
+        </div>
+        <div class="pack-list">
+          @for (pack of packs; track pack.id) {
+            <div class="pack-row">
+              <div>
+                <strong>{{ pack.name }}</strong>
+                <span>{{ pack.app }} / {{ pack.component }}</span>
+              </div>
+              <span
+                class="status-pill"
+                [class]="pack.status === 'Critical' ? 'status-error' : pack.status === 'Warning' ? 'status-warning' : 'status-success'"
+              >
+                {{ pack.status }}
+              </span>
+              <progress [value]="pack.coverage" max="100"></progress>
+              <small>{{ pack.coverage }}%</small>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Active Requirement Case</h2>
+          <span class="status-pill status-success">{{ cases()[0].status }}</span>
+        </div>
+        <div class="case-summary">
+          <strong>{{ cases()[0].title }}</strong>
+          <p>{{ cases()[0].rawRequest }}</p>
+          <div class="confidence-bar"><i [style.width.%]="cases()[0].confidence * 100"></i></div>
+          <small>{{ cases()[0].evidence.length }} evidence items / {{ cases()[0].impactMap.length }} impact items</small>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Human Review Required</h2>
+          <a class="link-button" routerLink="/audit">Rate outputs</a>
+        </div>
+        <div class="review-list">
+          @for (run of needsReview(); track run.runId) {
+            <a routerLink="/audit">
+              <strong>{{ run.runId }}</strong>
+              <span>{{ run.useCase }} / {{ run.app }}</span>
+            </a>
+          } @empty {
+            <p>No current mock runs require review.</p>
+          }
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

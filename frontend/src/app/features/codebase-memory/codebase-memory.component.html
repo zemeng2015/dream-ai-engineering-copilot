@@ -1,0 +1,132 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">DFP structured index</span>
+      <h1>Codebase Memory</h1>
+      <p>
+        Explore mock repository memory across Angular UI, Java backend, AWS orchestration, Python
+        processors, and tests.
+      </p>
+    </div>
+    <div class="index-beacon" aria-label="Indexed repository status">
+      <span></span>
+      <strong>dfp-demo-repo</strong>
+      <small>indexed locally</small>
+    </div>
+  </header>
+
+  <section class="memory-strip" aria-label="Repository layers">
+    @for (item of layerSummary(); track item.layer) {
+      <div class="memory-layer">
+        <span>{{ item.layer }}</span>
+        <strong>{{ item.count }}</strong>
+        <div class="layer-bar"><i [style.width.%]="item.count * 18"></i></div>
+      </div>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Search Codebase Memory</h2>
+        <span class="status-pill status-info">keyword index</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
+          <div class="form-field-full">
+            <label for="code-query">Query</label>
+            <input id="code-query" formControlName="query" />
+          </div>
+          <div class="form-field">
+            <label for="code-layer">Layer</label>
+            <select id="code-layer" formControlName="layer">
+              <option value="">All layers</option>
+              @for (layer of layers; track layer) {
+                <option [value]="layer">{{ layer }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="code-top-k">Top K</label>
+            <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
+          </div>
+          <div class="form-field-full">
+            <button class="primary-button" type="submit">Search Index</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Codebase memory search results">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Layer</th>
+              <th>Role</th>
+              <th>Concepts</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (file of results(); track file.id) {
+              <tr (click)="selectedFile.set(file)" tabindex="0">
+                <td>{{ file.path }}</td>
+                <td>{{ file.layer }}</td>
+                <td>{{ file.role }}</td>
+                <td>{{ file.concepts.join(', ') }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">No codebase memory matched this query.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <div class="side-stack">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Concepts</h2>
+        </div>
+        <div class="concept-cloud">
+          @for (concept of conceptList(); track concept) {
+            <button type="button" (click)="form.patchValue({ query: concept }); search()">
+              {{ concept }}
+            </button>
+          }
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>File Detail</h2>
+        </div>
+        <div class="panel-body">
+          @if (selectedFile(); as file) {
+            <dl class="metadata-list">
+              <div>
+                <dt>Path</dt>
+                <dd>{{ file.path }}</dd>
+              </div>
+              <div>
+                <dt>Summary</dt>
+                <dd>{{ file.summary }}</dd>
+              </div>
+              <div>
+                <dt>Symbols</dt>
+                <dd>{{ file.symbols.join(', ') }}</dd>
+              </div>
+              <div>
+                <dt>Tests</dt>
+                <dd>{{ file.relatedTests.length ? file.relatedTests.join(', ') : 'No direct test mapping' }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <div class="info-callout">Select a file to inspect symbols and test mappings.</div>
+          }
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

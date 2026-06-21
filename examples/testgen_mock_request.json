@@ -1,0 +1,10 @@
+{
+  "team_id": "demo_team",
+  "repo_path": "examples/java-demo-repo",
+  "target_language": "java",
+  "target_files": [
+    "src/main/java/com/democorp/demo/CalculatorService.java"
+  ],
+  "dry_run": true
+}
+

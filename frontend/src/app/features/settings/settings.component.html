@@ -1,0 +1,59 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Runtime guardrails</span>
+      <h1>Settings</h1>
+      <p>
+        Frontend configuration preview. The Angular UI is mock-only and can later be wired to the
+        FastAPI endpoints.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>{{ dream.health.status }}</strong>
+      <small>{{ dream.health.mode }}</small>
+    </div>
+  </header>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Runtime Mode</h2>
+      </div>
+      <div class="panel-body">
+        <dl class="metadata-list">
+          <div>
+            <dt>Provider</dt>
+            <dd>MockLLMProvider</dd>
+          </div>
+          <div>
+            <dt>API base URL</dt>
+            <dd>{{ dream.health.apiBaseUrl }}</dd>
+          </div>
+          <div>
+            <dt>Frontend mode</dt>
+            <dd>{{ dream.health.mode }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ dream.health.status }}</dd>
+          </div>
+        </dl>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Guardrails</h2>
+      </div>
+      <div class="panel-body">
+        <ul>
+          <li>No paid external API calls in mock mode.</li>
+          <li>No real company data, tickets, pull requests, logs, or endpoints.</li>
+          <li>Requirement and PR outputs are draft/review-aid only.</li>
+          <li>TestGen engine execution is excluded from this frontend phase.</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+</section>

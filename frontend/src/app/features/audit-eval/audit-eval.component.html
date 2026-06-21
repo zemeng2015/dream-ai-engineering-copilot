@@ -1,0 +1,137 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Evaluation agent</span>
+      <h1>Eval & Audit</h1>
+      <p>
+        Inspect deterministic scorecards, evidence coverage, generation runs, warnings, and human
+        ratings before any output is treated as review-ready.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>Rule-based eval</strong>
+      <small>default local gate</small>
+    </div>
+  </header>
+
+  <section class="score-grid" aria-label="Evaluation scorecards">
+    @for (card of scorecards(); track card.evaluationId) {
+      <article class="score-card">
+        <div class="score-ring">{{ card.overallScore }}</div>
+        <strong>{{ card.targetType }} / Grade {{ card.grade }}</strong>
+        <p>{{ card.recommendations.join(' ') }}</p>
+        <span class="status-pill" [class]="card.passStatus === 'pass' ? 'status-success' : card.passStatus === 'warning' ? 'status-warning' : 'status-error'">
+          {{ card.passStatus }}
+        </span>
+      </article>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Audit Runs</h2>
+        <span class="status-pill status-info">{{ runs().length }} mock runs</span>
+      </div>
+      <div class="table-wrap">
+        <table aria-label="Audit runs">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Workflow</th>
+              <th>App</th>
+              <th>Status</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (run of runs(); track run.runId) {
+              <tr (click)="selectRun(run)" tabindex="0">
+                <td>{{ run.runId }}</td>
+                <td>{{ run.useCase }}</td>
+                <td>{{ run.app }}</td>
+                <td>
+                  <span
+                    class="status-pill"
+                    [class]="run.status === 'failed' ? 'status-error' : run.status === 'needs_review' || run.status === 'stub_only' ? 'status-warning' : 'status-success'"
+                  >
+                    {{ run.status }}
+                  </span>
+                </td>
+                <td>{{ run.outputPath }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Run Detail & Rating</h2>
+      </div>
+      <div class="panel-body">
+        @if (selectedRun(); as run) {
+          <dl class="metadata-list">
+            <div>
+              <dt>Run ID</dt>
+              <dd>{{ run.runId }}</dd>
+            </div>
+            <div>
+              <dt>Provider</dt>
+              <dd>{{ run.modelProvider }} / {{ run.modelName }}</dd>
+            </div>
+            <div>
+              <dt>Sources</dt>
+              <dd>{{ run.sourcesUsed.length ? run.sourcesUsed.join(', ') : 'None' }}</dd>
+            </div>
+            <div>
+              <dt>Warnings</dt>
+              <dd>{{ run.warnings.length ? run.warnings.join(', ') : 'None' }}</dd>
+            </div>
+          </dl>
+
+          <form class="form-grid rating-form" [formGroup]="ratingForm" (ngSubmit)="submitRating()">
+            <div class="form-field">
+              <label for="rating-usefulness">Usefulness</label>
+              <input id="rating-usefulness" type="number" min="1" max="5" formControlName="usefulnessScore" />
+            </div>
+            <div class="form-field">
+              <label for="rating-correctness">Correctness</label>
+              <input id="rating-correctness" type="number" min="1" max="5" formControlName="correctnessScore" />
+            </div>
+            <div class="form-field-full">
+              <label for="rating-comments">Comments</label>
+              <textarea id="rating-comments" formControlName="comments"></textarea>
+            </div>
+            <div class="form-field-full">
+              <button class="primary-button" type="submit">Save Human Rating</button>
+            </div>
+          </form>
+
+          <h3 class="section-title">Ratings</h3>
+          <div class="source-list">
+            @for (rating of selectedRatings(); track rating.createdAt) {
+              <div>
+                <strong>Usefulness {{ rating.usefulnessScore }} / Correctness {{ rating.correctnessScore }}</strong>
+                <span>{{ rating.comments }}</span>
+              </div>
+            } @empty {
+              <div class="info-callout">No rating for this run yet.</div>
+            }
+          </div>
+
+          <h3 class="section-title">Evidence Coverage</h3>
+          <div class="concept-cloud">
+            @for (item of scorecards()[0].sourceCoverage | keyvalue; track item.key) {
+              <button type="button" [class.coverage-on]="item.value">
+                {{ item.key }}: {{ item.value ? 'yes' : 'no' }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+</section>

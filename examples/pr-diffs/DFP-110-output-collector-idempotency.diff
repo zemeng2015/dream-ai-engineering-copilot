@@ -1,0 +1,17 @@
+diff --git a/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java b/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java
+--- a/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java
++++ b/backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java
+@@ -1,4 +1,12 @@
++// Synthetic DFP change for DFP-110-output-collector-idempotency.diff
++// Adds behavior connected to status, output, partial recovery, or config validation.
++public String demoChange(String executionId) {
++    return "changed:" + executionId;
++}
+diff --git a/backend-api/src/test/java/com/democorp/dfp/output/OutputCollectorTest.java b/backend-api/src/test/java/com/democorp/dfp/output/OutputCollectorTest.java
+--- a/backend-api/src/test/java/com/democorp/dfp/output/OutputCollectorTest.java
++++ b/backend-api/src/test/java/com/democorp/dfp/output/OutputCollectorTest.java
+@@ -1,4 +1,9 @@
++@Test
++void syntheticRegressionForDfpChange() {
++    assertTrue(true);
++}

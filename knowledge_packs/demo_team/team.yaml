@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+
+team_name: Demo Forecast Team
+team_id: demo_team
+applications:
+  - ForecastDemo
+  - BatchJobDemo
+  - OutputPreviewDemo
+repositories:
+  - dfp-demo-repo
+document_paths:
+  - docs/domain
+  - docs/architecture
+  - docs/runbooks
+  - docs/incidents
+  - docs/historical-jira
+  - docs/historical-pr
+  - docs/testing
+  - docs/pr-review
+  - docs/concepts
+review_rules:
+  - Check requirement alignment with Job, Workflow, Task, and Execution concepts.
+  - Check whether async status transitions are fully defined.
+  - Check whether SERVICE_TASK and BATCH_TASK behavior differs.
+  - Check missing tests for status transitions.
+  - Check output collection idempotency.
+  - Check large file preview behavior.
+  - Check partial completion behavior.
+  - Check operator runbook impact.
+  - Check UI polling and error state behavior.
+  - Check audit logging for execution state changes.
+requirement_template: engineering_brief
+test_generation_rules:
+  provider: mock
+  human_review_required: true
+roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS

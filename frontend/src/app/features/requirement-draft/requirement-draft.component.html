@@ -1,0 +1,166 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Requirement intelligence</span>
+      <h1>Requirement Case</h1>
+      <p>
+        Turn incomplete business requests into source-backed evidence, impact maps, role
+        questions, an engineering brief, and a Jira-ready draft.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>Human review</strong>
+      <small>required before Jira</small>
+    </div>
+  </header>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Case Intake</h2>
+        <span class="status-pill status-warning">Human Review Required</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="generate()">
+          <div class="form-field-full">
+            <label for="req-mode">Execution mode</label>
+            <select id="req-mode" formControlName="executionMode">
+              <option value="mock">Mock local provider</option>
+              <option value="openai">Real FastAPI + OpenAI-compatible provider</option>
+            </select>
+            <span class="helper-text">OpenAI API keys stay in the backend environment; the browser only selects the provider.</span>
+          </div>
+          <div class="form-field">
+            <label for="req-team">Team</label>
+            <input id="req-team" formControlName="teamId" />
+          </div>
+          <div class="form-field">
+            <label for="req-app">Application</label>
+            <select id="req-app" formControlName="app">
+              @for (app of apps; track app) {
+                <option [value]="app">{{ app }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="req-component">Component</label>
+            <input id="req-component" formControlName="component" />
+          </div>
+          <div class="form-field">
+            <label for="req-role">Written by role</label>
+            <select id="req-role" formControlName="role">
+              <option value="BA">BA</option>
+              <option value="TL">TL</option>
+              <option value="FE">FE</option>
+              <option value="BE">BE</option>
+              <option value="QA">QA</option>
+              <option value="OPS">OPS</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="req-top-k">Top K</label>
+            <input id="req-top-k" type="number" min="1" max="20" formControlName="topK" />
+          </div>
+          <div class="form-field-full">
+            <label for="req-request">Rough business request</label>
+            <textarea id="req-request" formControlName="roughBusinessRequest"></textarea>
+            <span class="helper-text">MockLLM-style deterministic output; no external API calls.</span>
+          </div>
+          <div class="form-field-full">
+            <button class="primary-button" type="submit" [disabled]="isLoading()">
+              {{ isLoading() ? 'Calling OpenAI Provider...' : 'Analyze Requirement Case' }}
+            </button>
+            @if (apiError(); as message) {
+              <div class="warning-callout">{{ message }}</div>
+            }
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Sources Used</h2>
+      </div>
+      <div class="panel-body">
+        @if (result(); as draft) {
+          <h3 class="section-title">{{ draft.requirementCase.title }}</h3>
+          <p>{{ draft.requirementCase.evidence.length }} evidence items retrieved from knowledge and codebase memory.</p>
+          <div class="source-list">
+            @for (source of draft.sourcesUsed; track source.id) {
+              <div>
+                <strong>{{ source.title }}</strong>
+                <span>{{ source.sourcePath }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="info-callout">Generate a draft to see retrieved sources.</div>
+        }
+      </div>
+    </article>
+  </section>
+
+  @if (result(); as draft) {
+    <section class="grid-2">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Impact Map</h2>
+          <span class="status-pill status-success">{{ draft.requirementCase.confidence * 100 | number: '1.0-0' }}% confidence</span>
+        </div>
+        <div class="panel-body">
+          <div class="impact-grid">
+            @for (impact of draft.requirementCase.impactMap; track impact.name) {
+              <div class="impact-card">
+                <span class="status-pill status-info">{{ impact.areaType }}</span>
+                <strong>{{ impact.name }}</strong>
+                <p>{{ impact.description }}</p>
+                <div class="confidence-bar"><i [style.width.%]="impact.confidence * 100"></i></div>
+              </div>
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Evaluation Scorecard</h2>
+          <span class="status-pill status-success">Grade {{ draft.scorecard.grade }}</span>
+        </div>
+        <div class="panel-body">
+          <div class="score-card">
+            <div class="score-ring">{{ draft.scorecard.overallScore }}</div>
+            <strong>{{ draft.scorecard.passStatus }}</strong>
+            <p>{{ draft.scorecard.recommendations.join(' ') }}</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Role-specific Clarification Questions</h2>
+      </div>
+      <div class="panel-body">
+        <div class="question-grid">
+          @for (question of draft.requirementCase.questions; track question.targetRole + question.question) {
+            <div class="question-card">
+              <span class="status-pill status-neutral">{{ question.targetRole }}</span>
+              <strong>{{ question.question }}</strong>
+              <p>{{ question.whyItMatters }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Jira-ready Draft</h2>
+        <span class="status-pill status-success">{{ draft.run.runId }}</span>
+      </div>
+      <pre class="markdown-preview">{{ draft.markdown }}</pre>
+    </article>
+  }
+</section>

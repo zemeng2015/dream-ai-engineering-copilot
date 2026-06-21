@@ -1,0 +1,55 @@
+profile_id: large-output-preview
+title: Large Output Preview
+query_patterns:
+  - large output preview
+  - athena preview
+  - preview timeout
+  - pagination
+expected_concepts:
+  - output preview
+  - pagination
+  - large file preview
+  - partition predicate
+expected_code:
+  - OutputPreviewService.java
+  - AthenaPreviewAdapter.java
+  - output-preview.component.ts
+expected_tests:
+  - OutputPreviewServiceTest.java
+expected_docs:
+  - output-preview-design.md
+  - large-file-preview-runbook.md
+  - output-preview-test-plan.md
+expected_incidents:
+  - INC-104
+  - INC-107
+expected_jira:
+  - DFP-103
+  - DFP-104
+expected_pr:
+  - PR-504
+expected_roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - What preview size and pagination behavior is acceptable?
+  TL:
+    - When should preview use service reads versus Athena-style queries?
+  FE:
+    - How should timeout and empty preview states be rendered?
+  BE:
+    - What partition predicate is required for large output preview?
+  QA:
+    - What regression data size should be tested?
+  OPS:
+    - What timeout metric should trigger investigation?
+critical_risks:
+  - preview OOM
+  - Athena preview timeout
+  - missing pagination test
+minimum_score_to_pass: 7.0

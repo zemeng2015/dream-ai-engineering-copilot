@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+artifacts/
+dream.sqlite
+*.db
+frontend/.angular/
+frontend/dist/
+frontend/node_modules/
+dist/
+build/
+*.egg-info/

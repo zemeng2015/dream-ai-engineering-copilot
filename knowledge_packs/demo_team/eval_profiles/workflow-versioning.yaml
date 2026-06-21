@@ -1,0 +1,55 @@
+profile_id: workflow-versioning
+title: Workflow Versioning
+query_patterns:
+  - workflow versioning
+  - workflow version
+  - versioned workflow
+  - task definition version
+expected_concepts:
+  - workflow
+  - workflow version
+  - task definition
+  - execution immutability
+expected_code:
+  - WorkflowController.java
+  - WorkflowService.java
+  - WorkflowDefinition.java
+  - TaskDefinition.java
+expected_tests:
+  - ExecutionServiceTest.java
+expected_docs:
+  - workflow-versioning-design.md
+  - workflow-model.md
+  - admin-workflow-console.md
+expected_incidents:
+  - INC-105
+expected_jira:
+  - DFP-105
+  - DFP-108
+expected_pr:
+  - PR-507
+expected_roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - Should existing Jobs keep the workflow version selected at creation time?
+  TL:
+    - What migration behavior applies when task definitions change?
+  FE:
+    - How should Admins compare workflow versions?
+  BE:
+    - What object stores the immutable workflow version used by an Execution?
+  QA:
+    - What regression tests cover old Jobs after workflow edits?
+  OPS:
+    - What operational checks detect mismatched workflow versions?
+critical_risks:
+  - execution immutability not defined
+  - missing workflow version migration behavior
+  - missing regression tests for old Jobs
+minimum_score_to_pass: 7.0

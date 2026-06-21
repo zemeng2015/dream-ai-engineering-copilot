@@ -1,0 +1,131 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Pull request review aid</span>
+      <h1>PR Review</h1>
+      <p>
+        Review synthetic diffs with DFP knowledge, codebase memory, historical incident context,
+        test-gap detection, and an evaluation scorecard.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>No PR posting</strong>
+      <small>review aid only</small>
+    </div>
+  </header>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Review Input</h2>
+        <span class="status-pill status-warning">Review Aid Only</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="generate()">
+          <div class="form-field-full">
+            <label for="pr-mode">Execution mode</label>
+            <select id="pr-mode" formControlName="executionMode">
+              <option value="mock">Mock local provider</option>
+              <option value="openai">Real FastAPI + OpenAI-compatible provider</option>
+            </select>
+            <span class="helper-text">Real API mode uses the synthetic DFP diff/Jira files on the backend.</span>
+          </div>
+          <div class="form-field">
+            <label for="pr-team">Team</label>
+            <input id="pr-team" formControlName="teamId" />
+          </div>
+          <div class="form-field">
+            <label for="pr-app">Application</label>
+            <select id="pr-app" formControlName="app">
+              @for (app of apps; track app) {
+                <option [value]="app">{{ app }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="pr-component">Component</label>
+            <input id="pr-component" formControlName="component" />
+          </div>
+          <div class="form-field">
+            <label for="pr-top-k">Top K</label>
+            <input id="pr-top-k" type="number" min="1" max="20" formControlName="topK" />
+          </div>
+          <div class="form-field-full">
+            <label for="pr-diff">Synthetic diff</label>
+            <textarea id="pr-diff" formControlName="diffText"></textarea>
+          </div>
+          <div class="form-field-full">
+            <label for="pr-jira">Synthetic Jira context</label>
+            <textarea id="pr-jira" formControlName="jiraContext"></textarea>
+          </div>
+          <div class="form-field-full">
+            <button class="primary-button" type="submit" [disabled]="isLoading()">
+              {{ isLoading() ? 'Calling OpenAI Provider...' : 'Generate PR Review Summary' }}
+            </button>
+            @if (apiError(); as message) {
+              <div class="warning-callout">{{ message }}</div>
+            }
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Review Memory</h2>
+      </div>
+      <div class="panel-body">
+        <div class="warning-callout">
+          This is an AI-generated review aid. Human review is required. The mock frontend does
+          not post PR comments, approve code, reject code, or call GitHub.
+        </div>
+        @if (result(); as review) {
+          <h3 class="section-title">Overall Risk: {{ review.risk }}</h3>
+          <div class="score-card">
+            <div class="score-ring">{{ review.scorecard.overallScore }}</div>
+            <strong>Eval grade {{ review.scorecard.grade }}</strong>
+            <p>{{ review.scorecard.recommendations.join(' ') }}</p>
+          </div>
+          <h3 class="section-title">Changed Files</h3>
+          <div class="source-list">
+            @for (file of review.changedFiles; track file) {
+              <div>
+                <strong>{{ file.split('/').pop() }}</strong>
+                <span>{{ file }}</span>
+              </div>
+            }
+          </div>
+          <h3 class="section-title">Related Codebase Memory</h3>
+          <div class="source-list">
+            @for (file of review.relatedCode; track file.id) {
+              <div>
+                <strong>{{ file.path.split('/').pop() }}</strong>
+                <span>{{ file.summary }}</span>
+              </div>
+            }
+          </div>
+          <h3 class="section-title">Sources</h3>
+          <div class="source-list">
+            @for (source of review.sourcesUsed; track source.id) {
+              <div>
+                <strong>{{ source.title }}</strong>
+                <span>{{ source.sourcePath }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </article>
+  </section>
+
+  @if (result(); as review) {
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Markdown Output</h2>
+        <span class="status-pill status-warning">{{ review.run.runId }}</span>
+      </div>
+      <pre class="markdown-preview">{{ review.markdown }}</pre>
+    </article>
+  }
+</section>

@@ -1,0 +1,63 @@
+profile_id: async-status-tracking
+title: Async Status Tracking
+query_patterns:
+  - async status
+  - status tracking
+  - long-running job
+  - task still running
+expected_concepts:
+  - execution status
+  - task status
+  - async tracking
+  - polling
+  - batch task
+  - service task
+expected_code:
+  - StatusTracker.java
+  - ExecutionService.java
+  - ExecutionController.java
+  - BatchJobAdapter.java
+  - execution-monitor.component.ts
+expected_tests:
+  - StatusTrackerTest.java
+  - ExecutionServiceTest.java
+expected_docs:
+  - status-tracking-design.md
+  - execution-model.md
+  - job-lifecycle.md
+expected_incidents:
+  - INC-103
+expected_jira:
+  - DFP-101
+  - DFP-109
+expected_pr:
+  - PR-502
+  - PR-505
+expected_roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - What status labels should users see?
+    - Should status be shown at job level, task level, or both?
+  TL:
+    - Should SERVICE_TASK and BATCH_TASK share the same status model?
+    - Should status be persisted or derived from execution events?
+  FE:
+    - Should the Execution Monitor poll or subscribe to updates?
+  BE:
+    - What is the authoritative source for task status?
+  QA:
+    - What are the regression tests for stuck RUNNING state?
+  OPS:
+    - What runbook update is needed for stuck execution?
+critical_risks:
+  - status stuck RUNNING
+  - missing task-level status transition
+  - missing UI polling behavior
+  - missing regression tests
+minimum_score_to_pass: 7.0

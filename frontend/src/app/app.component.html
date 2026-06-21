@@ -1,0 +1,65 @@
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Primary navigation">
+    <a class="brand" routerLink="/dashboard" aria-label="DREAM dashboard">
+      <span class="brand-mark">D</span>
+      <span>
+        <strong>DREAM</strong>
+        <small>Engineering Memory Platform</small>
+      </span>
+    </a>
+
+    <nav class="nav-list">
+      @for (item of navItems; track item.path) {
+        <a
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+        >
+          <app-ui-icon [name]="item.icon" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="mode-line">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <span>Mock Data Mode</span>
+        <strong>ON</strong>
+      </div>
+      <div class="environment-line">
+        <span>Environment</span>
+        <strong>Demo</strong>
+      </div>
+      <div class="version-line">
+        <strong>DemoCorp DFP</strong>
+        <span>Synthetic data workspace</span>
+      </div>
+    </div>
+  </aside>
+
+  <section class="workspace">
+    <header class="topbar">
+      <button class="icon-button" type="button" aria-label="Toggle navigation">
+        <app-ui-icon name="menu" />
+      </button>
+      <div class="topbar-title">
+        <strong>DREAM Engineering Memory Workbench</strong>
+        <span>Requirement intelligence, PR review, evaluation, and audit with synthetic DFP data.</span>
+      </div>
+      <div class="topbar-actions">
+        <span class="mode-chip">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Mock DFP Memory
+        </span>
+        <button class="ghost-button" type="button">Docs</button>
+        <span class="avatar" aria-label="Signed in as Demo Engineer">DE</span>
+      </div>
+    </header>
+
+    <main class="content" id="main-content">
+      <router-outlet />
+    </main>
+  </section>
+</div>

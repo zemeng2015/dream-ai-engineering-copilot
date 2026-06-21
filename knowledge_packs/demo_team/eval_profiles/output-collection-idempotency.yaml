@@ -1,0 +1,51 @@
+profile_id: output-collection-idempotency
+title: Output Collection Idempotency
+query_patterns:
+  - output collection
+  - duplicate output
+  - idempotency
+  - retry output
+expected_concepts:
+  - output artifact
+  - idempotency key
+  - storage retry
+  - duplicate output
+expected_code:
+  - OutputCollector.java
+  - OutputArtifact.java
+  - StorageAdapter.java
+expected_tests:
+  - OutputCollectorTest.java
+expected_docs:
+  - output-collection-design.md
+  - output-collection-memory.md
+  - output-collection-failure-runbook.md
+expected_incidents:
+  - INC-102
+expected_jira:
+  - DFP-110
+expected_pr:
+  - PR-503
+  - PR-508
+expected_roles:
+  - BA
+  - TL
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - Should duplicate output ever be visible to Analysts?
+  TL:
+    - Where is the idempotency boundary enforced?
+  BE:
+    - What key makes output collection idempotent across retries?
+  QA:
+    - What duplicate retry regression test is required?
+  OPS:
+    - What operator action detects duplicate artifacts?
+critical_risks:
+  - duplicate output
+  - missing idempotency key
+  - missing retry regression test
+minimum_score_to_pass: 7.0

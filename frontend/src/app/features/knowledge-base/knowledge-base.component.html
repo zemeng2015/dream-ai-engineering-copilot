@@ -1,0 +1,133 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Team knowledge pack</span>
+      <h1>Knowledge Memory</h1>
+      <p>
+        Search DFP domain docs, architecture notes, runbooks, incidents, historical Jira/PR,
+        testing plans, and concept memory.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>demo_team</strong>
+      <small>synthetic only</small>
+    </div>
+  </header>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Search Knowledge</h2>
+        <span class="status-pill status-info">demo_team</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
+          <div class="form-field-full">
+            <label for="kb-query">Query</label>
+            <input id="kb-query" formControlName="query" />
+          </div>
+          <div class="form-field">
+            <label for="kb-app">Application</label>
+            <select id="kb-app" formControlName="app">
+              <option value="">All applications</option>
+              @for (app of apps; track app) {
+                <option [value]="app">{{ app }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="kb-doc-type">Document type</label>
+            <select id="kb-doc-type" formControlName="docType">
+              <option value="">All document types</option>
+              @for (docType of docTypes; track docType) {
+                <option [value]="docType">{{ docType }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="kb-component">Component</label>
+            <input id="kb-component" formControlName="component" placeholder="job-execution" />
+          </div>
+          <div class="form-field">
+            <label for="kb-top-k">Top K</label>
+            <input id="kb-top-k" type="number" min="1" max="20" formControlName="topK" />
+          </div>
+          <div class="form-field-full">
+            <button class="primary-button" type="submit">Search Chunks</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Knowledge search results">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>App</th>
+              <th>Component</th>
+              <th>Doc Type</th>
+              <th>Source Type</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (chunk of chunks(); track chunk.id) {
+              <tr (click)="selectedChunk.set(chunk)" tabindex="0">
+                <td>{{ chunk.title }}</td>
+                <td>{{ chunk.metadata.app }}</td>
+                <td>{{ chunk.metadata.component }}</td>
+                <td>{{ chunk.metadata.docType }}</td>
+                <td>{{ chunk.sourceType }}</td>
+                <td>{{ chunk.sourcePath }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6">No mock chunks matched this query.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Chunk Preview</h2>
+      </div>
+      <div class="panel-body">
+        @if (selectedChunk(); as chunk) {
+          <h3 class="section-title">{{ chunk.title }}</h3>
+          <p>{{ chunk.excerpt }}</p>
+          <div class="concept-cloud">
+            @for (concept of chunk.concepts; track concept) {
+              <button type="button" (click)="form.patchValue({ query: concept }); search()">
+                {{ concept }}
+              </button>
+            }
+          </div>
+          <dl class="metadata-list">
+            <div>
+              <dt>Source</dt>
+              <dd>{{ chunk.sourcePath }}</dd>
+            </div>
+            <div>
+              <dt>App</dt>
+              <dd>{{ chunk.metadata.app }}</dd>
+            </div>
+            <div>
+              <dt>Component</dt>
+              <dd>{{ chunk.metadata.component }}</dd>
+            </div>
+            <div>
+              <dt>Doc type</dt>
+              <dd>{{ chunk.metadata.docType }}</dd>
+            </div>
+          </dl>
+        } @else {
+          <p>No chunk selected.</p>
+        }
+      </div>
+    </article>
+  </section>
+</section>

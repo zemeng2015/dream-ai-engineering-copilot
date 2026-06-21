@@ -1,0 +1,53 @@
+profile_id: operator-retry-action
+title: Operator Retry Action
+query_patterns:
+  - operator retry
+  - retry failed task
+  - batch retry
+  - stuck execution retry
+expected_concepts:
+  - retry
+  - failed task
+  - operator action
+  - batch timeout
+  - audit log
+expected_code:
+  - BatchJobAdapter.java
+  - ExecutionService.java
+  - StatusTracker.java
+expected_tests:
+  - ExecutionServiceTest.java
+expected_docs:
+  - batch-job-failure-runbook.md
+  - batch-task-retry-test-plan.md
+  - partial-completion-runbook.md
+expected_incidents:
+  - INC-101
+  - INC-103
+expected_jira:
+  - DFP-102
+  - DFP-111
+expected_pr:
+  - PR-501
+expected_roles:
+  - BA
+  - TL
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - Who is allowed to retry a failed task?
+  TL:
+    - How is retry scoped to one task versus the full execution?
+  BE:
+    - Which state transitions are legal for retry?
+  QA:
+    - What regression tests cover retry after timeout?
+  OPS:
+    - What runbook steps are required before retry?
+critical_risks:
+  - batch timeout
+  - unsafe retry transition
+  - missing operator audit log
+minimum_score_to_pass: 7.0

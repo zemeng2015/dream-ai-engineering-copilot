@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: Apache-2.0
+
+from pydantic import BaseModel, Field
+
+
+class RequirementCaseCreateRequest(BaseModel):
+    team_id: str
+    raw_request: str
+    created_by_role: str | None = None
+    target_app: str | None = None
+    target_component: str | None = None
+
+
+class RequirementCase(BaseModel):
+    case_id: str
+    team_id: str
+    title: str
+    raw_request: str
+    created_by_role: str | None = None
+    target_app: str | None = None
+    target_component: str | None = None
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class ContextEvidence(BaseModel):
+    evidence_id: str
+    case_id: str
+    source_type: str
+    source_path: str
+    title: str
+    excerpt: str
+    relevance_score: float
+    reason: str
+
+
+class ImpactItem(BaseModel):
+    impact_id: str
+    case_id: str
+    area_type: str
+    name: str
+    description: str
+    confidence: float
+    sources: list[str] = Field(default_factory=list)
+    reason: str
+
+
+class ClarificationQuestion(BaseModel):
+    question_id: str
+    case_id: str
+    target_role: str
+    question: str
+    why_it_matters: str
+    related_sources: list[str] = Field(default_factory=list)
+    status: str = "open"
+
+
+class RoleView(BaseModel):
+    case_id: str
+    role: str
+    markdown: str
+    sources_used: list[str] = Field(default_factory=list)
+
+
+class EngineeringBrief(BaseModel):
+    case_id: str
+    markdown: str
+    sources_used: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class JiraDraft(BaseModel):
+    case_id: str
+    markdown: str
+    sources_used: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class RequirementCaseSnapshot(BaseModel):
+    case: RequirementCase
+    evidence: list[ContextEvidence] = Field(default_factory=list)
+    impact_items: list[ImpactItem] = Field(default_factory=list)
+    questions: list[ClarificationQuestion] = Field(default_factory=list)
+    role_views: list[RoleView] = Field(default_factory=list)
+    engineering_brief: EngineeringBrief | None = None
+    jira_draft: JiraDraft | None = None
+    warnings: list[str] = Field(default_factory=list)

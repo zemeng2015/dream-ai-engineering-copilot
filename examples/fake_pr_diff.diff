@@ -1,0 +1,41 @@
+diff --git a/src/main/java/com/democorp/demo/JobExecutionService.java b/src/main/java/com/democorp/demo/JobExecutionService.java
+index 1111111..2222222 100644
+--- a/src/main/java/com/democorp/demo/JobExecutionService.java
++++ b/src/main/java/com/democorp/demo/JobExecutionService.java
+@@ -25,10 +25,18 @@ public class JobExecutionService {
+     public String startJob(String jobId) {
+         statusTracker.markSubmitted(jobId);
+         boolean accepted = batchJobAdapter.submitBatchJob(jobId);
+         if (accepted) {
+             statusTracker.markRunning(jobId);
+             return jobId;
+         }
+         statusTracker.markFailed(jobId);
+         return jobId;
+     }
++
++    public boolean isTerminalStatus(String jobId) {
++        JobStatus status = statusForJob(jobId);
++        return status == JobStatus.COMPLETED || status == JobStatus.FAILED;
++    }
++
++    public String statusMessageForJob(String jobId) {
++        return "job " + jobId + " is " + statusForJob(jobId).name().toLowerCase();
++    }
+ }
+diff --git a/src/test/java/com/democorp/demo/JobExecutionServiceTest.java b/src/test/java/com/democorp/demo/JobExecutionServiceTest.java
+index 3333333..4444444 100644
+--- a/src/test/java/com/democorp/demo/JobExecutionServiceTest.java
++++ b/src/test/java/com/democorp/demo/JobExecutionServiceTest.java
+@@ -18,4 +18,11 @@ class JobExecutionServiceTest {
+ 
+         assertEquals(JobStatus.UNKNOWN, service.statusForJob("missing-job"));
+     }
++
++    @Test
++    void reportsStatusMessageForRunningJob() {
++        JobExecutionService service = new JobExecutionService();
++        service.startJob("demo-job-2");
++        assertEquals("job demo-job-2 is running", service.statusMessageForJob("demo-job-2"));
++    }
+ }

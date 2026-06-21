@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+
+from pathlib import Path
+
+from dream.codebase.models import RepoIndex
+from dream.core.errors import NotFoundError
+from dream.core.paths import ARTIFACTS_DIR, display_path
+
+
+class CodebaseIndexRepository:
+    def __init__(self, artifacts_dir: Path = ARTIFACTS_DIR) -> None:
+        self.artifacts_dir = artifacts_dir
+
+    def save(self, index: RepoIndex) -> Path:
+        path = self.index_path(index.team_id, index.repo_name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(index.model_dump_json(indent=2), encoding="utf-8")
+        return path
+
+    def load(self, team_id: str, repo_name: str) -> RepoIndex:
+        path = self.index_path(team_id, repo_name)
+        if not path.exists():
+            raise NotFoundError(f"Codebase index not found for {team_id}/{repo_name}")
+        return RepoIndex.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def try_load(self, team_id: str, repo_name: str) -> RepoIndex | None:
+        path = self.index_path(team_id, repo_name)
+        if not path.exists():
+            return None
+        return RepoIndex.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def list_repo_names(self, team_id: str) -> list[str]:
+        base_dir = self.artifacts_dir / "codebase-indexes" / team_id
+        if not base_dir.exists():
+            return []
+        return sorted(path.stem for path in base_dir.glob("*.json"))
+
+    def index_path(self, team_id: str, repo_name: str) -> Path:
+        safe_repo_name = Path(repo_name).name.replace(" ", "-")
+        return self.artifacts_dir / "codebase-indexes" / team_id / f"{safe_repo_name}.json"
+
+    def display_index_path(self, team_id: str, repo_name: str) -> str:
+        return display_path(self.index_path(team_id, repo_name))

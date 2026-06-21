@@ -1,0 +1,9 @@
+{
+  "Comment": "Synthetic DFP job execution state machine for DREAM demos.",
+  "StartAt": "ValidateInput",
+  "States": {
+    "ValidateInput": { "Type": "Task", "Resource": "lambda:service_task_handler", "Next": "RunForecastBatch" },
+    "RunForecastBatch": { "Type": "Task", "Resource": "batch:batch_task_entrypoint", "Next": "CollectOutputs", "TimeoutSeconds": 3600 },
+    "CollectOutputs": { "Type": "Task", "Resource": "lambda:service_task_handler", "End": true }
+  }
+}

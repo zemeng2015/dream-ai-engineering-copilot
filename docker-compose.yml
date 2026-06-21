@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+services:
+  dream:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./artifacts:/app/artifacts
+    environment:
+      DREAM_LLM_PROVIDER: mock
+

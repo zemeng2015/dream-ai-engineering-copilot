@@ -1,0 +1,56 @@
+profile_id: partial-execution-recovery
+title: Partial Execution Recovery
+query_patterns:
+  - partial execution
+  - partial recovery
+  - partial completion
+  - partial success
+expected_concepts:
+  - partial success
+  - task dependency
+  - optional task
+  - critical task
+  - output availability
+expected_code:
+  - ExecutionStatus.java
+  - ExecutionService.java
+  - StatusTracker.java
+  - execution-monitor.component.ts
+expected_tests:
+  - ExecutionServiceTest.java
+  - StatusTrackerTest.java
+expected_docs:
+  - partial-completion-runbook.md
+  - partial-completion-test-plan.md
+  - execution-model.md
+expected_incidents:
+  - INC-105
+expected_jira:
+  - DFP-106
+expected_pr:
+  - PR-509
+expected_roles:
+  - BA
+  - TL
+  - FE
+  - BE
+  - QA
+  - OPS
+critical_questions:
+  BA:
+    - When should partial results be visible to Analysts?
+  TL:
+    - Which workflow dependencies allow PARTIAL_SUCCESS?
+  FE:
+    - How should partial output be displayed?
+  BE:
+    - Which status transition writes PARTIAL_SUCCESS?
+  QA:
+    - What is the regression matrix for optional versus critical task failure?
+  OPS:
+    - What runbook action applies when partial completion is expected?
+critical_risks:
+  - partial completion undefined
+  - missing PARTIAL_SUCCESS transition
+  - missing optional task regression tests
+minimum_score_to_pass: 7.0

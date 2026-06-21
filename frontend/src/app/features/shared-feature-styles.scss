@@ -1,0 +1,73 @@
+.source-list,
+.metadata-list {
+  display: grid;
+  gap: 12px;
+}
+
+.source-list > div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: var(--dream-surface-muted);
+  padding: 12px;
+}
+
+.source-list strong,
+.source-list span {
+  display: block;
+}
+
+.source-list span {
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.metadata-list {
+  margin: 0 0 18px;
+}
+
+.metadata-list > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--dream-border);
+  padding: 10px 0;
+}
+
+.metadata-list dt {
+  color: var(--dream-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metadata-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.checkbox-line input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rating-form {
+  margin-bottom: 24px;
+}
+
