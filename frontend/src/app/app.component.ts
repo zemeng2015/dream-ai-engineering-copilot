@@ -20,6 +20,7 @@ export class AppComponent {
     { label: 'Mission Control', path: '/dashboard', icon: 'dashboard' },
     { label: 'Knowledge Memory', path: '/knowledge', icon: 'database' },
     { label: 'Codebase Memory', path: '/codebase', icon: 'branch' },
+    { label: 'Evidence Graph', path: '/graph', icon: 'timeline' },
     { label: 'Requirement Case', path: '/requirements', icon: 'document' },
     { label: 'PR Review', path: '/review', icon: 'code' },
     { label: 'Eval & Audit', path: '/audit', icon: 'shield' },

@@ -9,6 +9,7 @@ from dream.core.errors import DreamError
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest, EvaluationResult
 from dream.evals.repository import EvaluationRepository
+from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import (
@@ -33,6 +34,11 @@ class TestGenRunRequest(TestGenRequest):
 class CodebaseIndexRequest(BaseModel):
     team_id: str
     repo_path: str
+    repo_name: str | None = None
+
+
+class EvidenceGraphBuildRequest(BaseModel):
+    team_id: str
     repo_name: str | None = None
 
 
@@ -106,6 +112,59 @@ def list_codebase_files(team_id: str, repo_name: str) -> list[dict[str, object]]
         return [file_node.model_dump() for file_node in index.files]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/graph/build")
+def build_evidence_graph(request: EvidenceGraphBuildRequest) -> dict[str, object]:
+    try:
+        return EvidenceGraphBuilder().build(
+            team_id=request.team_id,
+            repo_name=request.repo_name,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/graph/search")
+def search_evidence_graph(
+    team_id: str,
+    query: str,
+    repo_name: str | None = None,
+    top_k: int = 8,
+) -> list[dict[str, object]]:
+    results = EvidenceGraphRetriever().search(
+        team_id=team_id,
+        repo_name=repo_name,
+        query=query,
+        top_k=top_k,
+    )
+    return [result.model_dump() for result in results]
+
+
+@router.get("/graph/explain")
+def explain_evidence_graph(
+    team_id: str,
+    concept: str,
+    repo_name: str | None = None,
+) -> dict[str, object]:
+    return EvidenceGraphRetriever().explain(
+        team_id=team_id,
+        repo_name=repo_name,
+        query=concept,
+    ).model_dump()
+
+
+@router.get("/graph/neighbors")
+def get_evidence_graph_neighbors(
+    team_id: str,
+    node: str,
+    repo_name: str | None = None,
+) -> dict[str, object]:
+    return EvidenceGraphRetriever().neighbors(
+        team_id=team_id,
+        repo_name=repo_name,
+        node=node,
+    ).model_dump()
 
 
 @router.post("/requirement-cases")

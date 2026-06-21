@@ -13,6 +13,7 @@ from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest
 from dream.evals.rating import HumanRatingService
 from dream.evals.repository import EvaluationRepository
+from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
@@ -30,6 +31,7 @@ eval_app = typer.Typer(help="Human evaluation commands.")
 codebase_app = typer.Typer(help="Codebase memory commands.")
 req_app = typer.Typer(help="Requirement Case intelligence commands.")
 llm_app = typer.Typer(help="Optional LLM provider smoke-test commands.")
+graph_app = typer.Typer(help="Evidence graph / memory graph commands.")
 
 app.add_typer(kb_app, name="kb")
 app.add_typer(requirement_app, name="requirement")
@@ -40,6 +42,7 @@ app.add_typer(eval_app, name="eval")
 app.add_typer(codebase_app, name="codebase")
 app.add_typer(req_app, name="req")
 app.add_typer(llm_app, name="llm")
+app.add_typer(graph_app, name="graph")
 
 
 @kb_app.command("list-teams")
@@ -222,6 +225,82 @@ def codebase_show(
     if file_node is None:
         raise typer.BadParameter(f"File not found in codebase index: {file}")
     typer.echo(file_node.model_dump_json(indent=2))
+
+
+@graph_app.command("build")
+def graph_build(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    graph = EvidenceGraphBuilder().build(team_id=team, repo_name=repo)
+    graph_path = EvidenceGraphRepository().display_graph_path(team, repo)
+    typer.echo(f"team_id: {graph.team_id}")
+    typer.echo(f"repo_name: {graph.repo_name or '_team'}")
+    typer.echo(f"nodes: {len(graph.nodes)}")
+    typer.echo(f"edges: {len(graph.edges)}")
+    typer.echo(f"graph: {graph_path}")
+    if graph.warnings:
+        typer.echo("warnings:")
+        for warning in graph.warnings:
+            typer.echo(f"- {warning}")
+
+
+@graph_app.command("search")
+def graph_search(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    results = EvidenceGraphRetriever().search(
+        team_id=team,
+        repo_name=repo,
+        query=query,
+        top_k=top_k,
+    )
+    for result in results:
+        typer.echo(f"Type: {result.node.node_type}")
+        typer.echo(f"Title: {result.node.title}")
+        typer.echo(f"Source: {result.node.source_path or result.node.key}")
+        typer.echo(f"Score: {result.score}")
+        typer.echo("Evidence paths:")
+        for path in result.evidence_paths[:6]:
+            typer.echo(f"- {path}")
+        typer.echo("")
+
+
+@graph_app.command("explain")
+def graph_explain(
+    team: Annotated[str, typer.Option("--team")],
+    concept: Annotated[str, typer.Option("--concept")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    result = EvidenceGraphRetriever().explain(team_id=team, repo_name=repo, query=concept)
+    typer.echo(f"query: {result.query}")
+    typer.echo(f"nodes: {len(result.matched_nodes)}")
+    for node in result.matched_nodes:
+        typer.echo(f"- [{node.node_type}] {node.title} ({node.source_path or node.key})")
+    typer.echo("evidence_paths:")
+    for path in result.evidence_paths:
+        typer.echo(f"- {path}")
+
+
+@graph_app.command("neighbors")
+def graph_neighbors(
+    team: Annotated[str, typer.Option("--team")],
+    node: Annotated[str, typer.Option("--node")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    result = EvidenceGraphRetriever().neighbors(team_id=team, repo_name=repo, node=node)
+    typer.echo(f"query: {result.query}")
+    for matched_node in result.matched_nodes:
+        typer.echo(
+            f"- [{matched_node.node_type}] {matched_node.title} "
+            f"({matched_node.source_path or matched_node.key})"
+        )
+    typer.echo("evidence_paths:")
+    for path in result.evidence_paths:
+        typer.echo(f"- {path}")
 
 
 @req_app.command("create")

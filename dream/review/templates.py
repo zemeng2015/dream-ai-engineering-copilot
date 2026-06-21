@@ -87,10 +87,13 @@ Related tests from codebase memory:
 def _codebase_lines(results: list[CodebaseSearchResult]) -> str:
     if not results:
         return "- No related codebase memory was available."
-    return "\n".join(
-        f"- {result.title} [{result.result_type}] ({result.source_path}) - {result.reason}"
-        for result in results
-    )
+    lines = []
+    for result in results:
+        line = f"- {result.title} [{result.result_type}] ({result.source_path}) - {result.reason}"
+        if result.result_type.startswith("graph_") and result.excerpt:
+            line += f" Evidence path: {result.excerpt}"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def _test_lines(mappings: list[TestMapping]) -> str:

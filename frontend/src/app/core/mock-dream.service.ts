@@ -6,6 +6,8 @@ import {
   ContextEvidence,
   EvaluationDimension,
   EvaluationScorecard,
+  EvidenceGraphNode,
+  EvidenceGraphPath,
   HumanRating,
   ImpactItem,
   KnowledgeChunk,
@@ -73,6 +75,26 @@ export class MockDreamService {
 
   listCodebaseFiles(): CodebaseFile[] {
     return MOCK_CODEBASE_FILES;
+  }
+
+  listEvidenceGraphNodes(): EvidenceGraphNode[] {
+    return MOCK_GRAPH_NODES;
+  }
+
+  searchEvidenceGraph(params: { query: string; topK?: number }): EvidenceGraphPath[] {
+    const terms = tokenize(params.query);
+    const topK = params.topK ?? 8;
+    return MOCK_GRAPH_PATHS.map((path) => ({
+      path,
+      score: scoreSearchText(
+        `${path.concept} ${path.path.join(' ')} ${path.risk} ${path.reviewHint}`,
+        terms,
+      ),
+    }))
+      .filter((item) => item.score > 0 || terms.length === 0)
+      .sort((a, b) => b.score - a.score || a.path.concept.localeCompare(b.path.concept))
+      .slice(0, topK)
+      .map((item) => item.path);
   }
 
   searchKnowledge(params: {
@@ -1058,6 +1080,154 @@ const MOCK_CODEBASE_FILES: CodebaseFile[] = [
     concepts: ['output collection tests', 'idempotency', 'duplicate output'],
     symbols: ['OutputCollectorTest', 'doesNotDuplicateArtifacts'],
     relatedTests: [],
+  },
+];
+
+const MOCK_GRAPH_NODES: EvidenceGraphNode[] = [
+  {
+    id: 'graph-concept-execution-status',
+    type: 'concept',
+    title: 'execution status',
+    sourcePath: 'evidence-graph#concept:execution-status',
+    concepts: ['execution status', 'task status', 'async tracking'],
+    summary: 'Connects DFP status docs, UI monitor, backend tracker, incidents, Jira, PRs, and tests.',
+  },
+  {
+    id: 'graph-status-design',
+    type: 'architecture_doc',
+    title: 'Status Tracking Design',
+    sourcePath: 'knowledge_packs/demo_team/docs/architecture/status-tracking-design.md',
+    concepts: ['execution status', 'polling'],
+    summary: 'Defines persisted status, terminal states, and stale RUNNING handling.',
+  },
+  {
+    id: 'graph-status-tracker',
+    type: 'code_file',
+    title: 'StatusTracker.java',
+    sourcePath: 'backend-api/src/main/java/com/democorp/dfp/execution/StatusTracker.java',
+    concepts: ['execution status', 'status transition'],
+    summary: 'Persists authoritative Execution and Task status transitions.',
+  },
+  {
+    id: 'graph-inc-103',
+    type: 'incident',
+    title: 'INC-103 Status stuck RUNNING',
+    sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md',
+    concepts: ['status stuck running', 'operator'],
+    summary: 'Processor completed but StatusTracker failed to persist COMPLETED.',
+  },
+  {
+    id: 'graph-dfp-101',
+    type: 'historical_jira',
+    title: 'DFP-101 Add execution status tracking',
+    sourcePath: 'knowledge_packs/demo_team/docs/historical-jira/DFP-101-add-execution-status-tracking.md',
+    concepts: ['execution status', 'acceptance criteria'],
+    summary: 'Historical story for async job and task-level progress visibility.',
+  },
+  {
+    id: 'graph-output-collection',
+    type: 'concept',
+    title: 'output collection',
+    sourcePath: 'evidence-graph#concept:output-collection',
+    concepts: ['output collection', 'idempotency'],
+    summary: 'Connects OutputCollector, duplicate-output incident, idempotency Jira/PR, and tests.',
+  },
+  {
+    id: 'graph-output-collector',
+    type: 'code_file',
+    title: 'OutputCollector.java',
+    sourcePath: 'backend-api/src/main/java/com/democorp/dfp/output/OutputCollector.java',
+    concepts: ['output collection', 'idempotency'],
+    summary: 'Collects result artifacts and must use a stable idempotency key during retry.',
+  },
+  {
+    id: 'graph-inc-102',
+    type: 'incident',
+    title: 'INC-102 Duplicate output',
+    sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-102-duplicate-output.md',
+    concepts: ['duplicate output', 'storage retry'],
+    summary: 'Retry without stable idempotency key produced duplicate result files.',
+  },
+  {
+    id: 'graph-dfp-110',
+    type: 'historical_jira',
+    title: 'DFP-110 Make output collection idempotent',
+    sourcePath: 'knowledge_packs/demo_team/docs/historical-jira/DFP-110-output-collection-idempotency.md',
+    concepts: ['output collection', 'idempotency'],
+    summary: 'Historical story defining stable output collection idempotency behavior.',
+  },
+];
+
+const MOCK_GRAPH_PATHS: EvidenceGraphPath[] = [
+  {
+    id: 'path-execution-status-main',
+    concept: 'execution status',
+    path: [
+      'execution status',
+      'Status Tracking Design',
+      'StatusTracker.java',
+      'StatusTrackerTest.java',
+      'INC-103 Status stuck RUNNING',
+      'DFP-101 Add execution status tracking',
+      'PR-502 Add execution status polling',
+    ],
+    evidenceTypes: [
+      'concept',
+      'architecture_doc',
+      'code_file',
+      'test_file',
+      'incident',
+      'historical_jira',
+      'historical_pr',
+    ],
+    risk: 'Stale RUNNING state or missing task-level transition could mislead Analyst and Operator views.',
+    reviewHint: 'Ask BA/TL whether status is job-level, task-level, or both, then require regression tests.',
+  },
+  {
+    id: 'path-output-idempotency',
+    concept: 'output collection',
+    path: [
+      'output collection',
+      'OutputCollector.java',
+      'OutputCollectorTest.java',
+      'INC-102 Duplicate output',
+      'DFP-110 Make output collection idempotent',
+      'PR-508 Output collection idempotency',
+    ],
+    evidenceTypes: ['concept', 'code_file', 'test_file', 'incident', 'historical_jira', 'historical_pr'],
+    risk: 'Retry without a stable idempotency key can create duplicate result artifacts.',
+    reviewHint: 'Require tests proving retry reuses the same idempotency key and does not duplicate output.',
+  },
+  {
+    id: 'path-output-preview',
+    concept: 'output preview',
+    path: [
+      'output preview',
+      'Output Preview Design',
+      'OutputPreviewService.java',
+      'AthenaPreviewAdapter.java',
+      'INC-104 Preview OOM',
+      'INC-107 Athena preview timeout',
+      'DFP-104 Athena large file preview',
+    ],
+    evidenceTypes: ['concept', 'architecture_doc', 'code_file', 'incident', 'incident', 'historical_jira'],
+    risk: 'Full-file preview or missing partition predicate can create memory and timeout failures.',
+    reviewHint: 'Review pagination, partition predicate, timeout messaging, and large-file regression tests.',
+  },
+  {
+    id: 'path-partial-recovery',
+    concept: 'partial recovery',
+    path: [
+      'partial recovery',
+      'ExecutionService.java',
+      'ExecutionStatus.PARTIAL_SUCCESS',
+      'INC-105 Partial completion undefined',
+      'DFP-106 Define partial execution recovery',
+      'PR-509 Partial success status',
+    ],
+    evidenceTypes: ['concept', 'code_file', 'code_file', 'incident', 'historical_jira', 'historical_pr'],
+    risk: 'Product behavior can be ambiguous when optional tasks fail but outputs still exist.',
+    reviewHint: 'Force open questions for BA/TL/QA around partial result availability and retry policy.',
   },
 ];
 

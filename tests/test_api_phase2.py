@@ -52,3 +52,33 @@ def test_requirement_case_endpoints() -> None:
     brief_response = client.get(f"/requirement-cases/{case_id}/brief")
     assert brief_response.status_code == 200
     assert "# Engineering Brief" in brief_response.json()["markdown"]
+
+
+def test_evidence_graph_endpoints() -> None:
+    client = TestClient(create_app())
+    client.post(
+        "/codebase/index",
+        json={
+            "team_id": "demo_team",
+            "repo_path": "examples/dfp-demo-repo",
+            "repo_name": "dfp-demo-repo",
+        },
+    )
+
+    build_response = client.post(
+        "/graph/build",
+        json={"team_id": "demo_team", "repo_name": "dfp-demo-repo"},
+    )
+    assert build_response.status_code == 200
+    assert build_response.json()["edges"]
+
+    search_response = client.get(
+        "/graph/search",
+        params={
+            "team_id": "demo_team",
+            "repo_name": "dfp-demo-repo",
+            "query": "execution status",
+        },
+    )
+    assert search_response.status_code == 200
+    assert any("StatusTracker" in str(item) for item in search_response.json())

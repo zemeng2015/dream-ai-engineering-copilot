@@ -1,0 +1,131 @@
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Graph-Lite memory layer</span>
+      <h1>Evidence Graph</h1>
+      <p>
+        Show how DREAM connects concepts to docs, code, tests, incidents, historical Jira, and
+        PR memory without requiring a heavy graph database.
+      </p>
+    </div>
+    <div class="index-beacon" aria-label="Evidence graph status">
+      <span></span>
+      <strong>dfp-demo-repo</strong>
+      <small>graph paths ready</small>
+    </div>
+  </header>
+
+  <section class="memory-strip" aria-label="Evidence node types">
+    @for (item of nodeSummary(); track item.type) {
+      <div class="memory-layer">
+        <span>{{ item.type }}</span>
+        <strong>{{ item.count }}</strong>
+        <div class="layer-bar"><i [style.width.%]="item.count * 24"></i></div>
+      </div>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Search Evidence Paths</h2>
+        <span class="status-pill status-info">1-hop / 2-hop expansion</span>
+      </div>
+      <div class="panel-body">
+        <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
+          <div class="form-field-full">
+            <label for="graph-query">Concept or risk</label>
+            <input id="graph-query" formControlName="query" />
+          </div>
+          <div class="form-field">
+            <label for="graph-top-k">Top K</label>
+            <input id="graph-top-k" type="number" min="1" max="12" formControlName="topK" />
+          </div>
+          <div class="form-field">
+            <label>Storage</label>
+            <div class="readonly-field">JSON artifact</div>
+          </div>
+          <div class="form-field-full">
+            <button class="primary-button" type="submit">Explain Memory Path</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="source-list graph-path-list">
+        @for (path of results(); track path.id) {
+          <div (click)="selectedPath.set(path)" tabindex="0">
+            <strong>{{ path.concept }}</strong>
+            <span>{{ path.path.join(' -> ') }}</span>
+            <span>Risk: {{ path.risk }}</span>
+          </div>
+        } @empty {
+          <div>
+            <strong>No graph path found</strong>
+            <span>Try execution status, duplicate output, output preview, or partial recovery.</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <div class="side-stack">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Selected Path</h2>
+          <span class="status-pill status-warning">human review required</span>
+        </div>
+        <div class="panel-body">
+          @if (selectedPath(); as path) {
+            <dl class="metadata-list">
+              <div>
+                <dt>Concept</dt>
+                <dd>{{ path.concept }}</dd>
+              </div>
+              <div>
+                <dt>Evidence</dt>
+                <dd>{{ path.path.join(' -> ') }}</dd>
+              </div>
+              <div>
+                <dt>Types</dt>
+                <dd>{{ path.evidenceTypes.join(', ') }}</dd>
+              </div>
+              <div>
+                <dt>Risk</dt>
+                <dd>{{ path.risk }}</dd>
+              </div>
+              <div>
+                <dt>Review Hint</dt>
+                <dd>{{ path.reviewHint }}</dd>
+              </div>
+            </dl>
+          }
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Why Graph-Lite</h2>
+        </div>
+        <div class="panel-body">
+          <div class="info-callout">
+            DREAM keeps the user workflow simple: Create Requirement Case, Analyze, Review, Eval.
+            The graph stays underneath retrieval, expanding concepts into source-backed evidence.
+          </div>
+          <div class="concept-cloud">
+            <button type="button" (click)="form.patchValue({ query: 'execution status' }); search()">
+              execution status
+            </button>
+            <button type="button" (click)="form.patchValue({ query: 'duplicate output' }); search()">
+              duplicate output
+            </button>
+            <button type="button" (click)="form.patchValue({ query: 'output preview' }); search()">
+              output preview
+            </button>
+            <button type="button" (click)="form.patchValue({ query: 'partial recovery' }); search()">
+              partial recovery
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

@@ -66,6 +66,18 @@ textarea {
   font: inherit;
 }
 
+.readonly-field {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: var(--dream-surface-muted);
+  padding: 0 12px;
+  color: var(--dream-muted);
+  font-weight: 700;
+}
+
 button,
 a,
 select,

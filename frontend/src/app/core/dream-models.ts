@@ -6,6 +6,7 @@ export type WorkflowType =
   | 'pr_review_summary'
   | 'knowledge_search'
   | 'codebase_index'
+  | 'evidence_graph'
   | 'testgen_stub'
   | 'audit_eval'
   | 'eval_scorecard';
@@ -21,6 +22,7 @@ export type EvidenceSourceType =
   | 'historical_pr'
   | 'testing_doc'
   | 'concept_memory'
+  | 'graph_evidence'
   | 'code_file'
   | 'test_file';
 
@@ -60,6 +62,33 @@ export interface CodebaseFile {
   concepts: string[];
   symbols: string[];
   relatedTests: string[];
+}
+
+export interface EvidenceGraphNode {
+  id: string;
+  type:
+    | 'concept'
+    | 'domain_doc'
+    | 'architecture_doc'
+    | 'incident'
+    | 'historical_jira'
+    | 'historical_pr'
+    | 'code_file'
+    | 'test_file'
+    | 'runbook';
+  title: string;
+  sourcePath: string;
+  concepts: string[];
+  summary: string;
+}
+
+export interface EvidenceGraphPath {
+  id: string;
+  concept: string;
+  path: string[];
+  evidenceTypes: EvidenceGraphNode['type'][];
+  risk: string;
+  reviewHint: string;
 }
 
 export interface ContextEvidence {

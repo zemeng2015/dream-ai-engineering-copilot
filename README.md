@@ -55,6 +55,7 @@ domain-aware memory applications.
 
 - Loads team memory packs from Markdown and `team.yaml`.
 - Builds lightweight memory indexes for local repositories and artifact folders.
+- Builds Evidence Graph Lite paths across concepts, docs, code, tests, incidents, Jira, and PR memory.
 - Extracts files, languages, classes, methods, endpoints, test mappings, concepts, and summaries.
 - Performs deterministic keyword retrieval without a vector database.
 - Generates source-backed requirement drafts.
@@ -130,6 +131,7 @@ Mock-data workflows included:
 - Mission Control dashboard
 - Knowledge Memory search across DFP docs, incidents, Jira, PRs, tests, and concept memory
 - Codebase Memory search across Angular, Java, AWS-style, Python, and test files
+- Evidence Graph search showing source-backed concept paths
 - Requirement Case analysis with evidence, impact map, role questions, Jira draft, and eval scorecard
 - PR Review with changed files, related codebase memory, source-backed comments, and eval scorecard
 - Eval & Audit with deterministic scorecards and human rating
@@ -148,6 +150,9 @@ dream kb list-teams
 dream kb search --team demo_team --query "job execution"
 dream codebase index --team demo_team --repo examples/java-demo-repo --name java-demo-repo
 dream codebase search --team demo_team --repo java-demo-repo --query "async status tracking"
+dream graph build --team demo_team --repo java-demo-repo
+dream graph search --team demo_team --repo java-demo-repo --query "execution status"
+dream graph explain --team demo_team --repo java-demo-repo --concept "execution status"
 dream req create --team demo_team --request "Add async status tracking for long-running job execution" --role BA
 dream req analyze --case <case_id>
 dream req impact --case <case_id>
@@ -221,6 +226,16 @@ curl -X POST http://localhost:8000/codebase/index \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 ```
 
+Evidence graph:
+
+```bash
+curl -X POST http://localhost:8000/graph/build \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","repo_name":"java-demo-repo"}'
+
+curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=java-demo-repo&query=execution%20status"
+```
+
 Requirement Case:
 
 ```bash
@@ -290,6 +305,18 @@ language, file role, symbols, simple dependencies, concept mappings, source-to-t
 mappings, summaries, and warnings. It is intentionally deterministic and does not
 require a vector database.
 
+## Evidence Graph
+
+Evidence Graph Lite is stored under
+`artifacts/evidence-graphs/{team_id}/{repo_name}.json`. It links concept nodes
+to knowledge docs, code files, symbols, tests, incidents, historical Jira, and
+historical PRs using deterministic edges such as `IMPLEMENTED_BY`, `TESTED_BY`,
+`REGRESSED_BY`, `REQUIRED_BY`, and `CHANGED_BY`.
+
+Requirement Case analysis and PR Review use the graph when it exists. The user
+workflow stays simple; graph expansion happens underneath retrieval so outputs
+can show evidence paths instead of ungrounded claims.
+
 ## Requirement Case
 
 A Requirement Case starts from a rough request and produces:
@@ -343,6 +370,15 @@ dream codebase search \
   --repo dfp-demo-repo \
   --query "status tracker batch task"
 
+dream graph build \
+  --team demo_team \
+  --repo dfp-demo-repo
+
+dream graph explain \
+  --team demo_team \
+  --repo dfp-demo-repo \
+  --concept "execution status"
+
 dream req create \
   --team demo_team \
   --request "Users want to know which task is still running when a forecast job takes too long" \
@@ -382,7 +418,7 @@ DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 ## Roadmap
 
 - Vector retrieval
-- Code graph relationships
+- Deeper code graph relationships beyond Evidence Graph Lite
 - GitHub and Jira connectors
 - Historical PR/Jira ingestion
 - JTestGen integration

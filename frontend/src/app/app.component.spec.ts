@@ -21,6 +21,7 @@ describe('AppComponent', () => {
     const app = fixture.componentInstance;
     expect(app.navItems.map((item) => item.label)).toContain('Requirement Case');
     expect(app.navItems.map((item) => item.label)).toContain('Codebase Memory');
+    expect(app.navItems.map((item) => item.label)).toContain('Evidence Graph');
     expect(app.navItems.map((item) => item.label)).toContain('Eval & Audit');
   });
 

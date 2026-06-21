@@ -13,7 +13,7 @@ class EvidenceCoverageAnalyzer:
     def analyze(self, markdown: str, sources: list[str] | None = None) -> dict[str, bool]:
         source_text = "\n".join(sources or [])
         text = f"{markdown}\n{source_text}".lower()
-        return {
+        coverage = {
             "domain_docs": self._has_any(
                 text, ["docs/domain", "job-lifecycle.md", "workflow-model.md"]
             ),
@@ -35,6 +35,20 @@ class EvidenceCoverageAnalyzer:
                 re.search(r"(src/test|tests/|test_[\w-]+\.py|[\w-]+test\.java|\.spec\.ts)", text)
             ),
         }
+        if self._has_any(
+            text,
+            [
+                "evidence graph",
+                "evidence-graph#",
+                "graph_",
+                "memory graph",
+                "--implemented_by-->",
+                "--tested_by-->",
+                "--regressed_by-->",
+            ],
+        ):
+            coverage["evidence_graph"] = True
+        return coverage
 
     @staticmethod
     def _has_any(text: str, values: list[str]) -> bool:
