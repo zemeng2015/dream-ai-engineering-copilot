@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 profile_id: partial-execution-recovery
 title: Partial Execution Recovery
 query_patterns:

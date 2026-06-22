@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Python Processor Architecture"
 doc_type: "architecture"

@@ -1,18 +1,40 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 <section class="page reveal-page">
-  <header class="page-header command-header">
-    <div>
+  <header class="mission-hero">
+    <div class="mission-copy">
       <span class="eyebrow">DemoCorp Forecast Platform</span>
       <h1>Mission Control</h1>
       <p>
-        Codebase-aware engineering memory for rough requests, source-backed briefs, PR review,
-        evaluation scorecards, and audit trails.
+        A source-backed memory cockpit for turning rough engineering requests and PR diffs into
+        evidence paths, review-ready drafts, scorecards, and auditable human decisions.
       </p>
+      <div class="hero-actions" aria-label="Primary workflows">
+        <a class="primary-button" routerLink="/requirements">
+          <app-ui-icon name="document" />
+          Analyze Requirement
+        </a>
+        <a class="secondary-button" routerLink="/graph">
+          <app-ui-icon name="timeline" />
+          Inspect Evidence Graph
+        </a>
+      </div>
     </div>
-    <div class="index-beacon">
-      <span></span>
-      <strong>MockLLMProvider</strong>
-      <small>no external API required</small>
-    </div>
+
+    <aside class="hero-ops" aria-label="Workspace guardrails">
+      <div class="ops-heading">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <strong>Local Demo Guardrails</strong>
+      </div>
+      <div class="guardrail-list">
+        @for (guardrail of guardrails; track guardrail.label) {
+          <div>
+            <span>{{ guardrail.label }}</span>
+            <strong [class]="'guardrail-' + guardrail.status">{{ guardrail.value }}</strong>
+          </div>
+        }
+      </div>
+    </aside>
   </header>
 
   <section class="metric-strip" aria-label="DREAM workspace metrics">
@@ -25,16 +47,24 @@
     }
   </section>
 
-  <section class="grid-5" aria-label="Quick actions">
-    @for (action of quickActions; track action.title) {
-      <a class="quick-action" [routerLink]="action.route">
-        <app-ui-icon [name]="action.icon" />
-        <span>
-          <strong>{{ action.title }}</strong>
-          <small>{{ action.description }}</small>
-        </span>
-      </a>
-    }
+  <section class="pipeline-panel" aria-label="DREAM memory workflow">
+    <div class="pipeline-header">
+      <div>
+        <h2>Memory-to-review pipeline</h2>
+        <p>Knowledge and code context stay visible all the way through review and audit.</p>
+      </div>
+      <span class="status-pill status-info">Graph-Lite enabled</span>
+    </div>
+    <div class="pipeline-steps">
+      @for (step of pipelineSteps(); track step.label) {
+        <a class="pipeline-step" [routerLink]="step.route">
+          <span class="step-status" [class]="'step-' + step.status"></span>
+          <small>{{ step.label }}</small>
+          <strong>{{ step.value }}</strong>
+          <p>{{ step.description }}</p>
+        </a>
+      }
+    </div>
   </section>
 
   <section class="grid-2">
@@ -72,6 +102,22 @@
     </article>
 
     <div class="side-stack">
+      <article class="panel graph-preview-panel">
+        <div class="panel-header">
+          <h2>Evidence Graph Preview</h2>
+          <a class="link-button" routerLink="/graph">Open graph</a>
+        </div>
+        <div class="graph-preview-list">
+          @for (path of graphPaths; track path.id) {
+            <a routerLink="/graph">
+              <strong>{{ path.concept }}</strong>
+              <span>{{ path.path.join(' -> ') }}</span>
+              <small>{{ path.risk }}</small>
+            </a>
+          }
+        </div>
+      </article>
+
       <article class="panel">
         <div class="panel-header">
           <h2>Knowledge Pack Health</h2>
@@ -100,13 +146,13 @@
       <article class="panel">
         <div class="panel-header">
           <h2>Active Requirement Case</h2>
-          <span class="status-pill status-success">{{ cases()[0].status }}</span>
+          <span class="status-pill status-success">{{ primaryCase().status }}</span>
         </div>
         <div class="case-summary">
-          <strong>{{ cases()[0].title }}</strong>
-          <p>{{ cases()[0].rawRequest }}</p>
-          <div class="confidence-bar"><i [style.width.%]="cases()[0].confidence * 100"></i></div>
-          <small>{{ cases()[0].evidence.length }} evidence items / {{ cases()[0].impactMap.length }} impact items</small>
+          <strong>{{ primaryCase().title }}</strong>
+          <p>{{ primaryCase().rawRequest }}</p>
+          <div class="confidence-bar"><i [style.width.%]="primaryCase().confidence * 100"></i></div>
+          <small>{{ primaryCase().evidence.length }} evidence items / {{ primaryCase().impactMap.length }} impact items</small>
         </div>
       </article>
 
@@ -127,5 +173,17 @@
         </div>
       </article>
     </div>
+  </section>
+
+  <section class="quick-action-row" aria-label="Quick actions">
+    @for (action of quickActions; track action.title) {
+      <a class="quick-action" [routerLink]="action.route">
+        <app-ui-icon [name]="action.icon" />
+        <span>
+          <strong>{{ action.title }}</strong>
+          <small>{{ action.description }}</small>
+        </span>
+      </a>
+    }
   </section>
 </section>

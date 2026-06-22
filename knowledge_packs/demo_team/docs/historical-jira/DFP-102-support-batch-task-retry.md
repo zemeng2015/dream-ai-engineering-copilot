@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Support retry for failed batch task"
 doc_type: "historical-jira"

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -9,6 +11,20 @@ interface QuickAction {
   description: string;
   route: string;
   icon: UiIconName;
+}
+
+interface PipelineStep {
+  label: string;
+  value: string;
+  description: string;
+  status: 'ready' | 'review' | 'local';
+  route: string;
+}
+
+interface Guardrail {
+  label: string;
+  value: string;
+  status: 'success' | 'warning' | 'info';
 }
 
 @Component({
@@ -27,6 +43,8 @@ export class DashboardComponent {
   readonly cases = this.dream.requirementCases;
   readonly scorecards = this.dream.scorecards;
   readonly codeFiles = this.dream.listCodebaseFiles();
+  readonly graphPaths = this.dream.searchEvidenceGraph({ query: 'execution status', topK: 3 });
+  readonly primaryCase = computed(() => this.cases()[0]);
   readonly needsReview = computed(() =>
     this.dream.auditRuns().filter((run) => run.status === 'needs_review' || run.status === 'warning'),
   );
@@ -37,6 +55,48 @@ export class DashboardComponent {
     { label: 'Human Ratings', value: this.ratings().length, note: 'stored locally' },
     { label: 'Needs Review', value: this.needsReview().length, note: 'human gate' },
   ]);
+  readonly pipelineSteps = computed<PipelineStep[]>(() => [
+    {
+      label: 'Knowledge Packs',
+      value: `${this.dream.listKnowledgeChunks().length} chunks`,
+      description: 'Domain docs, runbooks, incidents, Jira, PR memory.',
+      status: 'ready',
+      route: '/knowledge',
+    },
+    {
+      label: 'Codebase Index',
+      value: `${this.codeFiles.length} files`,
+      description: 'Frontend, backend, AWS, Python, and tests.',
+      status: 'ready',
+      route: '/codebase',
+    },
+    {
+      label: 'Evidence Graph',
+      value: `${this.graphPaths.length} paths`,
+      description: 'Concepts linked to code, risks, tests, and history.',
+      status: 'local',
+      route: '/graph',
+    },
+    {
+      label: 'Review Workflows',
+      value: `${this.cases().length} cases`,
+      description: 'Requirement Case and PR Review stay draft-only.',
+      status: 'review',
+      route: '/requirements',
+    },
+    {
+      label: 'Eval & Audit',
+      value: `${this.scorecards().length} scorecards`,
+      description: 'Rule-based checks plus human ratings.',
+      status: 'review',
+      route: '/audit',
+    },
+  ]);
+  readonly guardrails: Guardrail[] = [
+    { label: 'External mutation', value: 'Disabled', status: 'success' },
+    { label: 'Provider default', value: 'Mock local', status: 'info' },
+    { label: 'Human approval', value: 'Required', status: 'warning' },
+  ];
 
   readonly quickActions: QuickAction[] = [
     {

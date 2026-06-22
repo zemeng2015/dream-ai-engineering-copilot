@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import pytest
+
 from dream.audit.logger import AuditLogger
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.core.errors import PathTraversalError
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
+from dream.graph.models import EvidenceGraph, EvidenceNode
+from dream.knowledge.pack_loader import KnowledgePackLoader
 from dream.memory import EngineeringMemoryRetriever
 from dream.requirement_cases import (
     RequirementCaseCreateRequest,
@@ -71,6 +76,93 @@ def test_evidence_graph_retriever_explains_execution_status(tmp_path) -> None:
     assert "StatusTracker.java" in text
     assert "INC-103" in text or "Status stuck RUNNING" in text
     assert "DFP-101" in text or "Add execution status tracking" in text
+
+
+def test_evidence_graph_concept_metadata_edges_start_from_concept_nodes(tmp_path) -> None:
+    graph, _, _, _ = _build_dfp_graph(tmp_path)
+    nodes_by_id = {node.node_id: node for node in graph.nodes}
+
+    inherited_edges = [
+        edge for edge in graph.edges if edge.reason.startswith("Concept inherited ")
+    ]
+
+    assert inherited_edges
+    assert all(nodes_by_id[edge.from_node_id].node_type == "concept" for edge in inherited_edges)
+
+
+def test_evidence_graph_search_without_repo_scans_all_graphs(tmp_path) -> None:
+    graph_repository = EvidenceGraphRepository(tmp_path / "artifacts")
+    graph_repository.save(
+        EvidenceGraph(
+            graph_id="first",
+            team_id="demo_team",
+            repo_name="alpha",
+            built_at="2026-06-21T00:00:00+00:00",
+            nodes=[
+                EvidenceNode(
+                    node_id="concept:first",
+                    node_type="concept",
+                    key="alpha only",
+                    title="alpha only",
+                )
+            ],
+            edges=[],
+            summary="first graph",
+        )
+    )
+    graph_repository.save(
+        EvidenceGraph(
+            graph_id="second",
+            team_id="demo_team",
+            repo_name="zeta",
+            built_at="2026-06-21T00:00:00+00:00",
+            nodes=[
+                EvidenceNode(
+                    node_id="concept:second",
+                    node_type="concept",
+                    key="zeta target",
+                    title="zeta target",
+                )
+            ],
+            edges=[],
+            summary="second graph",
+        )
+    )
+
+    results = EvidenceGraphRetriever(repository=graph_repository).search(
+        team_id="demo_team",
+        query="zeta target",
+    )
+
+    assert [result.node.title for result in results] == ["zeta target"]
+
+
+def test_evidence_graph_builder_rejects_document_path_traversal(tmp_path) -> None:
+    packs_dir = tmp_path / "packs"
+    pack_dir = packs_dir / "unsafe_team"
+    pack_dir.mkdir(parents=True)
+    (pack_dir / "team.yaml").write_text(
+        "\n".join(
+            [
+                'team_name: "Unsafe Team"',
+                'team_id: "unsafe_team"',
+                "document_paths:",
+                '  - "../outside"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "outside").mkdir()
+    (tmp_path / "outside" / "leak.md").write_text("# Outside\n", encoding="utf-8")
+
+    builder = EvidenceGraphBuilder(
+        pack_loader=KnowledgePackLoader(packs_dir=packs_dir),
+        repository=EvidenceGraphRepository(tmp_path / "artifacts"),
+        audit_logger=AuditLogger(repository=AuditRepository(tmp_path / "audit.sqlite")),
+    )
+
+    with pytest.raises(PathTraversalError):
+        builder.build(team_id="unsafe_team")
 
 
 def test_requirement_case_uses_graph_evidence_when_graph_exists(tmp_path) -> None:

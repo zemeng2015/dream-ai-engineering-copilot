@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Impact Map: Partial Execution Recovery
 
 - workflow: optional vs critical task semantics.

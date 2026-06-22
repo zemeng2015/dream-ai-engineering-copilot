@@ -106,7 +106,7 @@ ruff check .
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,
 routing, SCSS design tokens, typed reactive forms, and mock data. It is designed
-as a Fannie Mae-style enterprise engineering workbench: deep navy navigation,
+as a large-enterprise finance engineering workbench: deep navy navigation,
 white and pale blue-gray work surfaces, teal/cyan action accents, dense tables,
 clear review gates, and restrained motion. It does not copy third-party logos,
 trademarks, imagery, or brand assets.
@@ -414,6 +414,18 @@ The API runs on port 8000. Check `http://localhost:8000/health`.
 ## License
 
 DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+## Legal and Provenance
+
+- [NOTICE](NOTICE) records project attribution and the synthetic-data boundary.
+- [PROVENANCE](PROVENANCE.md) documents the public upstream boundary and company
+  import policy.
+- [CONTRIBUTING](CONTRIBUTING.md) describes clean contribution rules, DCO
+  sign-off, and employer-code restrictions.
+- [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) summarizes current third-party
+  dependency license posture.
+- [SECURITY](SECURITY.md) documents vulnerability reporting and sensitive-data
+  boundaries.
 
 ## Roadmap
 

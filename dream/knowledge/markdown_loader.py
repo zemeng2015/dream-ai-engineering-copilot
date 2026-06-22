@@ -5,6 +5,7 @@ from pathlib import Path
 
 import yaml
 
+from dream.core.errors import PathTraversalError
 from dream.core.paths import display_path
 from dream.knowledge.models import Document, TeamKnowledgePack
 
@@ -13,7 +14,7 @@ class MarkdownDocumentLoader:
     def load_for_pack(self, pack: TeamKnowledgePack, pack_dir: Path) -> list[Document]:
         documents: list[Document] = []
         for relative_doc_dir in pack.document_paths:
-            doc_dir = (pack_dir / relative_doc_dir).resolve()
+            doc_dir = self._resolve_document_dir(pack_dir, relative_doc_dir)
             if not doc_dir.exists():
                 continue
             for path in sorted(doc_dir.rglob("*.md")):
@@ -79,6 +80,16 @@ class MarkdownDocumentLoader:
         except ValueError:
             return path.parent.name
         return relative_parts[0] if relative_parts else path.parent.name
+
+    @staticmethod
+    def _resolve_document_dir(pack_dir: Path, relative_doc_dir: str) -> Path:
+        pack_root = pack_dir.resolve()
+        doc_dir = (pack_root / relative_doc_dir).resolve()
+        if not doc_dir.is_relative_to(pack_root):
+            raise PathTraversalError(
+                f"Knowledge document path escapes pack directory: {relative_doc_dir}"
+            )
+        return doc_dir
 
     @staticmethod
     def _stable_id(value: str) -> str:

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Validate task-level config before execution"
 doc_type: "historical-jira"

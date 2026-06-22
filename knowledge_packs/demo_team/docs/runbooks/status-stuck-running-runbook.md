@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Status Stuck RUNNING Runbook"
 doc_type: "runbook"

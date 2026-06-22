@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -9,6 +11,7 @@ import { MockDreamService } from '../../core/mock-dream.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './evidence-graph.component.html',
+  styleUrl: './evidence-graph.component.scss',
 })
 export class EvidenceGraphComponent {
   private readonly dream = inject(MockDreamService);
@@ -39,5 +42,9 @@ export class EvidenceGraphComponent {
     const matches = this.dream.searchEvidenceGraph({ query: value.query, topK: value.topK });
     this.results.set(matches);
     this.selectedPath.set(matches[0] ?? null);
+  }
+
+  selectPath(path: EvidenceGraphPath): void {
+    this.selectedPath.set(path);
   }
 }

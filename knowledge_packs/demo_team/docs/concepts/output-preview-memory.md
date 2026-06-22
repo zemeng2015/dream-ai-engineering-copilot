@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Concept Memory: Output Preview"
 doc_type: "concept"

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 <section class="page reveal-page">
   <header class="page-header command-header">
     <div>
@@ -15,9 +17,9 @@
     </div>
   </header>
 
-  <section class="memory-strip" aria-label="Evidence node types">
+  <section class="graph-overview" aria-label="Evidence node types">
     @for (item of nodeSummary(); track item.type) {
-      <div class="memory-layer">
+      <div class="graph-node-stat">
         <span>{{ item.type }}</span>
         <strong>{{ item.count }}</strong>
         <div class="layer-bar"><i [style.width.%]="item.count * 24"></i></div>
@@ -51,15 +53,29 @@
         </form>
       </div>
 
-      <div class="source-list graph-path-list">
+      <div class="graph-path-list" aria-label="Evidence graph search results">
         @for (path of results(); track path.id) {
-          <div (click)="selectedPath.set(path)" tabindex="0">
-            <strong>{{ path.concept }}</strong>
-            <span>{{ path.path.join(' -> ') }}</span>
-            <span>Risk: {{ path.risk }}</span>
-          </div>
+          <button
+            class="graph-result"
+            type="button"
+            [class.selected]="selectedPath()?.id === path.id"
+            (click)="selectPath(path)"
+          >
+            <span class="result-heading">
+              <strong>{{ path.concept }}</strong>
+              <small>{{ path.risk }}</small>
+            </span>
+            <span class="mini-path">
+              @for (node of path.path; track node; let last = $last) {
+                <span>{{ node }}</span>
+                @if (!last) {
+                  <i aria-hidden="true"></i>
+                }
+              }
+            </span>
+          </button>
         } @empty {
-          <div>
+          <div class="empty-result">
             <strong>No graph path found</strong>
             <span>Try execution status, duplicate output, output preview, or partial recovery.</span>
           </div>
@@ -75,28 +91,27 @@
         </div>
         <div class="panel-body">
           @if (selectedPath(); as path) {
-            <dl class="metadata-list">
-              <div>
-                <dt>Concept</dt>
-                <dd>{{ path.concept }}</dd>
+            <div class="selected-path-card">
+              <div class="selected-summary">
+                <span>{{ path.concept }}</span>
+                <strong>{{ path.risk }}</strong>
               </div>
-              <div>
-                <dt>Evidence</dt>
-                <dd>{{ path.path.join(' -> ') }}</dd>
+              <ol class="path-chain">
+                @for (node of path.path; track node; let index = $index) {
+                  <li>
+                    <span class="node-index">{{ index + 1 }}</span>
+                    <span>
+                      <strong>{{ node }}</strong>
+                      <small>{{ path.evidenceTypes[index] || 'evidence' }}</small>
+                    </span>
+                  </li>
+                }
+              </ol>
+              <div class="review-hint">
+                <span>Review Hint</span>
+                <p>{{ path.reviewHint }}</p>
               </div>
-              <div>
-                <dt>Types</dt>
-                <dd>{{ path.evidenceTypes.join(', ') }}</dd>
-              </div>
-              <div>
-                <dt>Risk</dt>
-                <dd>{{ path.risk }}</dd>
-              </div>
-              <div>
-                <dt>Review Hint</dt>
-                <dd>{{ path.reviewHint }}</dd>
-              </div>
-            </dl>
+            </div>
           }
         </div>
       </article>

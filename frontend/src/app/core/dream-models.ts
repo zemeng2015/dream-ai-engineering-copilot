@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 export type WorkflowType =
   | 'requirement_draft'
   | 'requirement_case'

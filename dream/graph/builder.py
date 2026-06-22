@@ -12,7 +12,8 @@ import yaml
 from dream.audit.logger import AuditLogger
 from dream.codebase.models import FileNode, RepoIndex, SymbolNode
 from dream.codebase.repository import CodebaseIndexRepository
-from dream.core.paths import KNOWLEDGE_PACKS_DIR, display_path
+from dream.core.errors import PathTraversalError
+from dream.core.paths import display_path
 from dream.graph.models import EvidenceEdge, EvidenceGraph, EvidenceNode
 from dream.graph.repository import EvidenceGraphRepository
 from dream.knowledge import KnowledgePackLoader
@@ -45,7 +46,7 @@ class EvidenceGraphBuilder:
 
     def build(self, *, team_id: str, repo_name: str | None = None) -> EvidenceGraph:
         pack = self.pack_loader.load(team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.packs_dir / pack.team_id
         repo_index = (
             self.codebase_repository.try_load(team_id, repo_name) if repo_name else None
         )
@@ -326,7 +327,7 @@ class EvidenceGraphBuilder:
     ) -> list[_DocEntry]:
         entries: list[_DocEntry] = []
         for relative_doc_dir in document_paths:
-            doc_dir = (pack_dir / relative_doc_dir).resolve()
+            doc_dir = self._resolve_document_dir(pack_dir, relative_doc_dir)
             if not doc_dir.exists():
                 continue
             for path in sorted(doc_dir.rglob("*.md")):
@@ -418,7 +419,6 @@ class EvidenceGraphBuilder:
             path.stem,
             cls._doc_key(entry),
         ]
-        aliases.extend(cls._metadata_list(entry.metadata.get("concepts")))
         return sorted({alias for alias in aliases if alias})
 
     @classmethod
@@ -516,7 +516,8 @@ class EvidenceGraphBuilder:
     def _node_aliases(node: EvidenceNode) -> list[str]:
         values = [node.key, node.title, node.source_path or ""]
         values.extend(node.aliases)
-        values.extend(node.concepts)
+        if node.node_type == "concept":
+            values.extend(node.concepts)
         return values
 
     @staticmethod
@@ -546,6 +547,16 @@ class EvidenceGraphBuilder:
     @classmethod
     def _node_id(cls, node_type: str, key: str) -> str:
         return f"{node_type}:{cls._stable_id(f'{node_type}:{key}')}"
+
+    @staticmethod
+    def _resolve_document_dir(pack_dir: Path, relative_doc_dir: str) -> Path:
+        pack_root = pack_dir.resolve()
+        doc_dir = (pack_root / relative_doc_dir).resolve()
+        if not doc_dir.is_relative_to(pack_root):
+            raise PathTraversalError(
+                f"Knowledge document path escapes pack directory: {relative_doc_dir}"
+            )
+        return doc_dir
 
     @staticmethod
     def _stable_id(value: str) -> str:

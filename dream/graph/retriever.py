@@ -26,10 +26,14 @@ class EvidenceGraphRetriever:
         repo_name: str | None = None,
         top_k: int = 8,
     ) -> list[EvidenceGraphSearchResult]:
-        graph = self._load_best_graph(team_id, repo_name)
-        if graph is None:
+        graphs = self._load_candidate_graphs(team_id, repo_name)
+        if not graphs:
             return []
-        return self.search_graph(graph=graph, query=query, top_k=top_k)
+        results: list[EvidenceGraphSearchResult] = []
+        for graph in graphs:
+            results.extend(self.search_graph(graph=graph, query=query, top_k=top_k))
+        results.sort(key=lambda item: (-item.score, item.node.title))
+        return results[:top_k]
 
     def search_graph(
         self,
@@ -79,10 +83,10 @@ class EvidenceGraphRetriever:
         repo_name: str | None = None,
         max_nodes: int = 12,
     ) -> EvidenceGraphExplainResult:
-        graph = self._load_best_graph(team_id, repo_name)
-        if graph is None:
+        best_match = self._best_graph_match(team_id=team_id, repo_name=repo_name, query=query)
+        if best_match is None:
             return EvidenceGraphExplainResult(query=query)
-        results = self.search_graph(graph=graph, query=query, top_k=3)
+        graph, results = best_match
         node_by_id = {node.node_id: node for node in graph.nodes}
         selected_nodes: dict[str, EvidenceNode] = {}
         selected_edges: dict[str, EvidenceEdge] = {}
@@ -119,11 +123,15 @@ class EvidenceGraphRetriever:
         repo_name: str | None = None,
         limit: int = 12,
     ) -> EvidenceGraphExplainResult:
-        graph = self._load_best_graph(team_id, repo_name)
-        if graph is None:
-            return EvidenceGraphExplainResult(query=node)
-        target = self._resolve_node(graph, node)
-        if target is None:
+        graph = None
+        target = None
+        for candidate_graph in self._load_candidate_graphs(team_id, repo_name):
+            candidate_target = self._resolve_node(candidate_graph, node)
+            if candidate_target is not None:
+                graph = candidate_graph
+                target = candidate_target
+                break
+        if graph is None or target is None:
             return EvidenceGraphExplainResult(query=node)
         node_by_id = {item.node_id: item for item in graph.nodes}
         adjacency = self._adjacency(graph.edges)
@@ -141,15 +149,39 @@ class EvidenceGraphRetriever:
             evidence_paths=self._evidence_paths(target, connected, graph.edges),
         )
 
-    def _load_best_graph(
-        self, team_id: str, repo_name: str | None = None
-    ) -> EvidenceGraph | None:
-        if repo_name is not None:
-            return self.repository.try_load(team_id, repo_name)
-        graph_names = self.repository.list_graph_names(team_id)
-        if not graph_names:
+    def _best_graph_match(
+        self,
+        *,
+        team_id: str,
+        repo_name: str | None,
+        query: str,
+    ) -> tuple[EvidenceGraph, list[EvidenceGraphSearchResult]] | None:
+        best_graph: EvidenceGraph | None = None
+        best_results: list[EvidenceGraphSearchResult] = []
+        for graph in self._load_candidate_graphs(team_id, repo_name):
+            results = self.search_graph(graph=graph, query=query, top_k=3)
+            if not results:
+                continue
+            if not best_results or results[0].score > best_results[0].score:
+                best_graph = graph
+                best_results = results
+        if best_graph is None:
             return None
-        return self.repository.try_load(team_id, graph_names[0])
+        return best_graph, best_results
+
+    def _load_candidate_graphs(
+        self, team_id: str, repo_name: str | None = None
+    ) -> list[EvidenceGraph]:
+        if repo_name is not None:
+            graph = self.repository.try_load(team_id, repo_name)
+            return [graph] if graph is not None else []
+        graph_names = self.repository.list_graph_names(team_id)
+        graphs = []
+        for graph_name in graph_names:
+            graph = self.repository.try_load(team_id, graph_name)
+            if graph is not None:
+                graphs.append(graph)
+        return graphs
 
     @staticmethod
     def _adjacency(edges: list[EvidenceEdge]) -> dict[str, list[EvidenceEdge]]:

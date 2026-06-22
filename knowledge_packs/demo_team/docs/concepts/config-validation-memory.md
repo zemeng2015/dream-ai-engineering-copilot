@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Concept Memory: Config Validation"
 doc_type: "concept"

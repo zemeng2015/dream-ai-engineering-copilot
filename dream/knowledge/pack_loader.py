@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from dream.core.errors import NotFoundError
+from dream.core.errors import NotFoundError, PathTraversalError
 from dream.core.paths import KNOWLEDGE_PACKS_DIR
 from dream.knowledge.models import TeamKnowledgePack
 
@@ -25,7 +25,10 @@ class KnowledgePackLoader:
         return team_ids
 
     def load(self, team_id: str) -> TeamKnowledgePack:
-        team_file = self.packs_dir / team_id / "team.yaml"
+        packs_root = self.packs_dir.resolve()
+        team_file = (packs_root / team_id / "team.yaml").resolve()
+        if not team_file.is_relative_to(packs_root):
+            raise PathTraversalError(f"Knowledge pack escapes packs directory: {team_id}")
         if not team_file.exists():
             raise NotFoundError(f"Knowledge pack not found for team: {team_id}")
         return TeamKnowledgePack.model_validate(self._read_yaml(team_file))
@@ -36,4 +39,3 @@ class KnowledgePackLoader:
         if not isinstance(data, dict):
             raise ValueError(f"Expected mapping in {path}")
         return data
-
