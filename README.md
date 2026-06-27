@@ -5,6 +5,8 @@
 DREAM is an open-source, source-backed memory platform for teams that need their
 AI workflows to stay grounded in real organizational context.
 
+![DREAM governed memory HLD](docs/assets/dream-hld.gif)
+
 It turns scattered knowledge such as docs, runbooks, code structure, incidents,
 historical tickets, PR notes, test plans, and review rules into reusable memory
 that workflow assistants can retrieve, cite, evaluate, and audit.
@@ -44,6 +46,8 @@ DREAM is built around a reusable memory model:
   clean path to vector retrieval later.
 - Memory workflows: assistants that transform rough inputs into structured,
   source-backed outputs.
+- Memory distillation: governed extraction of code/doc facts into cited,
+  reviewable memory claims.
 - Memory governance: audit logs, scorecards, human ratings, warnings, and
   generated artifacts saved for review.
 
@@ -56,6 +60,8 @@ domain-aware memory applications.
 - Loads team memory packs from Markdown and `team.yaml`.
 - Builds lightweight memory indexes for local repositories and artifact folders.
 - Builds Evidence Graph Lite paths across concepts, docs, code, tests, incidents, Jira, and PR memory.
+- Distills repositories and knowledge packs into source-backed memory claims
+  with citation, secrecy, and human-review guardrails.
 - Extracts files, languages, classes, methods, endpoints, test mappings, concepts, and summaries.
 - Performs deterministic keyword retrieval without a vector database.
 - Generates source-backed requirement drafts.
@@ -153,6 +159,9 @@ dream codebase search --team demo_team --repo java-demo-repo --query "async stat
 dream graph build --team demo_team --repo java-demo-repo
 dream graph search --team demo_team --repo java-demo-repo --query "execution status"
 dream graph explain --team demo_team --repo java-demo-repo --concept "execution status"
+dream memory scan --team demo_team --repo examples/java-demo-repo --name java-demo-repo
+dream memory diff --team demo_team
+dream memory eval --team demo_team
 dream req create --team demo_team --request "Add async status tracking for long-running job execution" --role BA
 dream req analyze --case <case_id>
 dream req impact --case <case_id>
@@ -236,6 +245,20 @@ curl -X POST http://localhost:8000/graph/build \
 curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=java-demo-repo&query=execution%20status"
 ```
 
+Governed memory distillation:
+
+```bash
+curl -X POST http://localhost:8000/memory/scan \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
+
+curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/eval \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","scan_id":"latest"}'
+```
+
 Requirement Case:
 
 ```bash
@@ -316,6 +339,20 @@ historical PRs using deterministic edges such as `IMPLEMENTED_BY`, `TESTED_BY`,
 Requirement Case analysis and PR Review use the graph when it exists. The user
 workflow stays simple; graph expansion happens underneath retrieval so outputs
 can show evidence paths instead of ungrounded claims.
+
+## Governed Memory Distillation
+
+Memory distillation converts local repository structure and team knowledge-pack
+documents into `MemoryClaim` records. Deterministic code claims can be approved
+automatically; semantic document claims remain candidates until human review.
+
+Each claim carries source spans, extraction metadata, governance status,
+security classification, and audit timestamps. MVP validation checks citation
+validity, unsupported claims, secret-like leakage, and accidental semantic
+auto-promotion before memory is treated as durable.
+
+See [Memory Distillation](docs/memory-distillation.md) for the design, CLI/API
+workflow, and acceptance guardrails.
 
 ## Requirement Case
 
@@ -433,6 +470,7 @@ DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 - Deeper code graph relationships beyond Evidence Graph Lite
 - GitHub and Jira connectors
 - Historical PR/Jira ingestion
+- Governed memory review queue and durable approval ledger
 - JTestGen integration
 - UI workspace and role-specific dashboards
 - Angular frontend API integration

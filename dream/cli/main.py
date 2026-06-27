@@ -16,6 +16,8 @@ from dream.evals.repository import EvaluationRepository
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.memory import MemoryDistillationEvaluator, MemoryDistillationService
+from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import RequirementDraftGenerator, RequirementDraftRequest
 from dream.review import PRReviewAssistant, PRReviewRequest
@@ -32,6 +34,7 @@ codebase_app = typer.Typer(help="Codebase memory commands.")
 req_app = typer.Typer(help="Requirement Case intelligence commands.")
 llm_app = typer.Typer(help="Optional LLM provider smoke-test commands.")
 graph_app = typer.Typer(help="Evidence graph / memory graph commands.")
+memory_app = typer.Typer(help="Governed memory distillation commands.")
 
 app.add_typer(kb_app, name="kb")
 app.add_typer(requirement_app, name="requirement")
@@ -43,6 +46,7 @@ app.add_typer(codebase_app, name="codebase")
 app.add_typer(req_app, name="req")
 app.add_typer(llm_app, name="llm")
 app.add_typer(graph_app, name="graph")
+app.add_typer(memory_app, name="memory")
 
 
 @kb_app.command("list-teams")
@@ -301,6 +305,58 @@ def graph_neighbors(
     typer.echo("evidence_paths:")
     for path in result.evidence_paths:
         typer.echo(f"- {path}")
+
+
+@memory_app.command("scan")
+def memory_scan(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str, typer.Option("--repo")],
+    name: Annotated[str | None, typer.Option("--name")] = None,
+) -> None:
+    try:
+        scan = MemoryDistillationService().scan(
+            team_id=team,
+            repo_path=repo,
+            repo_name=name,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(f"scan_id: {scan.scan_id}")
+    typer.echo(f"team_id: {scan.team_id}")
+    typer.echo(f"repo_name: {scan.repo_name or '_team'}")
+    typer.echo(f"sources: {len(scan.sources)}")
+    typer.echo(f"claims: {len(scan.claims)}")
+    typer.echo(f"structural_claims: {scan.validation.structural_claims}")
+    typer.echo(f"semantic_candidate_claims: {scan.validation.semantic_candidate_claims}")
+    typer.echo(f"citation_validity: {scan.validation.citation_validity:.2f}")
+    typer.echo(f"scan: {repository.display_scan_path(scan.team_id, scan.scan_id)}")
+    typer.echo(f"latest: {repository.display_latest_scan_path(scan.team_id)}")
+
+
+@memory_app.command("diff")
+def memory_diff(
+    team: Annotated[str, typer.Option("--team")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+) -> None:
+    try:
+        typer.echo(MemoryDistillationService().diff_markdown(team_id=team, scan_id=scan))
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@memory_app.command("eval")
+def memory_eval(
+    team: Annotated[str, typer.Option("--team")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+) -> None:
+    try:
+        result = MemoryDistillationEvaluator().evaluate(team_id=team, scan_id=scan)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(result.markdown_report)
+    typer.echo(f"JSON: {repository.display_eval_path(result.team_id, result.evaluation_id)}")
 
 
 @req_app.command("create")

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DREAM 记忆系统技术说明</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f6f8fb;
+      color: #172033;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.72;
+    }
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 22px 72px;
+      background: #fff;
+    }
+    h1, h2, h3 {
+      line-height: 1.28;
+      color: #0f2742;
+    }
+    h1 {
+      font-size: 30px;
+      border-bottom: 2px solid #d9e4f2;
+      padding-bottom: 14px;
+    }
+    h2 {
+      margin-top: 34px;
+      font-size: 22px;
+    }
+    h3 {
+      margin-top: 24px;
+      font-size: 18px;
+    }
+    code, pre {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 13px;
+    }
+    pre {
+      overflow-x: auto;
+      background: #0f172a;
+      color: #e5edf7;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+    }
+    th, td {
+      border: 1px solid #d8e1ec;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eef4fb;
+    }
+    .note {
+      border-left: 4px solid #2f80ed;
+      padding: 8px 14px;
+      background: #eef6ff;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>DREAM 记忆系统技术说明</h1>
+  <p class="note">本文是 DREAM 记忆系统中文说明，覆盖设计原理、四层实现、技术栈、验收机制和下一步优化空间。</p>
+
+  <h2>1. 项目定位</h2>
+  <p>DREAM 是一个 source-backed memory platform。它不是通用聊天机器人，也不是简单 RAG demo。核心目标是把团队里的代码、文档、runbook、事故记录、历史 Jira/PR、测试计划、评审规则等信息，整理成可检索、可引用、可审计、可人工验收的工程记忆系统。</p>
+
+  <h2>2. 设计原则</h2>
+  <ul>
+    <li>证据优先：任何可持久化的记忆都必须能回溯到 source、span、hash 或具体文件路径。</li>
+    <li>少提取、强引用：优先提取低风险、可验证、可审查的 claim。</li>
+    <li>结构化记忆优先于 prompt 拼接：团队知识沉淀为索引、图谱、claim 和审计记录。</li>
+    <li>语义 claim 默认需要人工验收：代码结构类事实可以自动批准；文档推断类记忆默认 candidate。</li>
+    <li>记忆不能污染自己：生成物不能直接变成权威记忆，除非能指向原始 source 并通过 review/eval。</li>
+  </ul>
+
+  <h2>3. 高层架构</h2>
+  <pre>Knowledge Packs / Repo / Runbooks / Incidents / PR-Jira History
+  -> Source Registry
+  -> Source Spans
+  -> Codebase Index
+  -> Evidence Graph
+  -> Candidate Memory Claims
+  -> Validation Gates
+  -> Memory Diff Review
+  -> Durable Memory Ledger
+  -> Retrieval for Requirement / PR Review / Eval Workflows</pre>
+
+  <h2>4. 记忆系统的四层实现</h2>
+  <h3>4.1 Knowledge Pack 层</h3>
+  <p>Knowledge Pack 是团队知识源头，由 Markdown 和 YAML 组成，包含 domain docs、architecture docs、runbooks、incidents、testing docs、pr-review rules、historical Jira/PR 和 concept memory。</p>
+  <p>实现组件：<code>KnowledgePackLoader</code>、<code>MarkdownDocumentLoader</code>、<code>Chunker</code>、<code>SimpleRetriever</code>。</p>
+
+  <h3>4.2 Codebase Memory 层</h3>
+  <p>Codebase Memory 把本地 repo 变成结构化代码记忆，记录 files、language、file role、symbols、dependencies、concepts、source-to-test mappings、summaries 和 warnings。</p>
+  <p>artifact 路径：</p>
+  <pre>artifacts/codebase-indexes/{team_id}/{repo_name}.json</pre>
+
+  <h3>4.3 Evidence Graph 层</h3>
+  <p>Evidence Graph Lite 把文档、代码、测试、事故、历史 Jira/PR 连接成图，边包括 <code>MENTIONED_IN</code>、<code>IMPLEMENTED_BY</code>、<code>DEFINED_IN</code>、<code>TESTED_BY</code>、<code>AFFECTS</code>、<code>REGRESSED_BY</code>、<code>REQUIRED_BY</code> 和 <code>CHANGED_BY</code>。</p>
+  <p>artifact 路径：</p>
+  <pre>artifacts/evidence-graphs/{team_id}/{repo_name}.json</pre>
+
+  <h3>4.4 Governed Memory Distillation 层</h3>
+  <p>记忆蒸馏层把 repo 和知识文档转成可审查的 <code>MemoryClaim</code>。每条 claim 包含 source span、hash、提取方法、置信度、治理状态、安全分类和审计时间。</p>
+  <p>artifact 路径：</p>
+  <pre>artifacts/memory-scans/{team_id}/{scan_id}.json
+artifacts/memory-scans/{team_id}/latest.json
+artifacts/memory-evals/{team_id}/{evaluation_id}.json</pre>
+
+  <h2>5. Claim 类型和晋升规则</h2>
+  <table>
+    <thead><tr><th>Claim 类型</th><th>当前策略</th></tr></thead>
+    <tbody>
+      <tr><td>file has language</td><td>deterministic，自动 approved</td></tr>
+      <tr><td>symbol defined in file</td><td>parser/indexer 提取，自动 approved</td></tr>
+      <tr><td>endpoint-like symbol</td><td>直接代码证据存在时 approved</td></tr>
+      <tr><td>source-to-test mapping</td><td>默认 candidate，后续需要更强证据</td></tr>
+      <tr><td>concept/runbook/incident/decision memory</td><td>semantic candidate，需要人工 review</td></tr>
+      <tr><td>secret-like source</td><td>quarantined</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. 验收和 Guardrails</h2>
+  <p><code>dream memory eval</code> 检查 citation validity、unsupported claim rate、secret leakage count、structural claim count、semantic candidate claim count 和 auto-promoted semantic claim count。</p>
+  <pre>citation_validity == 1.0
+unsupported_claim_rate <= 0.03
+secret_leakage_count == 0
+auto_promoted_semantic_claims == 0</pre>
+
+  <h2>7. CLI 和 API</h2>
+  <pre>dream memory scan --team demo_team --repo examples/java-demo-repo --name java-demo-repo
+dream memory diff --team demo_team
+dream memory eval --team demo_team</pre>
+  <pre>POST /memory/scan
+GET  /memory/scans/latest
+GET  /memory/diff
+POST /memory/eval</pre>
+
+  <h2>8. 技术栈</h2>
+  <ul>
+    <li>后端：Python 3.11+、FastAPI、Pydantic v2、Typer CLI、PyYAML、Uvicorn、SQLite、JSON artifacts。</li>
+    <li>开发测试：pytest、ruff、httpx。</li>
+    <li>前端：Angular 19、TypeScript 5.7、RxJS、SCSS、Karma/Jasmine。</li>
+    <li>当前 memory/index/graph 层不依赖外部数据库、向量数据库或云服务。</li>
+  </ul>
+
+  <h2>9. 当前实现的强项</h2>
+  <ul>
+    <li>本地可运行，部署和演示成本低。</li>
+    <li>证据链清楚：source、span、hash、artifact 都能落盘。</li>
+    <li>结构化程度高：形成 codebase index、evidence graph、memory claim，而不是直接拼 prompt。</li>
+    <li>Governance 意识正确：semantic claim 默认 candidate。</li>
+    <li>API/CLI 都已经可用，适合继续接 UI review queue。</li>
+  </ul>
+
+  <h2>10. 主要优化空间</h2>
+  <ol>
+    <li>P0：记录 commit SHA、dirty state、scanned root、extractor version、artifact schema version。</li>
+    <li>P0：实现 durable approval ledger，支持 approve/reject/quarantine、reviewer、reason、superseded_by。</li>
+    <li>P0：增强 secret redaction，在写入 preview 前先脱敏。</li>
+    <li>P1：实现真正的跨 scan diff，识别 added、removed、changed、stale evidence。</li>
+    <li>P1：新增 MemoryClaimRetriever，只让 approved claims 进入业务检索。</li>
+    <li>P1：引入 schema-based LLM extraction，但 semantic claim 仍默认 candidate。</li>
+    <li>P2：按 content hash 做增量扫描。</li>
+  </ol>
+
+  <h2>11. 建议下一步开发顺序</h2>
+  <ol>
+    <li>提交当前 memory distillation MVP。</li>
+    <li>补 <code>commit_sha + dirty flag + schema version</code>。</li>
+    <li>补 redaction-before-preview。</li>
+    <li>加 approval ledger。</li>
+    <li>加 true scan diff。</li>
+    <li>加 MemoryClaimRetriever。</li>
+    <li>最后再加 LLM semantic extraction。</li>
+  </ol>
+</main>
+</body>
+</html>

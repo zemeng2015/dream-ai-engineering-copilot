@@ -11,6 +11,8 @@ from dream.evals.models import EvaluationRequest, EvaluationResult
 from dream.evals.repository import EvaluationRepository
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.memory import MemoryDistillationEvaluator, MemoryDistillationService
+from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import (
     RequirementDraftGenerator,
@@ -40,6 +42,17 @@ class CodebaseIndexRequest(BaseModel):
 class EvidenceGraphBuildRequest(BaseModel):
     team_id: str
     repo_name: str | None = None
+
+
+class MemoryScanRequest(BaseModel):
+    team_id: str
+    repo_path: str
+    repo_name: str | None = None
+
+
+class MemoryEvalRequest(BaseModel):
+    team_id: str
+    scan_id: str = "latest"
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -165,6 +178,52 @@ def get_evidence_graph_neighbors(
         repo_name=repo_name,
         node=node,
     ).model_dump()
+
+
+@router.post("/memory/scan")
+def scan_memory(request: MemoryScanRequest) -> dict[str, object]:
+    try:
+        return MemoryDistillationService().scan(
+            team_id=request.team_id,
+            repo_path=request.repo_path,
+            repo_name=request.repo_name,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/memory/scans/latest")
+def get_latest_memory_scan(team_id: str) -> dict[str, object]:
+    scan = MemoryDistillationRepository().try_load_latest_scan(team_id)
+    if scan is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Memory scan not found: {team_id}/latest",
+        )
+    return scan.model_dump()
+
+
+@router.get("/memory/diff")
+def diff_memory(team_id: str, scan_id: str = "latest") -> dict[str, object]:
+    try:
+        markdown = MemoryDistillationService().diff_markdown(
+            team_id=team_id,
+            scan_id=scan_id,
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"team_id": team_id, "scan_id": scan_id, "markdown": markdown}
+
+
+@router.post("/memory/eval")
+def eval_memory(request: MemoryEvalRequest) -> dict[str, object]:
+    try:
+        return MemoryDistillationEvaluator().evaluate(
+            team_id=request.team_id,
+            scan_id=request.scan_id,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/requirement-cases")

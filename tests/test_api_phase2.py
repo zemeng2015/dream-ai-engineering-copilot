@@ -82,3 +82,26 @@ def test_evidence_graph_endpoints() -> None:
     )
     assert search_response.status_code == 200
     assert any("StatusTracker" in str(item) for item in search_response.json())
+
+
+def test_memory_distillation_endpoints() -> None:
+    client = TestClient(create_app())
+
+    scan_response = client.post(
+        "/memory/scan",
+        json={
+            "team_id": "demo_team",
+            "repo_path": "examples/java-demo-repo",
+            "repo_name": "java-demo-repo",
+        },
+    )
+    assert scan_response.status_code == 200
+    assert scan_response.json()["claims"]
+
+    diff_response = client.get("/memory/diff", params={"team_id": "demo_team"})
+    assert diff_response.status_code == 200
+    assert "# Memory Diff" in diff_response.json()["markdown"]
+
+    eval_response = client.post("/memory/eval", json={"team_id": "demo_team"})
+    assert eval_response.status_code == 200
+    assert eval_response.json()["pass_status"] == "pass"
