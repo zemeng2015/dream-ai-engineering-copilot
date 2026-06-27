@@ -347,9 +347,14 @@ documents into `MemoryClaim` records. Deterministic code claims can be approved
 automatically; semantic document claims remain candidates until human review.
 
 Each claim carries source spans, extraction metadata, governance status,
-security classification, and audit timestamps. MVP validation checks citation
-validity, unsupported claims, secret-like leakage, and accidental semantic
-auto-promotion before memory is treated as durable.
+security classification, and audit timestamps. Scans also persist repo
+provenance including schema version, commit SHA, dirty state, and scanner
+version. Source hashes stay based on original content, while persisted previews
+are redacted for secret-like assignments and common token patterns.
+
+MVP validation checks citation validity, unsupported claims, secret-like
+leakage, and accidental semantic auto-promotion before memory is treated as
+durable.
 
 See [Memory Distillation](docs/memory-distillation.md) for the design, CLI/API
 workflow, and acceptance guardrails.

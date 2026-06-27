@@ -162,7 +162,7 @@ Requirement Case 和 PR Review 会使用 Evidence Graph，让输出能展示 evi
 - `ExtractionInfo`：提取方法、版本、置信度。
 - `GovernanceInfo`：candidate/approved/quarantined、风险等级、reviewer。
 - `SecurityInfo`：安全分类和是否 redacted。
-- `MemoryScanResult`：一次 scan 的完整结果。
+- `MemoryScanResult`：一次 scan 的完整结果，包含 schema version 和 repo provenance。
 - `MemoryEvalResult`：一次 eval 的验收结果。
 
 实现入口：
@@ -179,6 +179,18 @@ artifacts/memory-scans/{team_id}/{scan_id}.json
 artifacts/memory-scans/{team_id}/latest.json
 artifacts/memory-evals/{team_id}/{evaluation_id}.json
 ```
+
+每次 scan 会记录：
+
+- schema version
+- scanned repo path
+- containing Git root
+- current commit SHA
+- dirty state
+- dirty path list
+- scanner version
+
+`SourceRecord.commit_sha` 会从 scan provenance 填充。hash 仍基于原始内容计算，但 `SourceSpan.preview` 在落盘前会先做 redaction，避免 secret-like assignment、AWS access key、JWT-like token、private key header 直接进入 artifact preview。
 
 ## 5. Claim 类型和晋升规则
 
@@ -304,9 +316,9 @@ curl -X POST http://localhost:8000/memory/eval \
 
 ## 10. 主要优化空间
 
-### P0：记录 commit 和 dirty 状态
+### 已完成：记录 commit 和 dirty 状态
 
-`SourceRecord.commit_sha` 字段已经存在，但当前没有填充。下一步应记录：
+`SourceRecord.commit_sha` 字段已经从 scan provenance 填充。当前已记录：
 
 - repo commit SHA
 - dirty state
@@ -314,7 +326,7 @@ curl -X POST http://localhost:8000/memory/eval \
 - extractor version
 - artifact schema version
 
-否则将来 claim 很难精确回溯到某个代码版本。
+后续仍可继续增强为 per-source provenance，例如分别记录外部 repo、knowledge pack repo 和生成 artifact repo 的来源版本。
 
 ### P0：实现 durable approval ledger
 
@@ -328,13 +340,15 @@ curl -X POST http://localhost:8000/memory/eval \
 - superseded_by
 - durable ledger artifact 或 SQLite table
 
-### P0：增强 secret redaction
+### 已完成基础版：增强 secret redaction
 
 当前 secret 检测是基础 regex。后续需要：
 
 - 在写入 `SourceSpan.preview` 前先 redaction
 - 增加 AWS key、PEM、JWT、高熵 token、`.env` 检测
 - 对 blocked source 默认不落 preview
+
+当前实现已经在 preview 落盘前 redaction secret-like assignments、AWS access key、JWT-like token 和 private key header。后续可继续加入高熵 token 和 `.env` 语义检测。
 
 ### P1：做真正的 scan diff
 
@@ -378,12 +392,10 @@ curl -X POST http://localhost:8000/memory/eval \
 推荐顺序：
 
 1. 提交当前 memory distillation MVP。
-2. 补 `commit_sha + dirty flag + schema version`。
-3. 补 redaction-before-preview。
-4. 加 approval ledger。
-5. 加 true scan diff。
-6. 加 MemoryClaimRetriever。
-7. 最后再加 LLM semantic extraction。
+2. 加 approval ledger。
+3. 加 true scan diff。
+4. 加 MemoryClaimRetriever。
+5. 继续增强 secret scanning。
+6. 最后再加 LLM semantic extraction。
 
-原因是：没有 provenance、redaction 和 ledger，系统还只是“可审查的 demo memory”；补齐这些后，才开始接近“可进入公司项目长期演进的工程记忆系统”。
-
+原因是：provenance 和 redaction 已经具备基础版；补齐 ledger、true diff 和 approved-claim retrieval 后，系统才更接近“可进入公司项目长期演进的工程记忆系统”。

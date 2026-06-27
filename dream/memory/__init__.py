@@ -6,6 +6,7 @@ from dream.memory.models import (
     MemoryClaim,
     MemoryEvalResult,
     MemoryScanResult,
+    RepoProvenanceInfo,
     SourceRecord,
     SourceSpan,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "MemoryDistillationService",
     "MemoryEvalResult",
     "MemoryScanResult",
+    "RepoProvenanceInfo",
     "SourceRecord",
     "SourceSpan",
 ]

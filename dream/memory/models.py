@@ -88,6 +88,15 @@ class ClaimAuditInfo(BaseModel):
     updated_at: str
 
 
+class RepoProvenanceInfo(BaseModel):
+    repo_path: str
+    git_root: str | None = None
+    commit_sha: str | None = None
+    dirty: bool = False
+    dirty_paths: list[str] = Field(default_factory=list)
+    scanner_version: str
+
+
 class MemoryClaim(BaseModel):
     claim_id: str
     team_id: str
@@ -114,10 +123,12 @@ class MemoryValidationSummary(BaseModel):
 
 
 class MemoryScanResult(BaseModel):
+    schema_version: str = "memory-scan-v0"
     scan_id: str
     team_id: str
     repo_name: str | None = None
     created_at: str
+    provenance: RepoProvenanceInfo | None = None
     sources: list[SourceRecord] = Field(default_factory=list)
     claims: list[MemoryClaim] = Field(default_factory=list)
     validation: MemoryValidationSummary

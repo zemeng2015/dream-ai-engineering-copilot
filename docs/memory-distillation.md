@@ -31,6 +31,8 @@ The first implementation adds:
 - deterministic structural claims from the codebase index
 - heuristic semantic candidate claims from team knowledge-pack Markdown
 - source/citation/security validation summary
+- repo provenance capture for commit SHA, dirty state, scanner version, and schema version
+- redacted source previews for secret-like assignments and common token patterns
 - reviewable memory diff output
 - MVP eval guardrails
 - CLI commands and FastAPI endpoints
@@ -86,6 +88,18 @@ The MVP distinguishes deterministic structure from semantic memory:
 
 Semantic claims are never auto-promoted in this MVP. They must remain candidates
 until a reviewer approves them.
+
+## Provenance And Redaction
+
+Every scan writes a `schema_version` and `provenance` block. The provenance block
+captures the scanned repo path, containing Git root, current commit SHA, dirty
+state for the scanned path, dirty path list, and scanner version.
+
+`SourceRecord.commit_sha` is populated from the scan provenance when the source
+is inside a Git worktree. Source hashes and excerpt hashes are computed from the
+original content, but `SourceSpan.preview` is redacted before it is persisted.
+The MVP redacts secret-like assignments, AWS access keys, JWT-like tokens, and
+private-key headers.
 
 ## MVP Guardrails
 

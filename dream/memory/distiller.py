@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,6 +28,7 @@ from dream.memory.models import (
     MemoryRelation,
     MemoryScanResult,
     MemoryValidationSummary,
+    RepoProvenanceInfo,
     SecurityInfo,
     SourceRecord,
     SourceSpan,
@@ -36,9 +38,16 @@ from dream.memory.repository import MemoryDistillationRepository
 STRUCTURAL_EXTRACTION = "deterministic_structure"
 SEMANTIC_EXTRACTION = "heuristic_semantic"
 EXTRACTOR_VERSION = "memory-distillation-v0"
+MEMORY_SCAN_SCHEMA_VERSION = "memory-scan-v0.2"
 SECRET_RE = re.compile(
     r"(?i)(api[_-]?key|secret|password|passwd|token|private[_-]?key)\s*[:=]"
 )
+SECRET_VALUE_RE = re.compile(
+    r"(?i)\b(api[_-]?key|secret|password|passwd|token|private[_-]?key)(\s*[:=]\s*)([^\s,;\"']+)"
+)
+AWS_ACCESS_KEY_RE = re.compile(r"\bAKIA[0-9A-Z]{16}\b")
+JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")
+PEM_PRIVATE_KEY_RE = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 
 
 @dataclass(frozen=True)
@@ -77,6 +86,7 @@ class MemoryDistillationService:
         created_at = datetime.now(UTC).isoformat()
         scan_id = f"memscan-{uuid4().hex[:12]}"
         root = resolve_project_path(repo_path, must_exist=True)
+        provenance = self._repo_provenance(root)
         index = CodebaseIndexer(
             repository=self.codebase_repository,
             audit_logger=self.audit_logger,
@@ -98,6 +108,7 @@ class MemoryDistillationService:
                 content=content,
                 indexed_at=created_at,
                 trust_level="high",
+                commit_sha=provenance.commit_sha,
             )
             sources.append(source)
             source_by_path[file_node.path] = (source, content)
@@ -129,6 +140,7 @@ class MemoryDistillationService:
                     index.repo_name,
                     symbol.file_path,
                     created_at,
+                    provenance.commit_sha,
                 )
                 sources.append(source)
                 source_by_path[symbol.file_path] = (source, content)
@@ -210,6 +222,7 @@ class MemoryDistillationService:
                 content=entry.content,
                 indexed_at=created_at,
                 trust_level=self._doc_trust_level(entry),
+                commit_sha=provenance.commit_sha,
             )
             sources.append(doc_source)
             claims.extend(
@@ -226,10 +239,12 @@ class MemoryDistillationService:
         claims = self._dedupe_claims(claims)
         validation = self._validate(sources=sources, claims=claims)
         scan = MemoryScanResult(
+            schema_version=MEMORY_SCAN_SCHEMA_VERSION,
             scan_id=scan_id,
             team_id=team_id,
             repo_name=index.repo_name,
             created_at=created_at,
+            provenance=provenance,
             sources=sources,
             claims=claims,
             validation=validation,
@@ -248,8 +263,11 @@ class MemoryDistillationService:
             f"# Memory Diff: {scan.team_id}/{scan.repo_name or '_team'}",
             "",
             f"- Scan: `{scan.scan_id}`",
+            f"- Schema: `{scan.schema_version}`",
             f"- Claims: {len(scan.claims)}",
             f"- Sources: {len(scan.sources)}",
+            f"- Commit: `{scan.provenance.commit_sha if scan.provenance else 'unknown'}`",
+            f"- Dirty: {scan.provenance.dirty if scan.provenance else 'unknown'}",
             f"- Citation validity: {scan.validation.citation_validity:.2f}",
             f"- Unsupported claim rate: {scan.validation.unsupported_claim_rate:.2f}",
             f"- Secret leakage count: {scan.validation.secret_leakage_count}",
@@ -463,7 +481,10 @@ class MemoryDistillationService:
                 confidence=confidence,
             ),
             governance=GovernanceInfo(status=status, risk_level=risk_level),
-            security=SecurityInfo(classification=security_classification),
+            security=SecurityInfo(
+                classification=security_classification,
+                redaction_applied=bool(source.security_flags),
+            ),
             audit=ClaimAuditInfo(created_at=created_at, updated_at=created_at),
         )
 
@@ -478,6 +499,7 @@ class MemoryDistillationService:
         content: str,
         indexed_at: str,
         trust_level: str,
+        commit_sha: str | None,
     ) -> SourceRecord:
         content_hash = cls._sha256(content)
         source_key = f"{team_id}:{repo_name}:{source_type}:{path}:{content_hash}"
@@ -496,6 +518,7 @@ class MemoryDistillationService:
             team_id=team_id,
             repo_name=repo_name,
             path=path,
+            commit_sha=commit_sha,
             content_hash=content_hash,
             indexed_at=indexed_at,
             trust_level=trust_level,
@@ -543,7 +566,7 @@ class MemoryDistillationService:
             start_line=start_line,
             end_line=end_line,
             text_hash=text_hash,
-            preview=" ".join(excerpt.split())[:240],
+            preview=cls._redact_preview(" ".join(excerpt.split()))[:240],
         )
 
     @classmethod
@@ -706,6 +729,7 @@ class MemoryDistillationService:
         repo_name: str,
         path: str,
         indexed_at: str,
+        commit_sha: str | None,
     ) -> tuple[SourceRecord, str]:
         source = cls._source_record(
             team_id=team_id,
@@ -715,6 +739,7 @@ class MemoryDistillationService:
             content="",
             indexed_at=indexed_at,
             trust_level="low",
+            commit_sha=commit_sha,
         )
         return source, ""
 
@@ -727,7 +752,63 @@ class MemoryDistillationService:
 
     @staticmethod
     def _security_flags(content: str) -> list[str]:
-        return ["secret_like_token"] if SECRET_RE.search(content) else []
+        flags = []
+        if SECRET_RE.search(content):
+            flags.append("secret_like_assignment")
+        if AWS_ACCESS_KEY_RE.search(content):
+            flags.append("aws_access_key")
+        if JWT_RE.search(content):
+            flags.append("jwt_like_token")
+        if PEM_PRIVATE_KEY_RE.search(content):
+            flags.append("pem_private_key")
+        return sorted(flags)
+
+    @staticmethod
+    def _redact_preview(value: str) -> str:
+        redacted = SECRET_VALUE_RE.sub(
+            lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]",
+            value,
+        )
+        redacted = AWS_ACCESS_KEY_RE.sub("[REDACTED_AWS_ACCESS_KEY]", redacted)
+        redacted = JWT_RE.sub("[REDACTED_JWT]", redacted)
+        return PEM_PRIVATE_KEY_RE.sub("-----BEGIN [REDACTED PRIVATE KEY]-----", redacted)
+
+    @classmethod
+    def _repo_provenance(cls, root: Path) -> RepoProvenanceInfo:
+        git_root = cls._git_output(root, "rev-parse", "--show-toplevel")
+        commit_sha = cls._git_output(root, "rev-parse", "HEAD") if git_root else None
+        dirty_lines = (
+            cls._git_output(root, "status", "--porcelain", "--untracked-files=normal", "--", ".")
+            if git_root
+            else ""
+        )
+        dirty_paths = [
+            line[3:].strip()
+            for line in dirty_lines.splitlines()
+            if len(line) > 3 and line[3:].strip()
+        ]
+        return RepoProvenanceInfo(
+            repo_path=display_path(root),
+            git_root=display_path(git_root) if git_root else None,
+            commit_sha=commit_sha,
+            dirty=bool(dirty_paths),
+            dirty_paths=dirty_paths[:50],
+            scanner_version=EXTRACTOR_VERSION,
+        )
+
+    @staticmethod
+    def _git_output(root: Path, *args: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", str(root), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        if result.returncode != 0:
+            return ""
+        return result.stdout.strip()
 
     @classmethod
     def _entity_id(cls, entity_type: str, name: str) -> str:

@@ -73,13 +73,17 @@ class MemoryDistillationEvaluator:
         recommendations: list[str],
     ) -> str:
         validation = scan.validation
+        provenance = scan.provenance
         recommendation_lines = "\n".join(f"- {item}" for item in recommendations)
         return f"""# Memory Distillation Eval
 
 - Evaluation: `{evaluation_id}`
 - Scan: `{scan.scan_id}`
+- Schema: `{scan.schema_version}`
 - Team: `{scan.team_id}`
 - Repo: `{scan.repo_name or "_team"}`
+- Commit: `{provenance.commit_sha if provenance else "unknown"}`
+- Dirty: `{provenance.dirty if provenance else "unknown"}`
 - Status: `{pass_status}`
 
 ## Guardrails

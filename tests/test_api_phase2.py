@@ -96,7 +96,10 @@ def test_memory_distillation_endpoints() -> None:
         },
     )
     assert scan_response.status_code == 200
-    assert scan_response.json()["claims"]
+    scan_payload = scan_response.json()
+    assert scan_payload["schema_version"] == "memory-scan-v0.2"
+    assert scan_payload["provenance"]["repo_path"] == "examples/java-demo-repo"
+    assert scan_payload["claims"]
 
     diff_response = client.get("/memory/diff", params={"team_id": "demo_team"})
     assert diff_response.status_code == 200
