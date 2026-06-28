@@ -11,7 +11,11 @@ from dream.evals.models import EvaluationRequest, EvaluationResult
 from dream.evals.repository import EvaluationRepository
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
-from dream.memory import MemoryDistillationEvaluator, MemoryDistillationService
+from dream.memory import (
+    MemoryClaimRetriever,
+    MemoryDistillationEvaluator,
+    MemoryDistillationService,
+)
 from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import (
@@ -52,6 +56,15 @@ class MemoryScanRequest(BaseModel):
 
 class MemoryEvalRequest(BaseModel):
     team_id: str
+    scan_id: str = "latest"
+
+
+class MemoryReviewRequest(BaseModel):
+    team_id: str
+    claim_id: str
+    status: str
+    reviewer: str | None = None
+    reason: str | None = None
     scan_id: str = "latest"
 
 
@@ -204,15 +217,78 @@ def get_latest_memory_scan(team_id: str) -> dict[str, object]:
 
 
 @router.get("/memory/diff")
-def diff_memory(team_id: str, scan_id: str = "latest") -> dict[str, object]:
+def diff_memory(
+    team_id: str,
+    scan_id: str = "latest",
+    base_scan_id: str | None = None,
+) -> dict[str, object]:
     try:
-        markdown = MemoryDistillationService().diff_markdown(
+        diff = MemoryDistillationService().diff(
             team_id=team_id,
             scan_id=scan_id,
+            base_scan_id=base_scan_id,
         )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"team_id": team_id, "scan_id": scan_id, "markdown": markdown}
+    return diff.model_dump()
+
+
+@router.post("/memory/review")
+def review_memory_claim(request: MemoryReviewRequest) -> dict[str, object]:
+    try:
+        return MemoryDistillationService().review_claim(
+            team_id=request.team_id,
+            claim_id=request.claim_id,
+            new_status=request.status,
+            reviewer=request.reviewer,
+            reason=request.reason,
+            scan_id=request.scan_id,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/memory/ledger")
+def get_memory_ledger(team_id: str) -> dict[str, object]:
+    return MemoryDistillationRepository().load_ledger(team_id).model_dump()
+
+
+@router.get("/memory/search")
+def search_memory_claims(
+    team_id: str,
+    query: str,
+    scan_id: str = "latest",
+    top_k: int = 8,
+) -> list[dict[str, object]]:
+    try:
+        results = MemoryClaimRetriever().search(
+            team_id=team_id,
+            query=query,
+            scan_id=scan_id,
+            top_k=top_k,
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return [result.model_dump() for result in results]
+
+
+@router.get("/memory/context-card")
+def get_memory_context_card(
+    team_id: str,
+    query: str,
+    scan_id: str = "latest",
+    top_k: int = 8,
+) -> dict[str, object]:
+    try:
+        markdown = MemoryClaimRetriever().context_card(
+            team_id=team_id,
+            query=query,
+            scan_id=scan_id,
+            top_k=top_k,
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"team_id": team_id, "scan_id": scan_id, "query": query, "markdown": markdown}
 
 
 @router.post("/memory/eval")

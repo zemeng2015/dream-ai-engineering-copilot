@@ -16,7 +16,8 @@ repo + docs + runbooks + incidents + PR/ticket-like history
   -> semantic candidate claims
   -> validation gates
   -> reviewable memory diff
-  -> durable memory ledger later
+  -> durable memory ledger
+  -> approved memory retrieval
 ```
 
 Generated artifacts are views over source-backed memory. They are not treated as
@@ -34,6 +35,9 @@ The first implementation adds:
 - repo provenance capture for commit SHA, dirty state, scanner version, and schema version
 - redacted source previews for secret-like assignments and common token patterns
 - reviewable memory diff output
+- true scan diff against a previous scan when available
+- durable review ledger for approve/reject/quarantine events
+- approved-claim search and context-card output
 - MVP eval guardrails
 - CLI commands and FastAPI endpoints
 
@@ -43,6 +47,7 @@ Artifacts are written under:
 artifacts/memory-scans/{team_id}/{scan_id}.json
 artifacts/memory-scans/{team_id}/latest.json
 artifacts/memory-evals/{team_id}/{evaluation_id}.json
+artifacts/memory-ledgers/{team_id}.json
 ```
 
 ## CLI
@@ -55,6 +60,16 @@ dream memory scan \
 
 dream memory diff --team demo_team
 
+dream memory review \
+  --team demo_team \
+  --claim <claim_id> \
+  --status approved \
+  --reviewer zack
+
+dream memory search --team demo_team --query "execution status"
+
+dream memory context --team demo_team --query "execution status"
+
 dream memory eval --team demo_team
 ```
 
@@ -66,6 +81,14 @@ curl -X POST http://localhost:8000/memory/scan \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/review \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","claim_id":"<claim_id>","status":"approved","reviewer":"zack"}'
+
+curl "http://localhost:8000/memory/search?team_id=demo_team&query=execution%20status"
+
+curl "http://localhost:8000/memory/context-card?team_id=demo_team&query=execution%20status"
 
 curl -X POST http://localhost:8000/memory/eval \
   -H "Content-Type: application/json" \
@@ -88,6 +111,11 @@ The MVP distinguishes deterministic structure from semantic memory:
 
 Semantic claims are never auto-promoted in this MVP. They must remain candidates
 until a reviewer approves them.
+
+Review events are appended to a durable ledger. The ledger records claim id,
+scan id, previous status, new status, reviewer, reason, and review timestamp.
+The latest ledger event for a claim overrides the scan's original governance
+status during approved-claim retrieval.
 
 ## Provenance And Redaction
 
@@ -140,5 +168,6 @@ Source Registry
 ```
 
 The current implementation covers the path through candidate claims, validation,
-diff, and eval artifacts. The durable review ledger and UI approval workflow are
-the next natural step.
+true diff, durable ledger, approved-claim retrieval, context-card output, and
+eval artifacts. The UI approval workflow and direct workflow integration are the
+next natural steps.

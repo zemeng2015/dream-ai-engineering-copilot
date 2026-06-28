@@ -16,7 +16,11 @@ from dream.evals.repository import EvaluationRepository
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
-from dream.memory import MemoryDistillationEvaluator, MemoryDistillationService
+from dream.memory import (
+    MemoryClaimRetriever,
+    MemoryDistillationEvaluator,
+    MemoryDistillationService,
+)
 from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import RequirementDraftGenerator, RequirementDraftRequest
@@ -341,9 +345,85 @@ def memory_scan(
 def memory_diff(
     team: Annotated[str, typer.Option("--team")],
     scan: Annotated[str, typer.Option("--scan")] = "latest",
+    base: Annotated[str | None, typer.Option("--base")] = None,
 ) -> None:
     try:
-        typer.echo(MemoryDistillationService().diff_markdown(team_id=team, scan_id=scan))
+        typer.echo(
+            MemoryDistillationService().diff_markdown(
+                team_id=team,
+                scan_id=scan,
+                base_scan_id=base,
+            )
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@memory_app.command("review")
+def memory_review(
+    team: Annotated[str, typer.Option("--team")],
+    claim: Annotated[str, typer.Option("--claim")],
+    status: Annotated[str, typer.Option("--status")],
+    reviewer: Annotated[str | None, typer.Option("--reviewer")] = None,
+    reason: Annotated[str | None, typer.Option("--reason")] = None,
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+) -> None:
+    try:
+        event = MemoryDistillationService().review_claim(
+            team_id=team,
+            claim_id=claim,
+            new_status=status,
+            reviewer=reviewer,
+            reason=reason,
+            scan_id=scan,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(event.model_dump_json(indent=2))
+    typer.echo(f"ledger: {repository.display_ledger_path(event.team_id)}")
+
+
+@memory_app.command("ledger")
+def memory_ledger(team: Annotated[str, typer.Option("--team")]) -> None:
+    typer.echo(MemoryDistillationRepository().load_ledger(team).model_dump_json(indent=2))
+
+
+@memory_app.command("search")
+def memory_search(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    try:
+        results = MemoryClaimRetriever().search(
+            team_id=team,
+            query=query,
+            scan_id=scan,
+            top_k=top_k,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps([result.model_dump() for result in results], indent=2))
+
+
+@memory_app.command("context")
+def memory_context(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    try:
+        typer.echo(
+            MemoryClaimRetriever().context_card(
+                team_id=team,
+                query=query,
+                scan_id=scan,
+                top_k=top_k,
+            )
+        )
     except DreamError as exc:
         raise typer.BadParameter(str(exc)) from exc
 

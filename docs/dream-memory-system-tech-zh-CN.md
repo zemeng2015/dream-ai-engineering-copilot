@@ -45,9 +45,8 @@ Knowledge Packs / Repo / Runbooks / Incidents / PR-Jira History
 
 尚未完成的是：
 
-- durable approval ledger
-- 真正的 claim approve/reject 工作流
-- memory claim 作为一等 retrieval source 接入所有业务 workflow
+- UI approval workflow
+- approved memory claim 直接接入 Requirement/PR/TestGen 等业务 workflow
 - 增量扫描和跨版本 diff
 
 ## 4. 记忆系统的四层实现
@@ -350,7 +349,24 @@ curl -X POST http://localhost:8000/memory/eval \
 
 当前实现已经在 preview 落盘前 redaction secret-like assignments、AWS access key、JWT-like token 和 private key header。后续可继续加入高熵 token 和 `.env` 语义检测。
 
-### P1：做真正的 scan diff
+### 已完成基础版：durable approval ledger
+
+当前实现已经新增 review ledger：
+
+- approve/reject/quarantine/candidate 状态流转
+- reviewer
+- review reason
+- reviewed_at
+- scan_id
+- previous_status/new_status
+
+ledger 存储在：
+
+```text
+artifacts/memory-ledgers/{team_id}.json
+```
+
+### 已完成基础版：做真正的 scan diff
 
 当前 diff 是单个 scan 的 claim 列表。后续应支持：
 
@@ -361,7 +377,9 @@ curl -X POST http://localhost:8000/memory/eval \
 - changed status
 - stale evidence
 
-### P1：把 MemoryClaim 接入 retrieval
+当前实现已经支持 added/removed/changed/unchanged 统计；后续可继续增强 stale evidence 和 status-only diff。
+
+### 已完成基础版：把 MemoryClaim 接入 retrieval
 
 当前 Requirement Case/PR Review 主要用 Knowledge Pack、Codebase Index 和 Evidence Graph。下一步应新增：
 
@@ -369,6 +387,8 @@ curl -X POST http://localhost:8000/memory/eval \
 - 只检索 approved claims
 - candidate claims 只进入 review UI
 - 输出中显示 claim id 和 evidence span
+
+当前实现已经提供 approved-claim search 和 `memory context` context card。后续需要把 context card 直接接入 Requirement Case、PR Review、TestGen 等 workflow。
 
 ### P1：引入 schema-based LLM extraction
 
@@ -392,9 +412,9 @@ curl -X POST http://localhost:8000/memory/eval \
 推荐顺序：
 
 1. 提交当前 memory distillation MVP。
-2. 加 approval ledger。
-3. 加 true scan diff。
-4. 加 MemoryClaimRetriever。
+2. 将 approved memory context card 接入 Requirement Case 和 PR Review。
+3. 增强 stale evidence / status-only diff。
+4. 增加 UI approval workflow。
 5. 继续增强 secret scanning。
 6. 最后再加 LLM semantic extraction。
 

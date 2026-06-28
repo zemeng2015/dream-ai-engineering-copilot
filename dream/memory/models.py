@@ -88,6 +88,24 @@ class ClaimAuditInfo(BaseModel):
     updated_at: str
 
 
+class MemoryReviewEvent(BaseModel):
+    event_id: str
+    team_id: str
+    claim_id: str
+    scan_id: str
+    previous_status: str
+    new_status: str
+    reviewer: str | None = None
+    reason: str | None = None
+    reviewed_at: str
+
+
+class MemoryLedgerSnapshot(BaseModel):
+    team_id: str
+    updated_at: str
+    events: list[MemoryReviewEvent] = Field(default_factory=list)
+
+
 class RepoProvenanceInfo(BaseModel):
     repo_path: str
     git_root: str | None = None
@@ -151,3 +169,21 @@ class MemoryEvalResult(BaseModel):
     pass_status: str
     recommendations: list[str] = Field(default_factory=list)
     markdown_report: str
+
+
+class MemoryClaimSearchResult(BaseModel):
+    claim: MemoryClaim
+    effective_status: str
+    score: float
+    reason: str
+
+
+class MemoryDiffResult(BaseModel):
+    team_id: str
+    scan_id: str
+    base_scan_id: str | None = None
+    added_claims: list[MemoryClaim] = Field(default_factory=list)
+    removed_claims: list[MemoryClaim] = Field(default_factory=list)
+    changed_claims: list[MemoryClaim] = Field(default_factory=list)
+    unchanged_count: int = 0
+    markdown: str

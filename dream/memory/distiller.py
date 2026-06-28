@@ -22,10 +22,12 @@ from dream.memory.models import (
     ExtractionInfo,
     GovernanceInfo,
     MemoryClaim,
+    MemoryDiffResult,
     MemoryEntity,
     MemoryEvidence,
     MemoryEvidenceSpan,
     MemoryRelation,
+    MemoryReviewEvent,
     MemoryScanResult,
     MemoryValidationSummary,
     RepoProvenanceInfo,
@@ -39,6 +41,7 @@ STRUCTURAL_EXTRACTION = "deterministic_structure"
 SEMANTIC_EXTRACTION = "heuristic_semantic"
 EXTRACTOR_VERSION = "memory-distillation-v0"
 MEMORY_SCAN_SCHEMA_VERSION = "memory-scan-v0.2"
+REVIEWABLE_STATUSES = {"candidate", "approved", "rejected", "quarantined"}
 SECRET_RE = re.compile(
     r"(?i)(api[_-]?key|secret|password|passwd|token|private[_-]?key)\s*[:=]"
 )
@@ -257,8 +260,104 @@ class MemoryDistillationService:
         self.repository.save_scan(scan)
         return scan
 
-    def diff_markdown(self, *, team_id: str, scan_id: str = "latest") -> str:
+    def diff(
+        self,
+        *,
+        team_id: str,
+        scan_id: str = "latest",
+        base_scan_id: str | None = None,
+    ) -> MemoryDiffResult:
         scan = self.repository.load_scan(team_id, scan_id)
+        base = (
+            self.repository.load_scan(team_id, base_scan_id)
+            if base_scan_id
+            else self.repository.previous_scan(team_id, scan.scan_id)
+        )
+        if base is None:
+            markdown = self._review_queue_markdown(scan)
+            return MemoryDiffResult(
+                team_id=team_id,
+                scan_id=scan.scan_id,
+                base_scan_id=None,
+                added_claims=scan.claims,
+                unchanged_count=0,
+                markdown=markdown,
+            )
+
+        base_by_id = {claim.claim_id: claim for claim in base.claims}
+        current_by_id = {claim.claim_id: claim for claim in scan.claims}
+        added = [claim for claim_id, claim in current_by_id.items() if claim_id not in base_by_id]
+        removed = [claim for claim_id, claim in base_by_id.items() if claim_id not in current_by_id]
+        changed = [
+            claim
+            for claim_id, claim in current_by_id.items()
+            if claim_id in base_by_id
+            and self._claim_compare_key(claim) != self._claim_compare_key(base_by_id[claim_id])
+        ]
+        unchanged = len(current_by_id) - len(added) - len(changed)
+        markdown = self._diff_markdown(
+            scan=scan,
+            base=base,
+            added=sorted(added, key=lambda item: item.claim_id),
+            removed=sorted(removed, key=lambda item: item.claim_id),
+            changed=sorted(changed, key=lambda item: item.claim_id),
+            unchanged=unchanged,
+        )
+        return MemoryDiffResult(
+            team_id=team_id,
+            scan_id=scan.scan_id,
+            base_scan_id=base.scan_id,
+            added_claims=sorted(added, key=lambda item: item.claim_id),
+            removed_claims=sorted(removed, key=lambda item: item.claim_id),
+            changed_claims=sorted(changed, key=lambda item: item.claim_id),
+            unchanged_count=unchanged,
+            markdown=markdown,
+        )
+
+    def diff_markdown(
+        self,
+        *,
+        team_id: str,
+        scan_id: str = "latest",
+        base_scan_id: str | None = None,
+    ) -> str:
+        return self.diff(team_id=team_id, scan_id=scan_id, base_scan_id=base_scan_id).markdown
+
+    def review_claim(
+        self,
+        *,
+        team_id: str,
+        claim_id: str,
+        new_status: str,
+        reviewer: str | None = None,
+        reason: str | None = None,
+        scan_id: str = "latest",
+    ) -> MemoryReviewEvent:
+        if new_status not in REVIEWABLE_STATUSES:
+            raise DreamError(f"Unsupported memory review status: {new_status}")
+        scan = self.repository.load_scan(team_id, scan_id)
+        claim = next((item for item in scan.claims if item.claim_id == claim_id), None)
+        if claim is None:
+            raise DreamError(f"Memory claim not found in scan {scan.scan_id}: {claim_id}")
+        latest = self.repository.latest_review_statuses(team_id).get(claim_id)
+        previous_status = latest.new_status if latest else claim.governance.status
+        reviewed_at = datetime.now(UTC).isoformat()
+        event = MemoryReviewEvent(
+            event_id=f"memory-review-{uuid4().hex[:12]}",
+            team_id=team_id,
+            claim_id=claim_id,
+            scan_id=scan.scan_id,
+            previous_status=previous_status,
+            new_status=new_status,
+            reviewer=reviewer,
+            reason=reason,
+            reviewed_at=reviewed_at,
+        )
+        self.repository.append_review_event(event)
+        return event
+
+    @staticmethod
+    def _review_queue_markdown(scan: MemoryScanResult) -> str:
         lines = [
             f"# Memory Diff: {scan.team_id}/{scan.repo_name or '_team'}",
             "",
@@ -276,23 +375,66 @@ class MemoryDistillationService:
             "",
         ]
         for claim in sorted(scan.claims, key=lambda item: item.claim_id):
-            status = claim.governance.status
-            marker = "+" if status in {"candidate", "approved"} else "?"
-            source_paths = ", ".join(span.path for span in claim.evidence.spans[:3])
-            lines.extend(
-                [
-                    (
-                        f"{marker} `{status}` `{claim.governance.risk_level}` "
-                        f"{claim.entity.canonical_name} --{claim.relation.type}--> "
-                        f"{claim.relation.value or claim.relation.object_entity_id or '_'}"
-                    ),
-                    f"  - method: {claim.extraction.method}",
-                    f"  - confidence: {claim.extraction.confidence:.2f}",
-                    f"  - evidence: {source_paths or 'missing'}",
-                    "",
-                ]
-            )
+            lines.extend(MemoryDistillationService._claim_markdown_lines(claim))
         return "\n".join(lines).rstrip() + "\n"
+
+    @staticmethod
+    def _diff_markdown(
+        *,
+        scan: MemoryScanResult,
+        base: MemoryScanResult,
+        added: list[MemoryClaim],
+        removed: list[MemoryClaim],
+        changed: list[MemoryClaim],
+        unchanged: int,
+    ) -> str:
+        lines = [
+            f"# Memory Diff: {scan.team_id}/{scan.repo_name or '_team'}",
+            "",
+            f"- Base scan: `{base.scan_id}`",
+            f"- Current scan: `{scan.scan_id}`",
+            f"- Added claims: {len(added)}",
+            f"- Removed claims: {len(removed)}",
+            f"- Changed claims: {len(changed)}",
+            f"- Unchanged claims: {unchanged}",
+            "",
+        ]
+        for title, claims in [
+            ("Added Claims", added),
+            ("Removed Claims", removed),
+            ("Changed Claims", changed),
+        ]:
+            lines.extend([f"## {title}", ""])
+            if not claims:
+                lines.extend(["_None._", ""])
+                continue
+            for claim in claims:
+                lines.extend(MemoryDistillationService._claim_markdown_lines(claim))
+        return "\n".join(lines).rstrip() + "\n"
+
+    @staticmethod
+    def _claim_markdown_lines(claim: MemoryClaim) -> list[str]:
+        status = claim.governance.status
+        marker = "+" if status in {"candidate", "approved"} else "?"
+        source_paths = ", ".join(span.path for span in claim.evidence.spans[:3])
+        return [
+            (
+                f"{marker} `{claim.claim_id}` `{status}` `{claim.governance.risk_level}` "
+                f"{claim.entity.canonical_name} --{claim.relation.type}--> "
+                f"{claim.relation.value or claim.relation.object_entity_id or '_'}"
+            ),
+            f"  - method: {claim.extraction.method}",
+            f"  - confidence: {claim.extraction.confidence:.2f}",
+            f"  - evidence: {source_paths or 'missing'}",
+            "",
+        ]
+
+    @staticmethod
+    def _claim_compare_key(claim: MemoryClaim) -> dict[str, object]:
+        payload = claim.model_dump()
+        payload.pop("scan_id", None)
+        payload.pop("audit", None)
+        return payload
 
     @staticmethod
     def _test_mapping_claim(

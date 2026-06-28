@@ -168,10 +168,10 @@ POST /memory/eval</pre>
   <h2>10. 主要优化空间</h2>
   <ol>
     <li>已完成基础版：记录 commit SHA、dirty state、scanned root、extractor version、artifact schema version。</li>
-    <li>P0：实现 durable approval ledger，支持 approve/reject/quarantine、reviewer、reason、superseded_by。</li>
+    <li>已完成基础版：durable approval ledger，支持 approve/reject/quarantine/candidate、reviewer、reason、reviewed_at。</li>
     <li>已完成基础版：secret redaction，在写入 preview 前先脱敏。后续可继续增强高熵 token 和 .env 语义检测。</li>
     <li>P1：实现真正的跨 scan diff，识别 added、removed、changed、stale evidence。</li>
-    <li>P1：新增 MemoryClaimRetriever，只让 approved claims 进入业务检索。</li>
+    <li>已完成基础版：新增 MemoryClaimRetriever，只让 approved claims 进入记忆检索，并提供 context card。</li>
     <li>P1：引入 schema-based LLM extraction，但 semantic claim 仍默认 candidate。</li>
     <li>P2：按 content hash 做增量扫描。</li>
   </ol>
@@ -179,9 +179,9 @@ POST /memory/eval</pre>
   <h2>11. 建议下一步开发顺序</h2>
   <ol>
     <li>提交当前 memory distillation MVP。</li>
-    <li>加 approval ledger。</li>
-    <li>加 true scan diff。</li>
-    <li>加 MemoryClaimRetriever。</li>
+    <li>将 approved memory context card 接入 Requirement Case 和 PR Review。</li>
+    <li>增强 stale evidence / status-only diff。</li>
+    <li>增加 UI approval workflow。</li>
     <li>继续增强 secret scanning。</li>
     <li>最后再加 LLM semantic extraction。</li>
   </ol>

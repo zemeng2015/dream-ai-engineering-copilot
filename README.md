@@ -161,6 +161,9 @@ dream graph search --team demo_team --repo java-demo-repo --query "execution sta
 dream graph explain --team demo_team --repo java-demo-repo --concept "execution status"
 dream memory scan --team demo_team --repo examples/java-demo-repo --name java-demo-repo
 dream memory diff --team demo_team
+dream memory review --team demo_team --claim <claim_id> --status approved --reviewer zack
+dream memory search --team demo_team --query "execution status"
+dream memory context --team demo_team --query "execution status"
 dream memory eval --team demo_team
 dream req create --team demo_team --request "Add async status tracking for long-running job execution" --role BA
 dream req analyze --case <case_id>
@@ -253,6 +256,14 @@ curl -X POST http://localhost:8000/memory/scan \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/review \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","claim_id":"<claim_id>","status":"approved","reviewer":"zack"}'
+
+curl "http://localhost:8000/memory/search?team_id=demo_team&query=execution%20status"
+
+curl "http://localhost:8000/memory/context-card?team_id=demo_team&query=execution%20status"
 
 curl -X POST http://localhost:8000/memory/eval \
   -H "Content-Type: application/json" \
@@ -355,6 +366,16 @@ are redacted for secret-like assignments and common token patterns.
 MVP validation checks citation validity, unsupported claims, secret-like
 leakage, and accidental semantic auto-promotion before memory is treated as
 durable.
+
+The governed review loop adds a durable approval ledger under
+`artifacts/memory-ledgers/{team_id}.json`. Review events can approve, reject,
+quarantine, or return claims to candidate status. Approved claims are available
+through `dream memory search` and `dream memory context`; candidate claims remain
+review-only.
+
+`dream memory diff` compares the latest scan with the previous scan when one is
+available, showing added, removed, changed, and unchanged claim counts. Without
+a base scan it falls back to a full review queue.
 
 See [Memory Distillation](docs/memory-distillation.md) for the design, CLI/API
 workflow, and acceptance guardrails.
@@ -475,7 +496,7 @@ DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 - Deeper code graph relationships beyond Evidence Graph Lite
 - GitHub and Jira connectors
 - Historical PR/Jira ingestion
-- Governed memory review queue and durable approval ledger
+- Workflow integration for approved memory context cards
 - JTestGen integration
 - UI workspace and role-specific dashboards
 - Angular frontend API integration
