@@ -1,5 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 
+.search-panel-header {
+  align-items: start;
+}
+
+.search-heading {
+  min-width: 0;
+}
+
+.search-heading p {
+  margin: 4px 0 0;
+  color: var(--dream-muted);
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.panel-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapse-button {
+  min-height: 34px;
+  width: 34px;
+}
+
 .source-tree {
   display: grid;
   gap: 12px;

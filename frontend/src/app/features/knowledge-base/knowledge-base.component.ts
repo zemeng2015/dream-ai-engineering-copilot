@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { KnowledgeChunk } from '../../core/dream-models';
 import { MockDreamService } from '../../core/mock-dream.service';
+import { UiIconComponent } from '../../shared/ui-icon.component';
 
 interface KnowledgeSourceGroup {
   sourceType: KnowledgeChunk['sourceType'];
@@ -15,7 +16,7 @@ interface KnowledgeSourceGroup {
 @Component({
   selector: 'app-knowledge-base',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, UiIconComponent],
   templateUrl: './knowledge-base.component.html',
   styleUrl: './knowledge-base.component.scss',
 })
@@ -27,6 +28,14 @@ export class KnowledgeBaseComponent {
   readonly docTypes = this.dream.listDocTypes();
   readonly chunks = signal<KnowledgeChunk[]>(this.dream.searchKnowledge({ query: 'execution status stuck running', topK: 8 }));
   readonly selectedChunk = signal<KnowledgeChunk | null>(this.chunks()[0] ?? null);
+  readonly searchCollapsed = signal(true);
+  readonly activeSearch = signal({
+    query: 'execution status stuck running',
+    app: '',
+    component: '',
+    docType: '',
+    topK: 8,
+  });
   readonly sourceGroups = computed<KnowledgeSourceGroup[]>(() => {
     const grouped = new Map<KnowledgeChunk['sourceType'], KnowledgeChunk[]>();
     for (const chunk of this.chunks()) {
@@ -38,6 +47,20 @@ export class KnowledgeBaseComponent {
       chunks,
     }));
   });
+  readonly searchSummary = computed(() => {
+    const value = this.activeSearch();
+    const summaryParts = [value.query.trim() ? `Query: ${value.query.trim()}` : 'All knowledge'];
+    if (value.component.trim()) {
+      summaryParts.push(`Component: ${value.component.trim()}`);
+    }
+    if (value.app) {
+      summaryParts.push(`App: ${value.app}`);
+    }
+    if (value.docType) {
+      summaryParts.push(`Docs: ${value.docType}`);
+    }
+    return summaryParts.join(' | ');
+  });
 
   readonly form = this.fb.nonNullable.group({
     query: 'execution status stuck running',
@@ -46,6 +69,10 @@ export class KnowledgeBaseComponent {
     docType: '',
     topK: 8,
   });
+
+  toggleSearch(): void {
+    this.searchCollapsed.update((collapsed) => !collapsed);
+  }
 
   search(): void {
     const value = this.form.getRawValue();
@@ -58,6 +85,8 @@ export class KnowledgeBaseComponent {
     });
     this.chunks.set(results);
     this.selectedChunk.set(results[0] ?? null);
+    this.activeSearch.set(value);
+    this.searchCollapsed.set(true);
   }
 
   selectChunk(chunk: KnowledgeChunk): void {
