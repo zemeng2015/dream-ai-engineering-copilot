@@ -31,7 +31,20 @@
     <article class="panel scan-panel">
       <div class="panel-header">
         <h2>Upload / Import Queue</h2>
-        <span class="status-pill status-info">{{ queue().length }} mock sources</span>
+        <span class="status-pill status-info">{{ queue().length }} sources</span>
+      </div>
+
+      <div class="upload-strip">
+        <div>
+          <label for="source-upload">Raw source document</label>
+          <span>{{ uploadMessage() }}</span>
+        </div>
+        <input
+          id="source-upload"
+          type="file"
+          accept=".md,.txt,.docx,.html,.htm,.json"
+          (change)="onSourceUpload($event)"
+        />
       </div>
 
       <div class="table-wrap">
@@ -127,6 +140,16 @@
             >
               Promote to Pack
             </button>
+          </div>
+
+          <div class="review-comment">
+            <label for="intake-review-comment">Review comment</label>
+            <textarea
+              id="intake-review-comment"
+              [value]="reviewComment()"
+              (input)="updateReviewComment($event)"
+              placeholder="Capture the human review decision, risk note, or promotion rationale."
+            ></textarea>
           </div>
 
           <div class="info-callout">{{ actionMessage() }}</div>

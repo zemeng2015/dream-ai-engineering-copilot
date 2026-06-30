@@ -26,6 +26,59 @@
   margin-bottom: 16px;
 }
 
+.upload-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+  gap: 14px;
+  align-items: center;
+  border-bottom: 1px solid var(--dream-border);
+  background: var(--dream-info-bg);
+  padding: 14px 16px;
+}
+
+.upload-strip label,
+.review-comment label {
+  display: block;
+  color: var(--dream-navy);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.upload-strip span {
+  display: block;
+  margin-top: 5px;
+  color: var(--dream-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.upload-strip input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--dream-border);
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 8px;
+}
+
+.review-comment {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.review-comment textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--dream-ink);
+  padding: 10px 12px;
+}
+
 .section-list,
 .note-list,
 .side-stack {
@@ -100,4 +153,10 @@
   color: var(--dream-muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+@media (max-width: 820px) {
+  .upload-strip {
+    grid-template-columns: 1fr;
+  }
 }
