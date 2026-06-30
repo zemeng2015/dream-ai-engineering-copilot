@@ -12,7 +12,6 @@ type MemoryHubTab = 'sources' | 'packs' | 'codebase' | 'graph';
 interface MemoryHubNavItem {
   id: MemoryHubTab;
   label: string;
-  description: string;
 }
 
 @Component({
@@ -33,23 +32,19 @@ export class MemoryHubComponent {
   readonly tabs: MemoryHubNavItem[] = [
     {
       id: 'sources',
-      label: 'Source Intake',
-      description: 'Upload, parse, review, approve, and promote raw engineering sources.',
+      label: 'Sources',
     },
     {
       id: 'packs',
       label: 'Knowledge Packs',
-      description: 'Search approved docs, incidents, historical Jira, PR notes, and concept memory.',
     },
     {
       id: 'codebase',
       label: 'Codebase Memory',
-      description: 'Inspect indexed files, symbols, related tests, concepts, and ownership signals.',
     },
     {
       id: 'graph',
       label: 'Evidence Graph',
-      description: 'Trace concept-to-doc-code-test-incident paths for explainable retrieval.',
     },
   ];
 

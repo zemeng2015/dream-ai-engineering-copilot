@@ -28,10 +28,10 @@
 
 .brand {
   display: flex;
-  min-height: 96px;
+  min-height: 80px;
   align-items: center;
   gap: 14px;
-  padding: 24px 24px 20px;
+  padding: 20px 24px 16px;
   color: #ffffff;
   text-decoration: none;
 }
@@ -51,20 +51,10 @@
   font-weight: 700;
 }
 
-.brand strong,
-.brand small {
-  display: block;
-}
-
 .brand strong {
+  display: block;
   font-size: 24px;
   letter-spacing: 0;
-}
-
-.brand small {
-  margin-top: 3px;
-  color: rgb(255 255 255 / 72%);
-  font-size: 13px;
 }
 
 .nav-list {
@@ -116,8 +106,7 @@
 }
 
 .mode-line,
-.environment-line,
-.version-line {
+.environment-line {
   display: grid;
   gap: 5px;
 }
@@ -131,10 +120,6 @@
 .version-line strong,
 .mode-line strong {
   color: #ffffff;
-}
-
-.version-line span {
-  color: rgb(255 255 255 / 62%);
 }
 
 .workspace {
@@ -158,19 +143,14 @@
 }
 
 .topbar-title {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
 .topbar-title strong {
   color: var(--dream-navy);
   font-size: 16px;
-}
-
-.topbar-title span {
-  color: var(--dream-muted);
-  font-size: 12px;
 }
 
 .topbar-actions {
@@ -281,10 +261,6 @@
 }
 
 @media (width <= 680px) {
-  .topbar-title span {
-    display: none;
-  }
-
   .mode-chip {
     min-height: 30px;
     font-size: 12px;

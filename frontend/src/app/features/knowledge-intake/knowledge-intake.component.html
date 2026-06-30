@@ -3,42 +3,18 @@
 <section class="page reveal-page">
   <header class="page-header command-header">
     <div>
-      <span class="eyebrow">Knowledge intake pipeline</span>
       <h1>Knowledge Intake</h1>
-      <p>
-        Demonstrate how runbooks, DOCX notes, and Confluence HLDs move from import queue to parsed
-        sections, concept review, approval, and promotion into DREAM memory packs.
-      </p>
-    </div>
-    <div class="index-beacon">
-      <span></span>
-      <strong>Mock parser</strong>
-      <small>approval gate active</small>
     </div>
   </header>
-
-  <section class="grid-4" aria-label="Knowledge intake metrics">
-    @for (metric of intakeMetrics(); track metric.label) {
-      <div class="metric-tile">
-        <span>{{ metric.label }}</span>
-        <strong>{{ metric.value }}</strong>
-        <small>{{ metric.note }}</small>
-      </div>
-    }
-  </section>
 
   <section class="grid-2">
     <article class="panel scan-panel">
       <div class="panel-header">
-        <h2>Upload / Import Queue</h2>
+        <h2>Sources</h2>
         <span class="status-pill status-info">{{ queue().length }} sources</span>
       </div>
 
       <div class="upload-strip">
-        <div>
-          <label for="source-upload">Raw source document</label>
-          <span>{{ uploadMessage() }}</span>
-        </div>
         <div class="upload-picker">
           <input
             id="source-upload"
@@ -47,9 +23,10 @@
             accept=".md,.txt,.docx,.html,.htm,.json"
             (change)="onSourceUpload($event)"
           />
-          <label class="upload-button" for="source-upload">Choose source file</label>
+          <label class="upload-button" for="source-upload">Upload source</label>
           <span class="upload-file-name">{{ selectedUploadFileName() }}</span>
         </div>
+        <span class="upload-status">{{ uploadMessage() }}</span>
       </div>
 
       <div class="table-wrap">
@@ -96,7 +73,7 @@
 
     <article class="panel review-console">
       <div class="panel-header">
-        <h2>Review Console</h2>
+        <h2>Review</h2>
         @if (selectedItem(); as item) {
           <span class="status-pill" [class]="statusClass(item.reviewStatus)">
             {{ formatStatus(item.reviewStatus) }}
@@ -105,20 +82,20 @@
       </div>
       <div class="panel-body">
         @if (selectedItem(); as item) {
-          <dl class="metadata-list">
+          <div class="review-summary">
             <div>
-              <dt>Imported</dt>
-              <dd>{{ item.importedAt | date: 'MMM d, y, h:mm a' }}</dd>
+              <span>Imported</span>
+              <strong>{{ item.importedAt | date: 'MMM d, h:mm a' }}</strong>
             </div>
             <div>
-              <dt>Parser</dt>
-              <dd>{{ item.parser }}</dd>
+              <span>Target</span>
+              <strong>{{ item.targetPack }}</strong>
             </div>
             <div>
-              <dt>Promotion</dt>
-              <dd>{{ item.promotionSummary }}</dd>
+              <span>Sections</span>
+              <strong>{{ item.sections.length }}</strong>
             </div>
-          </dl>
+          </div>
 
           <div class="action-row">
             <button
@@ -153,13 +130,13 @@
               id="intake-review-comment"
               [value]="reviewComment()"
               (input)="updateReviewComment($event)"
-              placeholder="Capture the human review decision, risk note, or promotion rationale."
+              placeholder="Decision, risk note, or promotion rationale."
             ></textarea>
           </div>
 
           <div class="info-callout">{{ actionMessage() }}</div>
         } @else {
-          <div class="info-callout">Select a source row to inspect parsed content.</div>
+          <div class="info-callout">Select a source.</div>
         }
       </div>
     </article>

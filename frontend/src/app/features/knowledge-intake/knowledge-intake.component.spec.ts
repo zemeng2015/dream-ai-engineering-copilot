@@ -71,7 +71,7 @@ describe('KnowledgeIntakeComponent', () => {
     const localizedChooseFile = '\u9009\u62e9\u6587\u4ef6';
     const localizedNoFileSelected = '\u672a\u9009\u62e9\u4efb\u4f55\u6587\u4ef6';
 
-    expect(compiled.textContent).toContain('Choose source file');
+    expect(compiled.textContent).toContain('Upload source');
     expect(compiled.textContent).toContain('No file selected');
     expect(compiled.textContent).not.toContain(localizedChooseFile);
     expect(compiled.textContent).not.toContain(localizedNoFileSelected);

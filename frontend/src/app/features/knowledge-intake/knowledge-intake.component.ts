@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 
 import {
   KnowledgeIntakeItem,
@@ -24,25 +24,10 @@ export class KnowledgeIntakeComponent {
 
   readonly queue = signal<KnowledgeIntakeItem[]>(this.dream.listKnowledgeIntakeQueue());
   readonly selectedItem = signal<KnowledgeIntakeItem | null>(this.queue()[0] ?? null);
-  readonly actionMessage = signal('Select a source row, approve parsed sections, then promote approved knowledge to a pack.');
-  readonly uploadMessage = signal('Choose a raw runbook, DOCX export, or Confluence HLD export to create a reviewable source.');
+  readonly actionMessage = signal('Select a source to review.');
+  readonly uploadMessage = signal('Ready.');
   readonly selectedUploadFileName = signal('No file selected');
-  readonly reviewComment = signal('Sections match the status-tracking workflow and are safe to promote after steward review.');
-
-  readonly intakeMetrics = computed(() => [
-    { label: 'Imports', value: this.queue().length, note: 'runbook + docx + HLD' },
-    { label: 'Parsed sections', value: this.queue().reduce((total, item) => total + item.sections.length, 0), note: 'ready to review' },
-    {
-      label: 'Needs review',
-      value: this.queue().filter((item) => item.reviewStatus === 'needs_review' || item.reviewStatus === 'unreviewed').length,
-      note: 'human gate',
-    },
-    {
-      label: 'Promoted',
-      value: this.queue().filter((item) => item.reviewStatus === 'promoted').length,
-      note: 'mock pack state',
-    },
-  ]);
+  readonly reviewComment = signal('');
 
   selectItem(item: KnowledgeIntakeItem): void {
     this.selectedItem.set(item);

@@ -6,91 +6,54 @@
 
 .workspace-page {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .workspace-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: end;
+  gap: 4px;
 }
 
 .workspace-header h1 {
   margin: 0;
   color: var(--dream-navy);
-  font-size: clamp(2rem, 3vw, 2.65rem);
-  line-height: 1.08;
+  font-size: clamp(1.75rem, 2.4vw, 2.25rem);
+  line-height: 1.1;
 }
 
 .workspace-header p {
-  max-width: 920px;
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--dream-muted);
-  line-height: 1.6;
-}
-
-.workspace-beacon {
-  display: grid;
-  gap: 5px;
-  min-width: 230px;
-  border: 1px solid var(--dream-border);
-  border-radius: 8px;
-  background: var(--dream-surface);
-  box-shadow: var(--dream-shadow);
-  padding: 16px;
-}
-
-.workspace-beacon span {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--dream-teal);
-  box-shadow: 0 0 0 5px rgb(0 124 137 / 12%);
-}
-
-.workspace-beacon strong {
-  color: var(--dream-navy);
-}
-
-.workspace-beacon small {
-  color: var(--dream-muted);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .workspace-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .workspace-tabs button {
-  display: grid;
-  min-height: 92px;
-  gap: 7px;
-  align-content: start;
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
   border: 1px solid var(--dream-border);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--dream-surface);
   color: var(--dream-ink);
-  box-shadow: var(--dream-shadow);
-  text-align: left;
-  padding: 14px;
+  box-shadow: none;
+  padding: 0 12px;
 }
 
 .workspace-tabs button.active {
   border-color: rgb(0 124 137 / 42%);
-  background: linear-gradient(180deg, #ffffff 0%, var(--dream-info-bg) 100%);
-  box-shadow: inset 0 0 0 2px rgb(0 124 137 / 10%), var(--dream-shadow);
+  background: var(--dream-info-bg);
+  box-shadow: inset 0 0 0 1px rgb(0 124 137 / 10%);
 }
 
 .workspace-tabs strong {
   color: var(--dream-navy);
-}
-
-.workspace-tabs span {
-  color: var(--dream-muted);
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .workspace-embedded {
@@ -102,16 +65,11 @@
 }
 
 :host ::ng-deep .workspace-embedded > * > .page {
-  gap: 18px;
+  gap: 14px;
 }
 
 @media (max-width: 980px) {
-  .workspace-header,
-  .workspace-tabs {
-    grid-template-columns: 1fr;
-  }
-
-  .workspace-beacon {
-    min-width: 0;
+  .workspace-tabs button {
+    flex: 1 1 160px;
   }
 }
