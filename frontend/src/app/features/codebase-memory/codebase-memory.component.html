@@ -3,17 +3,12 @@
 <section class="page reveal-page">
   <header class="page-header command-header">
     <div>
-      <span class="eyebrow">DFP structured index</span>
-      <h1>Codebase Memory</h1>
-      <p>
-        Explore mock repository memory across Angular UI, Java backend, AWS orchestration, Python
-        processors, and tests.
-      </p>
+      <h1>Code Index</h1>
     </div>
     <div class="index-beacon" aria-label="Indexed repository status">
       <span></span>
       <strong>dfp-demo-repo</strong>
-      <small>indexed locally</small>
+      <small>JSON index</small>
     </div>
   </header>
 
@@ -30,8 +25,8 @@
   <section class="grid-2">
     <article class="panel scan-panel">
       <div class="panel-header">
-        <h2>Search Codebase Memory</h2>
-        <span class="status-pill status-info">keyword index</span>
+        <h2>Find Related Code</h2>
+        <span class="status-pill status-info">local JSON</span>
       </div>
       <div class="panel-body">
         <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
@@ -53,7 +48,7 @@
             <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
           </div>
           <div class="form-field-full">
-            <button class="primary-button" type="submit">Search Index</button>
+            <button class="primary-button" type="submit">Find Code Evidence</button>
           </div>
         </form>
       </div>
@@ -65,7 +60,7 @@
               <th>File</th>
               <th>Layer</th>
               <th>Role</th>
-              <th>Concepts</th>
+              <th>Retrieval Tags</th>
             </tr>
           </thead>
           <tbody>
@@ -89,7 +84,7 @@
     <div class="side-stack">
       <article class="panel">
         <div class="panel-header">
-          <h2>Concepts</h2>
+          <h2>Retrieval Tags</h2>
         </div>
         <div class="concept-cloud">
           @for (concept of conceptList(); track concept) {
@@ -102,7 +97,8 @@
 
       <article class="panel">
         <div class="panel-header">
-          <h2>File Detail</h2>
+          <h2>Code Evidence</h2>
+          <span class="status-pill status-info">source/test links</span>
         </div>
         <div class="panel-body">
           @if (selectedFile(); as file) {
@@ -120,12 +116,12 @@
                 <dd>{{ file.symbols.join(', ') }}</dd>
               </div>
               <div>
-                <dt>Tests</dt>
+                <dt>Linked Tests</dt>
                 <dd>{{ file.relatedTests.length ? file.relatedTests.join(', ') : 'No direct test mapping' }}</dd>
               </div>
             </dl>
           } @else {
-            <div class="info-callout">Select a file to inspect symbols and test mappings.</div>
+            <div class="info-callout">Select a file to inspect symbols and linked tests.</div>
           }
         </div>
       </article>

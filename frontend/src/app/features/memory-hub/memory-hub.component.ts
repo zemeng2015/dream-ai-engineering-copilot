@@ -40,11 +40,11 @@ export class MemoryHubComponent {
     },
     {
       id: 'codebase',
-      label: 'Codebase Memory',
+      label: 'Code Index',
     },
     {
       id: 'graph',
-      label: 'Evidence Graph',
+      label: 'Retrieval Paths',
     },
   ];
 

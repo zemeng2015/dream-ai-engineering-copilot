@@ -118,7 +118,7 @@
 
 .review-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -178,7 +178,7 @@
   color: var(--dream-navy);
 }
 
-.section-heading span {
+.section-heading > span:not(.status-pill) {
   color: var(--dream-teal-dark);
   font-size: 12px;
   font-weight: 800;
@@ -195,6 +195,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+  align-items: center;
+}
+
+.mini-concepts b {
+  color: var(--dream-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .mini-concepts span {
@@ -205,6 +213,26 @@
   font-size: 11px;
   font-weight: 700;
   padding: 4px 7px;
+}
+
+.card-meta {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid var(--dream-border);
+  padding-top: 10px;
+}
+
+.card-meta span {
+  color: var(--dream-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.card-meta strong {
+  color: var(--dream-ink);
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .compact-cloud {

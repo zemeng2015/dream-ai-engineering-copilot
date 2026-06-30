@@ -71,7 +71,7 @@ export class DashboardComponent {
       route: '/memory',
     },
     {
-      label: 'Evidence Graph',
+      label: 'Retrieval Paths',
       value: `${this.graphPaths.length} paths`,
       description: 'Concepts linked to code, risks, tests, and history.',
       status: 'local',
@@ -106,7 +106,7 @@ export class DashboardComponent {
       icon: 'document',
     },
     {
-      title: 'Codebase Memory',
+      title: 'Code Index',
       description: 'Search symbols, layers, concepts, and test mappings.',
       route: '/memory',
       icon: 'branch',

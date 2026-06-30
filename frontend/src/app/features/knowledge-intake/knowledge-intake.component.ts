@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 
 import {
@@ -15,7 +15,7 @@ import { MockDreamService } from '../../core/mock-dream.service';
 @Component({
   selector: 'app-knowledge-intake',
   standalone: true,
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe],
   templateUrl: './knowledge-intake.component.html',
   styleUrl: './knowledge-intake.component.scss',
 })
@@ -24,7 +24,7 @@ export class KnowledgeIntakeComponent {
 
   readonly queue = signal<KnowledgeIntakeItem[]>(this.dream.listKnowledgeIntakeQueue());
   readonly selectedItem = signal<KnowledgeIntakeItem | null>(this.queue()[0] ?? null);
-  readonly actionMessage = signal('Select a source to review.');
+  readonly actionMessage = signal('Review the proposed memory cards before promotion.');
   readonly uploadMessage = signal('Ready.');
   readonly selectedUploadFileName = signal('No file selected');
   readonly reviewComment = signal('');
@@ -48,8 +48,8 @@ export class KnowledgeIntakeComponent {
     this.queue.update((queue) => [item, ...queue]);
     this.selectedItem.set(item);
     this.reviewComment.set('Verified headings and task-status concepts; approve for demo knowledge pack.');
-    this.actionMessage.set(`${item.title} uploaded and parsed into ${item.sections.length} reviewable sections.`);
-    this.uploadMessage.set(`${file.name} parsed into ${item.sections.length} sections and is waiting for human review.`);
+    this.actionMessage.set(`${item.title} uploaded and parsed into ${item.sections.length} proposed memory cards.`);
+    this.uploadMessage.set(`${file.name} parsed into ${item.sections.length} memory cards for review.`);
     input.value = '';
   }
 
@@ -72,7 +72,7 @@ export class KnowledgeIntakeComponent {
         ...item.reviewNotes,
       ],
     });
-    this.actionMessage.set(`${item.title} approved for ${item.targetPack}.`);
+    this.actionMessage.set(`${item.sections.length} memory cards approved for ${item.targetPack}.`);
   }
 
   promoteSelected(): void {
@@ -90,7 +90,7 @@ export class KnowledgeIntakeComponent {
       ],
       promotionSummary: `${item.sections.length} reviewed sections promoted to ${item.targetPack}.`,
     });
-    this.actionMessage.set(`${item.title} promoted into ${item.targetPack}.`);
+    this.actionMessage.set(`${item.sections.length} memory cards promoted into ${item.targetPack}.`);
   }
 
   reparseSelected(): void {
@@ -104,6 +104,26 @@ export class KnowledgeIntakeComponent {
       reviewNotes: ['Mock re-parse queued with the same deterministic source content.'],
     });
     this.actionMessage.set(`${item.title} moved back to parser queue.`);
+  }
+
+  memoryCardStatus(item: KnowledgeIntakeItem): string {
+    if (item.reviewStatus === 'promoted') {
+      return 'promoted';
+    }
+    if (item.reviewStatus === 'approved') {
+      return 'approved';
+    }
+    return 'candidate';
+  }
+
+  memoryCardStatusClass(item: KnowledgeIntakeItem): string {
+    return item.reviewStatus === 'approved' || item.reviewStatus === 'promoted'
+      ? 'status-success'
+      : 'status-warning';
+  }
+
+  reviewNoteLabel(note: string): string {
+    return note.toLowerCase().includes('comment') ? 'Reviewer note' : 'System check';
   }
 
   statusClass(status: KnowledgeIntakeQueueStatus | KnowledgeIntakeReviewStatus): string {

@@ -34,10 +34,10 @@
           <thead>
             <tr>
               <th>Source</th>
-              <th>Owner</th>
-              <th>Queue</th>
-              <th>Review</th>
-              <th>Target Pack</th>
+              <th>Processing</th>
+              <th>Reviewer</th>
+              <th>Memory Cards</th>
+              <th>Promote To</th>
             </tr>
           </thead>
           <tbody>
@@ -52,16 +52,17 @@
                   <strong>{{ item.title }}</strong>
                   <span>{{ sourceKindLabel(item) }} / {{ item.sourcePath }}</span>
                 </td>
-                <td>{{ item.owner }}</td>
                 <td>
                   <span class="status-pill" [class]="statusClass(item.queueStatus)">
                     {{ formatStatus(item.queueStatus) }}
                   </span>
                 </td>
+                <td>{{ item.owner }}</td>
                 <td>
                   <span class="status-pill" [class]="statusClass(item.reviewStatus)">
-                    {{ formatStatus(item.reviewStatus) }}
+                    {{ item.sections.length }} {{ item.sections.length === 1 ? 'card' : 'cards' }}
                   </span>
+                  <span>{{ formatStatus(item.reviewStatus) }}</span>
                 </td>
                 <td>{{ item.targetPack }}</td>
               </tr>
@@ -73,7 +74,7 @@
 
     <article class="panel review-console">
       <div class="panel-header">
-        <h2>Review</h2>
+        <h2>Review & Approve</h2>
         @if (selectedItem(); as item) {
           <span class="status-pill" [class]="statusClass(item.reviewStatus)">
             {{ formatStatus(item.reviewStatus) }}
@@ -88,12 +89,16 @@
               <strong>{{ item.importedAt | date: 'MMM d, h:mm a' }}</strong>
             </div>
             <div>
-              <span>Target</span>
-              <strong>{{ item.targetPack }}</strong>
+              <span>Reviewer</span>
+              <strong>{{ item.owner }}</strong>
             </div>
             <div>
-              <span>Sections</span>
-              <strong>{{ item.sections.length }}</strong>
+              <span>Cards</span>
+              <strong>{{ item.sections.length }} proposed</strong>
+            </div>
+            <div>
+              <span>Destination</span>
+              <strong>{{ item.targetPack }}</strong>
             </div>
           </div>
 
@@ -112,7 +117,7 @@
               [disabled]="item.reviewStatus === 'approved' || item.reviewStatus === 'promoted'"
               (click)="approveSelected()"
             >
-              Approve Sections
+              Approve Cards
             </button>
             <button
               class="primary-button"
@@ -120,7 +125,7 @@
               [disabled]="item.reviewStatus !== 'approved'"
               (click)="promoteSelected()"
             >
-              Promote to Pack
+              Promote Cards
             </button>
           </div>
 
@@ -146,19 +151,25 @@
     <section class="grid-2">
       <article class="panel">
         <div class="panel-header">
-          <h2>Parsed Sections</h2>
-          <span class="status-pill status-info">{{ item.sections.length }} sections</span>
+          <h2>Proposed Memory Cards</h2>
+          <span class="status-pill status-info">{{ item.sections.length }} cards</span>
         </div>
         <div class="section-list">
           @for (section of item.sections; track section.id) {
             <div class="parsed-section">
               <div class="section-heading">
                 <strong>{{ section.heading }}</strong>
-                <span>{{ section.confidence * 100 | number: '1.0-0' }}%</span>
+                <span class="status-pill" [class]="memoryCardStatusClass(item)">
+                  {{ memoryCardStatus(item) }}
+                </span>
               </div>
               <p>{{ section.summary }}</p>
-              <div class="confidence-bar"><i [style.width.%]="section.confidence * 100"></i></div>
+              <div class="card-meta">
+                <span>Source span</span>
+                <strong>{{ item.sourcePath }}#{{ section.id }}</strong>
+              </div>
               <div class="mini-concepts">
+                <b>Retrieval tags</b>
                 @for (concept of section.concepts; track concept) {
                   <span>{{ concept }}</span>
                 }
@@ -171,7 +182,8 @@
       <div class="side-stack">
         <article class="panel">
           <div class="panel-header">
-            <h2>Parsed Concepts</h2>
+            <h2>Retrieval Tags</h2>
+            <span class="status-pill status-info">docs -> code/tests</span>
           </div>
           <div class="concept-cloud compact-cloud">
             @for (concept of item.parsedConcepts; track concept) {
@@ -182,12 +194,12 @@
 
         <article class="panel">
           <div class="panel-header">
-            <h2>Review Notes</h2>
+            <h2>Checks & Reviewer Notes</h2>
           </div>
           <div class="note-list">
             @for (note of item.reviewNotes; track note) {
               <div>
-                <strong>Gate note</strong>
+                <strong>{{ reviewNoteLabel(note) }}</strong>
                 <span>{{ note }}</span>
               </div>
             }

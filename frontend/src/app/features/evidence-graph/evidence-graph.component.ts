@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { EvidenceGraphPath } from '../../core/dream-models';
@@ -17,7 +17,6 @@ export class EvidenceGraphComponent {
   private readonly dream = inject(MockDreamService);
   private readonly fb = inject(FormBuilder);
 
-  readonly nodes = this.dream.listEvidenceGraphNodes();
   readonly results = signal<EvidenceGraphPath[]>(
     this.dream.searchEvidenceGraph({ query: 'execution status', topK: 8 }),
   );
@@ -27,15 +26,6 @@ export class EvidenceGraphComponent {
     query: 'execution status',
     topK: 8,
   });
-
-  readonly nodeSummary = computed(() =>
-    Array.from(new Set(this.nodes.map((node) => node.type)))
-      .sort()
-      .map((type) => ({
-        type,
-        count: this.nodes.filter((node) => node.type === type).length,
-      })),
-  );
 
   search(): void {
     const value = this.form.getRawValue();

@@ -42,12 +42,12 @@ export const routes: Routes = [
     path: 'codebase',
     loadComponent: () =>
       import('./features/codebase-memory/codebase-memory.component').then((module) => module.CodebaseMemoryComponent),
-    title: 'Codebase Memory',
+    title: 'Code Index',
   },
   {
     path: 'graph',
     loadComponent: () => import('./features/evidence-graph/evidence-graph.component').then((module) => module.EvidenceGraphComponent),
-    title: 'Evidence Graph',
+    title: 'Retrieval Paths',
   },
   {
     path: 'context-intelligence',
