@@ -1,10 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dream-ai-engineering-copilot"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "Open-source source-backed memory platform for team knowledge, codebase context, workflow automation, audit, and evaluation"
 readme = "README.md"
 requires-python = ">=3.11"

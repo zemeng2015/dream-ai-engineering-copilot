@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Add execution monitor auto-refresh"
 doc_type: "historical-jira"

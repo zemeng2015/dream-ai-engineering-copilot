@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
@@ -19,9 +21,13 @@ describe('AppComponent', () => {
   it('should expose primary navigation items', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.navItems.map((item) => item.label)).toContain('Requirement Case');
-    expect(app.navItems.map((item) => item.label)).toContain('Codebase Memory');
-    expect(app.navItems.map((item) => item.label)).toContain('Eval & Audit');
+    expect(app.navItems.map((item) => item.label)).toEqual([
+      'Mission Control',
+      'Memory Hub',
+      'Engineering Workbench',
+      'Trust Center',
+      'Settings',
+    ]);
   });
 
   it('should render the DREAM shell', () => {

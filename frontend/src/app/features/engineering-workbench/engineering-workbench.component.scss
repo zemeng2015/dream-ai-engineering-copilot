@@ -1,0 +1,245 @@
+// SPDX-License-Identifier: Apache-2.0
+
+:host {
+  display: block;
+}
+
+.workspace-page {
+  display: grid;
+  gap: 18px;
+}
+
+.workspace-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+}
+
+.workspace-header h1 {
+  margin: 0;
+  color: var(--dream-navy);
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  line-height: 1.08;
+}
+
+.workspace-header p {
+  max-width: 940px;
+  margin: 8px 0 0;
+  color: var(--dream-muted);
+  line-height: 1.6;
+}
+
+.trust-link {
+  display: grid;
+  gap: 5px;
+  min-width: 220px;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: var(--dream-surface);
+  color: var(--dream-ink);
+  box-shadow: var(--dream-shadow);
+  text-decoration: none;
+  padding: 16px;
+}
+
+.trust-link span {
+  color: var(--dream-teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trust-link strong {
+  color: var(--dream-navy);
+}
+
+.workbench-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  gap: 18px;
+  align-items: start;
+}
+
+.workbench-main {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mode-switch button {
+  display: grid;
+  min-height: 82px;
+  gap: 7px;
+  align-content: start;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: var(--dream-surface);
+  color: var(--dream-ink);
+  box-shadow: var(--dream-shadow);
+  text-align: left;
+  padding: 14px;
+}
+
+.mode-switch button.active {
+  border-color: rgb(0 124 137 / 42%);
+  background: linear-gradient(180deg, #ffffff 0%, var(--dream-info-bg) 100%);
+  box-shadow: inset 0 0 0 2px rgb(0 124 137 / 10%), var(--dream-shadow);
+}
+
+.mode-switch strong {
+  color: var(--dream-navy);
+}
+
+.mode-switch span {
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.context-rail {
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 12px;
+}
+
+.rail-header,
+.rail-card {
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: var(--dream-surface);
+  box-shadow: var(--dream-shadow);
+}
+
+.rail-header {
+  padding: 16px;
+}
+
+.rail-header h2 {
+  margin: 4px 0 8px;
+  color: var(--dream-navy);
+  font-size: 20px;
+}
+
+.rail-header p,
+.rail-card p {
+  margin: 0;
+  color: var(--dream-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rail-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.rail-card > span {
+  color: var(--dream-teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rail-card > strong {
+  color: var(--dream-navy);
+}
+
+.concept-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.concept-list strong {
+  border: 1px solid rgb(36 107 159 / 16%);
+  border-radius: 5px;
+  background: var(--dream-surface-muted);
+  color: var(--dream-muted);
+  font-size: 11px;
+  padding: 5px 7px;
+}
+
+.mini-trail {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.mini-trail li {
+  color: var(--dream-navy);
+}
+
+.mini-trail strong,
+.mini-trail small {
+  display: block;
+}
+
+.mini-trail small,
+.metric-list small {
+  color: var(--dream-muted);
+  font-size: 12px;
+}
+
+.metric-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric-list div {
+  border: 1px solid var(--dream-border);
+  border-radius: 7px;
+  background: var(--dream-surface-muted);
+  padding: 10px;
+}
+
+.metric-list strong {
+  display: block;
+  color: var(--dream-navy);
+  font-size: 18px;
+}
+
+:host ::ng-deep .workspace-embedded > * > .page > .page-header {
+  display: none;
+}
+
+:host ::ng-deep .workspace-embedded > * > .page {
+  gap: 18px;
+}
+
+@media (max-width: 1180px) {
+  .workbench-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .context-rail {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rail-header {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-header,
+  .mode-switch,
+  .context-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-link {
+    min-width: 0;
+  }
+}

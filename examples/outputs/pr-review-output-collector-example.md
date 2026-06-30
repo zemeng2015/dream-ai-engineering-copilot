@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # AI PR Review Summary
 
 This is an AI-generated review aid. It does not approve, reject, merge, or block

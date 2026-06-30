@@ -1,1 +1,3 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Subscription, interval, switchMap } from 'rxjs'; import { JobApiService } from '../services/job-api.service'; export class ExecutionMonitorComponent { execution?: unknown; private refreshSubscription?: Subscription; constructor(private readonly jobApi: JobApiService) {} startAutoRefresh(executionId: string): void { this.refreshSubscription = interval(15000).pipe(switchMap(() => this.jobApi.getExecutionStatus(executionId))).subscribe(status => { this.execution = status; }); } stopAutoRefresh(): void { this.refreshSubscription?.unsubscribe(); } }

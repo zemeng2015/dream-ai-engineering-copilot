@@ -28,8 +28,37 @@ and warnings.
 ## Engineering Memory Retriever
 
 `EngineeringMemoryRetriever` combines knowledge pack retrieval and codebase
-memory retrieval. It is the seam for future vector retrieval or code graph
-improvements, but Phase 2 remains deterministic and lightweight.
+memory retrieval. It also uses Evidence Graph Lite when a graph artifact exists,
+expanding concepts into related docs, code, tests, incidents, historical Jira,
+and PR memory. It is the seam for future vector retrieval or deeper code graph
+improvements, while remaining deterministic and lightweight.
+
+## Evidence Graph Lite
+
+Evidence Graph Lite is a deterministic graph stored as JSON under
+`artifacts/evidence-graphs/{team_id}/{repo_name}.json`.
+
+Node examples:
+
+- concept: execution status, output collection
+- domain / architecture / runbook / testing docs
+- incidents such as INC-103
+- historical Jira such as DFP-101
+- historical PRs such as PR-502
+- code files, symbols, and test files
+
+Edge examples:
+
+- `IMPLEMENTED_BY`: concept to code file or symbol
+- `TESTED_BY`: source file or concept to test file
+- `REGRESSED_BY`: concept or doc to incident
+- `REQUIRED_BY`: concept or doc to historical Jira
+- `CHANGED_BY`: concept or doc to historical PR
+- `AFFECTS`: document to code file
+
+The graph intentionally avoids full AST call graph precision. It is designed as
+a maintainable evidence layer that makes Requirement Case and PR Review outputs
+more explainable without adding heavy infrastructure.
 
 ## Requirement Case Workflow
 

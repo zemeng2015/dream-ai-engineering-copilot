@@ -5,6 +5,8 @@
 DREAM is an open-source, source-backed memory platform for teams that need their
 AI workflows to stay grounded in real organizational context.
 
+![DREAM governed memory HLD](docs/assets/dream-hld.gif)
+
 It turns scattered knowledge such as docs, runbooks, code structure, incidents,
 historical tickets, PR notes, test plans, and review rules into reusable memory
 that workflow assistants can retrieve, cite, evaluate, and audit.
@@ -19,6 +21,17 @@ chatbot.
 This repository uses synthetic DemoCorp examples only. For enterprise use, keep
 company-specific knowledge packs, connectors, prompts, and deployment configs in
 private repositories.
+
+## Open-Core / Private Extension Pattern
+
+DREAM public core contains the generic framework, synthetic DemoCorp data,
+provider interfaces, and local/mock providers. Private extension repositories
+contain private knowledge packs, private LLM providers, private prompt and
+redaction policies, deployment configs, connectors, and generated artifacts.
+
+Public core can be imported into a private environment, but private extensions
+should not be pushed back to public core. When a private implementation reveals
+a generic improvement, recreate it with synthetic examples before upstreaming.
 
 ## Why DREAM Exists
 
@@ -44,6 +57,8 @@ DREAM is built around a reusable memory model:
   clean path to vector retrieval later.
 - Memory workflows: assistants that transform rough inputs into structured,
   source-backed outputs.
+- Memory distillation: governed extraction of code/doc facts into cited,
+  reviewable memory claims.
 - Memory governance: audit logs, scorecards, human ratings, warnings, and
   generated artifacts saved for review.
 
@@ -55,6 +70,9 @@ domain-aware memory applications.
 
 - Loads team memory packs from Markdown and `team.yaml`.
 - Builds lightweight memory indexes for local repositories and artifact folders.
+- Builds Evidence Graph Lite paths across concepts, docs, code, tests, incidents, Jira, and PR memory.
+- Distills repositories and knowledge packs into source-backed memory claims
+  with citation, secrecy, and human-review guardrails.
 - Extracts files, languages, classes, methods, endpoints, test mappings, concepts, and summaries.
 - Performs deterministic keyword retrieval without a vector database.
 - Generates source-backed requirement drafts.
@@ -105,7 +123,7 @@ ruff check .
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,
 routing, SCSS design tokens, typed reactive forms, and mock data. It is designed
-as a Fannie Mae-style enterprise engineering workbench: deep navy navigation,
+as a large-enterprise finance engineering workbench: deep navy navigation,
 white and pale blue-gray work surfaces, teal/cyan action accents, dense tables,
 clear review gates, and restrained motion. It does not copy third-party logos,
 trademarks, imagery, or brand assets.
@@ -130,6 +148,7 @@ Mock-data workflows included:
 - Mission Control dashboard
 - Knowledge Memory search across DFP docs, incidents, Jira, PRs, tests, and concept memory
 - Codebase Memory search across Angular, Java, AWS-style, Python, and test files
+- Evidence Graph search showing source-backed concept paths
 - Requirement Case analysis with evidence, impact map, role questions, Jira draft, and eval scorecard
 - PR Review with changed files, related codebase memory, source-backed comments, and eval scorecard
 - Eval & Audit with deterministic scorecards and human rating
@@ -148,6 +167,15 @@ dream kb list-teams
 dream kb search --team demo_team --query "job execution"
 dream codebase index --team demo_team --repo examples/java-demo-repo --name java-demo-repo
 dream codebase search --team demo_team --repo java-demo-repo --query "async status tracking"
+dream graph build --team demo_team --repo java-demo-repo
+dream graph search --team demo_team --repo java-demo-repo --query "execution status"
+dream graph explain --team demo_team --repo java-demo-repo --concept "execution status"
+dream memory scan --team demo_team --repo examples/java-demo-repo --name java-demo-repo
+dream memory diff --team demo_team
+dream memory review --team demo_team --claim <claim_id> --status approved --reviewer zack
+dream memory search --team demo_team --query "execution status"
+dream memory context --team demo_team --query "execution status"
+dream memory eval --team demo_team
 dream req create --team demo_team --request "Add async status tracking for long-running job execution" --role BA
 dream req analyze --case <case_id>
 dream req impact --case <case_id>
@@ -221,6 +249,38 @@ curl -X POST http://localhost:8000/codebase/index \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 ```
 
+Evidence graph:
+
+```bash
+curl -X POST http://localhost:8000/graph/build \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","repo_name":"java-demo-repo"}'
+
+curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=java-demo-repo&query=execution%20status"
+```
+
+Governed memory distillation:
+
+```bash
+curl -X POST http://localhost:8000/memory/scan \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
+
+curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/review \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","claim_id":"<claim_id>","status":"approved","reviewer":"zack"}'
+
+curl "http://localhost:8000/memory/search?team_id=demo_team&query=execution%20status"
+
+curl "http://localhost:8000/memory/context-card?team_id=demo_team&query=execution%20status"
+
+curl -X POST http://localhost:8000/memory/eval \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","scan_id":"latest"}'
+```
+
 Requirement Case:
 
 ```bash
@@ -290,6 +350,47 @@ language, file role, symbols, simple dependencies, concept mappings, source-to-t
 mappings, summaries, and warnings. It is intentionally deterministic and does not
 require a vector database.
 
+## Evidence Graph
+
+Evidence Graph Lite is stored under
+`artifacts/evidence-graphs/{team_id}/{repo_name}.json`. It links concept nodes
+to knowledge docs, code files, symbols, tests, incidents, historical Jira, and
+historical PRs using deterministic edges such as `IMPLEMENTED_BY`, `TESTED_BY`,
+`REGRESSED_BY`, `REQUIRED_BY`, and `CHANGED_BY`.
+
+Requirement Case analysis and PR Review use the graph when it exists. The user
+workflow stays simple; graph expansion happens underneath retrieval so outputs
+can show evidence paths instead of ungrounded claims.
+
+## Governed Memory Distillation
+
+Memory distillation converts local repository structure and team knowledge-pack
+documents into `MemoryClaim` records. Deterministic code claims can be approved
+automatically; semantic document claims remain candidates until human review.
+
+Each claim carries source spans, extraction metadata, governance status,
+security classification, and audit timestamps. Scans also persist repo
+provenance including schema version, commit SHA, dirty state, and scanner
+version. Source hashes stay based on original content, while persisted previews
+are redacted for secret-like assignments and common token patterns.
+
+MVP validation checks citation validity, unsupported claims, secret-like
+leakage, and accidental semantic auto-promotion before memory is treated as
+durable.
+
+The governed review loop adds a durable approval ledger under
+`artifacts/memory-ledgers/{team_id}.json`. Review events can approve, reject,
+quarantine, or return claims to candidate status. Approved claims are available
+through `dream memory search` and `dream memory context`; candidate claims remain
+review-only.
+
+`dream memory diff` compares the latest scan with the previous scan when one is
+available, showing added, removed, changed, and unchanged claim counts. Without
+a base scan it falls back to a full review queue.
+
+See [Memory Distillation](docs/memory-distillation.md) for the design, CLI/API
+workflow, and acceptance guardrails.
+
 ## Requirement Case
 
 A Requirement Case starts from a rough request and produces:
@@ -343,6 +444,15 @@ dream codebase search \
   --repo dfp-demo-repo \
   --query "status tracker batch task"
 
+dream graph build \
+  --team demo_team \
+  --repo dfp-demo-repo
+
+dream graph explain \
+  --team demo_team \
+  --repo dfp-demo-repo \
+  --concept "execution status"
+
 dream req create \
   --team demo_team \
   --request "Users want to know which task is still running when a forecast job takes too long" \
@@ -379,12 +489,25 @@ The API runs on port 8000. Check `http://localhost:8000/health`.
 
 DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 
+## Legal and Provenance
+
+- [NOTICE](NOTICE) records project attribution and the synthetic-data boundary.
+- [PROVENANCE](PROVENANCE.md) documents the public upstream boundary and company
+  import policy.
+- [CONTRIBUTING](CONTRIBUTING.md) describes clean contribution rules, DCO
+  sign-off, and employer-code restrictions.
+- [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) summarizes current third-party
+  dependency license posture.
+- [SECURITY](SECURITY.md) documents vulnerability reporting and sensitive-data
+  boundaries.
+
 ## Roadmap
 
 - Vector retrieval
-- Code graph relationships
+- Deeper code graph relationships beyond Evidence Graph Lite
 - GitHub and Jira connectors
 - Historical PR/Jira ingestion
+- Workflow integration for approved memory context cards
 - JTestGen integration
 - UI workspace and role-specific dashboards
 - Angular frontend API integration

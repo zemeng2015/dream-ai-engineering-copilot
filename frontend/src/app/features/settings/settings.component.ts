@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component, inject } from '@angular/core';
 
 import { MockDreamService } from '../../core/mock-dream.service';

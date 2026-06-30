@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 profile_id: async-status-tracking
 title: Async Status Tracking
 query_patterns:

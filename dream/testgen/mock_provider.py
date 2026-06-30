@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from dream.audit.logger import AuditLogger
-from dream.core.paths import display_path, ensure_artifacts_dir, resolve_project_path
+from dream.core.paths import display_path, resolve_artifact_path, resolve_project_path
 from dream.testgen.models import TestGenPlan, TestGenRequest, TestGenResult
 
 
@@ -47,7 +47,7 @@ class MockTestGenProvider:
             generated_files=suggested_files,
             warnings=warnings,
         )
-        output_path = ensure_artifacts_dir() / f"testgen-report-{run_id}.md"
+        output_path = resolve_artifact_path(f"testgen-report-{run_id}.md")
         output_path.write_text(markdown, encoding="utf-8")
         self.audit_logger.log_generation(
             run_id=run_id,

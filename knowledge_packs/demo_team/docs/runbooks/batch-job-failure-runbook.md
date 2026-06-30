@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Batch Job Failure Runbook"
 doc_type: "runbook"

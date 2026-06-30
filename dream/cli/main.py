@@ -5,16 +5,29 @@ from typing import Annotated
 
 import typer
 
+from dream import __version__
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.config import resolve_config, sanitized_config_dict, validate_config
+from dream.context import ContextEvaluationService, ContextIntelligenceService
 from dream.core.errors import DreamError
-from dream.core.paths import KNOWLEDGE_PACKS_DIR
+from dream.demo import run_demo_verification
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest
 from dream.evals.rating import HumanRatingService
 from dream.evals.repository import EvaluationRepository
+from dream.extensions import build_llm_provider
+from dream.extensions.models import LLMProvider
+from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
+from dream.intake import KnowledgeIntakeService, ReviewDecision
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.memory import (
+    MemoryClaimRetriever,
+    MemoryDistillationEvaluator,
+    MemoryDistillationService,
+)
+from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import RequirementDraftGenerator, RequirementDraftRequest
 from dream.review import PRReviewAssistant, PRReviewRequest
@@ -30,6 +43,12 @@ eval_app = typer.Typer(help="Human evaluation commands.")
 codebase_app = typer.Typer(help="Codebase memory commands.")
 req_app = typer.Typer(help="Requirement Case intelligence commands.")
 llm_app = typer.Typer(help="Optional LLM provider smoke-test commands.")
+graph_app = typer.Typer(help="Evidence graph / memory graph commands.")
+memory_app = typer.Typer(help="Governed memory distillation commands.")
+config_app = typer.Typer(help="Configuration and extension diagnostics.")
+demo_app = typer.Typer(help="Deterministic DemoCorp verification commands.")
+context_app = typer.Typer(help="Context intelligence and retrieval trust commands.")
+intake_app = typer.Typer(help="Knowledge intake and human-review commands.")
 
 app.add_typer(kb_app, name="kb")
 app.add_typer(requirement_app, name="requirement")
@@ -40,6 +59,33 @@ app.add_typer(eval_app, name="eval")
 app.add_typer(codebase_app, name="codebase")
 app.add_typer(req_app, name="req")
 app.add_typer(llm_app, name="llm")
+app.add_typer(graph_app, name="graph")
+app.add_typer(memory_app, name="memory")
+app.add_typer(config_app, name="config")
+app.add_typer(demo_app, name="demo")
+app.add_typer(context_app, name="context")
+app.add_typer(intake_app, name="intake")
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show DREAM version and exit.",
+        ),
+    ] = False,
+) -> None:
+    _ = version
 
 
 @kb_app.command("list-teams")
@@ -60,7 +106,7 @@ def search_kb(
 ) -> None:
     pack_loader = KnowledgePackLoader()
     pack = pack_loader.load(team)
-    pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+    pack_dir = pack_loader.pack_dir(pack.team_id)
     documents = MarkdownDocumentLoader().load_for_pack(pack, pack_dir)
     chunks = Chunker().chunk_all(documents)
     results = SimpleRetriever(chunks).search(
@@ -224,6 +270,213 @@ def codebase_show(
     typer.echo(file_node.model_dump_json(indent=2))
 
 
+@graph_app.command("build")
+def graph_build(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    graph = EvidenceGraphBuilder().build(team_id=team, repo_name=repo)
+    graph_path = EvidenceGraphRepository().display_graph_path(team, repo)
+    typer.echo(f"team_id: {graph.team_id}")
+    typer.echo(f"repo_name: {graph.repo_name or '_team'}")
+    typer.echo(f"nodes: {len(graph.nodes)}")
+    typer.echo(f"edges: {len(graph.edges)}")
+    typer.echo(f"graph: {graph_path}")
+    if graph.warnings:
+        typer.echo("warnings:")
+        for warning in graph.warnings:
+            typer.echo(f"- {warning}")
+
+
+@graph_app.command("search")
+def graph_search(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    results = EvidenceGraphRetriever().search(
+        team_id=team,
+        repo_name=repo,
+        query=query,
+        top_k=top_k,
+    )
+    for result in results:
+        typer.echo(f"Type: {result.node.node_type}")
+        typer.echo(f"Title: {result.node.title}")
+        typer.echo(f"Source: {result.node.source_path or result.node.key}")
+        typer.echo(f"Score: {result.score}")
+        typer.echo("Evidence paths:")
+        for path in result.evidence_paths[:6]:
+            typer.echo(f"- {path}")
+        typer.echo("")
+
+
+@graph_app.command("explain")
+def graph_explain(
+    team: Annotated[str, typer.Option("--team")],
+    concept: Annotated[str, typer.Option("--concept")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    result = EvidenceGraphRetriever().explain(team_id=team, repo_name=repo, query=concept)
+    typer.echo(f"query: {result.query}")
+    typer.echo(f"nodes: {len(result.matched_nodes)}")
+    for node in result.matched_nodes:
+        typer.echo(f"- [{node.node_type}] {node.title} ({node.source_path or node.key})")
+    typer.echo("evidence_paths:")
+    for path in result.evidence_paths:
+        typer.echo(f"- {path}")
+
+
+@graph_app.command("neighbors")
+def graph_neighbors(
+    team: Annotated[str, typer.Option("--team")],
+    node: Annotated[str, typer.Option("--node")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    result = EvidenceGraphRetriever().neighbors(team_id=team, repo_name=repo, node=node)
+    typer.echo(f"query: {result.query}")
+    for matched_node in result.matched_nodes:
+        typer.echo(
+            f"- [{matched_node.node_type}] {matched_node.title} "
+            f"({matched_node.source_path or matched_node.key})"
+        )
+    typer.echo("evidence_paths:")
+    for path in result.evidence_paths:
+        typer.echo(f"- {path}")
+
+
+@memory_app.command("scan")
+def memory_scan(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str, typer.Option("--repo")],
+    name: Annotated[str | None, typer.Option("--name")] = None,
+) -> None:
+    try:
+        scan = MemoryDistillationService().scan(
+            team_id=team,
+            repo_path=repo,
+            repo_name=name,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(f"scan_id: {scan.scan_id}")
+    typer.echo(f"team_id: {scan.team_id}")
+    typer.echo(f"repo_name: {scan.repo_name or '_team'}")
+    typer.echo(f"schema_version: {scan.schema_version}")
+    typer.echo(f"commit_sha: {scan.provenance.commit_sha if scan.provenance else 'unknown'}")
+    typer.echo(f"dirty: {scan.provenance.dirty if scan.provenance else 'unknown'}")
+    typer.echo(f"sources: {len(scan.sources)}")
+    typer.echo(f"claims: {len(scan.claims)}")
+    typer.echo(f"structural_claims: {scan.validation.structural_claims}")
+    typer.echo(f"semantic_candidate_claims: {scan.validation.semantic_candidate_claims}")
+    typer.echo(f"citation_validity: {scan.validation.citation_validity:.2f}")
+    typer.echo(f"scan: {repository.display_scan_path(scan.team_id, scan.scan_id)}")
+    typer.echo(f"latest: {repository.display_latest_scan_path(scan.team_id)}")
+
+
+@memory_app.command("diff")
+def memory_diff(
+    team: Annotated[str, typer.Option("--team")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+    base: Annotated[str | None, typer.Option("--base")] = None,
+) -> None:
+    try:
+        typer.echo(
+            MemoryDistillationService().diff_markdown(
+                team_id=team,
+                scan_id=scan,
+                base_scan_id=base,
+            )
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@memory_app.command("review")
+def memory_review(
+    team: Annotated[str, typer.Option("--team")],
+    claim: Annotated[str, typer.Option("--claim")],
+    status: Annotated[str, typer.Option("--status")],
+    reviewer: Annotated[str | None, typer.Option("--reviewer")] = None,
+    reason: Annotated[str | None, typer.Option("--reason")] = None,
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+) -> None:
+    try:
+        event = MemoryDistillationService().review_claim(
+            team_id=team,
+            claim_id=claim,
+            new_status=status,
+            reviewer=reviewer,
+            reason=reason,
+            scan_id=scan,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(event.model_dump_json(indent=2))
+    typer.echo(f"ledger: {repository.display_ledger_path(event.team_id)}")
+
+
+@memory_app.command("ledger")
+def memory_ledger(team: Annotated[str, typer.Option("--team")]) -> None:
+    typer.echo(MemoryDistillationRepository().load_ledger(team).model_dump_json(indent=2))
+
+
+@memory_app.command("search")
+def memory_search(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    try:
+        results = MemoryClaimRetriever().search(
+            team_id=team,
+            query=query,
+            scan_id=scan,
+            top_k=top_k,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps([result.model_dump() for result in results], indent=2))
+
+
+@memory_app.command("context")
+def memory_context(
+    team: Annotated[str, typer.Option("--team")],
+    query: Annotated[str, typer.Option("--query")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+    top_k: Annotated[int, typer.Option("--top-k")] = 8,
+) -> None:
+    try:
+        typer.echo(
+            MemoryClaimRetriever().context_card(
+                team_id=team,
+                query=query,
+                scan_id=scan,
+                top_k=top_k,
+            )
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@memory_app.command("eval")
+def memory_eval(
+    team: Annotated[str, typer.Option("--team")],
+    scan: Annotated[str, typer.Option("--scan")] = "latest",
+) -> None:
+    try:
+        result = MemoryDistillationEvaluator().evaluate(team_id=team, scan_id=scan)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    repository = MemoryDistillationRepository()
+    typer.echo(result.markdown_report)
+    typer.echo(f"JSON: {repository.display_eval_path(result.team_id, result.evaluation_id)}")
+
+
 @req_app.command("create")
 def req_create(
     team: Annotated[str, typer.Option("--team")],
@@ -271,9 +524,40 @@ def req_questions(
 ) -> None:
     questions = RequirementCaseService().generate_questions(case, role=role)
     for question in questions:
-        typer.echo(f"[{question.target_role}] {question.question}")
+        typer.echo(f"{question.question_id}\t[{question.target_role}]\t{question.status}")
+        typer.echo(question.question)
+        if question.answer:
+            typer.echo(f"Answer: {question.answer}")
         typer.echo(f"Why: {question.why_it_matters}")
         typer.echo("")
+
+
+@req_app.command("answer")
+def req_answer(
+    case: Annotated[str, typer.Option("--case")],
+    question: Annotated[str, typer.Option("--question")],
+    answer: Annotated[str, typer.Option("--answer")],
+    answered_by: Annotated[str | None, typer.Option("--answered-by")] = None,
+) -> None:
+    try:
+        updated = RequirementCaseService().answer_question(
+            case,
+            question,
+            answer,
+            answered_by=answered_by,
+        )
+    except (DreamError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(updated.model_dump_json(indent=2))
+
+
+@req_app.command("readiness")
+def req_readiness(case: Annotated[str, typer.Option("--case")]) -> None:
+    try:
+        readiness = RequirementCaseService().jira_readiness(case)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(readiness.model_dump_json(indent=2))
 
 
 @req_app.command("brief")
@@ -384,6 +668,20 @@ def eval_run(
     typer.echo(f"Markdown: {result.markdown_path}")
 
 
+@eval_app.command("retrieval")
+def eval_retrieval(
+    case: Annotated[str, typer.Option("--case")],
+    profile: Annotated[str, typer.Option("--profile")],
+) -> None:
+    try:
+        result = ContextEvaluationService().evaluate_case(case_id=case, profile_id=profile)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(result.markdown_report)
+    typer.echo(f"JSON: {result.json_path}")
+    typer.echo(f"Markdown: {result.markdown_path}")
+
+
 @eval_app.command("list")
 def eval_list() -> None:
     for scorecard in EvaluationRepository().list():
@@ -426,6 +724,163 @@ def llm_smoke(
     typer.echo(response.text)
 
 
+@context_app.command("trace")
+def context_trace(case: Annotated[str, typer.Option("--case")]) -> None:
+    trail = ContextIntelligenceService().trace_case(case)
+    typer.echo(trail.model_dump_json(indent=2))
+    typer.echo(f"JSON: {trail.json_path}")
+    typer.echo(f"Markdown: {trail.markdown_path}")
+
+
+@context_app.command("assemble")
+def context_assemble(case: Annotated[str, typer.Option("--case")]) -> None:
+    pack = ContextIntelligenceService().assemble_case(case)
+    typer.echo(pack.model_dump_json(indent=2))
+    typer.echo(f"JSON: {pack.json_path}")
+    typer.echo(f"Markdown: {pack.markdown_path}")
+
+
+@context_app.command("prompt")
+def context_prompt(
+    case: Annotated[str, typer.Option("--case")],
+    target: Annotated[str, typer.Option("--target")] = "jira_draft",
+) -> None:
+    preview = ContextIntelligenceService().prompt_for_case(case, target=target)
+    typer.echo(preview.prompt_text)
+    typer.echo(f"\nJSON: {preview.json_path}")
+    typer.echo(f"Markdown: {preview.markdown_path}")
+
+
+@context_app.command("card")
+def context_card(
+    team: Annotated[str, typer.Option("--team")],
+    source: Annotated[str, typer.Option("--source")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    card = ContextIntelligenceService().evidence_card(
+        team_id=team,
+        repo_name=repo,
+        source_path=source,
+    )
+    typer.echo(card.model_dump_json(indent=2))
+
+
+@context_app.command("report")
+def context_report(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    report = ContextIntelligenceService().memory_report(team_id=team, repo_name=repo)
+    typer.echo(report.model_dump_json(indent=2))
+    typer.echo(f"JSON: {report.json_path}")
+    typer.echo(f"Markdown: {report.markdown_path}")
+
+
+@intake_app.command("upload")
+def intake_upload(
+    team: Annotated[str, typer.Option("--team")],
+    file: Annotated[str, typer.Option("--file")],
+    doc_type: Annotated[str, typer.Option("--type")] = "architecture",
+    title: Annotated[str | None, typer.Option("--title")] = None,
+) -> None:
+    document = KnowledgeIntakeService().upload_local_file(
+        team_id=team,
+        file_path=file,
+        document_type=doc_type,
+        title=title,
+    )
+    typer.echo(document.model_dump_json(indent=2))
+
+
+@intake_app.command("list")
+def intake_list() -> None:
+    for document in KnowledgeIntakeService().repository.list_documents():
+        typer.echo(
+            f"{document.document_id}\t{document.team_id}\t{document.document_type}\t"
+            f"{document.status}\t{document.title}"
+        )
+
+
+@intake_app.command("parse")
+def intake_parse(document: Annotated[str, typer.Option("--document")]) -> None:
+    draft = KnowledgeIntakeService().parse_document(document)
+    typer.echo(draft.model_dump_json(indent=2))
+    typer.echo(f"JSON: {draft.json_path}")
+    typer.echo(f"Markdown: {draft.markdown_path}")
+
+
+@intake_app.command("review")
+def intake_review(
+    draft: Annotated[str, typer.Option("--draft")],
+    status: Annotated[str, typer.Option("--status")],
+    reviewer: Annotated[str | None, typer.Option("--reviewer")] = None,
+    notes: Annotated[str | None, typer.Option("--notes")] = None,
+) -> None:
+    updated = KnowledgeIntakeService().review_draft(
+        draft,
+        ReviewDecision(status=status, reviewer=reviewer, notes=notes),
+    )
+    typer.echo(updated.model_dump_json(indent=2))
+
+
+@intake_app.command("promote")
+def intake_promote(draft: Annotated[str, typer.Option("--draft")]) -> None:
+    result = KnowledgeIntakeService().promote_draft(draft)
+    typer.echo(result.model_dump_json(indent=2))
+
+
+@config_app.command("show")
+def config_show() -> None:
+    resolved = resolve_config()
+    typer.echo(json.dumps(sanitized_config_dict(resolved), indent=2, sort_keys=True))
+
+
+@config_app.command("validate")
+def config_validate() -> None:
+    report = validate_config()
+    if report.ok:
+        typer.echo("DREAM config validate: PASS")
+    else:
+        typer.echo("DREAM config validate: FAIL")
+    _echo_config_diagnostics(report.diagnostics)
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@config_app.command("doctor")
+def config_doctor() -> None:
+    report = validate_config(create_artifact_root=False)
+    config = report.config
+    typer.echo("DREAM Config Doctor")
+    typer.echo(f"mode: {config.mode}")
+    typer.echo(f"llm_provider: {config.llm.provider}")
+    typer.echo(f"knowledge_root: {config.knowledge.root}")
+    typer.echo(f"artifact_root: {config.artifacts.root}")
+    typer.echo(f"audit_sqlite_path: {config.audit.sqlite_path}")
+    if not report.diagnostics:
+        typer.echo("diagnostics: none")
+    else:
+        typer.echo("diagnostics:")
+        _echo_config_diagnostics(report.diagnostics)
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@demo_app.command("verify")
+def demo_verify() -> None:
+    result = run_demo_verification()
+    if result.passed:
+        typer.echo("DREAM Demo Verification: PASS")
+        return
+    failure = result.failure
+    typer.echo("DREAM Demo Verification: FAIL")
+    if failure is not None:
+        typer.echo(f"step: {failure.step}")
+        typer.echo(f"error: {failure.error}")
+        typer.echo(f"recommended_fix: {failure.recommended_fix}")
+    raise typer.Exit(code=1)
+
+
 def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     if provider == "mock":
         return MockTestGenProvider()
@@ -434,18 +889,27 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     raise typer.BadParameter(f"Unsupported testgen provider: {provider}")
 
 
-def _llm_provider(provider: str) -> MockLLMProvider | OpenAICompatibleProvider:
+def _llm_provider(provider: str) -> LLMProvider:
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"config", "plugin"}:
+        return build_llm_provider()
     raise typer.BadParameter(f"Unsupported LLM provider: {provider}")
 
 
-def _optional_llm_provider(provider: str) -> MockLLMProvider | OpenAICompatibleProvider | None:
+def _optional_llm_provider(provider: str) -> LLMProvider | None:
     if provider == "deterministic":
         return None
     return _llm_provider(provider)
+
+
+def _echo_config_diagnostics(diagnostics) -> None:
+    for item in diagnostics:
+        typer.echo(f"{item.severity}: {item.message}")
+        if item.recommended_fix:
+            typer.echo(f"  fix: {item.recommended_fix}")
 
 
 if __name__ == "__main__":

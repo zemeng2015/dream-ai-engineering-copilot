@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Concept Memory: Batch Task"
 doc_type: "concept"

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
@@ -17,13 +19,10 @@ interface NavItem {
 })
 export class AppComponent {
   readonly navItems: NavItem[] = [
-    { label: 'Mission Control', path: '/dashboard', icon: 'dashboard' },
-    { label: 'Knowledge Memory', path: '/knowledge', icon: 'database' },
-    { label: 'Codebase Memory', path: '/codebase', icon: 'branch' },
-    { label: 'Requirement Case', path: '/requirements', icon: 'document' },
-    { label: 'PR Review', path: '/review', icon: 'code' },
-    { label: 'Eval & Audit', path: '/audit', icon: 'shield' },
-    { label: 'TestGen Stub', path: '/testgen', icon: 'clipboard' },
+    { label: 'Mission Control', path: '/mission-control', icon: 'dashboard' },
+    { label: 'Memory Hub', path: '/memory', icon: 'database' },
+    { label: 'Engineering Workbench', path: '/workbench', icon: 'code' },
+    { label: 'Trust Center', path: '/trust', icon: 'shield' },
     { label: 'Settings', path: '/settings', icon: 'settings' },
   ];
 }

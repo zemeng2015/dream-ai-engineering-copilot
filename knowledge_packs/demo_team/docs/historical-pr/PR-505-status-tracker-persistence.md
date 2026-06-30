@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "StatusTracker persistence"
 doc_type: "historical-pr"

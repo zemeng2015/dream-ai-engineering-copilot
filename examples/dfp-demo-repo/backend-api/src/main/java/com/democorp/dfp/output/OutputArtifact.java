@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package com.democorp.dfp.output;
 
 /** Synthetic DFP code for DREAM codebase memory demos. */

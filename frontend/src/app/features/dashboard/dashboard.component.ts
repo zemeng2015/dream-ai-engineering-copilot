@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -9,6 +11,20 @@ interface QuickAction {
   description: string;
   route: string;
   icon: UiIconName;
+}
+
+interface PipelineStep {
+  label: string;
+  value: string;
+  description: string;
+  status: 'ready' | 'review' | 'local';
+  route: string;
+}
+
+interface Guardrail {
+  label: string;
+  value: string;
+  status: 'success' | 'warning' | 'info';
 }
 
 @Component({
@@ -27,6 +43,8 @@ export class DashboardComponent {
   readonly cases = this.dream.requirementCases;
   readonly scorecards = this.dream.scorecards;
   readonly codeFiles = this.dream.listCodebaseFiles();
+  readonly graphPaths = this.dream.searchEvidenceGraph({ query: 'execution status', topK: 3 });
+  readonly primaryCase = computed(() => this.cases()[0]);
   readonly needsReview = computed(() =>
     this.dream.auditRuns().filter((run) => run.status === 'needs_review' || run.status === 'warning'),
   );
@@ -37,43 +55,85 @@ export class DashboardComponent {
     { label: 'Human Ratings', value: this.ratings().length, note: 'stored locally' },
     { label: 'Needs Review', value: this.needsReview().length, note: 'human gate' },
   ]);
+  readonly pipelineSteps = computed<PipelineStep[]>(() => [
+    {
+      label: 'Knowledge Packs',
+      value: `${this.dream.listKnowledgeChunks().length} chunks`,
+      description: 'Domain docs, runbooks, incidents, Jira, PR memory.',
+      status: 'ready',
+      route: '/memory',
+    },
+    {
+      label: 'Codebase Index',
+      value: `${this.codeFiles.length} files`,
+      description: 'Frontend, backend, AWS, Python, and tests.',
+      status: 'ready',
+      route: '/memory',
+    },
+    {
+      label: 'Evidence Graph',
+      value: `${this.graphPaths.length} paths`,
+      description: 'Concepts linked to code, risks, tests, and history.',
+      status: 'local',
+      route: '/memory',
+    },
+    {
+      label: 'Review Workflows',
+      value: `${this.cases().length} cases`,
+      description: 'Requirement Case and PR Review stay draft-only.',
+      status: 'review',
+      route: '/workbench',
+    },
+    {
+      label: 'Eval & Audit',
+      value: `${this.scorecards().length} scorecards`,
+      description: 'Rule-based checks plus human ratings.',
+      status: 'review',
+      route: '/trust',
+    },
+  ]);
+  readonly guardrails: Guardrail[] = [
+    { label: 'External mutation', value: 'Disabled', status: 'success' },
+    { label: 'Provider default', value: 'Mock local', status: 'info' },
+    { label: 'Human approval', value: 'Required', status: 'warning' },
+  ];
 
   readonly quickActions: QuickAction[] = [
     {
       title: 'Requirement Case',
       description: 'Turn rough requests into impact maps, briefs, and Jira drafts.',
-      route: '/requirements',
+      route: '/workbench',
       icon: 'document',
     },
     {
       title: 'Codebase Memory',
       description: 'Search symbols, layers, concepts, and test mappings.',
-      route: '/codebase',
+      route: '/memory',
       icon: 'branch',
     },
     {
       title: 'PR Review',
       description: 'Review fake diffs with source-backed codebase context.',
-      route: '/review',
+      route: '/workbench',
       icon: 'code',
     },
     {
-      title: 'Knowledge Memory',
+      title: 'Memory Hub',
       description: 'Retrieve DFP docs, incidents, Jira, PRs, and concept memory.',
-      route: '/knowledge',
+      route: '/memory',
       icon: 'search',
     },
     {
-      title: 'Eval Agent',
+      title: 'Trust Center',
       description: 'Inspect scorecards, evidence coverage, and review gates.',
-      route: '/audit',
+      route: '/trust',
       icon: 'shield',
     },
     {
-      title: 'TestGen Stub',
-      description: 'Validate plugin flow without unit-test generation.',
-      route: '/testgen',
-      icon: 'clipboard',
+      title: 'Context Trail',
+      description: 'Review retrieval paths, prompt preview, and logic chain.',
+      route: '/trust',
+      icon: 'timeline',
     },
   ];
 }

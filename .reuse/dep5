@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: DREAM
+Source: https://github.com/zemeng2015/dream-ai-engineering-copilot
+
+Files: *
+Copyright: 2026 DREAM Contributors
+License: Apache-2.0

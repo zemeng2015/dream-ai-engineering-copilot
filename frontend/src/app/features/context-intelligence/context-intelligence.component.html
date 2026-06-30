@@ -1,0 +1,175 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Context intelligence layer</span>
+      <h1>Context Intelligence</h1>
+      <p>
+        Show how DREAM turns rough intent into a source-backed context pack, evaluates retrieval
+        quality, assembles prompt instructions, and preserves a standardized logic chain.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>{{ snapshot.caseId }}</strong>
+      <small>context pack ready</small>
+    </div>
+  </header>
+
+  <section class="context-hero panel">
+    <div>
+      <span class="eyebrow">Active request</span>
+      <h2>{{ snapshot.title }}</h2>
+      <p>{{ snapshot.request }}</p>
+    </div>
+    <div class="context-summary">
+      <div>
+        <span>Trail steps</span>
+        <strong>{{ snapshot.retrievalTrail.length }}</strong>
+      </div>
+      <div>
+        <span>Pack sections</span>
+        <strong>{{ snapshot.contextPackSections.length }}</strong>
+      </div>
+      <div>
+        <span>Evidence cards</span>
+        <strong>{{ snapshot.evidenceCards.length }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-4" aria-label="Retrieval evaluation metrics">
+    @for (metric of snapshot.metrics; track metric.label) {
+      <article class="metric-tile retrieval-metric">
+        <span>{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.target }}</small>
+        <em [class]="statusClass(metric.status)">{{ metric.note }}</em>
+      </article>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Retrieval Trail Timeline</h2>
+        <span class="status-pill status-info">deterministic mock</span>
+      </div>
+      <ol class="trail-timeline">
+        @for (step of snapshot.retrievalTrail; track step.id) {
+          <li>
+            <span class="timeline-index">{{ step.step }}</span>
+            <div>
+              <div class="timeline-heading">
+                <strong>{{ step.label }}</strong>
+                <span class="status-pill" [class]="statusClass(step.status)">
+                  {{ formatStatus(step.status) }}
+                </span>
+              </div>
+              <p>{{ step.detail }}</p>
+              <code>{{ step.query }}</code>
+              <small>{{ step.sourcesMatched }} sources matched</small>
+            </div>
+          </li>
+        }
+      </ol>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Context Pack Sections</h2>
+        @if (selectedSection(); as section) {
+          <span class="status-pill" [class]="statusClass(section.status)">
+            {{ formatStatus(section.status) }}
+          </span>
+        }
+      </div>
+      <div class="pack-section-list">
+        @for (section of snapshot.contextPackSections; track section.id) {
+          <button
+            type="button"
+            [class.selected]="selectedSectionId() === section.id"
+            (click)="selectSection(section.id)"
+          >
+            <span>{{ section.title }}</span>
+            <strong>{{ section.tokenEstimate }} tokens</strong>
+            <small>{{ section.summary }}</small>
+          </button>
+        }
+      </div>
+      @if (selectedSection(); as section) {
+        <div class="guardrail-strip">
+          <span>Guardrail</span>
+          <strong>{{ section.guardrail }}</strong>
+        </div>
+      }
+    </article>
+  </section>
+
+  <section class="grid-2">
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Evidence Cards</h2>
+        <span class="status-pill status-info">{{ selectedEvidence().length }} linked</span>
+      </div>
+      <div class="evidence-card-grid">
+        @for (card of selectedEvidence(); track card.evidenceId) {
+          <div class="evidence-card">
+            <div class="evidence-heading">
+              <strong>{{ card.title }}</strong>
+              <span>{{ card.relevanceScore * 100 | number: '1.0-0' }}%</span>
+            </div>
+            <p>{{ card.excerpt }}</p>
+            <small>{{ card.sourceType }} / {{ card.sourcePath }}</small>
+            <div class="review-hint">
+              <span>Why selected</span>
+              <p>{{ card.reason }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-header">
+        <h2>Prompt Preview</h2>
+        <span class="status-pill status-warning">draft only</span>
+      </div>
+      <pre class="markdown-preview prompt-preview">{{ promptText() }}</pre>
+    </article>
+  </section>
+
+  <article class="panel">
+    <div class="panel-header">
+      <h2>Standardized Logic Chain</h2>
+      <span class="status-pill status-info">intent -> evidence -> impact -> prompt</span>
+    </div>
+    <ol class="logic-chain">
+      @for (step of snapshot.logicChain; track step.id) {
+        <li>
+          <span class="logic-index">{{ step.order }}</span>
+          <div class="logic-card">
+            <div class="logic-heading">
+              <strong>{{ step.title }}</strong>
+              <span class="status-pill" [class]="statusClass(step.status)">
+                {{ formatStatus(step.status) }}
+              </span>
+            </div>
+            <div class="logic-io">
+              <div>
+                <span>Input</span>
+                <p>{{ step.input }}</p>
+              </div>
+              <div>
+                <span>Output</span>
+                <p>{{ step.output }}</p>
+              </div>
+            </div>
+            <small>Evidence: {{ step.evidenceIds.join(', ') }}</small>
+          </div>
+        </li>
+      }
+    </ol>
+  </article>
+</section>

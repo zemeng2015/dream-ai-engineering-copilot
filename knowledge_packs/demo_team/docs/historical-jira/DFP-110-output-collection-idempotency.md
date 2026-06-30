@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Make output collection idempotent"
 doc_type: "historical-jira"

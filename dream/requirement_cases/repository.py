@@ -4,13 +4,13 @@ import sqlite3
 from pathlib import Path
 
 from dream.core.errors import NotFoundError
-from dream.core.paths import DEFAULT_DB_PATH
+from dream.core.paths import get_audit_db_path
 from dream.requirement_cases.models import RequirementCaseSnapshot
 
 
 class RequirementCaseRepository:
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
-        self.db_path = db_path
+    def __init__(self, db_path: Path | None = None) -> None:
+        self.db_path = db_path or get_audit_db_path()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 

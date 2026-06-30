@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "OutputCollector retry logic"
 doc_type: "historical-pr"

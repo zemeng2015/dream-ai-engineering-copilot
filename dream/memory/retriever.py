@@ -4,7 +4,8 @@ import hashlib
 
 from dream.codebase.repository import CodebaseIndexRepository
 from dream.codebase.retriever import CodebaseRetriever
-from dream.core.paths import KNOWLEDGE_PACKS_DIR
+from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
+from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.requirement_cases.models import ContextEvidence
 
@@ -18,6 +19,8 @@ class EngineeringMemoryRetriever:
         chunker: Chunker | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
         codebase_retriever: CodebaseRetriever | None = None,
+        graph_repository: EvidenceGraphRepository | None = None,
+        graph_retriever: EvidenceGraphRetriever | None = None,
     ) -> None:
         self.pack_loader = pack_loader or KnowledgePackLoader()
         self.doc_loader = doc_loader or MarkdownDocumentLoader()
@@ -25,6 +28,10 @@ class EngineeringMemoryRetriever:
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
         self.codebase_retriever = codebase_retriever or CodebaseRetriever(
             repository=self.codebase_repository
+        )
+        self.graph_repository = graph_repository or EvidenceGraphRepository()
+        self.graph_retriever = graph_retriever or EvidenceGraphRetriever(
+            repository=self.graph_repository
         )
 
     def search(
@@ -88,8 +95,39 @@ class EngineeringMemoryRetriever:
                     )
                 )
         evidence.sort(key=lambda item: (-item.relevance_score, item.source_path, item.title))
+        evidence.extend(
+            self._search_graph(
+                team_id=team_id,
+                repo_names=repo_names,
+                query=query,
+                top_k=top_k,
+            )
+        )
+        evidence.sort(key=lambda item: (-item.relevance_score, item.source_path, item.title))
         evidence = self._dedupe(evidence)
         return self._balanced_top_k(evidence, top_k)
+
+    def _search_graph(
+        self,
+        *,
+        team_id: str,
+        repo_names: list[str | None],
+        query: str,
+        top_k: int,
+    ) -> list[ContextEvidence]:
+        evidence: list[ContextEvidence] = []
+        graph_names = repo_names or self.graph_repository.list_graph_names(team_id)
+        if not graph_names:
+            graph_names = [None]
+        for repo_name in graph_names:
+            for result in self.graph_retriever.search(
+                team_id=team_id,
+                repo_name=repo_name,
+                query=query,
+                top_k=top_k,
+            ):
+                evidence.append(self._graph_result_to_evidence(result))
+        return evidence
 
     def _search_knowledge(
         self,
@@ -101,7 +139,7 @@ class EngineeringMemoryRetriever:
         component: str | None,
     ) -> list[ContextEvidence]:
         pack = self.pack_loader.load(team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
         retrieved = SimpleRetriever(chunks).search(
@@ -130,6 +168,27 @@ class EngineeringMemoryRetriever:
     @staticmethod
     def _stable_id(value: str) -> str:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+    @classmethod
+    def _graph_result_to_evidence(cls, result: EvidenceGraphSearchResult) -> ContextEvidence:
+        node = result.node
+        source_path = node.source_path or f"evidence-graph#{node.node_type}:{node.key}"
+        connected = ", ".join(
+            f"{item.title} [{item.node_type}]" for item in result.connected_nodes[:6]
+        )
+        paths = "; ".join(result.evidence_paths[:4])
+        excerpt_parts = [str(node.metadata.get("summary", "")), connected, paths]
+        excerpt = " ".join(part for part in excerpt_parts if part).strip()
+        return ContextEvidence(
+            evidence_id=cls._stable_id(f"graph:{node.node_id}:{source_path}"),
+            case_id="",
+            source_type=f"graph_{node.node_type}",
+            source_path=source_path,
+            title=node.title,
+            excerpt=excerpt[:600] or "Evidence graph node matched the request.",
+            relevance_score=float(min(result.score, 25)),
+            reason=result.reason,
+        )
 
     @staticmethod
     def _code_queries(query: str) -> list[str]:
@@ -189,6 +248,11 @@ class EngineeringMemoryRetriever:
             "domain",
             "testing",
             "concept_memory",
+            "graph_evidence",
+            "graph_incident",
+            "graph_historical_jira",
+            "graph_historical_pr",
+            "graph_concept_memory",
             "test_file",
             "test_file",
             "code_file",
@@ -239,6 +303,8 @@ class EngineeringMemoryRetriever:
             return "code_symbol"
         if item.source_type == "concept":
             return "code_concept"
+        if item.source_type.startswith("graph_"):
+            return item.source_type
         return item.source_type
 
     @staticmethod

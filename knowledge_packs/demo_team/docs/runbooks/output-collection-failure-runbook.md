@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Output Collection Failure Runbook"
 doc_type: "runbook"

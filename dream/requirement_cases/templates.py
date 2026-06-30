@@ -124,9 +124,7 @@ def render_jira_draft(
     questions: list[ClarificationQuestion],
 ) -> str:
     sources = _source_lines(evidence)
-    open_questions = "\n".join(
-        f"- [{question.target_role}] {question.question}" for question in questions[:10]
-    )
+    open_questions = "\n".join(_question_status_line(question) for question in questions[:10])
     impact_names = ", ".join(item.name for item in impact_items[:5]) or "TBD"
     return f"""# Jira Story Draft
 
@@ -248,9 +246,24 @@ def _question_lines(questions: list[ClarificationQuestion]) -> str:
     if not questions:
         return "- No role-specific questions generated."
     return "\n".join(
-        f"- **{question.target_role}**: {question.question} Why: {question.why_it_matters}"
+        f"- **{question.target_role}**: {question.question} "
+        f"Status: {question.status}. {_answer_line(question)} "
+        f"Why: {question.why_it_matters}"
         for question in questions
     )
+
+
+def _question_status_line(question: ClarificationQuestion) -> str:
+    return (
+        f"- [{question.target_role}] {question.question} "
+        f"Status: {question.status}. {_answer_line(question)}"
+    )
+
+
+def _answer_line(question: ClarificationQuestion) -> str:
+    if question.answer:
+        return f"Answer: {question.answer}"
+    return "Answer: _pending human response_."
 
 
 def _source_lines(evidence: list[ContextEvidence]) -> str:

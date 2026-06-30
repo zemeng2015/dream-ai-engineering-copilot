@@ -54,6 +54,22 @@ class ClarificationQuestion(BaseModel):
     why_it_matters: str
     related_sources: list[str] = Field(default_factory=list)
     status: str = "open"
+    answer: str | None = None
+    answered_by: str | None = None
+    answered_at: str | None = None
+
+
+class JiraReadiness(BaseModel):
+    case_id: str
+    ready: bool
+    status: str
+    answered_questions: int
+    open_questions: int
+    evidence_items: int
+    impact_items: int
+    jira_draft_exists: bool
+    blocking_reasons: list[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
 
 
 class RoleView(BaseModel):
@@ -85,4 +101,5 @@ class RequirementCaseSnapshot(BaseModel):
     role_views: list[RoleView] = Field(default_factory=list)
     engineering_brief: EngineeringBrief | None = None
     jira_draft: JiraDraft | None = None
+    jira_readiness: JiraReadiness | None = None
     warnings: list[str] = Field(default_factory=list)

@@ -6,11 +6,12 @@ from dream.audit.logger import AuditLogger
 from dream.codebase import CodebaseIndexRepository, CodebaseRetriever
 from dream.codebase.models import CodebaseSearchResult, TestMapping
 from dream.core.paths import (
-    KNOWLEDGE_PACKS_DIR,
     display_path,
-    ensure_artifacts_dir,
+    resolve_artifact_path,
     resolve_project_path,
 )
+from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
+from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import BaseLLMProvider, MockLLMProvider
 from dream.review.diff_parser import parse_unified_diff
@@ -29,6 +30,8 @@ class PRReviewAssistant:
         audit_logger: AuditLogger | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
         codebase_retriever: CodebaseRetriever | None = None,
+        graph_repository: EvidenceGraphRepository | None = None,
+        graph_retriever: EvidenceGraphRetriever | None = None,
     ) -> None:
         self.pack_loader = pack_loader or KnowledgePackLoader()
         self.doc_loader = doc_loader or MarkdownDocumentLoader()
@@ -39,6 +42,10 @@ class PRReviewAssistant:
         self.codebase_retriever = codebase_retriever or CodebaseRetriever(
             repository=self.codebase_repository
         )
+        self.graph_repository = graph_repository or EvidenceGraphRepository()
+        self.graph_retriever = graph_retriever or EvidenceGraphRetriever(
+            repository=self.graph_repository
+        )
 
     def review(self, request: PRReviewRequest) -> PRReviewResponse:
         run_id = f"pr-{uuid4().hex[:12]}"
@@ -48,7 +55,7 @@ class PRReviewAssistant:
         jira_context = self._read_optional_context(request.jira_context_path)
 
         pack = self.pack_loader.load(request.team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
         query = " ".join(
@@ -92,9 +99,24 @@ class PRReviewAssistant:
             related_tests=related_tests,
             warnings=warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            codebase_repository=self.codebase_repository,
+            graph_repository=self.graph_repository,
+        ).save_pr_review_context(
+            run_id=run_id,
+            request=request,
+            diff_summary=diff_summary,
+            chunks=retrieved,
+            codebase_results=codebase_results,
+            related_tests=related_tests,
+            warnings=warnings,
+            prompt=prompt,
+        )
         llm_response = self.llm_provider.complete(prompt)
         markdown = llm_response.text
-        output_path = ensure_artifacts_dir() / f"pr-review-summary-{run_id}.md"
+        output_path = resolve_artifact_path(f"pr-review-summary-{run_id}.md")
         output_path.write_text(markdown, encoding="utf-8")
         sources_used = sorted(
             {chunk.source_path for chunk in retrieved}
@@ -178,7 +200,81 @@ class PRReviewAssistant:
                     )
                 )
         merged = self._merge_results(changed_results + results)
-        return merged[: request.top_k + len(changed_results)], self._dedupe_tests(related_tests), []
+        graph_results = self._graph_context(
+            request=request,
+            diff_summary=diff_summary,
+            query=query,
+        )
+        merged = self._merge_results(merged + graph_results)
+        return merged[: request.top_k + len(changed_results) + 6], self._dedupe_tests(
+            related_tests
+        ), []
+
+    def _graph_context(
+        self,
+        *,
+        request: PRReviewRequest,
+        diff_summary,
+        query: str,
+    ) -> list[CodebaseSearchResult]:
+        if request.repo_name is None:
+            return []
+        if self.graph_repository.try_load(request.team_id, request.repo_name) is None:
+            return []
+        graph_query = " ".join([query, " ".join(diff_summary.files_changed)])
+        results = self.graph_retriever.search(
+            team_id=request.team_id,
+            repo_name=request.repo_name,
+            query=graph_query,
+            top_k=request.top_k,
+        )
+        for changed_file in diff_summary.files_changed:
+            neighbors = self.graph_retriever.neighbors(
+                team_id=request.team_id,
+                repo_name=request.repo_name,
+                node=changed_file,
+                limit=8,
+            )
+            for node in neighbors.matched_nodes:
+                if node.key == changed_file or node.source_path == changed_file:
+                    continue
+                results.append(
+                    EvidenceGraphSearchResult(
+                        node=node,
+                        score=20,
+                        reason="Evidence graph neighbor of a directly changed file.",
+                        matched_terms=[],
+                        connected_nodes=[],
+                        evidence_paths=neighbors.evidence_paths,
+                    )
+                )
+        return self._graph_results_to_codebase_results(results)
+
+    @staticmethod
+    def _graph_results_to_codebase_results(
+        results: list[EvidenceGraphSearchResult],
+    ) -> list[CodebaseSearchResult]:
+        converted: list[CodebaseSearchResult] = []
+        for result in results:
+            node = result.node
+            source_path = node.source_path or f"evidence-graph#{node.node_type}:{node.key}"
+            connected = ", ".join(
+                f"{item.title} [{item.node_type}]" for item in result.connected_nodes[:5]
+            )
+            paths = "; ".join(result.evidence_paths[:3])
+            excerpt = " ".join(part for part in [connected, paths] if part).strip()
+            converted.append(
+                CodebaseSearchResult(
+                    result_type=f"graph_{node.node_type}",
+                    title=node.title,
+                    source_path=source_path,
+                    excerpt=excerpt or "Evidence graph matched this PR context.",
+                    score=result.score,
+                    reason=result.reason,
+                    metadata={"graph_node_type": node.node_type},
+                )
+            )
+        return converted
 
     @staticmethod
     def _merge_results(results: list[CodebaseSearchResult]) -> list[CodebaseSearchResult]:

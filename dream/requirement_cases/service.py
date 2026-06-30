@@ -7,7 +7,8 @@ from uuid import uuid4
 
 from dream.audit.logger import AuditLogger
 from dream.codebase.repository import CodebaseIndexRepository
-from dream.core.paths import display_path, ensure_artifacts_dir
+from dream.core.errors import NotFoundError
+from dream.core.paths import display_path, resolve_artifact_path
 from dream.llm import BaseLLMProvider
 from dream.requirement_cases.brief import EngineeringBriefGenerator
 from dream.requirement_cases.impact import ImpactMapGenerator
@@ -18,6 +19,7 @@ from dream.requirement_cases.models import (
     EngineeringBrief,
     ImpactItem,
     JiraDraft,
+    JiraReadiness,
     RequirementCase,
     RequirementCaseCreateRequest,
     RequirementCaseSnapshot,
@@ -135,6 +137,12 @@ class RequirementCaseService:
             status="success",
             warnings=warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).trace_case(snapshot.case.case_id)
         return snapshot
 
     def generate_impact_map(self, case_id: str) -> list[ImpactItem]:
@@ -149,6 +157,61 @@ class RequirementCaseService:
             return snapshot.questions
         normalized = role.upper()
         return [question for question in snapshot.questions if question.target_role == normalized]
+
+    def answer_question(
+        self,
+        case_id: str,
+        question_id: str,
+        answer: str,
+        *,
+        answered_by: str | None = None,
+    ) -> ClarificationQuestion:
+        snapshot = self._ensure_analyzed(case_id)
+        answer_text = answer.strip()
+        if not answer_text:
+            raise ValueError("Clarification answer cannot be empty.")
+        updated_question: ClarificationQuestion | None = None
+        now = datetime.now(UTC).isoformat()
+        questions: list[ClarificationQuestion] = []
+        for question in snapshot.questions:
+            if question.question_id == question_id:
+                updated_question = question.model_copy(
+                    update={
+                        "status": "answered",
+                        "answer": answer_text,
+                        "answered_by": answered_by,
+                        "answered_at": now,
+                    }
+                )
+                questions.append(updated_question)
+            else:
+                questions.append(question)
+        if updated_question is None:
+            raise NotFoundError(f"Clarification question not found: {question_id}")
+        snapshot.questions = questions
+        snapshot.case.status = "questions_answered"
+        snapshot.case.updated_at = now
+        snapshot.jira_readiness = self._jira_readiness(snapshot)
+        self.repository.save(snapshot)
+        self.audit_logger.log_generation(
+            run_id=f"question-answer-{uuid4().hex[:12]}",
+            use_case="requirement_question_answer",
+            team_id=snapshot.case.team_id,
+            case_id=snapshot.case.case_id,
+            input_payload={
+                "case_id": case_id,
+                "question_id": question_id,
+                "answer": answer_text,
+                "answered_by": answered_by,
+            },
+            retrieved_source_paths=updated_question.related_sources,
+            model_provider="human",
+            model_name="clarification-answer-v1",
+            output_path="sqlite:requirement_cases",
+            status="answered",
+            warnings=[],
+        )
+        return updated_question
 
     def generate_role_view(self, case_id: str, role: str) -> RoleView:
         snapshot = self._ensure_analyzed(case_id)
@@ -203,14 +266,25 @@ class RequirementCaseService:
             status="success",
             warnings=brief.warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).prompt_for_case(case_id, target="engineering_brief")
         return brief
 
     def generate_jira_draft(self, case_id: str) -> JiraDraft:
         snapshot = self._ensure_analyzed(case_id)
         jira = self.jira_generator.generate(snapshot)
+        readiness = self._jira_readiness(snapshot, jira_draft_exists=True)
+        if not readiness.ready:
+            jira.warnings = list(dict.fromkeys([*jira.warnings, *readiness.blocking_reasons]))
         output_path = self._case_artifact_dir(case_id) / "jira-draft.md"
         output_path.write_text(jira.markdown, encoding="utf-8")
         snapshot.jira_draft = jira
+        snapshot.jira_readiness = readiness
+        snapshot.case.status = readiness.status
         snapshot.case.updated_at = datetime.now(UTC).isoformat()
         self.repository.save(snapshot)
         self.audit_logger.log_generation(
@@ -223,10 +297,38 @@ class RequirementCaseService:
             model_provider=getattr(self.jira_generator, "last_model_provider", "deterministic"),
             model_name=getattr(self.jira_generator, "last_model_name", "jira-draft-v1"),
             output_path=display_path(output_path),
-            status="success",
+            status=readiness.status,
             warnings=jira.warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).prompt_for_case(case_id, target="jira_draft")
         return jira
+
+    def jira_readiness(self, case_id: str) -> JiraReadiness:
+        snapshot = self._ensure_analyzed(case_id)
+        readiness = self._jira_readiness(snapshot)
+        snapshot.jira_readiness = readiness
+        snapshot.case.status = readiness.status
+        snapshot.case.updated_at = datetime.now(UTC).isoformat()
+        self.repository.save(snapshot)
+        self.audit_logger.log_generation(
+            run_id=f"jira-readiness-{uuid4().hex[:12]}",
+            use_case="jira_readiness_check",
+            team_id=snapshot.case.team_id,
+            case_id=snapshot.case.case_id,
+            input_payload={"case_id": case_id},
+            retrieved_source_paths=sorted({item.source_path for item in snapshot.evidence}),
+            model_provider="deterministic",
+            model_name="jira-readiness-v1",
+            output_path="sqlite:requirement_cases",
+            status=readiness.status,
+            warnings=readiness.blocking_reasons,
+        )
+        return readiness
 
     def get_case(self, case_id: str) -> RequirementCaseSnapshot:
         return self.repository.get(case_id)
@@ -245,6 +347,56 @@ class RequirementCaseService:
         return repo_names[0] if repo_names else None
 
     @staticmethod
+    def _jira_readiness(
+        snapshot: RequirementCaseSnapshot,
+        *,
+        jira_draft_exists: bool | None = None,
+    ) -> JiraReadiness:
+        open_questions = [question for question in snapshot.questions if question.status == "open"]
+        answered_questions = [
+            question for question in snapshot.questions if question.status == "answered"
+        ]
+        draft_exists = (
+            snapshot.jira_draft is not None
+            if jira_draft_exists is None
+            else jira_draft_exists
+        )
+        blocking: list[str] = []
+        if not snapshot.evidence:
+            blocking.append("No retrieved evidence is attached to the requirement case.")
+        if not snapshot.impact_items:
+            blocking.append("No impact map has been generated.")
+        if open_questions:
+            blocking.append(
+                f"{len(open_questions)} clarification question(s) still need human answers."
+            )
+        if not draft_exists:
+            blocking.append("Jira draft has not been generated yet.")
+        ready = not blocking
+        recommendations = []
+        if open_questions:
+            recommendations.append(
+                "Answer or explicitly waive open questions before Jira approval."
+            )
+        if not snapshot.evidence:
+            recommendations.append("Run requirement analysis after knowledge/codebase indexing.")
+        if not draft_exists:
+            recommendations.append("Generate the Jira draft after answering questions.")
+        status = "jira_ready_draft" if ready else "jira_draft_needs_answers"
+        return JiraReadiness(
+            case_id=snapshot.case.case_id,
+            ready=ready,
+            status=status,
+            answered_questions=len(answered_questions),
+            open_questions=len(open_questions),
+            evidence_items=len(snapshot.evidence),
+            impact_items=len(snapshot.impact_items),
+            jira_draft_exists=draft_exists,
+            blocking_reasons=blocking,
+            recommendations=recommendations,
+        )
+
+    @staticmethod
     def _with_case_id(case_id: str, evidence: list[ContextEvidence]) -> list[ContextEvidence]:
         return [item.model_copy(update={"case_id": case_id}) for item in evidence]
 
@@ -256,7 +408,7 @@ class RequirementCaseService:
 
     @staticmethod
     def _case_artifact_dir(case_id: str) -> Path:
-        path = ensure_artifacts_dir() / "requirement-cases" / case_id
+        path = resolve_artifact_path(Path("requirement-cases") / case_id)
         path.mkdir(parents=True, exist_ok=True)
         return path
 

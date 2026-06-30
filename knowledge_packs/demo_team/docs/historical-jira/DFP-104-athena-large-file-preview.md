@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Use Athena-style query for large file preview"
 doc_type: "historical-jira"

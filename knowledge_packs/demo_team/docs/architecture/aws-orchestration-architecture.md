@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "AWS Orchestration Architecture"
 doc_type: "architecture"

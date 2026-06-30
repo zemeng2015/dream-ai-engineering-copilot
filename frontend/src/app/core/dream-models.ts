@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 export type WorkflowType =
   | 'requirement_draft'
   | 'requirement_case'
@@ -5,7 +7,10 @@ export type WorkflowType =
   | 'jira_draft'
   | 'pr_review_summary'
   | 'knowledge_search'
+  | 'knowledge_intake'
+  | 'context_intelligence'
   | 'codebase_index'
+  | 'evidence_graph'
   | 'testgen_stub'
   | 'audit_eval'
   | 'eval_scorecard';
@@ -21,6 +26,7 @@ export type EvidenceSourceType =
   | 'historical_pr'
   | 'testing_doc'
   | 'concept_memory'
+  | 'graph_evidence'
   | 'code_file'
   | 'test_file';
 
@@ -50,6 +56,37 @@ export interface KnowledgeChunk {
   };
 }
 
+export type KnowledgeIntakeSourceKind = 'runbook' | 'docx' | 'confluence_hld';
+
+export type KnowledgeIntakeQueueStatus = 'queued' | 'parsing' | 'parsed' | 'ready_for_review' | 'promoted';
+
+export type KnowledgeIntakeReviewStatus = 'unreviewed' | 'needs_review' | 'approved' | 'promoted';
+
+export interface KnowledgeIntakeSection {
+  id: string;
+  heading: string;
+  summary: string;
+  concepts: string[];
+  confidence: number;
+}
+
+export interface KnowledgeIntakeItem {
+  id: string;
+  title: string;
+  sourceKind: KnowledgeIntakeSourceKind;
+  sourcePath: string;
+  owner: string;
+  importedAt: string;
+  queueStatus: KnowledgeIntakeQueueStatus;
+  reviewStatus: KnowledgeIntakeReviewStatus;
+  targetPack: string;
+  parser: string;
+  parsedConcepts: string[];
+  sections: KnowledgeIntakeSection[];
+  reviewNotes: string[];
+  promotionSummary: string;
+}
+
 export interface CodebaseFile {
   id: string;
   path: string;
@@ -62,6 +99,33 @@ export interface CodebaseFile {
   relatedTests: string[];
 }
 
+export interface EvidenceGraphNode {
+  id: string;
+  type:
+    | 'concept'
+    | 'domain_doc'
+    | 'architecture_doc'
+    | 'incident'
+    | 'historical_jira'
+    | 'historical_pr'
+    | 'code_file'
+    | 'test_file'
+    | 'runbook';
+  title: string;
+  sourcePath: string;
+  concepts: string[];
+  summary: string;
+}
+
+export interface EvidenceGraphPath {
+  id: string;
+  concept: string;
+  path: string[];
+  evidenceTypes: EvidenceGraphNode['type'][];
+  risk: string;
+  reviewHint: string;
+}
+
 export interface ContextEvidence {
   evidenceId: string;
   title: string;
@@ -70,6 +134,65 @@ export interface ContextEvidence {
   excerpt: string;
   relevanceScore: number;
   reason: string;
+}
+
+export type ContextIntelligenceStatus = 'pass' | 'watch' | 'needs_review';
+
+export interface ContextRetrievalTrailItem {
+  id: string;
+  step: number;
+  label: string;
+  detail: string;
+  query: string;
+  sourcesMatched: number;
+  status: ContextIntelligenceStatus;
+}
+
+export interface ContextPackSection {
+  id: string;
+  title: string;
+  summary: string;
+  includedEvidenceIds: string[];
+  tokenEstimate: number;
+  guardrail: string;
+  status: ContextIntelligenceStatus;
+}
+
+export interface ContextPromptPreview {
+  system: string;
+  developer: string;
+  user: string;
+  evidenceInstructions: string[];
+}
+
+export interface RetrievalEvalMetric {
+  label: string;
+  value: string;
+  target: string;
+  status: ContextIntelligenceStatus;
+  note: string;
+}
+
+export interface LogicChainStep {
+  id: string;
+  order: number;
+  title: string;
+  input: string;
+  output: string;
+  evidenceIds: string[];
+  status: ContextIntelligenceStatus;
+}
+
+export interface ContextIntelligenceSnapshot {
+  caseId: string;
+  title: string;
+  request: string;
+  retrievalTrail: ContextRetrievalTrailItem[];
+  contextPackSections: ContextPackSection[];
+  promptPreview: ContextPromptPreview;
+  metrics: RetrievalEvalMetric[];
+  evidenceCards: ContextEvidence[];
+  logicChain: LogicChainStep[];
 }
 
 export interface ImpactItem {
@@ -82,10 +205,15 @@ export interface ImpactItem {
 }
 
 export interface ClarificationQuestion {
+  questionId: string;
   targetRole: 'BA' | 'TL' | 'FE' | 'BE' | 'QA' | 'OPS' | 'SECURITY';
   question: string;
   whyItMatters: string;
   relatedSources: string[];
+  status: 'open' | 'answered' | 'waived';
+  answer?: string;
+  answeredBy?: string;
+  answeredAt?: string;
 }
 
 export interface RequirementCase {
@@ -93,7 +221,16 @@ export interface RequirementCase {
   title: string;
   rawRequest: string;
   createdByRole: string;
-  status: 'created' | 'analyzed' | 'brief_generated' | 'closed';
+  status:
+    | 'created'
+    | 'analyzed'
+    | 'brief_generated'
+    | 'questions_answered'
+    | 'jira_draft_needs_answers'
+    | 'jira_ready_draft'
+    | 'closed';
+  jiraReadinessStatus?: 'jira_draft_needs_answers' | 'jira_ready_draft';
+  jiraReady?: boolean;
   confidence: number;
   createdAt: string;
   updatedAt: string;

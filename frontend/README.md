@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # DREAM Angular Workbench
 
 This Angular frontend is the mock-data workbench for DREAM - Domain-aware
@@ -64,7 +66,7 @@ The Angular app does not read or store the API key.
 The UI uses an enterprise mortgage-finance-inspired style: deep navy
 navigation, white and pale blue-gray surfaces, teal/cyan action accents,
 compact evidence tables, clear status pills, and explicit human-review gates.
-It does not use Fannie Mae logos, trademarks, imagery, or brand assets.
+It does not use real company logos, trademarks, imagery, or brand assets.
 
 Motion is limited to purposeful page entry, card rise, status pulse, and scan
 line effects. `prefers-reduced-motion` disables animation.

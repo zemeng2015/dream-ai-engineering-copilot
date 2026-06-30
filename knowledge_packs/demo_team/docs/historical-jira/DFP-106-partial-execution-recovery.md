@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 ---
 title: "Define partial execution recovery"
 doc_type: "historical-jira"

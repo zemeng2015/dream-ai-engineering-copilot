@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Component, input } from '@angular/core';
 
 export type UiIconName =

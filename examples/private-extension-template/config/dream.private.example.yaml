@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mode: private-extension
+
+llm:
+  provider: plugin
+  model: ExampleLLM
+  class_path: "private_plugins.custom_llm_provider:CustomLLMProvider"
+
+knowledge:
+  pack_root: "knowledge_packs"
+
+artifacts:
+  root_env: DREAM_ARTIFACT_ROOT
+
+audit:
+  sqlite_path_env: DREAM_AUDIT_SQLITE_PATH
+
+redaction:
+  provider: plugin
+  class_path: "private_plugins.custom_redaction_provider:CustomRedactionProvider"
+
+prompt_policy:
+  provider: plugin
+  class_path: "private_plugins.custom_prompt_policy:CustomPromptPolicy"

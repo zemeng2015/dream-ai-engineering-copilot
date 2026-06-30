@@ -1,1 +1,3 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { JobApiService } from '../services/job-api.service'; export class OutputPreviewComponent { page = 1; timeoutMessage?: string; constructor(private readonly jobApi: JobApiService) {} loadPreview(executionId: string, artifactId: string): void { this.jobApi.requestOutputPreview(executionId, artifactId, this.page).subscribe({ error: () => { this.timeoutMessage = 'Preview timed out. Try a narrower partition.'; } }); } }

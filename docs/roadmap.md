@@ -3,7 +3,7 @@
 # Roadmap
 
 - Vector retrieval
-- Code graph relationships
+- Deeper code graph relationships beyond Evidence Graph Lite
 - GitHub/Jira connectors
 - Historical PR/Jira ingestion
 - JTestGen integration

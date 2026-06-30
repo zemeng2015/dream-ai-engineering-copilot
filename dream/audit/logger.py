@@ -8,14 +8,13 @@ from typing import Any
 
 from dream.audit.models import AuditRecord
 from dream.audit.repository import AuditRepository
-from dream.core.paths import DEFAULT_DB_PATH
 
 
 class AuditLogger:
     def __init__(
         self,
         repository: AuditRepository | None = None,
-        db_path: Path = DEFAULT_DB_PATH,
+        db_path: Path | None = None,
     ) -> None:
         self.repository = repository or AuditRepository(db_path=db_path)
 

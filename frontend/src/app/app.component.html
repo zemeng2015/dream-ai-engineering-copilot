@@ -1,6 +1,8 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 <div class="app-shell">
   <aside class="sidebar" aria-label="Primary navigation">
-    <a class="brand" routerLink="/dashboard" aria-label="DREAM dashboard">
+    <a class="brand" routerLink="/mission-control" aria-label="DREAM mission control">
       <span class="brand-mark">D</span>
       <span>
         <strong>DREAM</strong>
@@ -14,7 +16,7 @@
           class="nav-link"
           [routerLink]="item.path"
           routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+          [routerLinkActiveOptions]="{ exact: item.path === '/mission-control' }"
         >
           <app-ui-icon [name]="item.icon" />
           <span>{{ item.label }}</span>
@@ -53,7 +55,7 @@
           <span class="pulse-dot" aria-hidden="true"></span>
           Mock DFP Memory
         </span>
-        <button class="ghost-button" type="button">Docs</button>
+        <a class="ghost-button" routerLink="/memory">Memory</a>
         <span class="avatar" aria-label="Signed in as Demo Engineer">DE</span>
       </div>
     </header>
