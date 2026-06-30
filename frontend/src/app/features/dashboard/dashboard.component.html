@@ -10,13 +10,13 @@
         evidence paths, review-ready drafts, scorecards, and auditable human decisions.
       </p>
       <div class="hero-actions" aria-label="Primary workflows">
-        <a class="primary-button" routerLink="/requirements">
+        <a class="primary-button" routerLink="/workbench">
           <app-ui-icon name="document" />
-          Analyze Requirement
+          Open Workbench
         </a>
-        <a class="secondary-button" routerLink="/graph">
+        <a class="secondary-button" routerLink="/trust">
           <app-ui-icon name="timeline" />
-          Inspect Evidence Graph
+          Inspect Trust Trail
         </a>
       </div>
     </div>
@@ -71,7 +71,7 @@
     <article class="panel scan-panel">
       <div class="panel-header">
         <h2>Recent Audit Runs</h2>
-        <a class="link-button" routerLink="/audit">View all runs</a>
+        <a class="link-button" routerLink="/trust">View all runs</a>
       </div>
       <div class="table-wrap">
         <table aria-label="Recent DREAM runs">
@@ -105,11 +105,11 @@
       <article class="panel graph-preview-panel">
         <div class="panel-header">
           <h2>Evidence Graph Preview</h2>
-          <a class="link-button" routerLink="/graph">Open graph</a>
+          <a class="link-button" routerLink="/memory">Open Memory Hub</a>
         </div>
         <div class="graph-preview-list">
           @for (path of graphPaths; track path.id) {
-            <a routerLink="/graph">
+            <a routerLink="/memory">
               <strong>{{ path.concept }}</strong>
               <span>{{ path.path.join(' -> ') }}</span>
               <small>{{ path.risk }}</small>
@@ -121,7 +121,7 @@
       <article class="panel">
         <div class="panel-header">
           <h2>Knowledge Pack Health</h2>
-          <a class="link-button" routerLink="/knowledge">Search packs</a>
+          <a class="link-button" routerLink="/memory">Search packs</a>
         </div>
         <div class="pack-list">
           @for (pack of packs; track pack.id) {
@@ -159,11 +159,11 @@
       <article class="panel">
         <div class="panel-header">
           <h2>Human Review Required</h2>
-          <a class="link-button" routerLink="/audit">Rate outputs</a>
+          <a class="link-button" routerLink="/trust">Rate outputs</a>
         </div>
         <div class="review-list">
           @for (run of needsReview(); track run.runId) {
-            <a routerLink="/audit">
+            <a routerLink="/trust">
               <strong>{{ run.runId }}</strong>
               <span>{{ run.useCase }} / {{ run.app }}</span>
             </a>

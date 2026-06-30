@@ -1,0 +1,49 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="workspace-page reveal-page">
+  <header class="workspace-header">
+    <div>
+      <span class="eyebrow">Retrieval trust and governance</span>
+      <h1>Trust Center</h1>
+      <p>
+        A consolidated review surface for context selection, prompt preview, retrieval eval,
+        human ratings, and audit records.
+      </p>
+    </div>
+    <div class="trust-summary">
+      <div>
+        <span>Trail Steps</span>
+        <strong>{{ context.retrievalTrail.length }}</strong>
+      </div>
+      <div>
+        <span>Scorecards</span>
+        <strong>{{ scorecards().length }}</strong>
+      </div>
+      <div>
+        <span>Audit Runs</span>
+        <strong>{{ auditRuns().length }}</strong>
+      </div>
+    </div>
+  </header>
+
+  <nav class="workspace-tabs" aria-label="Trust Center sections">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        [class.active]="activeTab() === tab.id"
+        (click)="selectTab(tab.id)"
+      >
+        <strong>{{ tab.label }}</strong>
+        <span>{{ tab.description }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="workspace-embedded">
+    @if (activeTab() === 'context') {
+      <app-context-intelligence />
+    } @else {
+      <app-audit-eval />
+    }
+  </div>
+</section>

@@ -39,12 +39,17 @@
           <label for="source-upload">Raw source document</label>
           <span>{{ uploadMessage() }}</span>
         </div>
-        <input
-          id="source-upload"
-          type="file"
-          accept=".md,.txt,.docx,.html,.htm,.json"
-          (change)="onSourceUpload($event)"
-        />
+        <div class="upload-picker">
+          <input
+            id="source-upload"
+            class="native-file-input"
+            type="file"
+            accept=".md,.txt,.docx,.html,.htm,.json"
+            (change)="onSourceUpload($event)"
+          />
+          <label class="upload-button" for="source-upload">Choose source file</label>
+          <span class="upload-file-name">{{ selectedUploadFileName() }}</span>
+        </div>
       </div>
 
       <div class="table-wrap">

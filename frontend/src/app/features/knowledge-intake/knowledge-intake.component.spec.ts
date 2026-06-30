@@ -44,6 +44,7 @@ describe('KnowledgeIntakeComponent', () => {
     expect(uploaded?.sections.length).toBeGreaterThan(1);
     expect(uploaded?.parsedConcepts).toContain('execution status');
     expect(component.uploadMessage()).toContain('parsed into');
+    expect(component.selectedUploadFileName()).toBe('status-runbook.md');
   });
 
   it('records review comments through approve and promote actions', async () => {
@@ -63,5 +64,16 @@ describe('KnowledgeIntakeComponent', () => {
     expect(component.selectedItem()?.reviewStatus).toBe('promoted');
     expect(component.selectedItem()?.queueStatus).toBe('promoted');
     expect(component.selectedItem()?.reviewNotes[0]).toContain('Promote into architecture pack');
+  });
+
+  it('renders an English-only custom upload control', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const localizedChooseFile = '\u9009\u62e9\u6587\u4ef6';
+    const localizedNoFileSelected = '\u672a\u9009\u62e9\u4efb\u4f55\u6587\u4ef6';
+
+    expect(compiled.textContent).toContain('Choose source file');
+    expect(compiled.textContent).toContain('No file selected');
+    expect(compiled.textContent).not.toContain(localizedChooseFile);
+    expect(compiled.textContent).not.toContain(localizedNoFileSelected);
   });
 });

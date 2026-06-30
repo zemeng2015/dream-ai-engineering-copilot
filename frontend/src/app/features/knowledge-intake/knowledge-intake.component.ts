@@ -26,6 +26,7 @@ export class KnowledgeIntakeComponent {
   readonly selectedItem = signal<KnowledgeIntakeItem | null>(this.queue()[0] ?? null);
   readonly actionMessage = signal('Select a source row, approve parsed sections, then promote approved knowledge to a pack.');
   readonly uploadMessage = signal('Choose a raw runbook, DOCX export, or Confluence HLD export to create a reviewable source.');
+  readonly selectedUploadFileName = signal('No file selected');
   readonly reviewComment = signal('Sections match the status-tracking workflow and are safe to promote after steward review.');
 
   readonly intakeMetrics = computed(() => [
@@ -56,6 +57,7 @@ export class KnowledgeIntakeComponent {
     }
 
     this.uploadMessage.set(`Uploading ${file.name}...`);
+    this.selectedUploadFileName.set(file.name);
     const text = await file.text();
     const item = buildUploadedIntakeItem(file, text);
     this.queue.update((queue) => [item, ...queue]);
