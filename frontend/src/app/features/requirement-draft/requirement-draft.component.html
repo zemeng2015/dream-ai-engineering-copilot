@@ -128,7 +128,13 @@
       <article class="panel">
         <div class="panel-header">
           <h2>Evaluation Scorecard</h2>
-          <span class="status-pill status-success">Grade {{ draft.scorecard.grade }}</span>
+          <span
+            class="status-pill"
+            [class.status-success]="draft.requirementCase.jiraReady"
+            [class.status-warning]="!draft.requirementCase.jiraReady"
+          >
+            {{ readinessLabel(draft) }}
+          </span>
         </div>
         <div class="panel-body">
           <div class="score-card">
@@ -146,11 +152,35 @@
       </div>
       <div class="panel-body">
         <div class="question-grid">
-          @for (question of draft.requirementCase.questions; track question.targetRole + question.question) {
+          @for (question of draft.requirementCase.questions; track question.questionId) {
             <div class="question-card">
-              <span class="status-pill status-neutral">{{ question.targetRole }}</span>
+              <div class="cluster-row">
+                <span class="status-pill status-neutral">{{ question.targetRole }}</span>
+                <span
+                  class="status-pill"
+                  [class.status-success]="question.status === 'answered'"
+                  [class.status-warning]="question.status !== 'answered'"
+                >
+                  {{ question.status }}
+                </span>
+              </div>
               <strong>{{ question.question }}</strong>
               <p>{{ question.whyItMatters }}</p>
+              @if (question.answer) {
+                <div class="info-callout">{{ question.answer }}</div>
+              }
+              <textarea
+                [value]="questionAnswers()[question.questionId] || question.answer || ''"
+                (input)="updateQuestionAnswer(question.questionId, $event)"
+                placeholder="Capture the human answer that should feed the next Jira draft."
+              ></textarea>
+              <button
+                class="secondary-button"
+                type="button"
+                (click)="saveQuestionAnswer(question.questionId)"
+              >
+                Save answer
+              </button>
             </div>
           }
         </div>
@@ -160,7 +190,9 @@
     <article class="panel">
       <div class="panel-header">
         <h2>Jira-ready Draft</h2>
-        <span class="status-pill status-success">{{ draft.run.runId }}</span>
+        <button class="secondary-button" type="button" (click)="regenerateJiraDraft()">
+          Regenerate after answers
+        </button>
       </div>
       <pre class="markdown-preview">{{ draft.markdown }}</pre>
     </article>

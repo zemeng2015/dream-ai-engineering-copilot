@@ -44,6 +44,23 @@ def test_context_intelligence_and_retrieval_eval_api(tmp_path, monkeypatch) -> N
 
     analyze_response = client.post(f"/requirement-cases/{case_id}/analyze")
     assert analyze_response.status_code == 200
+    question_ids = [item["question_id"] for item in analyze_response.json()["questions"]]
+    assert question_ids
+
+    not_ready_response = client.get(f"/requirement-cases/{case_id}/jira-readiness")
+    assert not_ready_response.status_code == 200
+    assert not_ready_response.json()["ready"] is False
+
+    for question_id in question_ids:
+        answer_response = client.post(
+            f"/requirement-cases/{case_id}/questions/{question_id}/answer",
+            json={
+                "answer": f"API answer for {question_id}.",
+                "answered_by": "api-test",
+            },
+        )
+        assert answer_response.status_code == 200
+        assert answer_response.json()["status"] == "answered"
 
     trail_response = client.get(f"/context/trails/{case_id}")
     assert trail_response.status_code == 200
@@ -52,6 +69,10 @@ def test_context_intelligence_and_retrieval_eval_api(tmp_path, monkeypatch) -> N
     pack_response = client.get(f"/context/packs/{case_id}")
     assert pack_response.status_code == 200
     assert pack_response.json()["selected_evidence_count"] > 0
+
+    jira_response = client.get(f"/requirement-cases/{case_id}/jira-draft")
+    assert jira_response.status_code == 200
+    assert "API answer for" in jira_response.json()["markdown"]
 
     prompt_response = client.get(
         f"/context/prompt-preview/{case_id}",
@@ -66,6 +87,10 @@ def test_context_intelligence_and_retrieval_eval_api(tmp_path, monkeypatch) -> N
     )
     assert eval_response.status_code == 200
     assert eval_response.json()["scorecard"]["target_type"] == "retrieval_context"
+
+    ready_response = client.get(f"/requirement-cases/{case_id}/jira-readiness")
+    assert ready_response.status_code == 200
+    assert ready_response.json()["ready"] is True
 
     report_response = client.get(
         "/context/report",

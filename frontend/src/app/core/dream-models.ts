@@ -205,10 +205,15 @@ export interface ImpactItem {
 }
 
 export interface ClarificationQuestion {
+  questionId: string;
   targetRole: 'BA' | 'TL' | 'FE' | 'BE' | 'QA' | 'OPS' | 'SECURITY';
   question: string;
   whyItMatters: string;
   relatedSources: string[];
+  status: 'open' | 'answered' | 'waived';
+  answer?: string;
+  answeredBy?: string;
+  answeredAt?: string;
 }
 
 export interface RequirementCase {
@@ -216,7 +221,16 @@ export interface RequirementCase {
   title: string;
   rawRequest: string;
   createdByRole: string;
-  status: 'created' | 'analyzed' | 'brief_generated' | 'closed';
+  status:
+    | 'created'
+    | 'analyzed'
+    | 'brief_generated'
+    | 'questions_answered'
+    | 'jira_draft_needs_answers'
+    | 'jira_ready_draft'
+    | 'closed';
+  jiraReadinessStatus?: 'jira_draft_needs_answers' | 'jira_ready_draft';
+  jiraReady?: boolean;
   confidence: number;
   createdAt: string;
   updatedAt: string;

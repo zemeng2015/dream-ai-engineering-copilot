@@ -21,13 +21,14 @@ class IntakeParser:
             return parse_markdown(_docx_text(path), source_path=path.as_posix())
         if suffix in {".html", ".htm"}:
             return parse_markdown(
-                _html_text(path.read_text(encoding="utf-8")),
+                _html_text(path.read_text(encoding="utf-8-sig")),
                 source_path=path.as_posix(),
             )
-        return parse_markdown(path.read_text(encoding="utf-8"), source_path=path.as_posix())
+        return parse_markdown(path.read_text(encoding="utf-8-sig"), source_path=path.as_posix())
 
 
 def parse_markdown(raw: str, *, source_path: str) -> list[ParsedSection]:
+    raw = raw.lstrip("\ufeff")
     sections: list[ParsedSection] = []
     current_heading = "Overview"
     current_level = 1

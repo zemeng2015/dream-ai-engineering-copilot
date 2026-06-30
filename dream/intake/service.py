@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from dream.audit.logger import AuditLogger
 from dream.core.paths import display_path, get_knowledge_packs_dir
 from dream.intake.models import (
     ExtractedConcept,
@@ -25,10 +26,12 @@ class KnowledgeIntakeService:
         repository: IntakeRepository | None = None,
         parser: IntakeParser | None = None,
         knowledge_root: Path | None = None,
+        audit_logger: AuditLogger | None = None,
     ) -> None:
         self.repository = repository or IntakeRepository()
         self.parser = parser or IntakeParser()
         self.knowledge_root = knowledge_root or get_knowledge_packs_dir()
+        self.audit_logger = audit_logger or AuditLogger()
 
     def upload_local_file(
         self,
@@ -55,7 +58,24 @@ class KnowledgeIntakeService:
             created_at=now,
             updated_at=now,
         )
-        return self.repository.save_document(document)
+        saved = self.repository.save_document(document)
+        self.audit_logger.log_generation(
+            run_id=f"intake-upload-{document.document_id}",
+            use_case="knowledge_intake_upload",
+            team_id=team_id,
+            input_payload={
+                "document_id": document.document_id,
+                "file_path": source.as_posix(),
+                "document_type": document_type,
+            },
+            retrieved_source_paths=[source.as_posix()],
+            model_provider="local",
+            model_name="knowledge-intake-upload-v1",
+            output_path=document.stored_path,
+            status=document.status,
+            warnings=document.warnings,
+        )
+        return saved
 
     def parse_document(self, document_id: str) -> KnowledgeDraft:
         document = self.repository.get_document(document_id)
@@ -82,7 +102,20 @@ class KnowledgeIntakeService:
         document.status = "parsed"
         document.updated_at = datetime.now(UTC).isoformat()
         self.repository.save_document(document)
-        return self.repository.save_draft(draft)
+        saved = self.repository.save_draft(draft)
+        self.audit_logger.log_generation(
+            run_id=f"intake-parse-{document.document_id}",
+            use_case="knowledge_intake_parse",
+            team_id=document.team_id,
+            input_payload={"document_id": document.document_id},
+            retrieved_source_paths=[document.stored_path],
+            model_provider="deterministic",
+            model_name="knowledge-intake-parser-v1",
+            output_path=saved.markdown_path or "artifact:intake/drafts",
+            status=document.status,
+            warnings=saved.warnings,
+        )
+        return saved
 
     def review_draft(self, draft_id: str, decision: ReviewDecision) -> KnowledgeDraft:
         draft = self.repository.get_draft(draft_id)
@@ -93,7 +126,25 @@ class KnowledgeIntakeService:
         document.status = decision.status
         document.updated_at = datetime.now(UTC).isoformat()
         self.repository.save_document(document)
-        return self.repository.save_draft(draft)
+        saved = self.repository.save_draft(draft)
+        self.audit_logger.log_generation(
+            run_id=f"intake-review-{draft.draft_id}",
+            use_case="knowledge_intake_review",
+            team_id=draft.team_id,
+            input_payload={
+                "draft_id": draft_id,
+                "status": decision.status,
+                "reviewer": decision.reviewer,
+                "notes": decision.notes,
+            },
+            retrieved_source_paths=[document.stored_path],
+            model_provider="human",
+            model_name="knowledge-intake-review-v1",
+            output_path=saved.json_path or "artifact:intake/drafts",
+            status=decision.status,
+            warnings=saved.warnings,
+        )
+        return saved
 
     def promote_draft(self, draft_id: str) -> PromotionResult:
         draft = self.repository.get_draft(draft_id)
@@ -110,12 +161,25 @@ class KnowledgeIntakeService:
         document.status = "promoted"
         document.updated_at = datetime.now(UTC).isoformat()
         self.repository.save_document(document)
-        return PromotionResult(
+        result = PromotionResult(
             document_id=draft.document_id,
             draft_id=draft.draft_id,
             promoted_path=display_path(target_path),
             status="promoted",
         )
+        self.audit_logger.log_generation(
+            run_id=f"intake-promote-{draft.draft_id}",
+            use_case="knowledge_intake_promote",
+            team_id=draft.team_id,
+            input_payload={"draft_id": draft_id, "document_id": draft.document_id},
+            retrieved_source_paths=[document.stored_path],
+            model_provider="deterministic",
+            model_name="knowledge-pack-promotion-v1",
+            output_path=result.promoted_path,
+            status=result.status,
+            warnings=result.warnings,
+        )
+        return result
 
 
 def _concepts_from_sections(sections) -> list[ExtractedConcept]:

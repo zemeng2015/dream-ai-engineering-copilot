@@ -444,7 +444,12 @@ function buildRequirementCase(input: {
     .map((item) => `- ${item.areaType.toUpperCase()} - ${item.name}: ${item.description}`)
     .join('\n');
   const questionLines = questions
-    .map((question) => `- ${question.targetRole}: ${question.question} (${question.whyItMatters})`)
+    .map(
+      (question) =>
+        `- ${question.targetRole}: ${question.question} ` +
+        `Status: ${question.status}. Answer: ${question.answer || 'pending human response'} ` +
+        `(${question.whyItMatters})`,
+    )
     .join('\n');
 
   const engineeringBrief = `# Engineering Brief
@@ -546,7 +551,9 @@ ${sourcesUsed}
     title: 'Async status tracking for long-running forecast executions',
     rawRequest: input.rawRequest,
     createdByRole: input.role,
-    status: 'brief_generated',
+    status: 'jira_draft_needs_answers',
+    jiraReadinessStatus: 'jira_draft_needs_answers',
+    jiraReady: false,
     confidence: 0.86,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -561,40 +568,52 @@ ${sourcesUsed}
 function buildQuestions(): RequirementCase['questions'] {
   return [
     {
+      questionId: 'q-ba-status-labels',
       targetRole: 'BA',
       question: 'What status labels should users see at job level, task level, or both?',
       whyItMatters: 'Acceptance criteria depend on business-visible status language.',
       relatedSources: ['job-lifecycle.md', 'execution-model.md'],
+      status: 'open',
     },
     {
+      questionId: 'q-tl-status-model',
       targetRole: 'TL',
       question: 'Should SERVICE_TASK and BATCH_TASK share one persisted status model?',
       whyItMatters: 'A split model can create cross-layer drift and review risk.',
       relatedSources: ['service-vs-batch-task.md', 'StatusTracker.java'],
+      status: 'open',
     },
     {
+      questionId: 'q-fe-polling',
       targetRole: 'FE',
       question: 'Should the Execution Monitor poll, refresh manually, or later subscribe to updates?',
       whyItMatters: 'Frontend behavior affects perceived freshness and API load.',
       relatedSources: ['execution-monitor.component.ts', 'PR-502'],
+      status: 'open',
     },
     {
+      questionId: 'q-be-authority',
       targetRole: 'BE',
       question: 'What is the authoritative source for task status after processor completion?',
       whyItMatters: 'INC-103 showed that processor success and persisted status can diverge.',
       relatedSources: ['INC-103', 'StatusTracker.java'],
+      status: 'open',
     },
     {
+      questionId: 'q-qa-regression',
       targetRole: 'QA',
       question: 'What regression tests prove stuck RUNNING and PARTIAL_SUCCESS behavior?',
       whyItMatters: 'Historical defects cluster around terminal-state and partial-state transitions.',
       relatedSources: ['status-transition-test-plan.md', 'partial-completion-test-plan.md'],
+      status: 'open',
     },
     {
+      questionId: 'q-ops-runbook',
       targetRole: 'OPS',
       question: 'What runbook update is needed when execution remains RUNNING after processor completion?',
       whyItMatters: 'Operators need deterministic triage steps and safe escalation guidance.',
       relatedSources: ['status-stuck-running-runbook.md', 'INC-103'],
+      status: 'open',
     },
   ];
 }

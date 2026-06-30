@@ -90,6 +90,11 @@ class RetrievalEvalRequest(BaseModel):
     profile_id: str
 
 
+class RequirementQuestionAnswerRequest(BaseModel):
+    answer: str
+    answered_by: str | None = None
+
+
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok")
@@ -465,6 +470,25 @@ def get_requirement_case_questions(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.post("/requirement-cases/{case_id}/questions/{question_id}/answer")
+def answer_requirement_case_question(
+    case_id: str,
+    question_id: str,
+    request: RequirementQuestionAnswerRequest,
+) -> dict[str, object]:
+    try:
+        return RequirementCaseService().answer_question(
+            case_id,
+            question_id,
+            request.answer,
+            answered_by=request.answered_by,
+        ).model_dump()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/requirement-cases/{case_id}/brief")
 def get_requirement_case_brief(
     case_id: str,
@@ -487,6 +511,14 @@ def get_requirement_case_jira_draft(
         return RequirementCaseService(
             llm_provider=_optional_llm_provider(llm_provider)
         ).generate_jira_draft(case_id).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/requirement-cases/{case_id}/jira-readiness")
+def get_requirement_case_jira_readiness(case_id: str) -> dict[str, object]:
+    try:
+        return RequirementCaseService().jira_readiness(case_id).model_dump()
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

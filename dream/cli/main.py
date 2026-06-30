@@ -524,9 +524,40 @@ def req_questions(
 ) -> None:
     questions = RequirementCaseService().generate_questions(case, role=role)
     for question in questions:
-        typer.echo(f"[{question.target_role}] {question.question}")
+        typer.echo(f"{question.question_id}\t[{question.target_role}]\t{question.status}")
+        typer.echo(question.question)
+        if question.answer:
+            typer.echo(f"Answer: {question.answer}")
         typer.echo(f"Why: {question.why_it_matters}")
         typer.echo("")
+
+
+@req_app.command("answer")
+def req_answer(
+    case: Annotated[str, typer.Option("--case")],
+    question: Annotated[str, typer.Option("--question")],
+    answer: Annotated[str, typer.Option("--answer")],
+    answered_by: Annotated[str | None, typer.Option("--answered-by")] = None,
+) -> None:
+    try:
+        updated = RequirementCaseService().answer_question(
+            case,
+            question,
+            answer,
+            answered_by=answered_by,
+        )
+    except (DreamError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(updated.model_dump_json(indent=2))
+
+
+@req_app.command("readiness")
+def req_readiness(case: Annotated[str, typer.Option("--case")]) -> None:
+    try:
+        readiness = RequirementCaseService().jira_readiness(case)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(readiness.model_dump_json(indent=2))
 
 
 @req_app.command("brief")

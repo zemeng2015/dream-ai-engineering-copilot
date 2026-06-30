@@ -214,6 +214,44 @@ def test_engineering_brief_and_jira_draft_include_sources(tmp_path) -> None:
     assert jira.sources_used
 
 
+def test_question_answers_drive_jira_readiness_and_audit(tmp_path) -> None:
+    audit_repository = AuditRepository(tmp_path / "audit.sqlite")
+    service = _service(tmp_path, audit_repository=audit_repository)
+    snapshot = service.create_case(
+        RequirementCaseCreateRequest(
+            team_id="demo_team",
+            raw_request="Add async status tracking for long-running job execution",
+        )
+    )
+    analyzed = service.analyze_case(snapshot.case.case_id)
+
+    early_jira = service.generate_jira_draft(analyzed.case.case_id)
+    early_readiness = service.jira_readiness(analyzed.case.case_id)
+    assert early_readiness.ready is False
+    assert "clarification question" in " ".join(early_jira.warnings)
+
+    for question in analyzed.questions:
+        service.answer_question(
+            analyzed.case.case_id,
+            question.question_id,
+            f"Approved answer for {question.target_role}.",
+            answered_by="api-test",
+        )
+
+    jira = service.generate_jira_draft(analyzed.case.case_id)
+    readiness = service.jira_readiness(analyzed.case.case_id)
+    snapshot_after_answers = service.get_case(analyzed.case.case_id)
+    records = audit_repository.list_audit_records()
+
+    assert readiness.ready is True
+    assert readiness.status == "jira_ready_draft"
+    assert snapshot_after_answers.case.status == "jira_ready_draft"
+    assert "Approved answer for BA." in jira.markdown
+    assert all(question.status == "answered" for question in snapshot_after_answers.questions)
+    assert any(record.use_case == "requirement_question_answer" for record in records)
+    assert any(record.use_case == "jira_readiness_check" for record in records)
+
+
 def test_requirement_case_brief_and_jira_can_use_llm_provider(tmp_path) -> None:
     audit_repository = AuditRepository(tmp_path / "audit.sqlite")
     provider = FakeLLMProvider()
