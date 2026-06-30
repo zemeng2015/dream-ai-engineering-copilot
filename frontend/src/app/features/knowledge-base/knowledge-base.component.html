@@ -61,35 +61,30 @@
         </form>
       </div>
 
-      <div class="table-wrap">
-        <table aria-label="Knowledge search results">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>App</th>
-              <th>Component</th>
-              <th>Doc Type</th>
-              <th>Source Type</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (chunk of chunks(); track chunk.id) {
-              <tr (click)="selectedChunk.set(chunk)" tabindex="0">
-                <td>{{ chunk.title }}</td>
-                <td>{{ chunk.metadata.app }}</td>
-                <td>{{ chunk.metadata.component }}</td>
-                <td>{{ chunk.metadata.docType }}</td>
-                <td>{{ chunk.sourceType }}</td>
-                <td>{{ chunk.sourcePath }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6">No mock chunks matched this query.</td>
-              </tr>
+      <div class="source-tree" aria-label="Knowledge sources grouped by type">
+        @for (group of sourceGroups(); track group.sourceType) {
+          <section class="source-group">
+            <div class="source-group-heading">
+              <strong>{{ group.label }}</strong>
+            </div>
+            @for (chunk of group.chunks; track chunk.id) {
+              <button
+                class="source-tree-item"
+                type="button"
+                [class.selected]="selectedChunk()?.id === chunk.id"
+                (click)="selectChunk(chunk)"
+              >
+                <span class="tree-branch" aria-hidden="true"></span>
+                <span>
+                  <strong>{{ chunk.title }}</strong>
+                  <small>{{ chunk.sourcePath }}</small>
+                </span>
+              </button>
             }
-          </tbody>
-        </table>
+          </section>
+        } @empty {
+          <div class="empty-source-tree">No sources matched this query.</div>
+        }
       </div>
     </article>
 
@@ -111,7 +106,11 @@
           <dl class="metadata-list">
             <div>
               <dt>Source</dt>
-              <dd>{{ chunk.sourcePath }}</dd>
+              <dd>
+                <a class="source-link" [href]="sourceHref(chunk)" target="_blank" rel="noreferrer">
+                  {{ chunk.sourcePath }}
+                </a>
+              </dd>
             </div>
             <div>
               <dt>App</dt>

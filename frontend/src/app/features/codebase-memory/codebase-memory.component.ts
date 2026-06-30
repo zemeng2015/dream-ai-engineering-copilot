@@ -19,20 +19,11 @@ export class CodebaseMemoryComponent {
   readonly files = this.dream.listCodebaseFiles();
   readonly results = signal<CodebaseFile[]>(this.dream.searchCodebase({ query: 'status tracker batch task', topK: 8 }));
   readonly selectedFile = signal<CodebaseFile | null>(this.results()[0] ?? null);
-  readonly layers = ['frontend', 'backend', 'aws', 'python', 'test'];
 
   readonly form = this.fb.nonNullable.group({
     query: 'status tracker batch task',
-    layer: '',
     topK: 8,
   });
-
-  readonly layerSummary = computed(() =>
-    this.layers.map((layer) => ({
-      layer,
-      count: this.files.filter((file) => file.layer === layer).length,
-    })),
-  );
 
   readonly conceptList = computed(() =>
     Array.from(new Set(this.files.flatMap((file) => file.concepts)))
@@ -44,7 +35,6 @@ export class CodebaseMemoryComponent {
     const value = this.form.getRawValue();
     const matches = this.dream.searchCodebase({
       query: value.query,
-      layer: value.layer || undefined,
       topK: value.topK,
     });
     this.results.set(matches);
