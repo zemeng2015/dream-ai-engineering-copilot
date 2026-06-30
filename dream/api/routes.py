@@ -5,11 +5,15 @@ from pydantic import BaseModel, Field
 
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.context import ContextEvaluationService, ContextIntelligenceService
 from dream.core.errors import DreamError
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest, EvaluationResult
 from dream.evals.repository import EvaluationRepository
+from dream.extensions import build_llm_provider
+from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
+from dream.intake import KnowledgeIntakeService, ReviewDecision
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
 from dream.memory import (
     MemoryClaimRetriever,
@@ -66,6 +70,24 @@ class MemoryReviewRequest(BaseModel):
     reviewer: str | None = None
     reason: str | None = None
     scan_id: str = "latest"
+
+
+class IntakeUploadRequest(BaseModel):
+    team_id: str
+    file_path: str
+    document_type: str = "architecture"
+    title: str | None = None
+
+
+class IntakeReviewRequest(BaseModel):
+    status: str
+    reviewer: str | None = None
+    notes: str | None = None
+
+
+class RetrievalEvalRequest(BaseModel):
+    case_id: str
+    profile_id: str
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -191,6 +213,98 @@ def get_evidence_graph_neighbors(
         repo_name=repo_name,
         node=node,
     ).model_dump()
+
+
+@router.post("/intake/documents")
+def upload_intake_document(request: IntakeUploadRequest) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().upload_local_file(
+            team_id=request.team_id,
+            file_path=request.file_path,
+            document_type=request.document_type,
+            title=request.title,
+        ).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/intake/documents")
+def list_intake_documents() -> list[dict[str, object]]:
+    return [item.model_dump() for item in KnowledgeIntakeService().repository.list_documents()]
+
+
+@router.get("/intake/documents/{document_id}")
+def get_intake_document(document_id: str) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().repository.get_document(document_id).model_dump()
+    except OSError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/intake/documents/{document_id}/parse")
+def parse_intake_document(document_id: str) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().parse_document(document_id).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/intake/drafts/{draft_id}/review")
+def review_intake_draft(draft_id: str, request: IntakeReviewRequest) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().review_draft(
+            draft_id,
+            ReviewDecision(
+                status=request.status,
+                reviewer=request.reviewer,
+                notes=request.notes,
+            ),
+        ).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/intake/drafts/{draft_id}/promote")
+def promote_intake_draft(draft_id: str) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().promote_draft(draft_id).model_dump()
+    except (DreamError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/context/trails/{case_id}")
+def get_context_trail(case_id: str) -> dict[str, object]:
+    try:
+        return ContextIntelligenceService().trace_case(case_id).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/context/packs/{case_id}")
+def get_context_pack(case_id: str) -> dict[str, object]:
+    try:
+        return ContextIntelligenceService().assemble_case(case_id).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/context/prompt-preview/{case_id}")
+def get_prompt_preview(case_id: str, target: str = "jira_draft") -> dict[str, object]:
+    try:
+        return ContextIntelligenceService().prompt_for_case(case_id, target=target).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/context/report")
+def get_context_report(team_id: str, repo_name: str | None = None) -> dict[str, object]:
+    try:
+        return ContextIntelligenceService().memory_report(
+            team_id=team_id,
+            repo_name=repo_name,
+        ).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/memory/scan")
@@ -407,6 +521,17 @@ def run_evaluation(request: EvaluationRequest) -> EvaluationResult:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/eval/retrieval", response_model=EvaluationResult)
+def run_retrieval_evaluation(request: RetrievalEvalRequest) -> EvaluationResult:
+    try:
+        return ContextEvaluationService().evaluate_case(
+            case_id=request.case_id,
+            profile_id=request.profile_id,
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.get("/eval/runs")
 def list_evaluation_runs() -> list[dict[str, object]]:
     return [scorecard.model_dump() for scorecard in EvaluationRepository().list()]
@@ -428,21 +553,25 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     raise HTTPException(status_code=400, detail=f"Unsupported testgen provider: {provider}")
 
 
-def _llm_provider(provider: str) -> MockLLMProvider | OpenAICompatibleProvider:
+def _llm_provider(provider: str) -> LLMProvider:
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"config", "plugin"}:
+        return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
 
 
 def _optional_llm_provider(
     provider: str,
-) -> MockLLMProvider | OpenAICompatibleProvider | None:
+) -> LLMProvider | None:
     if provider == "deterministic":
         return None
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"config", "plugin"}:
+        return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")

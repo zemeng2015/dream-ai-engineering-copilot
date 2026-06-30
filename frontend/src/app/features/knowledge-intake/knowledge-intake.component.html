@@ -1,0 +1,194 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Knowledge intake pipeline</span>
+      <h1>Knowledge Intake</h1>
+      <p>
+        Demonstrate how runbooks, DOCX notes, and Confluence HLDs move from import queue to parsed
+        sections, concept review, approval, and promotion into DREAM memory packs.
+      </p>
+    </div>
+    <div class="index-beacon">
+      <span></span>
+      <strong>Mock parser</strong>
+      <small>approval gate active</small>
+    </div>
+  </header>
+
+  <section class="grid-4" aria-label="Knowledge intake metrics">
+    @for (metric of intakeMetrics(); track metric.label) {
+      <div class="metric-tile">
+        <span>{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.note }}</small>
+      </div>
+    }
+  </section>
+
+  <section class="grid-2">
+    <article class="panel scan-panel">
+      <div class="panel-header">
+        <h2>Upload / Import Queue</h2>
+        <span class="status-pill status-info">{{ queue().length }} mock sources</span>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Knowledge intake import queue">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Owner</th>
+              <th>Queue</th>
+              <th>Review</th>
+              <th>Target Pack</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of queue(); track item.id) {
+              <tr
+                class="queue-row"
+                [class.selected]="selectedItem()?.id === item.id"
+                tabindex="0"
+                (click)="selectItem(item)"
+              >
+                <td>
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ sourceKindLabel(item) }} / {{ item.sourcePath }}</span>
+                </td>
+                <td>{{ item.owner }}</td>
+                <td>
+                  <span class="status-pill" [class]="statusClass(item.queueStatus)">
+                    {{ formatStatus(item.queueStatus) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-pill" [class]="statusClass(item.reviewStatus)">
+                    {{ formatStatus(item.reviewStatus) }}
+                  </span>
+                </td>
+                <td>{{ item.targetPack }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel review-console">
+      <div class="panel-header">
+        <h2>Review Console</h2>
+        @if (selectedItem(); as item) {
+          <span class="status-pill" [class]="statusClass(item.reviewStatus)">
+            {{ formatStatus(item.reviewStatus) }}
+          </span>
+        }
+      </div>
+      <div class="panel-body">
+        @if (selectedItem(); as item) {
+          <dl class="metadata-list">
+            <div>
+              <dt>Imported</dt>
+              <dd>{{ item.importedAt | date: 'MMM d, y, h:mm a' }}</dd>
+            </div>
+            <div>
+              <dt>Parser</dt>
+              <dd>{{ item.parser }}</dd>
+            </div>
+            <div>
+              <dt>Promotion</dt>
+              <dd>{{ item.promotionSummary }}</dd>
+            </div>
+          </dl>
+
+          <div class="action-row">
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="item.reviewStatus === 'promoted'"
+              (click)="reparseSelected()"
+            >
+              Re-parse
+            </button>
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="item.reviewStatus === 'approved' || item.reviewStatus === 'promoted'"
+              (click)="approveSelected()"
+            >
+              Approve Sections
+            </button>
+            <button
+              class="primary-button"
+              type="button"
+              [disabled]="item.reviewStatus !== 'approved'"
+              (click)="promoteSelected()"
+            >
+              Promote to Pack
+            </button>
+          </div>
+
+          <div class="info-callout">{{ actionMessage() }}</div>
+        } @else {
+          <div class="info-callout">Select a source row to inspect parsed content.</div>
+        }
+      </div>
+    </article>
+  </section>
+
+  @if (selectedItem(); as item) {
+    <section class="grid-2">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Parsed Sections</h2>
+          <span class="status-pill status-info">{{ item.sections.length }} sections</span>
+        </div>
+        <div class="section-list">
+          @for (section of item.sections; track section.id) {
+            <div class="parsed-section">
+              <div class="section-heading">
+                <strong>{{ section.heading }}</strong>
+                <span>{{ section.confidence * 100 | number: '1.0-0' }}%</span>
+              </div>
+              <p>{{ section.summary }}</p>
+              <div class="confidence-bar"><i [style.width.%]="section.confidence * 100"></i></div>
+              <div class="mini-concepts">
+                @for (concept of section.concepts; track concept) {
+                  <span>{{ concept }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+
+      <div class="side-stack">
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Parsed Concepts</h2>
+          </div>
+          <div class="concept-cloud compact-cloud">
+            @for (concept of item.parsedConcepts; track concept) {
+              <button type="button">{{ concept }}</button>
+            }
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Review Notes</h2>
+          </div>
+          <div class="note-list">
+            @for (note of item.reviewNotes; track note) {
+              <div>
+                <strong>Gate note</strong>
+                <span>{{ note }}</span>
+              </div>
+            }
+          </div>
+        </article>
+      </div>
+    </section>
+  }
+</section>

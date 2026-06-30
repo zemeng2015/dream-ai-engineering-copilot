@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from dream.core.errors import NotFoundError
-from dream.core.paths import ensure_artifacts_dir
+from dream.core.paths import display_path, ensure_artifacts_dir
 from dream.graph.models import EvidenceGraph
 
 
@@ -36,7 +36,7 @@ class EvidenceGraphRepository:
         return self.artifacts_dir / "evidence-graphs" / safe_team / f"{safe_repo}.json"
 
     def display_graph_path(self, team_id: str, repo_name: str | None = None) -> str:
-        return self.graph_path(team_id, repo_name).as_posix()
+        return display_path(self.graph_path(team_id, repo_name))
 
     def list_graph_names(self, team_id: str) -> list[str | None]:
         graph_dir = self.artifacts_dir / "evidence-graphs" / self._safe_name(team_id)

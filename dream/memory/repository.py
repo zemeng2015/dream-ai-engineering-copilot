@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from dream.core.errors import NotFoundError
-from dream.core.paths import ARTIFACTS_DIR, display_path
+from dream.core.paths import display_path, ensure_artifacts_dir
 from dream.memory.models import (
     MemoryEvalResult,
     MemoryLedgerSnapshot,
@@ -13,8 +13,8 @@ from dream.memory.models import (
 
 
 class MemoryDistillationRepository:
-    def __init__(self, artifacts_dir: Path = ARTIFACTS_DIR) -> None:
-        self.artifacts_dir = artifacts_dir
+    def __init__(self, artifacts_dir: Path | None = None) -> None:
+        self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
 
     def save_scan(self, scan: MemoryScanResult) -> Path:
         path = self.scan_path(scan.team_id, scan.scan_id)

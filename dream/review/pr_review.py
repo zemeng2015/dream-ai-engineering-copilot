@@ -6,9 +6,8 @@ from dream.audit.logger import AuditLogger
 from dream.codebase import CodebaseIndexRepository, CodebaseRetriever
 from dream.codebase.models import CodebaseSearchResult, TestMapping
 from dream.core.paths import (
-    KNOWLEDGE_PACKS_DIR,
     display_path,
-    ensure_artifacts_dir,
+    resolve_artifact_path,
     resolve_project_path,
 )
 from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
@@ -56,7 +55,7 @@ class PRReviewAssistant:
         jira_context = self._read_optional_context(request.jira_context_path)
 
         pack = self.pack_loader.load(request.team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
         query = " ".join(
@@ -100,9 +99,24 @@ class PRReviewAssistant:
             related_tests=related_tests,
             warnings=warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            codebase_repository=self.codebase_repository,
+            graph_repository=self.graph_repository,
+        ).save_pr_review_context(
+            run_id=run_id,
+            request=request,
+            diff_summary=diff_summary,
+            chunks=retrieved,
+            codebase_results=codebase_results,
+            related_tests=related_tests,
+            warnings=warnings,
+            prompt=prompt,
+        )
         llm_response = self.llm_provider.complete(prompt)
         markdown = llm_response.text
-        output_path = ensure_artifacts_dir() / f"pr-review-summary-{run_id}.md"
+        output_path = resolve_artifact_path(f"pr-review-summary-{run_id}.md")
         output_path.write_text(markdown, encoding="utf-8")
         sources_used = sorted(
             {chunk.source_path for chunk in retrieved}

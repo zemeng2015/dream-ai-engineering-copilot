@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 from dream.audit.logger import AuditLogger
-from dream.core.paths import KNOWLEDGE_PACKS_DIR, display_path, ensure_artifacts_dir
+from dream.core.paths import display_path, resolve_artifact_path
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import BaseLLMProvider, MockLLMProvider
 from dream.requirements.models import RequirementDraftRequest, RequirementDraftResponse
@@ -29,7 +29,7 @@ class RequirementDraftGenerator:
     def draft(self, request: RequirementDraftRequest) -> RequirementDraftResponse:
         run_id = f"req-{uuid4().hex[:12]}"
         pack = self.pack_loader.load(request.team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
         retrieved = SimpleRetriever(chunks).search(
@@ -55,7 +55,7 @@ class RequirementDraftGenerator:
         prompt = render_requirement_draft(request, retrieved)
         llm_response = self.llm_provider.complete(prompt)
         markdown = llm_response.text
-        output_path = ensure_artifacts_dir() / f"requirement-draft-{run_id}.md"
+        output_path = resolve_artifact_path(f"requirement-draft-{run_id}.md")
         output_path.write_text(markdown, encoding="utf-8")
         sources_used = sorted({chunk.source_path for chunk in retrieved})
         self.audit_logger.log_generation(

@@ -4,12 +4,12 @@ from pathlib import Path
 
 from dream.codebase.models import RepoIndex
 from dream.core.errors import NotFoundError
-from dream.core.paths import ARTIFACTS_DIR, display_path
+from dream.core.paths import display_path, ensure_artifacts_dir
 
 
 class CodebaseIndexRepository:
-    def __init__(self, artifacts_dir: Path = ARTIFACTS_DIR) -> None:
-        self.artifacts_dir = artifacts_dir
+    def __init__(self, artifacts_dir: Path | None = None) -> None:
+        self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
 
     def save(self, index: RepoIndex) -> Path:
         path = self.index_path(index.team_id, index.repo_name)

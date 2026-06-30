@@ -22,6 +22,17 @@ This repository uses synthetic DemoCorp examples only. For enterprise use, keep
 company-specific knowledge packs, connectors, prompts, and deployment configs in
 private repositories.
 
+## Open-Core / Private Extension Pattern
+
+DREAM public core contains the generic framework, synthetic DemoCorp data,
+provider interfaces, and local/mock providers. Private extension repositories
+contain private knowledge packs, private LLM providers, private prompt and
+redaction policies, deployment configs, connectors, and generated artifacts.
+
+Public core can be imported into a private environment, but private extensions
+should not be pushed back to public core. When a private implementation reveals
+a generic improvement, recreate it with synthetic examples before upstreaming.
+
 ## Why DREAM Exists
 
 Teams rarely lack information. They lack a reliable way to make the right

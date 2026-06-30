@@ -6,6 +6,7 @@ import {
   AuditRun,
   CodebaseFile,
   ContextEvidence,
+  ContextIntelligenceSnapshot,
   EvaluationDimension,
   EvaluationScorecard,
   EvidenceGraphNode,
@@ -13,6 +14,7 @@ import {
   HumanRating,
   ImpactItem,
   KnowledgeChunk,
+  KnowledgeIntakeItem,
   KnowledgePack,
   PrReviewInput,
   PrReviewResult,
@@ -73,6 +75,14 @@ export class MockDreamService {
 
   listKnowledgeChunks(): KnowledgeChunk[] {
     return MOCK_CHUNKS;
+  }
+
+  listKnowledgeIntakeQueue(): KnowledgeIntakeItem[] {
+    return MOCK_KNOWLEDGE_INTAKE_QUEUE.map(cloneKnowledgeIntakeItem);
+  }
+
+  getContextIntelligenceSnapshot(): ContextIntelligenceSnapshot {
+    return cloneContextIntelligenceSnapshot(MOCK_CONTEXT_INTELLIGENCE);
   }
 
   listCodebaseFiles(): CodebaseFile[] {
@@ -714,6 +724,39 @@ function relatedCodeForChangedFiles(changedFiles: string[]): CodebaseFile[] {
   return Array.from(new Map([...direct, ...conceptMatches].map((file) => [file.id, file])).values()).slice(0, 6);
 }
 
+function cloneKnowledgeIntakeItem(item: KnowledgeIntakeItem): KnowledgeIntakeItem {
+  return {
+    ...item,
+    parsedConcepts: [...item.parsedConcepts],
+    sections: item.sections.map((section) => ({
+      ...section,
+      concepts: [...section.concepts],
+    })),
+    reviewNotes: [...item.reviewNotes],
+  };
+}
+
+function cloneContextIntelligenceSnapshot(snapshot: ContextIntelligenceSnapshot): ContextIntelligenceSnapshot {
+  return {
+    ...snapshot,
+    retrievalTrail: snapshot.retrievalTrail.map((step) => ({ ...step })),
+    contextPackSections: snapshot.contextPackSections.map((section) => ({
+      ...section,
+      includedEvidenceIds: [...section.includedEvidenceIds],
+    })),
+    promptPreview: {
+      ...snapshot.promptPreview,
+      evidenceInstructions: [...snapshot.promptPreview.evidenceInstructions],
+    },
+    metrics: snapshot.metrics.map((metric) => ({ ...metric })),
+    evidenceCards: snapshot.evidenceCards.map((card) => ({ ...card })),
+    logicChain: snapshot.logicChain.map((step) => ({
+      ...step,
+      evidenceIds: [...step.evidenceIds],
+    })),
+  };
+}
+
 const MOCK_PACKS: KnowledgePack[] = [
   {
     id: 'dfp-domain',
@@ -947,6 +990,132 @@ const MOCK_CHUNKS: KnowledgeChunk[] = [
       component: 'job-execution',
       docType: 'pr-review',
     },
+  },
+];
+
+const MOCK_KNOWLEDGE_INTAKE_QUEUE: KnowledgeIntakeItem[] = [
+  {
+    id: 'intake-runbook-stuck-running',
+    title: 'Status Stuck RUNNING Operator Runbook',
+    sourceKind: 'runbook',
+    sourcePath: 'uploads/runbooks/status-stuck-running-runbook.md',
+    owner: 'Ops Enablement',
+    importedAt: '2026-06-21T14:12:00.000Z',
+    queueStatus: 'ready_for_review',
+    reviewStatus: 'needs_review',
+    targetPack: 'DFP Operations Memory',
+    parser: 'markdown-runbook-parser-v1',
+    parsedConcepts: ['stuck running', 'operator escalation', 'status tracker', 'processor completion'],
+    sections: [
+      {
+        id: 'runbook-section-detect',
+        heading: 'Detect stuck RUNNING execution',
+        summary: 'Operator compares processor completion evidence with StatusTracker terminal-state persistence.',
+        concepts: ['stuck running', 'status tracker', 'terminal state'],
+        confidence: 0.92,
+      },
+      {
+        id: 'runbook-section-remediate',
+        heading: 'Safe remediation path',
+        summary: 'Escalate before manual status correction and attach execution id, processor log id, and failed persistence event.',
+        concepts: ['operator escalation', 'audit trail', 'manual correction'],
+        confidence: 0.87,
+      },
+      {
+        id: 'runbook-section-prevent',
+        heading: 'Regression prevention',
+        summary: 'Require StatusTracker tests for RUNNING to COMPLETED and RUNNING to FAILED persistence failures.',
+        concepts: ['regression tests', 'status transition tests', 'persistence failure'],
+        confidence: 0.9,
+      },
+    ],
+    reviewNotes: [
+      'Ops reviewer must confirm manual correction language before promotion.',
+      'Promote into operations pack only after incident owner approves terminology.',
+    ],
+    promotionSummary: 'Adds operator-ready stuck RUNNING remediation context to requirement and PR review retrieval.',
+  },
+  {
+    id: 'intake-docx-long-running',
+    title: 'Long-running Forecast Execution UX Notes',
+    sourceKind: 'docx',
+    sourcePath: 'uploads/docx/long-running-forecast-execution-ux-notes.docx',
+    owner: 'Product BA',
+    importedAt: '2026-06-21T15:05:00.000Z',
+    queueStatus: 'parsed',
+    reviewStatus: 'unreviewed',
+    targetPack: 'DFP Domain Memory',
+    parser: 'docx-section-parser-v1',
+    parsedConcepts: ['analyst progress', 'task status labels', 'partial success', 'safe error copy'],
+    sections: [
+      {
+        id: 'docx-section-analyst-progress',
+        heading: 'Analyst progress expectation',
+        summary: 'Analysts need job-level and task-level progress without asking Operators during long forecasts.',
+        concepts: ['analyst progress', 'task status', 'job execution'],
+        confidence: 0.89,
+      },
+      {
+        id: 'docx-section-status-labels',
+        heading: 'Visible task status labels',
+        summary: 'The UI should distinguish queued, running, failed, completed, cancelled, skipped, and retrying tasks.',
+        concepts: ['status labels', 'queued', 'retrying', 'cancelled'],
+        confidence: 0.84,
+      },
+      {
+        id: 'docx-section-partial-success',
+        heading: 'Partial completion question',
+        summary: 'Product still needs a decision on when partial output is available after optional task failure.',
+        concepts: ['partial success', 'open question', 'output availability'],
+        confidence: 0.78,
+      },
+    ],
+    reviewNotes: [
+      'Needs BA/TL review because partial success is still an open product decision.',
+      'Parsed headings look stable; concept merge is pending.',
+    ],
+    promotionSummary: 'Would enrich requirement drafting with product wording for progress visibility and open questions.',
+  },
+  {
+    id: 'intake-confluence-state-model',
+    title: 'Confluence HLD: Forecast Execution State Model',
+    sourceKind: 'confluence_hld',
+    sourcePath: 'confluence://DFP/HLD/Forecast-Execution-State-Model',
+    owner: 'Platform TL',
+    importedAt: '2026-06-21T16:40:00.000Z',
+    queueStatus: 'promoted',
+    reviewStatus: 'promoted',
+    targetPack: 'DFP Architecture Memory',
+    parser: 'confluence-hld-parser-v1',
+    parsedConcepts: ['state machine', 'terminal states', 'batch task retry', 'api contract'],
+    sections: [
+      {
+        id: 'hld-section-state-machine',
+        heading: 'Execution state machine',
+        summary: 'Defines legal transitions for queued, running, completed, failed, cancelled, and partial success.',
+        concepts: ['state machine', 'terminal states', 'legal transitions'],
+        confidence: 0.95,
+      },
+      {
+        id: 'hld-section-api-contract',
+        heading: 'Status API contract',
+        summary: 'Status endpoint returns execution state, task states, timestamps, stale flag, and retry hint.',
+        concepts: ['api contract', 'stale flag', 'retry hint'],
+        confidence: 0.91,
+      },
+      {
+        id: 'hld-section-retry',
+        heading: 'Batch retry behavior',
+        summary: 'Batch task retries preserve execution id and make failure reason visible to Operator workflows.',
+        concepts: ['batch task retry', 'failure reason', 'operator workflow'],
+        confidence: 0.88,
+      },
+    ],
+    reviewNotes: [
+      'Already promoted in mock state to show post-approval queue behavior.',
+      'Architecture owner accepted status API contract wording.',
+    ],
+    promotionSummary: 'Promoted sections now participate in graph expansion and context pack assembly.',
   },
 ];
 
@@ -1232,6 +1401,263 @@ const MOCK_GRAPH_PATHS: EvidenceGraphPath[] = [
     reviewHint: 'Force open questions for BA/TL/QA around partial result availability and retry policy.',
   },
 ];
+
+const MOCK_CONTEXT_INTELLIGENCE: ContextIntelligenceSnapshot = {
+  caseId: 'case_async_status',
+  title: 'Async Status Context Pack',
+  request:
+    'Users want to know which task is still running when a forecast job takes too long. The execution page should show better progress.',
+  retrievalTrail: [
+    {
+      id: 'trail-normalize',
+      step: 1,
+      label: 'Normalize request',
+      detail: 'Mapped rough BA wording to execution status, task status, stale polling, and operator escalation concepts.',
+      query: 'long running forecast task still running progress',
+      sourcesMatched: 0,
+      status: 'pass',
+    },
+    {
+      id: 'trail-knowledge',
+      step: 2,
+      label: 'Retrieve knowledge chunks',
+      detail: 'Pulled domain, architecture, runbook, incident, Jira, PR, testing, and concept memory.',
+      query: 'execution status stuck running task status polling partial success',
+      sourcesMatched: 8,
+      status: 'pass',
+    },
+    {
+      id: 'trail-graph',
+      step: 3,
+      label: 'Expand evidence graph',
+      detail: 'Expanded execution status into code, tests, incidents, historical Jira, and PR review edges.',
+      query: 'concept:execution-status hops:2 include:code,test,incident',
+      sourcesMatched: 7,
+      status: 'pass',
+    },
+    {
+      id: 'trail-codebase',
+      step: 4,
+      label: 'Bind codebase memory',
+      detail: 'Attached ExecutionMonitor, StatusTracker, ExecutionService, BatchJobAdapter, and regression tests.',
+      query: 'ExecutionMonitor StatusTracker ExecutionService status transition tests',
+      sourcesMatched: 6,
+      status: 'pass',
+    },
+    {
+      id: 'trail-eval',
+      step: 5,
+      label: 'Evaluate context pack',
+      detail: 'Checked coverage, contradictions, source freshness, token budget, and human-review guardrails.',
+      query: 'eval async-status-tracking source coverage contradictions',
+      sourcesMatched: 4,
+      status: 'watch',
+    },
+  ],
+  contextPackSections: [
+    {
+      id: 'pack-request',
+      title: 'Request Interpretation',
+      summary: 'Keep the user story focused on Analyst progress visibility for long-running forecast executions.',
+      includedEvidenceIds: ['evidence-dfp-101', 'evidence-status-design'],
+      tokenEstimate: 540,
+      guardrail: 'Do not invent final timeout values; ask BA/TL.',
+      status: 'pass',
+    },
+    {
+      id: 'pack-evidence',
+      title: 'Source-backed Evidence Bundle',
+      summary: 'Use architecture, incident, historical Jira, historical PR, testing, and codebase memory together.',
+      includedEvidenceIds: ['evidence-status-design', 'evidence-inc-103', 'evidence-pr-502', 'evidence-status-tracker'],
+      tokenEstimate: 1780,
+      guardrail: 'Every recommendation must cite at least one source path.',
+      status: 'pass',
+    },
+    {
+      id: 'pack-impact',
+      title: 'Impact and Risk Lens',
+      summary: 'Explain frontend, backend, API, tests, and Ops runbook impact without treating draft output as approved.',
+      includedEvidenceIds: ['evidence-execution-monitor', 'evidence-status-tracker', 'evidence-test-plan'],
+      tokenEstimate: 1120,
+      guardrail: 'Keep PR and Jira outputs draft-only until human review.',
+      status: 'pass',
+    },
+    {
+      id: 'pack-open-questions',
+      title: 'Open Questions',
+      summary: 'Surface partial success and stale RUNNING timeout decisions as explicit role-specific questions.',
+      includedEvidenceIds: ['evidence-inc-105', 'evidence-test-plan'],
+      tokenEstimate: 460,
+      guardrail: 'Mark product ambiguity as needs_review instead of filling gaps.',
+      status: 'watch',
+    },
+  ],
+  promptPreview: {
+    system:
+      'You are DREAM, a source-backed engineering copilot. Produce draft-only outputs and require human review.',
+    developer:
+      'Use only supplied context pack evidence. Preserve source paths, expose uncertainty, and separate facts from recommendations.',
+    user:
+      'Draft a requirement case for task-level async status visibility in long-running DFP forecast executions.',
+    evidenceInstructions: [
+      'Cite status-tracking-design.md when describing terminal states.',
+      'Cite INC-103 for stuck RUNNING risk and operator escalation.',
+      'Cite PR-502 when discussing stale polling and frontend follow-up.',
+      'Ask BA/TL/QA questions for partial success and timeout thresholds.',
+    ],
+  },
+  metrics: [
+    {
+      label: 'Source coverage',
+      value: '7 / 8',
+      target: '>= 6 source families',
+      status: 'pass',
+      note: 'Docs, incidents, Jira, PR, tests, code, and concept memory are represented.',
+    },
+    {
+      label: 'Retrieval precision',
+      value: '0.86',
+      target: '>= 0.80',
+      status: 'pass',
+      note: 'Top evidence centers on execution status rather than unrelated output preview material.',
+    },
+    {
+      label: 'Conflict flags',
+      value: '1',
+      target: '0 unresolved',
+      status: 'watch',
+      note: 'Partial success output availability remains a product decision.',
+    },
+    {
+      label: 'Prompt budget',
+      value: '3.9k',
+      target: '<= 6k tokens',
+      status: 'pass',
+      note: 'Context pack leaves room for draft brief, questions, and Jira story generation.',
+    },
+  ],
+  evidenceCards: [
+    {
+      evidenceId: 'evidence-dfp-101',
+      title: 'DFP-101 Add Execution Status Tracking',
+      sourcePath: 'knowledge_packs/demo_team/docs/historical-jira/DFP-101-add-execution-status-tracking.md',
+      sourceType: 'historical_jira',
+      excerpt: 'Historical story introduced async execution status, task status visibility, and Analyst progress monitoring.',
+      relevanceScore: 0.91,
+      reason: 'Connects the current ask to accepted historical requirement language.',
+    },
+    {
+      evidenceId: 'evidence-status-design',
+      title: 'Status Tracking Design',
+      sourcePath: 'knowledge_packs/demo_team/docs/architecture/status-tracking-design.md',
+      sourceType: 'architecture_doc',
+      excerpt: 'Defines persisted execution status, terminal states, task states, and stale RUNNING handling.',
+      relevanceScore: 0.96,
+      reason: 'Primary architecture source for status model and terminal-state rules.',
+    },
+    {
+      evidenceId: 'evidence-inc-103',
+      title: 'INC-103 Status Stuck RUNNING',
+      sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md',
+      sourceType: 'incident',
+      excerpt: 'Processor completed but StatusTracker failed to persist COMPLETED, leaving the user-facing execution stuck.',
+      relevanceScore: 0.93,
+      reason: 'Historical failure mode that justifies stale-state guardrails and runbook linkage.',
+    },
+    {
+      evidenceId: 'evidence-pr-502',
+      title: 'PR-502 Add Execution Status Polling',
+      sourcePath: 'knowledge_packs/demo_team/docs/historical-pr/PR-502-add-execution-status-polling.md',
+      sourceType: 'historical_pr',
+      excerpt: 'Reviewer noted backend status updates were present but UI stale polling states needed follow-up.',
+      relevanceScore: 0.88,
+      reason: 'Shows frontend review concern and expected PR review question.',
+    },
+    {
+      evidenceId: 'evidence-status-tracker',
+      title: 'StatusTracker.java',
+      sourcePath: 'examples/dfp-demo-repo/backend-api/src/main/java/com/democorp/dfp/execution/StatusTracker.java',
+      sourceType: 'code_file',
+      excerpt: 'Persists authoritative execution and task status transitions to prevent stale RUNNING state.',
+      relevanceScore: 0.9,
+      reason: 'Maps the requirement to backend implementation ownership.',
+    },
+    {
+      evidenceId: 'evidence-test-plan',
+      title: 'Status Transition Test Plan',
+      sourcePath: 'knowledge_packs/demo_team/docs/testing/status-transition-test-plan.md',
+      sourceType: 'testing_doc',
+      excerpt: 'Regression tests cover queued, running, failed, completed, cancelled, partial success, and stuck RUNNING recovery paths.',
+      relevanceScore: 0.87,
+      reason: 'Anchors acceptance criteria and required regression coverage.',
+    },
+    {
+      evidenceId: 'evidence-inc-105',
+      title: 'INC-105 Partial Completion Undefined',
+      sourcePath: 'knowledge_packs/demo_team/docs/incidents/INC-105-partial-completion-undefined.md',
+      sourceType: 'incident',
+      excerpt: 'One task failed while other tasks completed; partial success and partial result availability were not defined.',
+      relevanceScore: 0.8,
+      reason: 'Triggers explicit product clarification instead of assumed behavior.',
+    },
+    {
+      evidenceId: 'evidence-execution-monitor',
+      title: 'ExecutionMonitorComponent',
+      sourcePath: 'examples/dfp-demo-repo/frontend/src/app/execution/execution-monitor.component.ts',
+      sourceType: 'code_file',
+      excerpt: 'Renders job and task status, polling state, stale data warnings, and operator-facing retry hints.',
+      relevanceScore: 0.84,
+      reason: 'Maps context to the Angular surface likely affected by the requirement.',
+    },
+  ],
+  logicChain: [
+    {
+      id: 'logic-intent',
+      order: 1,
+      title: 'Intent extraction',
+      input: 'Rough request mentions long forecast jobs and uncertainty about the running task.',
+      output: 'Normalize to async execution status, task progress, stale polling, and review questions.',
+      evidenceIds: ['evidence-dfp-101', 'evidence-status-design'],
+      status: 'pass',
+    },
+    {
+      id: 'logic-grounding',
+      order: 2,
+      title: 'Evidence grounding',
+      input: 'Search knowledge chunks and graph paths for execution status and stuck RUNNING.',
+      output: 'Select architecture, incident, PR, testing, and code evidence with source paths.',
+      evidenceIds: ['evidence-status-design', 'evidence-inc-103', 'evidence-pr-502'],
+      status: 'pass',
+    },
+    {
+      id: 'logic-impact',
+      order: 3,
+      title: 'Impact mapping',
+      input: 'Bind source evidence to frontend, backend, API, test, and Ops ownership.',
+      output: 'Produce component impact map and role-specific clarification questions.',
+      evidenceIds: ['evidence-execution-monitor', 'evidence-status-tracker', 'evidence-test-plan'],
+      status: 'pass',
+    },
+    {
+      id: 'logic-ambiguity',
+      order: 4,
+      title: 'Ambiguity handling',
+      input: 'Partial success behavior appears in incidents but lacks final product decision.',
+      output: 'Mark partial output availability and timeout threshold as needs_review.',
+      evidenceIds: ['evidence-inc-105', 'evidence-test-plan'],
+      status: 'watch',
+    },
+    {
+      id: 'logic-prompt',
+      order: 5,
+      title: 'Prompt assembly',
+      input: 'Combine request interpretation, evidence bundle, impact lens, and guardrails.',
+      output: 'Prepare draft-only prompt preview for requirement case generation.',
+      evidenceIds: ['evidence-status-design', 'evidence-inc-103', 'evidence-pr-502', 'evidence-test-plan'],
+      status: 'pass',
+    },
+  ],
+};
 
 const MOCK_REQUIREMENT_CASES: RequirementCase[] = [
   buildRequirementCase({

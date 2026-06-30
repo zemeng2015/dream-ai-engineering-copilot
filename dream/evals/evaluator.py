@@ -7,7 +7,7 @@ from uuid import uuid4
 from dream.audit.logger import AuditLogger
 from dream.audit.repository import AuditRepository
 from dream.core.errors import DreamError, NotFoundError
-from dream.core.paths import display_path, ensure_artifacts_dir, resolve_project_path
+from dream.core.paths import display_path, resolve_artifact_path, resolve_project_path
 from dream.evals.evidence import EvalProfileLoader, EvidenceCoverageAnalyzer
 from dream.evals.models import (
     EvalProfile,
@@ -883,7 +883,7 @@ class EvaluationAgent:
         target: EvaluationTarget,
         request: EvaluationRequest,
     ) -> EvaluationResult:
-        eval_dir = ensure_artifacts_dir() / "evals"
+        eval_dir = resolve_artifact_path("evals")
         eval_dir.mkdir(parents=True, exist_ok=True)
         json_path = eval_dir / f"{scorecard.evaluation_id}.json"
         markdown_path = eval_dir / f"{scorecard.evaluation_id}.md"

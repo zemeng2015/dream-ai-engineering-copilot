@@ -5,13 +5,13 @@ import sqlite3
 from pathlib import Path
 
 from dream.audit.models import AuditRecord
-from dream.core.paths import DEFAULT_DB_PATH
+from dream.core.paths import get_audit_db_path
 from dream.evals.models import HumanRating
 
 
 class AuditRepository:
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
-        self.db_path = db_path
+    def __init__(self, db_path: Path | None = None) -> None:
+        self.db_path = db_path or get_audit_db_path()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 

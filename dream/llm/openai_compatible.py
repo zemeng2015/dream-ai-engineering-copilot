@@ -7,7 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from dream.core.errors import ProviderConfigurationError, ProviderRequestError
-from dream.llm.base import LLMResponse
+from dream.llm.base import LLMRequest, LLMResponse, prompt_text
 
 
 class OpenAICompatibleProvider:
@@ -35,7 +35,8 @@ class OpenAICompatibleProvider:
             os.getenv("OPENAI_COMPATIBLE_TIMEOUT_SECONDS", "30")
         )
 
-    def complete(self, prompt: str) -> LLMResponse:
+    def complete(self, prompt: str | LLMRequest) -> LLMResponse:
+        prompt = prompt_text(prompt)
         if not self.api_key:
             raise ProviderConfigurationError(
                 "OPENAI_COMPATIBLE_API_KEY or OPENAI_API_KEY is required to use "

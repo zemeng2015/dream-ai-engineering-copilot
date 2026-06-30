@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DREAM 对 Omni Agentic Analytics 架构的参考结论</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172026;
+      background: #f6f7f9;
+      line-height: 1.62;
+    }
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #dde2e7;
+      border-radius: 8px;
+      padding: 28px;
+    }
+    h1, h2, h3 { line-height: 1.25; color: #101820; }
+    h1 { font-size: 26px; margin-top: 0; }
+    h2 { font-size: 20px; margin-top: 30px; border-top: 1px solid #e7ebef; padding-top: 20px; }
+    h3 { font-size: 16px; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th, td { border: 1px solid #d9dee5; padding: 8px; vertical-align: top; }
+    th { background: #eef2f6; text-align: left; }
+    code, pre { font-family: "SFMono-Regular", Consolas, monospace; }
+    pre {
+      white-space: pre-wrap;
+      background: #0f1720;
+      color: #e8eef5;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+    .status {
+      border-left: 4px solid #cc7a00;
+      background: #fff8ec;
+      padding: 12px 14px;
+      margin: 16px 0;
+    }
+    a { color: #0759b8; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>DREAM 对 Omni Agentic Analytics 架构的参考结论</h1>
+  <p>日期：2026-06-28</p>
+  <div class="status">
+    本轮已再次尝试把材料发给 ChatGPT Pro 页面复核，但 Chrome 扩展控制在 claim ChatGPT 标签时连续超时，未能取得 ChatGPT 页面生成的独立回复。以下结论基于可访问公开资料、B 站视频元数据/分段概要，以及 DREAM 当前代码实现整理。
+  </div>
+
+  <h2>1. 结论</h2>
+  <p>Omni 的材料对 DREAM 有较高参考价值，但它参考的是 agent harness 工程形态，不是自动记忆提取算法本身。</p>
+  <ul>
+    <li>不要让 LLM 直接面对混乱 repo/doc 上下文自由发挥。</li>
+    <li>先建设受治理的 semantic substrate：approved memory claims、evidence graph、source spans、permissions、review ledger。</li>
+    <li>在 substrate 之上构建 typed tools、run trace、validators、evals 和 human review UI。</li>
+    <li>先做好 single coordinator + deterministic tools，不要过早上复杂 multi-agent。</li>
+  </ul>
+  <p>DREAM 下一阶段应命名为 <strong>Agent Harness Lite</strong>。</p>
+
+  <h2>2. Omni 概念到 DREAM 概念映射</h2>
+  <table>
+    <tr><th>Omni 概念</th><th>DREAM 对应概念</th><th>参考价值</th></tr>
+    <tr><td>Semantic model / semantic layer</td><td>Approved MemoryClaim + Evidence Graph Lite + source spans</td><td>高。DREAM 应把 memory layer 明确定位为 engineering semantic layer。</td></tr>
+    <tr><td>Natural language to analytics actions</td><td>Requirement / PR / memory-review workflow</td><td>高。用户输入应进入受控 workflow。</td></tr>
+    <tr><td>Blobby agent</td><td>DREAM workflow coordinator</td><td>中。可参考工具调度，不复制 analytics 领域假设。</td></tr>
+    <tr><td>Tool registry / harness</td><td>DREAM typed tools</td><td>高。search、graph explain、context card、validator 都应工具化。</td></tr>
+    <tr><td>Raw traces and bad-session analysis</td><td>DREAM RunTrace / EvalTrace</td><td>高。必须落盘每一步输入、工具、证据、输出、失败原因。</td></tr>
+    <tr><td>Dashboard Builder UI</td><td>DREAM evidence/review UI</td><td>中高。生成结果应可检查、可编辑、可批准。</td></tr>
+    <tr><td>Agent Skills</td><td>DREAM versioned workflow specs</td><td>高。Requirement Case、PR Review、Memory Review 可定义为可版本化 skills。</td></tr>
+    <tr><td>99% code by Claude Code</td><td>DREAM 开发效率参考</td><td>低。不是产品架构护城河。</td></tr>
+  </table>
+
+  <h2>3. DREAM 应采纳什么</h2>
+  <h3>Agent Harness Lite</h3>
+  <ul>
+    <li><code>RunTrace</code>：记录 workflow id、输入、工具调用、memory claim ids、graph path ids、validator 结果、最终输出。</li>
+    <li><code>ToolCallTrace</code>：记录工具名、参数摘要、返回摘要、耗时、错误。</li>
+    <li><code>EvidenceUse</code>：记录输出中每个关键结论引用了哪些 source span / claim / graph node。</li>
+    <li><code>WorkflowSpec</code>：声明某 workflow 允许调用哪些 tools、需要哪些 validators、最终产物 schema。</li>
+  </ul>
+  <h3>Typed Tools</h3>
+  <ul>
+    <li><code>memory.search_approved_claims</code></li>
+    <li><code>memory.build_context_card</code></li>
+    <li><code>memory.diff_latest_scan</code></li>
+    <li><code>graph.search</code></li>
+    <li><code>graph.explain</code></li>
+    <li><code>codebase.search_symbols</code></li>
+    <li><code>codebase.find_related_tests</code></li>
+    <li><code>review.validate_sources</code></li>
+    <li><code>review.check_unapproved_claims</code></li>
+  </ul>
+  <h3>Validators Before Final Output</h3>
+  <ul>
+    <li>结论引用的 memory claim 必须是 <code>approved</code>。</li>
+    <li>source span 必须能在 artifact/source 中解析。</li>
+    <li>graph path 必须存在。</li>
+    <li>candidate/rejected/superseded claim 不得作为正式结论依据。</li>
+    <li>未证实推断必须标为 assumption 或 open question。</li>
+  </ul>
+
+  <h2>4. DREAM 不应照搬什么</h2>
+  <ul>
+    <li>不照搬 analytics agent 的 SQL/metric 假设。</li>
+    <li>不早做多智能体。</li>
+    <li>不把“Claude 写了 99% 代码”当作产品价值主张。</li>
+    <li>不自动把生成结果反补进 durable memory。</li>
+  </ul>
+
+  <h2>5. 推荐下一阶段开发计划</h2>
+  <h3>P0：Agent Harness Lite</h3>
+  <ol>
+    <li>新增 <code>dream/workflows/</code> 模块。</li>
+    <li>增加 <code>WorkflowRun</code>, <code>RunTrace</code>, <code>ToolCallTrace</code>, <code>EvidenceUse</code>, <code>ValidationResult</code> models。</li>
+    <li>增加 <code>ToolRegistry</code>，先注册 memory / graph / codebase / validator 工具。</li>
+    <li>Requirement Case workflow 改为通过 tool registry 获取 approved memory context card。</li>
+    <li>PR Review workflow 改为记录 related codebase memory、graph evidence、approved memory claims。</li>
+    <li>CLI/API 增加 workflow run 和 trace retrieval。</li>
+  </ol>
+  <h3>P1：UI Evidence Review</h3>
+  <ol>
+    <li>前端增加 workflow trace page。</li>
+    <li>Requirement Case / PR Review 结果页增加 Evidence Panel。</li>
+    <li>Memory diff 页面增加 approve/reject/supersede inline actions。</li>
+    <li>显示 validator failures，并阻止高风险失败结果被标记为 ready。</li>
+  </ol>
+  <h3>P2：Eval Harness</h3>
+  <ol>
+    <li>构造 golden cases。</li>
+    <li>记录 unsupported claim rate。</li>
+    <li>增加 regression tests，保证 trace、source、validator 全链路存在。</li>
+  </ol>
+
+  <h2>6. 验收标准</h2>
+  <ul>
+    <li>每次 Requirement Case / PR Review 都生成 run id。</li>
+    <li>每个 run id 可回放用户输入、tools、memory claim ids、graph nodes/edges、validators 和最终输出。</li>
+    <li>未 approved 的 memory claim 不会进入 final conclusion。</li>
+    <li>source span 缺失会触发 validator failure。</li>
+    <li>测试覆盖 workflow trace、approved-only retrieval、validator block、API trace retrieval。</li>
+  </ul>
+
+  <h2>7. 最高风险架构错误</h2>
+  <ol>
+    <li>把 memory 当 prompt stuffing，而不是 governed semantic layer。</li>
+    <li>让 LLM 自己决定哪些记忆可信。</li>
+    <li>没有 run trace，导致用户无法审计为什么得出结论。</li>
+    <li>自动把 AI 输出反补成 durable memory，形成污染闭环。</li>
+    <li>过早引入 multi-agent，导致定位问题困难。</li>
+    <li>前端只展示漂亮结论，不展示证据和风险状态。</li>
+    <li>eval 只看输出质量，不看 provenance、unsupported claim、stale memory。</li>
+  </ol>
+
+  <h2>8. 公开参考链接</h2>
+  <ul>
+    <li><a href="https://www.bilibili.com/video/BV1vmTA6pEXK/">B 站视频</a></li>
+    <li><a href="https://claude.com/code-with-claude/session/ldn-ext-building-the-best-agentic-analytics-harness-powered-by-claude-built-with-claude-code">Anthropic session</a></li>
+    <li><a href="https://omni.co/blog/building-omnis-architecture-for-agentic-analytics">Omni agentic analytics architecture</a></li>
+    <li><a href="https://omni.co/blog/why-ai-needs-a-semantic-model">Omni semantic model for AI</a></li>
+    <li><a href="https://omni.co/blog/improving-ai-quality-with-context">Omni AI context</a></li>
+    <li><a href="https://omni.co/blog/introducing-omnis-agent-skills">Omni Agent Skills</a></li>
+    <li><a href="https://omni.co/blog/introducing-omnis-dashboard-builder">Omni Dashboard Builder</a></li>
+  </ul>
+</main>
+</body>
+</html>

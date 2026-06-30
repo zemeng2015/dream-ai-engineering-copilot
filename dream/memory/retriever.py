@@ -4,7 +4,6 @@ import hashlib
 
 from dream.codebase.repository import CodebaseIndexRepository
 from dream.codebase.retriever import CodebaseRetriever
-from dream.core.paths import KNOWLEDGE_PACKS_DIR
 from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
@@ -140,7 +139,7 @@ class EngineeringMemoryRetriever:
         component: str | None,
     ) -> list[ContextEvidence]:
         pack = self.pack_loader.load(team_id)
-        pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+        pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
         retrieved = SimpleRetriever(chunks).search(

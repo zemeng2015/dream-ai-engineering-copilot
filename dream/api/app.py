@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from dream import __version__
 from dream.api.routes import router
 
 
@@ -10,7 +11,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="DREAM AI Engineering Copilot",
         description="Domain-aware Requirements, Engineering Automation & Memory",
-        version="0.1.0",
+        version=__version__,
     )
     app.add_middleware(
         CORSMiddleware,

@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "privatedemo-dream-extension"
+version = "0.1.0"
+description = "PrivateDemo extension template for DREAM"
+requires-python = ">=3.11"
+dependencies = [
+  "dream-ai-engineering-copilot==0.2.0.dev0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["private_plugins*"]

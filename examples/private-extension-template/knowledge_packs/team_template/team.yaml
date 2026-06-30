@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+team_name: TeamTemplate
+team_id: team_template
+applications:
+  - PrivateDemoApp
+repositories:
+  - privatedemo-service
+document_paths:
+  - docs/architecture
+  - docs/runbooks
+  - docs/testing
+  - docs/pr-review
+review_rules:
+  - Check that changes align with TeamTemplate architecture notes.
+  - Check tests and runbook updates for operator-visible behavior.
+requirement_template: engineering_brief
+test_generation_rules:
+  provider: mock
+  human_review_required: true

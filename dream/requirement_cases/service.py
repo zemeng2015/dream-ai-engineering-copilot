@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from dream.audit.logger import AuditLogger
 from dream.codebase.repository import CodebaseIndexRepository
-from dream.core.paths import display_path, ensure_artifacts_dir
+from dream.core.paths import display_path, resolve_artifact_path
 from dream.llm import BaseLLMProvider
 from dream.requirement_cases.brief import EngineeringBriefGenerator
 from dream.requirement_cases.impact import ImpactMapGenerator
@@ -135,6 +135,12 @@ class RequirementCaseService:
             status="success",
             warnings=warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).trace_case(snapshot.case.case_id)
         return snapshot
 
     def generate_impact_map(self, case_id: str) -> list[ImpactItem]:
@@ -203,6 +209,12 @@ class RequirementCaseService:
             status="success",
             warnings=brief.warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).prompt_for_case(case_id, target="engineering_brief")
         return brief
 
     def generate_jira_draft(self, case_id: str) -> JiraDraft:
@@ -226,6 +238,12 @@ class RequirementCaseService:
             status="success",
             warnings=jira.warnings,
         )
+        from dream.context import ContextIntelligenceService
+
+        ContextIntelligenceService(
+            requirement_repository=self.repository,
+            codebase_repository=self.codebase_repository,
+        ).prompt_for_case(case_id, target="jira_draft")
         return jira
 
     def get_case(self, case_id: str) -> RequirementCaseSnapshot:
@@ -256,7 +274,7 @@ class RequirementCaseService:
 
     @staticmethod
     def _case_artifact_dir(case_id: str) -> Path:
-        path = ensure_artifacts_dir() / "requirement-cases" / case_id
+        path = resolve_artifact_path(Path("requirement-cases") / case_id)
         path.mkdir(parents=True, exist_ok=True)
         return path
 

@@ -5,15 +5,21 @@ from typing import Annotated
 
 import typer
 
+from dream import __version__
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.config import resolve_config, sanitized_config_dict, validate_config
+from dream.context import ContextEvaluationService, ContextIntelligenceService
 from dream.core.errors import DreamError
-from dream.core.paths import KNOWLEDGE_PACKS_DIR
+from dream.demo import run_demo_verification
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest
 from dream.evals.rating import HumanRatingService
 from dream.evals.repository import EvaluationRepository
+from dream.extensions import build_llm_provider
+from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
+from dream.intake import KnowledgeIntakeService, ReviewDecision
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
 from dream.memory import (
@@ -39,6 +45,10 @@ req_app = typer.Typer(help="Requirement Case intelligence commands.")
 llm_app = typer.Typer(help="Optional LLM provider smoke-test commands.")
 graph_app = typer.Typer(help="Evidence graph / memory graph commands.")
 memory_app = typer.Typer(help="Governed memory distillation commands.")
+config_app = typer.Typer(help="Configuration and extension diagnostics.")
+demo_app = typer.Typer(help="Deterministic DemoCorp verification commands.")
+context_app = typer.Typer(help="Context intelligence and retrieval trust commands.")
+intake_app = typer.Typer(help="Knowledge intake and human-review commands.")
 
 app.add_typer(kb_app, name="kb")
 app.add_typer(requirement_app, name="requirement")
@@ -51,6 +61,31 @@ app.add_typer(req_app, name="req")
 app.add_typer(llm_app, name="llm")
 app.add_typer(graph_app, name="graph")
 app.add_typer(memory_app, name="memory")
+app.add_typer(config_app, name="config")
+app.add_typer(demo_app, name="demo")
+app.add_typer(context_app, name="context")
+app.add_typer(intake_app, name="intake")
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show DREAM version and exit.",
+        ),
+    ] = False,
+) -> None:
+    _ = version
 
 
 @kb_app.command("list-teams")
@@ -71,7 +106,7 @@ def search_kb(
 ) -> None:
     pack_loader = KnowledgePackLoader()
     pack = pack_loader.load(team)
-    pack_dir = KNOWLEDGE_PACKS_DIR / pack.team_id
+    pack_dir = pack_loader.pack_dir(pack.team_id)
     documents = MarkdownDocumentLoader().load_for_pack(pack, pack_dir)
     chunks = Chunker().chunk_all(documents)
     results = SimpleRetriever(chunks).search(
@@ -602,6 +637,20 @@ def eval_run(
     typer.echo(f"Markdown: {result.markdown_path}")
 
 
+@eval_app.command("retrieval")
+def eval_retrieval(
+    case: Annotated[str, typer.Option("--case")],
+    profile: Annotated[str, typer.Option("--profile")],
+) -> None:
+    try:
+        result = ContextEvaluationService().evaluate_case(case_id=case, profile_id=profile)
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(result.markdown_report)
+    typer.echo(f"JSON: {result.json_path}")
+    typer.echo(f"Markdown: {result.markdown_path}")
+
+
 @eval_app.command("list")
 def eval_list() -> None:
     for scorecard in EvaluationRepository().list():
@@ -644,6 +693,163 @@ def llm_smoke(
     typer.echo(response.text)
 
 
+@context_app.command("trace")
+def context_trace(case: Annotated[str, typer.Option("--case")]) -> None:
+    trail = ContextIntelligenceService().trace_case(case)
+    typer.echo(trail.model_dump_json(indent=2))
+    typer.echo(f"JSON: {trail.json_path}")
+    typer.echo(f"Markdown: {trail.markdown_path}")
+
+
+@context_app.command("assemble")
+def context_assemble(case: Annotated[str, typer.Option("--case")]) -> None:
+    pack = ContextIntelligenceService().assemble_case(case)
+    typer.echo(pack.model_dump_json(indent=2))
+    typer.echo(f"JSON: {pack.json_path}")
+    typer.echo(f"Markdown: {pack.markdown_path}")
+
+
+@context_app.command("prompt")
+def context_prompt(
+    case: Annotated[str, typer.Option("--case")],
+    target: Annotated[str, typer.Option("--target")] = "jira_draft",
+) -> None:
+    preview = ContextIntelligenceService().prompt_for_case(case, target=target)
+    typer.echo(preview.prompt_text)
+    typer.echo(f"\nJSON: {preview.json_path}")
+    typer.echo(f"Markdown: {preview.markdown_path}")
+
+
+@context_app.command("card")
+def context_card(
+    team: Annotated[str, typer.Option("--team")],
+    source: Annotated[str, typer.Option("--source")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    card = ContextIntelligenceService().evidence_card(
+        team_id=team,
+        repo_name=repo,
+        source_path=source,
+    )
+    typer.echo(card.model_dump_json(indent=2))
+
+
+@context_app.command("report")
+def context_report(
+    team: Annotated[str, typer.Option("--team")],
+    repo: Annotated[str | None, typer.Option("--repo")] = None,
+) -> None:
+    report = ContextIntelligenceService().memory_report(team_id=team, repo_name=repo)
+    typer.echo(report.model_dump_json(indent=2))
+    typer.echo(f"JSON: {report.json_path}")
+    typer.echo(f"Markdown: {report.markdown_path}")
+
+
+@intake_app.command("upload")
+def intake_upload(
+    team: Annotated[str, typer.Option("--team")],
+    file: Annotated[str, typer.Option("--file")],
+    doc_type: Annotated[str, typer.Option("--type")] = "architecture",
+    title: Annotated[str | None, typer.Option("--title")] = None,
+) -> None:
+    document = KnowledgeIntakeService().upload_local_file(
+        team_id=team,
+        file_path=file,
+        document_type=doc_type,
+        title=title,
+    )
+    typer.echo(document.model_dump_json(indent=2))
+
+
+@intake_app.command("list")
+def intake_list() -> None:
+    for document in KnowledgeIntakeService().repository.list_documents():
+        typer.echo(
+            f"{document.document_id}\t{document.team_id}\t{document.document_type}\t"
+            f"{document.status}\t{document.title}"
+        )
+
+
+@intake_app.command("parse")
+def intake_parse(document: Annotated[str, typer.Option("--document")]) -> None:
+    draft = KnowledgeIntakeService().parse_document(document)
+    typer.echo(draft.model_dump_json(indent=2))
+    typer.echo(f"JSON: {draft.json_path}")
+    typer.echo(f"Markdown: {draft.markdown_path}")
+
+
+@intake_app.command("review")
+def intake_review(
+    draft: Annotated[str, typer.Option("--draft")],
+    status: Annotated[str, typer.Option("--status")],
+    reviewer: Annotated[str | None, typer.Option("--reviewer")] = None,
+    notes: Annotated[str | None, typer.Option("--notes")] = None,
+) -> None:
+    updated = KnowledgeIntakeService().review_draft(
+        draft,
+        ReviewDecision(status=status, reviewer=reviewer, notes=notes),
+    )
+    typer.echo(updated.model_dump_json(indent=2))
+
+
+@intake_app.command("promote")
+def intake_promote(draft: Annotated[str, typer.Option("--draft")]) -> None:
+    result = KnowledgeIntakeService().promote_draft(draft)
+    typer.echo(result.model_dump_json(indent=2))
+
+
+@config_app.command("show")
+def config_show() -> None:
+    resolved = resolve_config()
+    typer.echo(json.dumps(sanitized_config_dict(resolved), indent=2, sort_keys=True))
+
+
+@config_app.command("validate")
+def config_validate() -> None:
+    report = validate_config()
+    if report.ok:
+        typer.echo("DREAM config validate: PASS")
+    else:
+        typer.echo("DREAM config validate: FAIL")
+    _echo_config_diagnostics(report.diagnostics)
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@config_app.command("doctor")
+def config_doctor() -> None:
+    report = validate_config(create_artifact_root=False)
+    config = report.config
+    typer.echo("DREAM Config Doctor")
+    typer.echo(f"mode: {config.mode}")
+    typer.echo(f"llm_provider: {config.llm.provider}")
+    typer.echo(f"knowledge_root: {config.knowledge.root}")
+    typer.echo(f"artifact_root: {config.artifacts.root}")
+    typer.echo(f"audit_sqlite_path: {config.audit.sqlite_path}")
+    if not report.diagnostics:
+        typer.echo("diagnostics: none")
+    else:
+        typer.echo("diagnostics:")
+        _echo_config_diagnostics(report.diagnostics)
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@demo_app.command("verify")
+def demo_verify() -> None:
+    result = run_demo_verification()
+    if result.passed:
+        typer.echo("DREAM Demo Verification: PASS")
+        return
+    failure = result.failure
+    typer.echo("DREAM Demo Verification: FAIL")
+    if failure is not None:
+        typer.echo(f"step: {failure.step}")
+        typer.echo(f"error: {failure.error}")
+        typer.echo(f"recommended_fix: {failure.recommended_fix}")
+    raise typer.Exit(code=1)
+
+
 def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     if provider == "mock":
         return MockTestGenProvider()
@@ -652,18 +858,27 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     raise typer.BadParameter(f"Unsupported testgen provider: {provider}")
 
 
-def _llm_provider(provider: str) -> MockLLMProvider | OpenAICompatibleProvider:
+def _llm_provider(provider: str) -> LLMProvider:
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"config", "plugin"}:
+        return build_llm_provider()
     raise typer.BadParameter(f"Unsupported LLM provider: {provider}")
 
 
-def _optional_llm_provider(provider: str) -> MockLLMProvider | OpenAICompatibleProvider | None:
+def _optional_llm_provider(provider: str) -> LLMProvider | None:
     if provider == "deterministic":
         return None
     return _llm_provider(provider)
+
+
+def _echo_config_diagnostics(diagnostics) -> None:
+    for item in diagnostics:
+        typer.echo(f"{item.severity}: {item.message}")
+        if item.recommended_fix:
+            typer.echo(f"  fix: {item.recommended_fix}")
 
 
 if __name__ == "__main__":
