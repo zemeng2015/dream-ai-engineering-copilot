@@ -42,6 +42,10 @@ Check StatusTracker persistence and operator retry notes.
     assert "execution status" in draft.normalized_markdown.lower()
     assert reviewed.review_status == "approved"
     assert promoted.status == "promoted"
+    assert (
+        service.repository.get_document(document.document_id).promoted_path
+        == promoted.promoted_path
+    )
     assert (tmp_path / "knowledge_packs" / "demo_team" / "docs" / "runbooks").exists()
     use_cases = {record.use_case for record in audit_repository.list_audit_records()}
     assert {

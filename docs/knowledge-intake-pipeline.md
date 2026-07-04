@@ -87,25 +87,22 @@ review:
 
 ## CLI Workflow
 
-The next-phase CLI should use explicit import, review, and promotion verbs.
+The current CLI uses explicit upload, parse, review, and promotion verbs.
 
 ```bash
-dream intake import \
+dream intake upload \
   --team demo_team \
-  --source examples/intake-samples/runbook-output-reconciliation.md \
-  --source-type runbook \
-  --app ForecastDemo \
-  --component output-reconciliation
+  --file examples/intake-samples/runbook-output-reconciliation.md \
+  --type runbooks \
+  --title "Output Reconciliation Intake Demo"
 
-dream intake import \
+dream intake upload \
   --team demo_team \
-  --source examples/intake-samples/confluence-hld-forecast-orchestration-export.md \
-  --source-type confluence_export \
-  --app ForecastDemo \
-  --component forecast-orchestration
+  --file examples/intake-samples/confluence-hld-forecast-orchestration-export.md \
+  --type architecture
 
-dream intake list --team demo_team --status pending
-dream intake show --draft <draft_id>
+dream intake list
+dream intake parse --document <document_id>
 
 dream intake review \
   --draft <draft_id> \
@@ -113,7 +110,7 @@ dream intake review \
   --reviewer demo.lead \
   --reason "Synthetic runbook matches DemoCorp recovery policy."
 
-dream intake promote --draft <draft_id> --target knowledge-pack
+dream intake promote --draft <draft_id>
 dream kb search --team demo_team --query "output reconciliation retry"
 ```
 
@@ -122,32 +119,32 @@ manual-transcript-required warning until a parser is intentionally added.
 
 ## API Workflow
 
-The API should expose the same lifecycle:
+The API exposes the same lifecycle:
 
 ```text
-POST /intake/imports
-GET  /intake/drafts?team_id=demo_team&status=pending
-GET  /intake/drafts/{draft_id}
+POST /intake/documents
+GET  /intake/documents
+GET  /intake/documents/{document_id}
+POST /intake/documents/{document_id}/parse
 POST /intake/drafts/{draft_id}/review
 POST /intake/drafts/{draft_id}/promote
-POST /intake/eval
 ```
 
 Upload responses should include the draft id, source hash, validation summary,
-and artifact paths. Promotion responses should include the promoted document path
-and retrieval refresh status.
+and artifact paths in a future hardened connector flow. The current local-file
+POC returns an intake document. Promotion responses include `promoted_path`, and
+`GET /intake/documents` also returns `promoted_path` for promoted documents.
 
 ## UI Workflow
 
 The UI should support a simple review queue:
 
-1. Upload or select local synthetic sample files.
-2. Show detected source type, app, component, and proposed title.
-3. Show source spans side by side with candidate claims.
-4. Let reviewers approve, reject, quarantine, or request edits.
-5. Promote approved drafts into the selected DemoCorp knowledge pack.
-6. Run a retrieval smoke test from the promoted document.
-7. Show whether the promoted source appears in context packs.
+1. Register a local synthetic sample file.
+2. Parse the source into a structured draft.
+3. Approve the draft from Memory Hub.
+4. Promote the approved draft into `knowledge_packs`.
+5. Show the promoted structured Markdown file in Memory Hub.
+6. Use the promoted document in retrieval, Jira drafting, PR review, and eval.
 
 Reviewers should be able to edit metadata before promotion. The raw source file
 and generated draft should remain immutable so the audit trail stays stable.

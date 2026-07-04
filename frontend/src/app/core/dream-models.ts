@@ -3,19 +3,40 @@
 export type WorkflowType =
   | 'requirement_draft'
   | 'requirement_case'
+  | 'requirement_case_create'
+  | 'requirement_case_analysis'
+  | 'requirement_question_answer'
   | 'engineering_brief'
   | 'jira_draft'
+  | 'jira_readiness_check'
   | 'pr_review_summary'
   | 'knowledge_search'
   | 'knowledge_intake'
+  | 'knowledge_intake_upload'
+  | 'knowledge_intake_parse'
+  | 'knowledge_intake_review'
+  | 'knowledge_intake_promote'
   | 'context_intelligence'
   | 'codebase_index'
   | 'evidence_graph'
   | 'testgen_stub'
   | 'audit_eval'
+  | 'evaluation_scorecard'
   | 'eval_scorecard';
 
-export type RunStatus = 'success' | 'completed' | 'needs_review' | 'warning' | 'failed' | 'stub_only';
+export type RunStatus =
+  | 'success'
+  | 'completed'
+  | 'created'
+  | 'answered'
+  | 'needs_review'
+  | 'warning'
+  | 'failed'
+  | 'fail'
+  | 'pass'
+  | 'stub_only'
+  | 'jira_draft_needs_answers'
+  | 'jira_ready_draft';
 
 export type EvidenceSourceType =
   | 'domain_doc'
@@ -256,17 +277,23 @@ export interface EvaluationScorecard {
   evaluationId: string;
   targetType: 'requirement_case' | 'engineering_brief' | 'jira_draft' | 'pr_review' | 'testgen_report';
   targetId: string;
+  caseId?: string;
+  runId?: string;
+  teamId?: string;
+  outputPath?: string;
   overallScore: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
   passStatus: 'pass' | 'warning' | 'fail';
   sourceCoverage: Record<string, boolean>;
   dimensions: EvaluationDimension[];
   missingCriticalItems: string[];
+  hallucinationWarnings?: string[];
   recommendations: string[];
 }
 
 export interface AuditRun {
   runId: string;
+  caseId?: string | null;
   useCase: WorkflowType;
   teamId: string;
   app: string;

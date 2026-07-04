@@ -122,43 +122,52 @@ ruff check .
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,
-routing, SCSS design tokens, typed reactive forms, and mock data. It is designed
-as a large-enterprise finance engineering workbench: deep navy navigation,
-white and pale blue-gray work surfaces, teal/cyan action accents, dense tables,
-clear review gates, and restrained motion. It does not copy third-party logos,
-trademarks, imagery, or brand assets.
+routing, SCSS design tokens, typed reactive forms, and live FastAPI data. It is
+designed as a large-enterprise finance engineering workbench: deep navy
+navigation, white and pale blue-gray work surfaces, teal/cyan action accents,
+dense tables, clear review gates, and restrained motion. It does not copy
+third-party logos, trademarks, imagery, or brand assets.
 
 Run it locally:
 
-```bash
+```powershell
+uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
+```
+
+```powershell
 cd frontend
 npm install
 npm run build
 npm test -- --watch=false --browsers=ChromeHeadless
-npm start
+npm start -- --host 127.0.0.1 --port 4300
 ```
 
-Open `http://localhost:4200/`.
+Open `http://localhost:4300/`.
 
 If local development ports are already occupied, build and serve the static
 bundle from `frontend/dist/frontend/browser` on any free local port.
 
-Mock-data workflows included:
+Current live workflows included:
 
-- Mission Control dashboard
-- Knowledge Memory search across DFP docs, incidents, Jira, PRs, tests, and concept memory
-- Codebase Memory search across Angular, Java, AWS-style, Python, and test files
-- Evidence Graph search showing source-backed concept paths
-- Requirement Case analysis with evidence, impact map, role questions, Jira draft, and eval scorecard
-- PR Review with changed files, related codebase memory, source-backed comments, and eval scorecard
-- Eval & Audit with deterministic scorecards and human rating
-- TestGen Stub, with no unit-test generation and no repository writes
-- Settings / guardrails preview
+- Mission Control work queue backed by FastAPI intake, requirement, audit, eval,
+  and codebase records.
+- Memory Hub source intake lifecycle: register, parse, approve, promote, and view
+  promoted structured Markdown.
+- Codebase Index repo browser backed by saved JSON index artifacts and file
+  content endpoints.
+- Requirement Case workflow with impact map, open questions, Jira proposal, and
+  strict Eval Agent result.
+- PR Review workflow with inline diff/Jira context, codebase memory, review
+  output, and strict Eval Agent result.
+- Audit & Eval with scorecards, case-by-case detail, audit runs, and local human
+  rating UI.
 
-Requirement Case and PR Review pages can switch from local mock mode to
-`Real FastAPI + OpenAI-compatible provider`. In that mode, the browser sends only
-workflow inputs and provider selection to FastAPI; `OPENAI_API_KEY` stays in the
-backend process environment.
+Primary routes are `/mission-control`, `/memory`, `/workbench`, `/requirements`,
+`/review`, `/codebase`, `/audit`, and `/audit/:targetId`. Legacy mock routes
+redirect to these primary surfaces.
+
+Requirement Case and PR Review use FastAPI. OpenAI-compatible generation is
+opt-in from the backend process; API keys stay in backend environment variables.
 
 ## CLI Examples
 

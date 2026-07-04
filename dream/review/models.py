@@ -5,8 +5,10 @@ from pydantic import BaseModel, Field
 
 class PRReviewRequest(BaseModel):
     team_id: str
-    pr_diff_path: str
+    pr_diff_path: str | None = None
+    pr_diff_text: str | None = None
     jira_context_path: str | None = None
+    jira_context_text: str | None = None
     repo_name: str | None = None
     app: str | None = None
     component: str | None = None

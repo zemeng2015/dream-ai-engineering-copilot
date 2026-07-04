@@ -5,6 +5,7 @@ from uuid import uuid4
 from dream.audit.logger import AuditLogger
 from dream.codebase import CodebaseIndexRepository, CodebaseRetriever
 from dream.codebase.models import CodebaseSearchResult, TestMapping
+from dream.core.errors import DreamError
 from dream.core.paths import (
     display_path,
     resolve_artifact_path,
@@ -49,10 +50,11 @@ class PRReviewAssistant:
 
     def review(self, request: PRReviewRequest) -> PRReviewResponse:
         run_id = f"pr-{uuid4().hex[:12]}"
-        diff_path = resolve_project_path(request.pr_diff_path, must_exist=True)
-        diff_text = diff_path.read_text(encoding="utf-8")
+        diff_text = self._read_diff(request)
         diff_summary = parse_unified_diff(diff_text)
-        jira_context = self._read_optional_context(request.jira_context_path)
+        jira_context = self._read_optional_context(
+            request.jira_context_path, request.jira_context_text
+        )
 
         pack = self.pack_loader.load(request.team_id)
         pack_dir = self.pack_loader.pack_dir(pack.team_id)
@@ -144,7 +146,20 @@ class PRReviewAssistant:
         )
 
     @staticmethod
-    def _read_optional_context(path_value: str | None) -> str | None:
+    def _read_diff(request: PRReviewRequest) -> str:
+        if request.pr_diff_text and request.pr_diff_text.strip():
+            return request.pr_diff_text
+        if request.pr_diff_path is None:
+            raise DreamError("Either pr_diff_text or pr_diff_path is required.")
+        diff_path = resolve_project_path(request.pr_diff_path, must_exist=True)
+        return diff_path.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _read_optional_context(
+        path_value: str | None, inline_value: str | None = None
+    ) -> str | None:
+        if inline_value and inline_value.strip():
+            return inline_value
         if path_value is None:
             return None
         path = resolve_project_path(path_value, must_exist=True)

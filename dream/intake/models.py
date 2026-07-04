@@ -10,6 +10,7 @@ class IntakeDocument(BaseModel):
     document_type: str
     original_path: str
     stored_path: str
+    promoted_path: str | None = None
     status: str = "uploaded"
     created_at: str
     updated_at: str

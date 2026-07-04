@@ -1,30 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { catchError, forkJoin, of } from 'rxjs';
 
-import { CodebaseFile } from '../../core/dream-models';
-import { MockDreamService } from '../../core/mock-dream.service';
+import {
+  CodebaseConcept,
+  CodebaseFileContent,
+  CodebaseIndexArtifact,
+  CodebaseIndexFile,
+  CodebaseIndexSummary,
+  CodebaseSearchItem,
+  DreamApiService,
+} from '../../core/dream-api.service';
 import { UiIconComponent } from '../../shared/ui-icon.component';
 
-interface CodeMapNode {
-  id: string;
-  file: CodebaseFile;
-  title: string;
-  lane: string;
-  x: number;
-  y: number;
-  matched: boolean;
-  selected: boolean;
+interface RepoFolderEntry {
+  name: string;
+  path: string;
+  fileCount: number;
 }
 
-interface CodeMapEdge {
-  id: string;
-  from: CodeMapNode;
-  to: CodeMapNode;
+interface RepoBreadcrumb {
   label: string;
-  relation: 'api' | 'calls' | 'config' | 'tests';
-  active: boolean;
+  path: string;
 }
 
 @Component({
@@ -35,202 +34,284 @@ interface CodeMapEdge {
   styleUrl: './codebase-memory.component.scss',
 })
 export class CodebaseMemoryComponent {
-  private readonly dream = inject(MockDreamService);
+  private readonly api = inject(DreamApiService);
   private readonly fb = inject(FormBuilder);
 
-  readonly files = this.dream.listCodebaseFiles();
-  readonly results = signal<CodebaseFile[]>(this.dream.searchCodebase({ query: 'status tracker batch task', topK: 8 }));
-  readonly selectedFile = signal<CodebaseFile | null>(this.results()[0] ?? null);
-  readonly searchCollapsed = signal(true);
-  readonly activeSearch = signal({
-    query: 'status tracker batch task',
-    topK: 8,
-  });
+  readonly isLoading = signal(false);
+  readonly isIndexing = signal(false);
+  readonly isFileLoading = signal(false);
+  readonly apiError = signal<string | null>(null);
+  readonly indexSummary = signal<CodebaseIndexSummary | null>(null);
+  readonly indexArtifact = signal<CodebaseIndexArtifact | null>(null);
+  readonly files = signal<CodebaseIndexFile[]>([]);
+  readonly concepts = signal<CodebaseConcept[]>([]);
+  readonly results = signal<CodebaseSearchItem[]>([]);
+  readonly selectedFilePath = signal<string | null>(null);
+  readonly selectedFileContent = signal<CodebaseFileContent | null>(null);
+  readonly currentFolderPath = signal('');
 
   readonly form = this.fb.nonNullable.group({
-    query: 'status tracker batch task',
-    topK: 8,
+    teamId: ['demo_team', Validators.required],
+    repoName: ['dfp-demo-repo', Validators.required],
+    repoPath: ['examples/dfp-demo-repo', Validators.required],
+    query: ['status tracking output collector tests', Validators.required],
+    topK: [8, [Validators.required, Validators.min(1), Validators.max(20)]],
   });
 
-  readonly searchSummary = computed(() => {
-    const value = this.activeSearch();
-    return value.query.trim() ? `Query: ${value.query.trim()}` : 'All indexed files';
+  readonly sourceFileCount = computed(() =>
+    this.files().filter((file) => file.role === 'source').length,
+  );
+  readonly testFileCount = computed(() =>
+    this.files().filter((file) => file.role === 'test').length,
+  );
+  readonly symbolCount = computed(() =>
+    this.files().reduce((count, file) => count + file.symbols.length, 0),
+  );
+  readonly selectedFile = computed(() => {
+    const selectedPath = this.selectedFilePath();
+    return this.files().find((file) => file.path === selectedPath) ?? this.files()[0] ?? null;
   });
-
-  readonly codeMapNodes = computed<CodeMapNode[]>(() => {
-    const matchedIds = new Set(this.results().map((file) => file.id));
-    const selectedId = this.selectedFile()?.id;
-    return this.files.map((file) => {
-      const position = CODE_MAP_POSITIONS[file.id] ?? { x: 50, y: 50 };
-      return {
-        id: file.id,
-        file,
-        title: file.path.split('/').pop() ?? file.path,
-        lane: nodeLane(file),
-        x: position.x,
-        y: position.y,
-        matched: matchedIds.has(file.id),
-        selected: selectedId === file.id,
-      };
-    });
-  });
-
-  readonly codeMapEdges = computed<CodeMapEdge[]>(() => {
-    const nodesById = new Map(this.codeMapNodes().map((node) => [node.id, node]));
-    const selectedId = this.selectedFile()?.id;
-    return CODE_MAP_EDGES.flatMap((edge) => {
-      const from = nodesById.get(edge.from);
-      const to = nodesById.get(edge.to);
-      if (!from || !to) {
-        return [];
-      }
-      return [
-        {
-          ...edge,
-          from,
-          to,
-          active: selectedId ? from.id === selectedId || to.id === selectedId : from.matched && to.matched,
-        },
-      ];
-    });
-  });
-
-  readonly selectedConnections = computed(() => {
-    const selected = this.selectedFile();
-    if (!selected) {
-      return [];
+  readonly repoBreadcrumbs = computed<RepoBreadcrumb[]>(() => {
+    const repoName = this.form.controls.repoName.value || 'repo';
+    const parts = this.currentFolderPath().split('/').filter(Boolean);
+    const breadcrumbs: RepoBreadcrumb[] = [{ label: repoName, path: '' }];
+    let path = '';
+    for (const part of parts) {
+      path = path ? `${path}/${part}` : part;
+      breadcrumbs.push({ label: part, path });
     }
-    return this.codeMapEdges()
-      .filter((edge) => edge.from.id === selected.id || edge.to.id === selected.id)
-      .map((edge) =>
-        edge.from.id === selected.id
-          ? `${edge.label}: ${edge.to.title}`
-          : `${edge.from.title}: ${edge.label}`,
-      );
+    return breadcrumbs;
   });
+  readonly currentFolderEntries = computed<RepoFolderEntry[]>(() => {
+    const folderPath = this.currentFolderPath();
+    const prefix = folderPath ? `${folderPath}/` : '';
+    const folders = new Map<string, RepoFolderEntry>();
+    for (const file of this.files()) {
+      if (prefix && !file.path.startsWith(prefix)) {
+        continue;
+      }
+      const remainder = prefix ? file.path.slice(prefix.length) : file.path;
+      const [folderName, ...nested] = remainder.split('/');
+      if (!folderName || !nested.length) {
+        continue;
+      }
+      const childPath = prefix ? `${prefix}${folderName}` : folderName;
+      const existing = folders.get(childPath);
+      folders.set(childPath, {
+        name: folderName,
+        path: childPath,
+        fileCount: (existing?.fileCount ?? 0) + 1,
+      });
+    }
+    return [...folders.values()].sort((left, right) => left.name.localeCompare(right.name));
+  });
+  readonly currentFolderFiles = computed(() => {
+    const folderPath = this.currentFolderPath();
+    const prefix = folderPath ? `${folderPath}/` : '';
+    return this.files()
+      .filter((file) => {
+        if (prefix && !file.path.startsWith(prefix)) {
+          return false;
+        }
+        const remainder = prefix ? file.path.slice(prefix.length) : file.path;
+        return remainder.length > 0 && !remainder.includes('/');
+      })
+      .sort((left, right) => this.fileName(left.path).localeCompare(this.fileName(right.path)));
+  });
+  readonly topConcepts = computed(() =>
+    [...this.concepts()].sort((a, b) => b.relatedFiles.length - a.relatedFiles.length).slice(0, 10),
+  );
+  readonly selectedImpactConcepts = computed(() => {
+    const filePath = this.selectedFilePath();
+    if (!filePath) return [];
+    return this.concepts()
+      .filter(
+        (concept) =>
+          concept.relatedFiles.includes(filePath) ||
+          concept.relatedTests.includes(filePath) ||
+          concept.relatedDocs.includes(filePath),
+      )
+      .slice(0, 6);
+  });
+  readonly codeLines = computed(() => this.selectedFileContent()?.content.split(/\r?\n/) ?? []);
+  readonly selectedFileJson = computed(() => {
+    const file = this.selectedFile();
+    return file ? JSON.stringify(file, null, 2) : '{}';
+  });
+  readonly repoIndexPath = computed(() => this.indexArtifact()?.indexPath ?? 'No index artifact loaded');
 
-  toggleSearch(): void {
-    this.searchCollapsed.update((collapsed) => !collapsed);
+  constructor() {
+    this.loadIndex();
   }
 
-  selectFile(file: CodebaseFile): void {
-    this.selectedFile.set(file);
-  }
-
-  search(): void {
+  loadIndex(): void {
     const value = this.form.getRawValue();
-    const matches = this.dream.searchCodebase({
-      query: value.query,
-      topK: value.topK,
+    this.isLoading.set(true);
+    this.apiError.set(null);
+    forkJoin({
+      artifact: this.api
+        .getCodebaseIndex(value.teamId, value.repoName)
+        .pipe(catchError(() => of(null as CodebaseIndexArtifact | null))),
+      files: this.api
+        .listCodebaseFiles(value.teamId, value.repoName)
+        .pipe(catchError(() => of([] as CodebaseIndexFile[]))),
+      concepts: this.api
+        .listCodebaseConcepts(value.teamId, value.repoName)
+        .pipe(catchError(() => of([] as CodebaseConcept[]))),
+      results: this.api
+        .searchCodebaseIndex(value.teamId, value.repoName, value.query, value.topK)
+        .pipe(catchError(() => of([] as CodebaseSearchItem[]))),
+    }).subscribe({
+      next: ({ artifact, files, concepts, results }) => {
+        this.indexArtifact.set(artifact);
+        this.indexSummary.set(artifact?.summary ?? null);
+        this.files.set(files);
+        this.concepts.set(concepts);
+        this.results.set(results);
+
+        const currentPath = this.selectedFilePath();
+        const nextPath =
+          currentPath && files.some((file) => file.path === currentPath)
+            ? currentPath
+            : files[0]?.path ?? null;
+        this.selectedFilePath.set(nextPath);
+        if (nextPath) {
+          this.currentFolderPath.set(this.folderPath(nextPath));
+          this.loadFileContent(nextPath);
+        } else {
+          this.selectedFileContent.set(null);
+        }
+
+        this.isLoading.set(false);
+        if (!files.length) {
+          this.apiError.set('No codebase index was loaded. Run Index Repo to create or refresh it.');
+        }
+      },
+      error: () => {
+        this.apiError.set('Codebase API data could not be loaded.');
+        this.isLoading.set(false);
+      },
     });
-    this.results.set(matches);
-    this.selectedFile.set(matches[0] ?? null);
-    this.activeSearch.set(value);
-    this.searchCollapsed.set(true);
   }
-}
 
-const CODE_MAP_POSITIONS: Record<string, { x: number; y: number }> = {
-  'code-execution-monitor': { x: 16, y: 28 },
-  'code-job-api': { x: 16, y: 62 },
-  'code-execution-controller': { x: 38, y: 25 },
-  'code-execution-service': { x: 38, y: 52 },
-  'code-status-tracker': { x: 38, y: 78 },
-  'code-state-machine': { x: 64, y: 18 },
-  'code-batch-adapter': { x: 64, y: 42 },
-  'code-input-validator': { x: 64, y: 66 },
-  'code-output-collector': { x: 64, y: 86 },
-  'code-output-preview': { x: 64, y: 28 },
-  'test-status-tracker': { x: 84, y: 72 },
-  'test-output-collector': { x: 84, y: 88 },
-};
+  refreshIndex(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const value = this.form.getRawValue();
+    this.isIndexing.set(true);
+    this.apiError.set(null);
+    this.api.indexCodebase(value.teamId, value.repoPath, value.repoName).subscribe({
+      next: (summary) => {
+        this.indexSummary.set(summary);
+        this.isIndexing.set(false);
+        this.loadIndex();
+      },
+      error: (error: unknown) => {
+        this.apiError.set(error instanceof Error ? error.message : 'Codebase indexing failed.');
+        this.isIndexing.set(false);
+      },
+    });
+  }
 
-const CODE_MAP_EDGES: Array<{
-  id: string;
-  from: string;
-  to: string;
-  label: string;
-  relation: CodeMapEdge['relation'];
-}> = [
-  { id: 'edge-monitor-api', from: 'code-execution-monitor', to: 'code-job-api', label: 'uses', relation: 'api' },
-  { id: 'edge-api-controller', from: 'code-job-api', to: 'code-execution-controller', label: 'calls', relation: 'api' },
-  {
-    id: 'edge-controller-service',
-    from: 'code-execution-controller',
-    to: 'code-execution-service',
-    label: 'delegates',
-    relation: 'calls',
-  },
-  {
-    id: 'edge-service-tracker',
-    from: 'code-execution-service',
-    to: 'code-status-tracker',
-    label: 'updates',
-    relation: 'calls',
-  },
-  {
-    id: 'edge-service-batch',
-    from: 'code-execution-service',
-    to: 'code-batch-adapter',
-    label: 'runs',
-    relation: 'calls',
-  },
-  {
-    id: 'edge-service-output',
-    from: 'code-execution-service',
-    to: 'code-output-collector',
-    label: 'collects',
-    relation: 'calls',
-  },
-  {
-    id: 'edge-state-service',
-    from: 'code-state-machine',
-    to: 'code-execution-service',
-    label: 'orchestrates',
-    relation: 'config',
-  },
-  {
-    id: 'edge-batch-validator',
-    from: 'code-batch-adapter',
-    to: 'code-input-validator',
-    label: 'processor',
-    relation: 'calls',
-  },
-  {
-    id: 'edge-job-preview',
-    from: 'code-job-api',
-    to: 'code-output-preview',
-    label: 'preview',
-    relation: 'api',
-  },
-  {
-    id: 'edge-tracker-test',
-    from: 'code-status-tracker',
-    to: 'test-status-tracker',
-    label: 'tested by',
-    relation: 'tests',
-  },
-  {
-    id: 'edge-output-test',
-    from: 'code-output-collector',
-    to: 'test-output-collector',
-    label: 'tested by',
-    relation: 'tests',
-  },
-];
+  runSearch(): void {
+    const value = this.form.getRawValue();
+    this.apiError.set(null);
+    this.api.searchCodebaseIndex(value.teamId, value.repoName, value.query, value.topK).subscribe({
+      next: (results) => this.results.set(results),
+      error: (error: unknown) => {
+        this.apiError.set(error instanceof Error ? error.message : 'Codebase search failed.');
+        this.results.set([]);
+      },
+    });
+  }
 
-function nodeLane(file: CodebaseFile): string {
-  if (file.role === 'test') {
-    return 'test';
+  selectFile(file: CodebaseIndexFile): void {
+    this.selectPath(file.path);
   }
-  if (file.role === 'config') {
-    return 'workflow';
+
+  selectPath(path: string): void {
+    if (!this.files().some((file) => file.path === path)) {
+      return;
+    }
+    this.selectedFilePath.set(path);
+    this.currentFolderPath.set(this.folderPath(path));
+    this.loadFileContent(path);
   }
-  if (file.language === 'typescript') {
-    return 'ui';
+
+  navigateFolder(path: string): void {
+    this.currentFolderPath.set(path);
+    const selectedPath = this.selectedFilePath();
+    if (selectedPath && this.folderPath(selectedPath) === path) {
+      return;
+    }
+    const directFile = this.files()
+      .filter((file) => this.folderPath(file.path) === path)
+      .sort((left, right) => this.fileName(left.path).localeCompare(this.fileName(right.path)))[0];
+    const descendantFile = this.files()
+      .filter((file) => !path || file.path.startsWith(`${path}/`))
+      .sort((left, right) => left.path.localeCompare(right.path))[0];
+    const nextFile = directFile ?? descendantFile;
+    if (nextFile) {
+      this.selectedFilePath.set(nextFile.path);
+      this.loadFileContent(nextFile.path);
+    }
   }
-  if (file.language === 'python') {
-    return 'processor';
+
+  loadFileContent(path: string): void {
+    const value = this.form.getRawValue();
+    this.isFileLoading.set(true);
+    this.api.getCodebaseFileContent(value.teamId, value.repoName, path).subscribe({
+      next: (file) => {
+        if (this.selectedFilePath() === file.path) {
+          this.selectedFileContent.set(file);
+        }
+        this.isFileLoading.set(false);
+      },
+      error: (error: unknown) => {
+        if (this.selectedFilePath() === path) {
+          this.selectedFileContent.set(null);
+        }
+        this.apiError.set(error instanceof Error ? error.message : 'File content could not be loaded.');
+        this.isFileLoading.set(false);
+      },
+    });
   }
-  return 'service';
+
+  fileName(path: string): string {
+    return path.split('/').pop() || path;
+  }
+
+  folderName(path: string): string {
+    return this.folderPath(path) || 'repo root';
+  }
+
+  folderPath(path: string): string {
+    const parts = path.split('/');
+    parts.pop();
+    return parts.join('/');
+  }
+
+  roleClass(role: string): string {
+    if (role === 'test') return 'status-success';
+    if (role === 'config') return 'status-warning';
+    if (role === 'docs') return 'status-neutral';
+    return 'status-info';
+  }
+
+  conceptCountLabel(concept: CodebaseConcept): string {
+    const fileCount = concept.relatedFiles.length;
+    const testCount = concept.relatedTests.length;
+    return `${fileCount} files / ${testCount} tests`;
+  }
+
+  formatBytes(sizeBytes: number): string {
+    if (sizeBytes < 1024) return `${sizeBytes} B`;
+    return `${Number((sizeBytes / 1024).toFixed(1))} KB`;
+  }
+
+  scoreLabel(score: number): string {
+    return Number(score.toFixed(1)).toString();
+  }
 }

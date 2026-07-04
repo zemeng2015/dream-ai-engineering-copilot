@@ -1,153 +1,241 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="page reveal-page">
+<section class="page code-memory-page">
   <header class="page-header command-header">
     <div>
-      <h1>Code Index</h1>
+      <span class="eyebrow">Live codebase memory</span>
+      <h1>Repo Browser & Index JSON</h1>
+      <p>Browse actual repo files and inspect the selected JSON index record used by memory and eval workflows.</p>
     </div>
-    <div class="index-beacon" aria-label="Indexed repository status">
+    <div class="index-beacon">
       <span></span>
-      <strong>dfp-demo-repo</strong>
-      <small>JSON index</small>
+      <strong>{{ form.controls.repoName.value }}</strong>
+      <small>{{ indexSummary()?.indexedAt || 'loaded from FastAPI' }}</small>
     </div>
   </header>
 
-  <section class="grid-2 code-index-layout">
-    <article class="panel code-map-panel">
-      <div class="panel-header">
-        <h2>Code Map</h2>
-        <span class="status-pill status-info">{{ results().length }} matched</span>
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+
+  <section class="panel index-controls" aria-label="Codebase index controls">
+    <form class="control-grid" [formGroup]="form" (ngSubmit)="runSearch()">
+      <div class="form-field">
+        <label for="code-team">Team</label>
+        <input id="code-team" formControlName="teamId" />
       </div>
-      <div class="panel-body">
-        <div class="code-map" aria-label="Code relationship map">
-          <svg class="code-map-edges" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            @for (edge of codeMapEdges(); track edge.id) {
-              <line
-                [class.active]="edge.active"
-                [class.test-edge]="edge.relation === 'tests'"
-                [attr.x1]="edge.from.x"
-                [attr.y1]="edge.from.y"
-                [attr.x2]="edge.to.x"
-                [attr.y2]="edge.to.y"
-              />
-              @if (edge.active) {
-                <text
-                  class="edge-label"
-                  [attr.x]="(edge.from.x + edge.to.x) / 2"
-                  [attr.y]="(edge.from.y + edge.to.y) / 2"
-                >
-                  {{ edge.label }}
-                </text>
-              }
-            }
-          </svg>
+      <div class="form-field">
+        <label for="code-repo">Repo name</label>
+        <input id="code-repo" formControlName="repoName" />
+      </div>
+      <div class="form-field">
+        <label for="code-path">Repo path</label>
+        <input id="code-path" formControlName="repoPath" />
+      </div>
+      <div class="form-field">
+        <label for="code-top-k">Top K</label>
+        <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
+      </div>
+      <div class="form-field-full search-line">
+        <label for="code-query">Evidence search</label>
+        <div>
+          <input id="code-query" formControlName="query" />
+          <button class="primary-button" type="submit" [disabled]="isLoading()">
+            <app-ui-icon name="search" />
+            Search
+          </button>
+          <button class="secondary-button" type="button" (click)="refreshIndex()" [disabled]="isIndexing()">
+            <app-ui-icon name="branch" />
+            {{ isIndexing() ? 'Indexing...' : 'Index Repo' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
 
-          @for (node of codeMapNodes(); track node.id) {
-            <button
-              class="code-node"
-              type="button"
-              [class.matched]="node.matched"
-              [class.selected]="node.selected"
-              [style.left.%]="node.x"
-              [style.top.%]="node.y"
-              (click)="selectFile(node.file)"
-            >
-              <span>{{ node.lane }}</span>
-              <strong>{{ node.title }}</strong>
-            </button>
+  <section class="memory-summary" aria-label="Codebase index summary">
+    <article class="summary-card tone-info">
+      <span>Indexed Files</span>
+      <strong>{{ files().length }}</strong>
+      <small>{{ sourceFileCount() }} source files</small>
+    </article>
+    <article class="summary-card tone-success">
+      <span>Tests</span>
+      <strong>{{ testFileCount() }}</strong>
+      <small>linked by the repo index</small>
+    </article>
+    <article class="summary-card tone-neutral">
+      <span>Symbols</span>
+      <strong>{{ symbolCount() }}</strong>
+      <small>classes, functions, or modules</small>
+    </article>
+    <article class="summary-card tone-warning">
+      <span>Concepts</span>
+      <strong>{{ concepts().length }}</strong>
+      <small>impact map terms</small>
+    </article>
+  </section>
+
+  <section class="repo-workspace" aria-label="Repository browser and index JSON">
+    <article class="panel repo-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Repo Files</h2>
+          <p>{{ form.controls.repoPath.value }} · {{ files().length }} indexed files</p>
+        </div>
+      </div>
+      <nav class="repo-pathbar" aria-label="Current repo path">
+        @for (crumb of repoBreadcrumbs(); track crumb.path) {
+          <button
+            type="button"
+            class="repo-crumb"
+            [class.active]="crumb.path === currentFolderPath()"
+            (click)="navigateFolder(crumb.path)"
+          >
+            {{ crumb.label }}
+          </button>
+          @if (!$last) {
+            <span>/</span>
           }
-        </div>
-
-        <div class="map-legend" aria-label="Relationship legend">
-          <span><i class="legend-line api"></i> API</span>
-          <span><i class="legend-line calls"></i> calls/config</span>
-          <span><i class="legend-line tests"></i> tested by</span>
-        </div>
+        }
+      </nav>
+      <div class="repo-tree">
+        @for (folder of currentFolderEntries(); track folder.path) {
+          <button type="button" class="repo-folder-row" (click)="navigateFolder(folder.path)" [title]="folder.path">
+            <app-ui-icon name="chevron-right" />
+            <span>{{ folder.name }}</span>
+            <small>{{ folder.fileCount }} files</small>
+          </button>
+        }
+        @for (file of currentFolderFiles(); track file.fileId) {
+          <button
+            type="button"
+            class="repo-file"
+            [class.active]="selectedFilePath() === file.path"
+            (click)="selectFile(file)"
+            [title]="file.path"
+          >
+            <app-ui-icon name="document" />
+            <span>{{ fileName(file.path) }}</span>
+            <small class="status-pill {{ roleClass(file.role) }}">{{ file.role }}</small>
+          </button>
+        }
+        @if (!currentFolderEntries().length && !currentFolderFiles().length) {
+          <div class="empty-state">
+            <strong>No files in this folder.</strong>
+            <span>Use the breadcrumb above to move to another path.</span>
+          </div>
+        }
       </div>
     </article>
 
-    <div class="side-stack">
-      <article class="panel scan-panel">
-        <div class="panel-header search-panel-header">
-          <div class="search-heading">
-            <h2>Find Related Code</h2>
-            @if (searchCollapsed()) {
-              <p>{{ searchSummary() }}</p>
-            }
-          </div>
-          <div class="panel-actions">
-            <span class="status-pill status-info">local JSON</span>
-            <button
-              class="icon-button collapse-button"
-              type="button"
-              [attr.aria-expanded]="!searchCollapsed()"
-              aria-controls="code-search-form"
-              [attr.aria-label]="searchCollapsed() ? 'Expand code search' : 'Collapse code search'"
-              (click)="toggleSearch()"
-            >
-              <app-ui-icon [name]="searchCollapsed() ? 'chevron-down' : 'chevron-up'" />
-            </button>
-          </div>
-        </div>
-        @if (!searchCollapsed()) {
-          <div id="code-search-form" class="panel-body">
-            <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
-              <div class="form-field-full">
-                <label for="code-query">Query</label>
-                <input id="code-query" formControlName="query" />
-              </div>
-              <div class="form-field">
-                <label for="code-top-k">Top K</label>
-                <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
-              </div>
-              <div class="form-field-full">
-                <button class="primary-button" type="submit">Search Code</button>
-              </div>
-            </form>
-          </div>
-        }
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <h2>Code Evidence</h2>
-          <span class="status-pill status-info">source/test links</span>
-        </div>
-        <div class="panel-body">
+    <article class="panel code-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Code Preview</h2>
           @if (selectedFile(); as file) {
-            <dl class="metadata-list">
-              <div>
-                <dt>Path</dt>
-                <dd>{{ file.path }}</dd>
-              </div>
-              <div>
-                <dt>Summary</dt>
-                <dd>{{ file.summary }}</dd>
-              </div>
-              <div>
-                <dt>Connections</dt>
-                <dd>
-                  @if (selectedConnections().length) {
-                    {{ selectedConnections().join(' | ') }}
-                  } @else {
-                    No mapped connection yet.
-                  }
-                </dd>
-              </div>
-              <div>
-                <dt>Symbols</dt>
-                <dd>{{ file.symbols.join(', ') }}</dd>
-              </div>
-              <div>
-                <dt>Linked Tests</dt>
-                <dd>{{ file.relatedTests.length ? file.relatedTests.join(', ') : 'No direct test mapping' }}</dd>
-              </div>
-            </dl>
-          } @else {
-            <div class="info-callout">Select a node to inspect symbols and linked tests.</div>
+            <p [title]="file.path">{{ file.path }}</p>
           }
         </div>
-      </article>
-    </div>
+        @if (selectedFile(); as file) {
+          <span class="status-pill {{ roleClass(file.role) }}">{{ file.language }}</span>
+        }
+      </div>
+      @if (selectedFile(); as file) {
+        <div class="file-meta-strip">
+          <span>{{ file.lineCount }} lines</span>
+          <span>{{ formatBytes(file.sizeBytes) }}</span>
+          <span>{{ file.symbols.length }} symbols</span>
+          <span>{{ file.concepts.length }} concepts</span>
+        </div>
+      }
+      @if (isFileLoading()) {
+        <div class="empty-state code-empty">
+          <strong>Loading file...</strong>
+          <span>Reading content through FastAPI.</span>
+        </div>
+      } @else if (codeLines().length) {
+        <pre class="code-block" aria-label="Selected file content">@for (line of codeLines(); track $index; let row = $index) {
+<span class="code-line"><span class="line-number">{{ row + 1 }}</span><code>{{ line || ' ' }}</code></span>
+}</pre>
+      } @else {
+        <div class="empty-state code-empty">
+          <strong>No file content loaded.</strong>
+          <span>Select a file from the repo browser.</span>
+        </div>
+      }
+    </article>
+
+    <article class="panel index-json-panel">
+      <div class="panel-header">
+        <div>
+          <h2>JSON Index</h2>
+          <p [title]="repoIndexPath()">{{ repoIndexPath() }}</p>
+        </div>
+      </div>
+      <details class="json-card" open>
+        <summary>
+          <strong>Selected file record</strong>
+          <span>highlighted index node</span>
+        </summary>
+        <pre class="json-block selected-json-block">{{ selectedFileJson() }}</pre>
+      </details>
+    </article>
+  </section>
+
+  <section class="support-layout" aria-label="Search evidence and impact map">
+    <article class="panel search-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Evidence Search</h2>
+          <p>{{ results().length }} matches from the retriever.</p>
+        </div>
+      </div>
+      <div class="result-list">
+        @for (result of results(); track result.sourcePath + result.resultType + result.title) {
+          <button class="result-row" type="button" (click)="selectPath(result.sourcePath)">
+            <span class="status-pill status-info">{{ result.resultType }}</span>
+            <strong>{{ result.title }}</strong>
+            <small [title]="result.sourcePath">{{ result.sourcePath }}</small>
+            <p>{{ result.reason }} Score {{ scoreLabel(result.score) }}</p>
+          </button>
+        } @empty {
+          <div class="empty-state">
+            <strong>No search results yet.</strong>
+            <span>Run a search or refresh the repo index.</span>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="panel concept-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Impact Map</h2>
+          <p>{{ selectedImpactConcepts().length || topConcepts().length }} visible concepts</p>
+        </div>
+      </div>
+      <div class="concept-list">
+        @for (concept of selectedImpactConcepts().length ? selectedImpactConcepts() : topConcepts(); track concept.concept) {
+          <details>
+            <summary>
+              <strong>{{ concept.concept }}</strong>
+              <span>{{ conceptCountLabel(concept) }}</span>
+            </summary>
+            <p>{{ concept.reason }}</p>
+            <div class="path-list">
+              @for (path of concept.relatedFiles.slice(0, 8); track path) {
+                <button type="button" (click)="selectPath(path)" [title]="path">{{ fileName(path) }}</button>
+              }
+            </div>
+          </details>
+        } @empty {
+          <div class="empty-state">
+            <strong>No concepts found.</strong>
+            <span>Refresh the repo index to derive concept mappings.</span>
+          </div>
+        }
+      </div>
+    </article>
   </section>
 </section>

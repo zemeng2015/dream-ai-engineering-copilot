@@ -186,3 +186,12 @@ StatusTracker.java needs async tracking.
 
     assert response.status_code == 200
     assert response.json()["scorecard"]["target_type"] == "engineering_brief"
+    evaluation_id = response.json()["scorecard"]["evaluation_id"]
+
+    detail_response = client.get(f"/eval/runs/{evaluation_id}")
+
+    assert detail_response.status_code == 200
+    assert "# DREAM Evaluation Scorecard" in detail_response.json()["markdown_report"]
+    assert detail_response.json()["json_path"].endswith(f"{evaluation_id}.json")
+    assert detail_response.json()["markdown_path"].endswith(f"{evaluation_id}.md")
+    assert "warnings" in detail_response.json()

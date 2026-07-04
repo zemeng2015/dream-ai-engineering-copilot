@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
 from dream.context import ContextEvaluationService, ContextIntelligenceService
-from dream.core.errors import DreamError
+from dream.core.errors import DreamError, NotFoundError, PathTraversalError
+from dream.core.paths import resolve_project_path
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest, EvaluationResult
 from dream.evals.repository import EvaluationRepository
@@ -45,6 +46,20 @@ class CodebaseIndexRequest(BaseModel):
     team_id: str
     repo_path: str
     repo_name: str | None = None
+
+
+class CodebaseIndexArtifactResponse(BaseModel):
+    index_path: str
+    index: dict[str, object]
+
+
+class CodebaseFileContentResponse(BaseModel):
+    path: str
+    language: str
+    role: str
+    size_bytes: int
+    line_count: int
+    content: str
 
 
 class EvidenceGraphBuildRequest(BaseModel):
@@ -133,6 +148,19 @@ def index_codebase(request: CodebaseIndexRequest) -> dict[str, object]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.get("/codebase/index", response_model=CodebaseIndexArtifactResponse)
+def get_codebase_index(team_id: str, repo_name: str) -> CodebaseIndexArtifactResponse:
+    try:
+        repository = CodebaseIndexRepository()
+        index = repository.load(team_id, repo_name)
+        return CodebaseIndexArtifactResponse(
+            index_path=repository.display_index_path(team_id, repo_name),
+            index=index.model_dump(),
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/codebase/search")
 def search_codebase(
     team_id: str,
@@ -165,6 +193,39 @@ def list_codebase_files(team_id: str, repo_name: str) -> list[dict[str, object]]
         return [file_node.model_dump() for file_node in index.files]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/codebase/file-content", response_model=CodebaseFileContentResponse)
+def get_codebase_file_content(
+    team_id: str,
+    repo_name: str,
+    file_path: str,
+) -> CodebaseFileContentResponse:
+    try:
+        index = CodebaseIndexRepository().load(team_id, repo_name)
+        file_node = next((item for item in index.files if item.path == file_path), None)
+        if file_node is None:
+            raise NotFoundError(f"File is not present in the codebase index: {file_path}")
+
+        repo_root = resolve_project_path(index.repo_path, must_exist=True).resolve()
+        target_path = (repo_root / file_node.path).resolve()
+        if not target_path.is_relative_to(repo_root):
+            raise PathTraversalError(f"File path escapes repo root: {file_path}")
+        if not target_path.is_file():
+            raise NotFoundError(f"Indexed file does not exist on disk: {file_path}")
+
+        return CodebaseFileContentResponse(
+            path=file_node.path,
+            language=file_node.language,
+            role=file_node.role,
+            size_bytes=file_node.size_bytes,
+            line_count=file_node.line_count,
+            content=target_path.read_text(encoding="utf-8", errors="replace"),
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/graph/build")
@@ -574,7 +635,20 @@ def get_evaluation_run(evaluation_id: str) -> dict[str, object]:
     scorecard = EvaluationRepository().get(evaluation_id)
     if scorecard is None:
         raise HTTPException(status_code=404, detail=f"Evaluation not found: {evaluation_id}")
-    return scorecard.model_dump()
+    payload = scorecard.model_dump()
+    markdown_path = scorecard.markdown_path or scorecard.output_path
+    if markdown_path:
+        try:
+            path = resolve_project_path(markdown_path, must_exist=True)
+            payload["markdown_report"] = path.read_text(encoding="utf-8")
+        except (DreamError, OSError):
+            payload["markdown_report"] = ""
+    else:
+        payload["markdown_report"] = ""
+    payload["json_path"] = scorecard.json_path
+    payload["markdown_path"] = markdown_path
+    payload["warnings"] = scorecard.warnings
+    return payload
 
 
 def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:

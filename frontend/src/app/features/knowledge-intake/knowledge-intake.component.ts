@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 
 import {
   KnowledgeIntakeItem,
@@ -28,6 +28,12 @@ export class KnowledgeIntakeComponent {
   readonly uploadMessage = signal('Ready.');
   readonly selectedUploadFileName = signal('No file selected');
   readonly reviewComment = signal('');
+  readonly sourcesNeedReview = computed(() =>
+    this.queue().filter((item) => item.reviewStatus === 'needs_review' || item.reviewStatus === 'unreviewed'),
+  );
+  readonly promotedSources = computed(() => this.queue().filter((item) => item.reviewStatus === 'promoted'));
+  readonly approvedSources = computed(() => this.queue().filter((item) => item.reviewStatus === 'approved'));
+  readonly totalMemoryCards = computed(() => this.queue().reduce((total, item) => total + item.sections.length, 0));
 
   selectItem(item: KnowledgeIntakeItem): void {
     this.selectedItem.set(item);
@@ -156,6 +162,10 @@ export class KnowledgeIntakeComponent {
 
   formatStatus(status: string): string {
     return status.replaceAll('_', ' ');
+  }
+
+  selectedSourceSummary(item: KnowledgeIntakeItem): string {
+    return `${this.sourceKindLabel(item)} / ${item.sections.length} proposed cards / ${item.targetPack}`;
   }
 
   private updateItem(

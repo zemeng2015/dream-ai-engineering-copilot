@@ -139,6 +139,11 @@ def test_knowledge_intake_api_review_gate_and_promote(tmp_path, monkeypatch) -> 
     promote_response = client.post(f"/intake/drafts/{draft_payload['draft_id']}/promote")
     assert promote_response.status_code == 200
     assert promote_response.json()["status"] == "promoted"
+    promoted_list_response = client.get("/intake/documents")
+    promoted_document = next(
+        item for item in promoted_list_response.json() if item["document_id"] == document_id
+    )
+    assert promoted_document["promoted_path"] == promote_response.json()["promoted_path"]
 
 
 def _configure_isolated_runtime(tmp_path: Path, monkeypatch) -> None:

@@ -1,39 +1,185 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="workspace-page reveal-page">
-  <header class="workspace-header">
+<section class="page memory-page reveal-page">
+  <header class="memory-hero">
     <div>
       <h1>Memory Hub</h1>
-      <p>Source -> memory cards -> code index -> retrieval paths.</p>
+      <p>Manage source documents and codebase index memory used by the live backend.</p>
     </div>
   </header>
 
-  <nav class="workspace-tabs" aria-label="Memory Hub sections">
-    @for (tab of tabs; track tab.id) {
-      <button
-        type="button"
-        [class.active]="activeTab() === tab.id"
-        (click)="selectTab(tab.id)"
-      >
-        <strong>{{ tab.label }}</strong>
-      </button>
-    }
-  </nav>
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+  @if (uploadMessage(); as message) {
+    <div class="info-callout">{{ message }}</div>
+  }
 
-  <div class="workspace-embedded">
-    @switch (activeTab()) {
-      @case ('sources') {
-        <app-knowledge-intake />
+  <section class="panel memory-workspace" aria-label="Memory workspace">
+    <div class="memory-tabs" role="tablist" aria-label="Memory sections">
+      @for (tab of memoryTabs(); track tab.id) {
+        <button
+          type="button"
+          role="tab"
+          class="memory-tab"
+          [class.active]="activeTab() === tab.id"
+          [class.tab-tone-info]="tab.tone === 'info'"
+          [class.tab-tone-warning]="tab.tone === 'warning'"
+          [class.tab-tone-success]="tab.tone === 'success'"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="setActiveTab(tab.id)"
+        >
+          <span>
+            <strong>{{ tab.label }}</strong>
+            <small>{{ tab.note }}</small>
+          </span>
+          <em>{{ tab.count }}</em>
+          <b class="status-pill" [class.status-info]="tab.tone === 'info'" [class.status-warning]="tab.tone === 'warning'" [class.status-success]="tab.tone === 'success'">
+            {{ tab.status }}
+          </b>
+        </button>
       }
-      @case ('packs') {
-        <app-knowledge-base />
-      }
-      @case ('codebase') {
-        <app-codebase-memory />
-      }
-      @case ('graph') {
-        <app-evidence-graph />
-      }
+    </div>
+
+    @if (activeTab() === 'sources') {
+      <article class="tab-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Source Intake</h2>
+            <p>{{ intakeDocuments().length }} registered docs: {{ sourceReviewQueue().length }} need action / {{ approvedSourceItems().length }} in memory.</p>
+          </div>
+          <button class="link-button" type="button" (click)="loadMemory()">Refresh</button>
+        </div>
+
+        <div class="review-list">
+          @for (item of sourceReviewQueue(); track item.documentId) {
+            <div class="review-row" [attr.title]="sourceFullPath(item)">
+              <span class="row-icon">
+                <app-ui-icon name="document" />
+              </span>
+              <div class="row-main">
+                <div class="row-title">
+                  <strong>{{ item.title }}</strong>
+                  <span class="status-pill" [class]="sourceStatusClass(item)">
+                    {{ sourceStatusLabel(item.status) }}
+                  </span>
+                </div>
+                <p>{{ item.teamId }} / {{ item.documentType }}</p>
+                <small [attr.title]="sourceFullPath(item)">{{ sourceReviewSummary(item) }}</small>
+              </div>
+              @if (sourceActionLabel(item); as actionLabel) {
+                <button
+                  class="secondary-button row-action"
+                  type="button"
+                  [disabled]="sourceActionInFlight() === item.documentId"
+                  (click)="runSourceAction(item)"
+                >
+                  {{ sourceActionInFlight() === item.documentId ? 'Working...' : actionLabel }}
+                </button>
+              }
+            </div>
+          } @empty {
+            <div class="empty-state">
+              <strong>No docs need review.</strong>
+              <span>{{ approvedSourceItems().length }} promoted docs are already available to memory workflows.</span>
+            </div>
+          }
+        </div>
+
+        <section class="structured-docs-section" aria-label="Structured docs in memory">
+          <div class="section-subheader">
+            <div>
+              <h3>Structured Docs in Memory</h3>
+              <p>{{ approvedSourceItems().length }} promoted docs available to retrieval and generation workflows.</p>
+            </div>
+          </div>
+          <div class="structured-doc-list">
+            @for (item of approvedSourceItems(); track item.documentId) {
+              <div class="review-row promoted-row" [attr.title]="sourceFullPath(item)">
+                <span class="row-icon">
+                  <app-ui-icon name="document" />
+                </span>
+                <div class="row-main">
+                  <div class="row-title">
+                    <strong>{{ item.title }}</strong>
+                    <span class="status-pill status-success">
+                      {{ sourceStatusLabel(item.status) }}
+                    </span>
+                  </div>
+                  <p>Structured {{ item.documentType }} / {{ item.teamId }}</p>
+                  <small [attr.title]="sourceFullPath(item)">{{ sourceFileName(item) }}</small>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <strong>No promoted docs yet.</strong>
+                <span>Register and review a source document before it appears here.</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <details class="add-source-details">
+          <summary>
+            <span>
+              <strong>Add Source Document</strong>
+              <small>Register a local file into intake for later review and promotion.</small>
+            </span>
+            <app-ui-icon name="chevron-down" />
+          </summary>
+
+          <form class="add-source-form" [formGroup]="uploadForm" (ngSubmit)="registerSource()">
+            <div class="form-field">
+              <label for="memory-type">Source type</label>
+              <select id="memory-type" formControlName="documentType">
+                <option value="runbooks">Runbook</option>
+                <option value="architecture">Architecture doc</option>
+                <option value="domain">Domain doc</option>
+                <option value="incident">Incident note</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="memory-title">Title</label>
+              <input id="memory-title" formControlName="title" placeholder="Optional title" />
+            </div>
+            <div class="form-field-full">
+              <label for="memory-path">Local file path</label>
+              <input id="memory-path" formControlName="filePath" />
+            </div>
+            <div class="form-field-full">
+              <button class="primary-button" type="submit" [disabled]="uploadInFlight()">
+                <app-ui-icon name="document" />
+                {{ uploadInFlight() ? 'Registering...' : 'Register Source' }}
+              </button>
+            </div>
+          </form>
+        </details>
+      </article>
+    } @else {
+      <article class="tab-panel codebase-tab-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Codebase Index</h2>
+            <p>{{ codebaseFiles().length }} indexed files from the repo JSON index.</p>
+          </div>
+          <a class="secondary-button" routerLink="/codebase">Open Browser</a>
+        </div>
+
+        <div class="codebase-stats" aria-label="Codebase memory stats">
+          <article>
+            <span>Source Files</span>
+            <strong>{{ sourceCodeFiles() }}</strong>
+          </article>
+          <article>
+            <span>Test Files</span>
+            <strong>{{ linkedTestFiles() }}</strong>
+          </article>
+          <article>
+            <span>Total Indexed</span>
+            <strong>{{ codebaseFiles().length }}</strong>
+          </article>
+        </div>
+      </article>
     }
-  </div>
+  </section>
 </section>

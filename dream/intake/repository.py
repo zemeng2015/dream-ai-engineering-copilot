@@ -14,16 +14,19 @@ class IntakeRepository:
         return document
 
     def get_document(self, document_id: str) -> IntakeDocument:
-        return IntakeDocument.model_validate_json(
+        document = IntakeDocument.model_validate_json(
             self.document_path(document_id).read_text(encoding="utf-8")
         )
+        return self._with_promoted_path(document)
 
     def list_documents(self) -> list[IntakeDocument]:
         base = resolve_artifact_path("intake/documents")
         if not base.exists():
             return []
         return [
-            IntakeDocument.model_validate_json(path.read_text(encoding="utf-8"))
+            self._with_promoted_path(
+                IntakeDocument.model_validate_json(path.read_text(encoding="utf-8"))
+            )
             for path in sorted(base.glob("*.json"))
         ]
 
@@ -52,6 +55,19 @@ class IntakeRepository:
         return resolve_artifact_path(
             Path("intake/documents") / f"{self._safe_name(document_id)}.json"
         )
+
+    def _with_promoted_path(self, document: IntakeDocument) -> IntakeDocument:
+        if document.promoted_path or document.status != "promoted":
+            return document
+        draft_path = resolve_artifact_path(
+            Path("intake/drafts")
+            / self._safe_name(f"draft-{document.document_id}")
+            / "draft.json"
+        )
+        if not draft_path.exists():
+            return document
+        draft = KnowledgeDraft.model_validate_json(draft_path.read_text(encoding="utf-8"))
+        return document.model_copy(update={"promoted_path": draft.promoted_path})
 
     @staticmethod
     def upload_path(document_id: str, suffix: str) -> Path:

@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DREAM Frontend Runbook - Developer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #10233f;
+      --muted: #52657f;
+      --line: #dbe6f3;
+      --panel: #ffffff;
+      --bg: #f4f8fb;
+      --accent: #007f86;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+    h1, h2, h3 {
+      line-height: 1.2;
+      margin: 28px 0 12px;
+    }
+    h1 {
+      font-size: 34px;
+    }
+    h2 {
+      border-top: 1px solid var(--line);
+      padding-top: 24px;
+    }
+    p, li {
+      color: var(--muted);
+    }
+    code {
+      background: #eaf2fb;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 1px 5px;
+    }
+    .callout {
+      background: #e9fbfb;
+      border: 1px solid #b9e4e5;
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+    .page {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin: 28px 0;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(16, 35, 63, 0.06);
+    }
+    .screenshot {
+      width: 100%;
+      max-width: 1100px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: block;
+      margin: 14px 0 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 24px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: #eef5fb;
+    }
+    .muted {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<main>
+<h1>DREAM Frontend Developer Runbook</h1>
+<p>生成时间：<code>2026-07-01T12:49:58.521Z</code></p>
+<div class="callout">本 HTML 是本地浏览器打开版；图片路径按 HTML 文件所在目录解析。</div>
+<h2>Route / Component Map</h2>
+<table><thead><tr><th>Route</th><th>页面</th><th>Component</th><th>备注</th></tr></thead><tbody><tr><td><code>/mission-control</code></td><td>Mission Control</td><td><code>frontend/src/app/features/dashboard/dashboard.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr><tr><td><code>/memory</code></td><td>Memory Hub</td><td><code>frontend/src/app/features/memory-hub/memory-hub.component.ts</code></td><td>容器页，内部嵌入多个 feature component。</td></tr><tr><td><code>/workbench</code></td><td>Engineering Workbench</td><td><code>frontend/src/app/features/engineering-workbench/engineering-workbench.component.ts</code></td><td>容器页，内部嵌入多个 feature component。</td></tr><tr><td><code>/trust</code></td><td>Trust Center</td><td><code>frontend/src/app/features/trust-center/trust-center.component.ts</code></td><td>容器页，内部嵌入多个 feature component。</td></tr><tr><td><code>/knowledge</code></td><td>Knowledge Memory</td><td><code>frontend/src/app/features/knowledge-base/knowledge-base.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr><tr><td><code>/knowledge-intake</code></td><td>Knowledge Intake</td><td><code>frontend/src/app/features/knowledge-intake/knowledge-intake.component.ts</code></td><td>本地 signal/mock state，无生产 side effect。</td></tr><tr><td><code>/codebase</code></td><td>Memory Atlas</td><td><code>frontend/src/app/features/codebase-memory/codebase-memory.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr><tr><td><code>/graph</code></td><td>Retrieval Paths</td><td><code>frontend/src/app/features/evidence-graph/evidence-graph.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr><tr><td><code>/context-intelligence</code></td><td>Context Intelligence</td><td><code>frontend/src/app/features/context-intelligence/context-intelligence.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr><tr><td><code>/requirements</code></td><td>Requirement Case</td><td><code>frontend/src/app/features/requirement-draft/requirement-draft.component.ts</code></td><td>可切 mock/real provider；real mode 调 FastAPI。</td></tr><tr><td><code>/review</code></td><td>PR Review</td><td><code>frontend/src/app/features/pr-review/pr-review.component.ts</code></td><td>可切 mock/real provider；real mode 调 FastAPI。</td></tr><tr><td><code>/testgen</code></td><td>TestGen Stub</td><td><code>frontend/src/app/features/testgen-stub/testgen-stub.component.ts</code></td><td>本地 signal/mock state，无生产 side effect。</td></tr><tr><td><code>/audit</code></td><td>Eval &amp; Audit</td><td><code>frontend/src/app/features/audit-eval/audit-eval.component.ts</code></td><td>本地 signal/mock state，无生产 side effect。</td></tr><tr><td><code>/settings</code></td><td>Settings</td><td><code>frontend/src/app/features/settings/settings.component.ts</code></td><td>mock/demo 数据展示或搜索。</td></tr></tbody></table>
+<h2>关键实现边界</h2>
+<ul><li>左侧 nav 只暴露 5 个顶层页面；其余功能页通过容器页、quick actions 或直接 route 访问。</li><li>顶部 Toggle navigation button 当前只有 UI button 和 aria-label，未绑定展开/收起状态。</li><li>Mock data 不是持久化存储；刷新页面会丢失 upload、question answers、ratings 等运行时 signal 状态。</li><li>Real OpenAI 模式依赖后端 http://127.0.0.1:8000，API key 只应在后端环境变量中配置。</li></ul>
+
+<section class="page" id="mission-control">
+  <h2>Mission Control</h2>
+  <p>Route：<code>/mission-control</code></p>
+  <p>Component：<code>frontend/src/app/features/dashboard/dashboard.component.ts</code></p>
+  <p>全局驾驶舱，用一屏汇总记忆源、审计、pipeline、需要人工 review 的事项。</p>
+  <img class="screenshot" src="annotated-screenshots/mission-control-annotated.png" alt="Mission Control annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面主叙事与入口</td><td>告诉用户 DREAM 的定位，并提供进入 Workbench 和 Trust Trail 的两个主入口。</td><td>DashboardComponent 的 hero 区，链接到 /workbench 和 /trust。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>主工作流按钮</td><td>Open Workbench 进入需求/PR 工作流；Inspect Trust Trail 查看可审计证据链。</td><td>routerLink 导航，无业务 side effect。</td><td>导航无 side effect，适合 demo；真实 workflow 需补权限/状态保护。</td></tr><tr><td>5</td><td>本地演示护栏</td><td>展示当前 demo 是否允许外部修改、默认 provider、是否需要人工审批。</td><td>静态 guardrails 数组，说明 mock/demo 安全边界。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>关键指标条</td><td>快速看当前 mock memory、case、scorecard、rating、待 review 数量。</td><td>由 MockDreamService 聚合 chunks/files/cases/ratings 计算。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Memory-to-review pipeline</td><td>展示从知识包、代码索引、检索路径到 review/audit 的端到端链路。</td><td>pipelineSteps computed；每个 step 是 routerLink。</td><td>导航无 side effect，适合 demo；真实 workflow 需补权限/状态保护。</td></tr><tr><td>8</td><td>Recent Audit Runs</td><td>最近生成/审计 run 的状态表，用于判断哪些输出失败、通过或待审。</td><td>recentRuns mock table，状态 pill 基于 run.status 映射。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>9</td><td>Retrieval Path Preview</td><td>预览业务概念如何映射到 evidence path。</td><td>searchEvidenceGraph 默认 query=execution status。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>10</td><td>Knowledge Pack Health</td><td>查看知识包覆盖率和健康状态，定位缺失/危险知识源。</td><td>listKnowledgePacks 的 coverage/status 展示。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>11</td><td>Active Requirement Case</td><td>当前最重要需求 case 的摘要、置信度和 evidence/impact 数量。</td><td>primaryCase() 取 requirementCases()[0]。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>12</td><td>Human Review Required</td><td>列出需要人工确认的 run，提醒不能自动发布。</td><td>needsReview computed 过滤 needs_review/warning。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>13</td><td>Quick Actions</td><td>快捷进入需求、代码索引、PR review、Memory、Trust、Context Trail。</td><td>quickActions 静态配置，均为 routerLink。</td><td>导航无 side effect，适合 demo；真实 workflow 需补权限/状态保护。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="memory-hub">
+  <h2>Memory Hub</h2>
+  <p>Route：<code>/memory</code></p>
+  <p>Component：<code>frontend/src/app/features/memory-hub/memory-hub.component.ts</code></p>
+  <p>Memory Hub 总览页，管理 source evidence 到 approved workflow context 的闭环。</p>
+  <img class="screenshot" src="annotated-screenshots/memory-hub-annotated.png" alt="Memory Hub annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Memory Hub 标题与动作</td><td>Add Source 切到 Intake；Trace Request 切到检索轨迹。</td><td>openIntake/openTrace 只更新 activeTab signal。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>4</td><td>Hub 内部 Tabs</td><td>切换 Loop Overview、Intake、Atlas、Trace、Evidence 五个内嵌视图。</td><td>activeTab signal 控制嵌入组件。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>5</td><td>Active Request 卡片</td><td>当前示例请求和 Show Trace/Open Atlas/Review Sources 快捷入口。</td><td>按钮分别切换 trace/atlas/intake tab。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Memory Loop Stages</td><td>显示 raw source 到 eval/audit 的每一步数量和状态。</td><td>loopStages 静态数组，data-state 控制样式。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Overview Focus Grid</td><td>当前关注 capability、atlas 高亮、待处理事项。</td><td>focusMetrics/atlasHighlights/activeWork 展示；按钮切换内部 tab。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>8</td><td>Retrieval Trace Preview</td><td>预览 request -&gt; concepts -&gt; memory -&gt; code -&gt; prompt -&gt; eval 的链路。</td><td>traceSteps 静态数组，Inspect full path 切 trace tab。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="engineering-workbench">
+  <h2>Engineering Workbench</h2>
+  <p>Route：<code>/workbench</code></p>
+  <p>Component：<code>frontend/src/app/features/engineering-workbench/engineering-workbench.component.ts</code></p>
+  <p>需求分析和 PR Review 的工作台容器，旁边固定显示 context trust sidebar。</p>
+  <img class="screenshot" src="annotated-screenshots/engineering-workbench-annotated.png" alt="Engineering Workbench annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Workbench 标题与 Trust 入口</td><td>说明工作台目的，右侧 Trust Center 链接用于打开检索审计。</td><td>trust-link routerLink=/trust。</td><td>导航无 side effect，适合 demo；真实 workflow 需补权限/状态保护。</td></tr><tr><td>4</td><td>Workflow Mode Switch</td><td>在 Requirement Case 与 PR Review 两种工作模式间切换。</td><td>activeMode signal 控制 app-requirement-draft/app-pr-review。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>5</td><td>嵌入工作流区域</td><td>当前模式的实际表单和结果输出区。</td><td>默认 requirement；PR 模式复用 PrReviewComponent。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Context Sidebar</td><td>持续显示检测到的概念、检索 trail、context eval 和 active case。</td><td>由 getContextIntelligenceSnapshot + primaryCase mock 数据驱动。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="trust-center">
+  <h2>Trust Center</h2>
+  <p>Route：<code>/trust</code></p>
+  <p>Component：<code>frontend/src/app/features/trust-center/trust-center.component.ts</code></p>
+  <p>检索可信度、prompt preview、eval/audit 和 human rating 的治理入口。</p>
+  <img class="screenshot" src="annotated-screenshots/trust-center-annotated.png" alt="Trust Center annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Trust Center 标题</td><td>解释这是 review/governance 面板。</td><td>TrustCenterComponent 容器页。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>汇总数字</td><td>快速看 trail steps、scorecards、audit runs 数量。</td><td>snapshot/auditRuns/scorecards 数据聚合。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Trust Tabs</td><td>切换 Retrieval Trust 和 Eval &amp; Audit。</td><td>activeTab signal 控制 ContextIntelligence 或 AuditEval。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>6</td><td>嵌入治理视图</td><td>当前 tab 的实际 trust/audit 内容。</td><td>默认加载 app-context-intelligence。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="knowledge-memory">
+  <h2>Knowledge Memory</h2>
+  <p>Route：<code>/knowledge</code></p>
+  <p>Component：<code>frontend/src/app/features/knowledge-base/knowledge-base.component.ts</code></p>
+  <p>知识源搜索和 chunk 预览页面，用于查 domain docs/runbooks/incidents/Jira/PR/test docs。</p>
+  <img class="screenshot" src="annotated-screenshots/knowledge-memory-annotated.png" alt="Knowledge Memory annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面说明与索引状态</td><td>说明当前搜索 demo_team synthetic knowledge pack。</td><td>index-beacon 静态显示 synthetic only。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>搜索与筛选面板</td><td>输入 query、app、doc type、component、Top K 后搜索来源。</td><td>Reactive form 调 dream.searchKnowledge 并更新 chunks/selectedChunk。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>展开后的搜索表单</td><td>高级过滤条件，搜索后会自动折叠并更新结果。</td><td>searchCollapsed signal 控制。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>6</td><td>Knowledge Source Tree</td><td>按 source type 分组展示命中的 chunk，点击任意 chunk 查看右侧详情。</td><td>sourceGroups computed 按 sourceType group。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Chunk Preview</td><td>查看选中 chunk 的摘要、概念标签、metadata 和 GitHub source link。</td><td>selectedChunk signal；concept 按钮会回填 query 并 search。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="knowledge-intake">
+  <h2>Knowledge Intake</h2>
+  <p>Route：<code>/knowledge-intake</code></p>
+  <p>Component：<code>frontend/src/app/features/knowledge-intake/knowledge-intake.component.ts</code></p>
+  <p>把上传/导入的 source parse 成候选 memory cards，并经过 approve/promote 流程。</p>
+  <img class="screenshot" src="annotated-screenshots/knowledge-intake-annotated.png" alt="Knowledge Intake annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Intake 标题</td><td>进入 source intake/review 工作台。</td><td>KnowledgeIntakeComponent standalone route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Sources Queue</td><td>展示待处理 source、解析状态、reviewer、memory card 数量和目标 pack。</td><td>queue signal 来自 listKnowledgeIntakeQueue。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>5</td><td>Upload Source</td><td>上传 md/txt/docx/html/json；本地读取并解析成 proposed memory cards。</td><td>File.text() + buildUploadedIntakeItem，不调用后端。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Review &amp; Approve Console</td><td>对选中 source 进行 re-parse、approve、promote，并记录 review comment。</td><td>reparse/approve/promote 更新 queue signal。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>7</td><td>Proposed Memory Cards</td><td>展示解析出来的候选 memory cards、摘要、source span 和 retrieval tags。</td><td>item.sections 渲染，状态取决于 reviewStatus。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>8</td><td>Retrieval Tags</td><td>解析出的概念标签，用于后续检索匹配。</td><td>item.parsedConcepts 展示，不可编辑。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>9</td><td>Checks &amp; Reviewer Notes</td><td>系统检查和人工 review note 的审计说明。</td><td>reviewNotes 数组，comment 文案会插入。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="memory-atlas">
+  <h2>Memory Atlas</h2>
+  <p>Route：<code>/codebase</code></p>
+  <p>Component：<code>frontend/src/app/features/codebase-memory/codebase-memory.component.ts</code></p>
+  <p>代码库 capability memory atlas，把业务能力、代码文件、测试、风险和 prompt 用途连接起来。</p>
+  <img class="screenshot" src="annotated-screenshots/memory-atlas-annotated.png" alt="Memory Atlas annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Atlas 标题与 Repo 状态</td><td>说明当前索引的 repo 和 provider snapshot。</td><td>repoName/providerLabel/indexedAt 静态 mock。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>左侧 Atlas Rail</td><td>查看 indexed repo、attention queue、trust states 和高级搜索。</td><td>reviewQueue/healthStats/searchCollapsed 驱动。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Advanced Search</td><td>按 query/topK 搜索代码 evidence，并选中第一个 match。</td><td>dream.searchCodebase 更新 results 和 selectedFile。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Selected Memory Hero</td><td>当前选中 capability 的摘要、状态、trust 和 evidence 数量。</td><td>selectedCapability computed。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Capability Network</td><td>点击 capability node 切换上下文，查看能力之间的关联。</td><td>selectCapability 更新 selectedCapabilityId/selectedFileId。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>8</td><td>Impact Map</td><td>把能力拆成 source code、tests、docs，可点击具体文件/路径。</td><td>selectedFiles/selectedTests/selectedDocs computed。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>9</td><td>Prompt Assembly Trace</td><td>说明 request 到 prompt slots 的组装步骤。</td><td>traceSteps 静态数组。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>10</td><td>Evidence Library</td><td>按 frontend/API/service/domain/tests 分组列出当前 capability 的 evidence。</td><td>evidenceGroups computed。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>11</td><td>Decision Inspector</td><td>右侧查看为什么信任、风险缺口、概念、选中 evidence 和搜索 matches。</td><td>selectedCapability/selectedFile/results 联动展示。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="retrieval-paths">
+  <h2>Retrieval Paths</h2>
+  <p>Route：<code>/graph</code></p>
+  <p>Component：<code>frontend/src/app/features/evidence-graph/evidence-graph.component.ts</code></p>
+  <p>按业务概念查 docs -&gt; code -&gt; tests 的 evidence graph path。</p>
+  <img class="screenshot" src="annotated-screenshots/retrieval-paths-annotated.png" alt="Retrieval Paths annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面标题与图谱状态</td><td>显示当前 demo repo 的 graph path ready 状态。</td><td>EvidenceGraphComponent route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Find Retrieval Path 表单</td><td>输入 business concept/risk 和 topK 后 trace sources。</td><td>Reactive form 调 searchEvidenceGraph。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Graph Path Results</td><td>点击结果选择某条 evidence path。</td><td>selectedPath signal 更新右侧 Why These Sources。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>6</td><td>Why These Sources</td><td>解释选中 path 中每个节点为什么进入 prompt context。</td><td>path.path/evidenceTypes/reviewHint 展示。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Prompt Boundary</td><td>提醒哪些 docs/incidents/code/tests 会进入 context pack，并提供快捷 query。</td><td>快捷按钮 patchValue + search。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="context-intelligence">
+  <h2>Context Intelligence</h2>
+  <p>Route：<code>/context-intelligence</code></p>
+  <p>Component：<code>frontend/src/app/features/context-intelligence/context-intelligence.component.ts</code></p>
+  <p>展示 intent 到 source-backed context pack、prompt preview、logic chain 的完整组装过程。</p>
+  <img class="screenshot" src="annotated-screenshots/context-intelligence-annotated.png" alt="Context Intelligence annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Context 页面说明</td><td>说明当前 caseId 和 context pack ready 状态。</td><td>snapshot 来自 getContextIntelligenceSnapshot。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Active Request Summary</td><td>当前请求、trail/pack/evidence 的摘要计数。</td><td>snapshot.title/request/sections/evidenceCards。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Retrieval Eval Metrics</td><td>衡量 coverage、freshness、source mix 等检索质量。</td><td>snapshot.metrics + statusClass。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Retrieval Trail Timeline</td><td>逐步展示 query、匹配 source 数和状态。</td><td>retrievalTrail 渲染。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Context Pack Sections</td><td>点击 section 查看该 section 的 guardrail 和 linked evidence。</td><td>selectedSectionId signal 控制 selectedEvidence。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>8</td><td>Evidence Cards</td><td>显示当前 section 绑定的 source excerpt、relevance 和 why selected。</td><td>selectedEvidence computed。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>9</td><td>Prompt Preview</td><td>查看最终将送给模型的 system/developer/user/evidence instructions 预览。</td><td>promptText computed 拼装；draft only。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>10</td><td>Standardized Logic Chain</td><td>标准化记录 input/output/evidence，方便审计和复盘。</td><td>snapshot.logicChain 渲染。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="requirement-case">
+  <h2>Requirement Case</h2>
+  <p>Route：<code>/requirements</code></p>
+  <p>Component：<code>frontend/src/app/features/requirement-draft/requirement-draft.component.ts</code></p>
+  <p>把粗糙业务需求转为 evidence、impact map、澄清问题、scorecard 和 Jira draft。</p>
+  <img class="screenshot" src="annotated-screenshots/requirement-case-annotated.png" alt="Requirement Case annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面目标与人工门禁</td><td>说明输出必须人工 review 后才能进 Jira。</td><td>RequirementDraftComponent route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Case Intake 表单</td><td>选择 execution mode、team/app/component/role/topK，输入 rough request 并分析。</td><td>Reactive form + Validators；默认 mock。</td><td>real mode 错误处理要覆盖后端未启动、CORS、provider key 缺失。</td></tr><tr><td>5</td><td>Sources Used</td><td>生成后展示检索到的来源和 source path。</td><td>result.sourcesUsed。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Impact Map</td><td>显示需求可能影响的系统区域、描述和置信度。</td><td>requirementCase.impactMap。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Evaluation Scorecard</td><td>用分数和建议判断是否 Jira-ready 或仍需答案。</td><td>draft.scorecard + readinessLabel。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>8</td><td>Role-specific Questions</td><td>不同角色需要回答的问题，可保存答案回填到 case。</td><td>questionAnswers signal + saveQuestionAnswer。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>9</td><td>Jira-ready Draft</td><td>查看/重新生成带人工答案的 Jira markdown 草稿。</td><td>regenerateJiraDraft 只更新本地 result。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="pr-review">
+  <h2>PR Review</h2>
+  <p>Route：<code>/review</code></p>
+  <p>Component：<code>frontend/src/app/features/pr-review/pr-review.component.ts</code></p>
+  <p>用 synthetic diff/Jira context 生成 evidence-backed PR review aid。</p>
+  <img class="screenshot" src="annotated-screenshots/pr-review-annotated.png" alt="PR Review annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面目标与安全边界</td><td>明确不发 PR comment、不 approve/reject，只生成 review aid。</td><td>PrReviewComponent route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Review Input 表单</td><td>选择 mode/team/app/component/topK，输入 synthetic diff 和 Jira context。</td><td>Reactive form；默认 MOCK_DIFF_TEXT/MOCK_JIRA_CONTEXT。</td><td>real mode 错误处理要覆盖后端未启动、CORS、provider key 缺失。</td></tr><tr><td>5</td><td>Review Memory</td><td>查看风险等级、eval grade、changed files、related code 和 sources。</td><td>result 后展示 review.risk/scorecard/relatedCode。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Markdown Output</td><td>生成可复制给 reviewer 的 markdown 摘要。</td><td>review.markdown；不调用 GitHub。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="testgen-stub">
+  <h2>TestGen Stub</h2>
+  <p>Route：<code>/testgen</code></p>
+  <p>Component：<code>frontend/src/app/features/testgen-stub/testgen-stub.component.ts</code></p>
+  <p>展示未来 TestGen provider 接口，但当前不生成测试、不写 repo。</p>
+  <img class="screenshot" src="annotated-screenshots/testgen-stub-annotated.png" alt="TestGen Stub annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>页面目标与 Stub 边界</td><td>说明这是 provider interface only，mock provider，无 repo 写入。</td><td>TestgenStubComponent route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>范围警告</td><td>提醒 unit-test generation 不在当前 UI phase。</td><td>静态 guardrail 文案。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Provider Stub Input</td><td>输入 team、语言、repo path，保持 dry run only。</td><td>Reactive form；UI 不读 filesystem。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Plan / Result</td><td>Plan Stub 预览要做的动作。</td><td>dream.planTestGenStub。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Safe Stub Report</td><td>Run Safe Stub 生成安全报告，证明不会写文件。</td><td>dream.runTestGenStub。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="eval-audit">
+  <h2>Eval &amp; Audit</h2>
+  <p>Route：<code>/audit</code></p>
+  <p>Component：<code>frontend/src/app/features/audit-eval/audit-eval.component.ts</code></p>
+  <p>查看 deterministic scorecards、run history、human ratings 和 evidence coverage。</p>
+  <img class="screenshot" src="annotated-screenshots/eval-audit-annotated.png" alt="Eval &amp; Audit annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Audit 页面说明</td><td>说明输出在 review-ready 前需要 eval 和人工评分。</td><td>AuditEvalComponent route。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Evaluation Scorecards</td><td>分数、grade、recommendation 和 pass/warning/fail 状态。</td><td>scorecards signal。</td><td>刷新会重置；生产化需接 API/持久化。</td></tr><tr><td>5</td><td>Audit Runs Table</td><td>点击 run 查看详情和评分。</td><td>selectRun 更新 selectedRun。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>6</td><td>Run Detail &amp; Rating</td><td>查看 provider、sources、warnings，并填写 usefulness/correctness/comment。</td><td>ratingForm + submitRating。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>7</td><td>Ratings List</td><td>展示当前 run 已保存的人类评分。</td><td>selectedRatings computed 从 ratings 过滤。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>8</td><td>Evidence Coverage</td><td>展示知识/代码/测试/历史等来源覆盖情况。</td><td>scorecards()[0].sourceCoverage keyvalue。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+
+<section class="page" id="settings">
+  <h2>Settings</h2>
+  <p>Route：<code>/settings</code></p>
+  <p>Component：<code>frontend/src/app/features/settings/settings.component.ts</code></p>
+  <p>运行模式和 guardrails 的只读配置预览。</p>
+  <img class="screenshot" src="annotated-screenshots/settings-annotated.png" alt="Settings annotated screenshot">
+  <table>
+    <thead><tr><th>编号</th><th>区域</th><th>用户功能</th><th>实现/状态来源</th><th>开发注意</th></tr></thead>
+    <tbody><tr><td>1</td><td>全局左侧导航</td><td>主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。</td><td>AppComponent navItems + sidebar-footer，routerLink 导航。</td><td>跨页固定 shell；改 navItems 会影响所有截图/入口。</td></tr><tr><td>2</td><td>全局顶部栏</td><td>移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。</td><td>app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。</td><td>Toggle navigation 尚未实现行为；如做响应式菜单需补状态和测试。</td></tr><tr><td>3</td><td>Settings 页面说明</td><td>查看 frontend mock-only 状态和健康标识。</td><td>SettingsComponent 注入 MockDreamService。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>4</td><td>Runtime Mode</td><td>查看 provider、API base URL、frontend mode、status。</td><td>dream.health 静态配置，base URL 指向 127.0.0.1:8000。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr><tr><td>5</td><td>Guardrails</td><td>当前 demo 的安全边界：无付费外部 API、无真实公司数据、输出仅草稿、TestGen excluded。</td><td>静态列表，面向 demo governance。</td><td>产品校验时确认 mock 行为和未来生产行为差异是否已说明。</td></tr></tbody>
+  </table>
+</section>
+
+</main>
+</body>
+</html>

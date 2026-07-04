@@ -1,40 +1,223 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="page reveal-page">
+<section class="page audit-page reveal-page">
   <header class="page-header command-header">
     <div>
       <span class="eyebrow">Evaluation agent</span>
-      <h1>Eval & Audit</h1>
+      <h1>{{ isDetailRoute() ? 'Eval Agent Detail' : 'Eval Agent Cases' }}</h1>
       <p>
-        Inspect deterministic scorecards, evidence coverage, generation runs, warnings, and human
-        ratings before any output is treated as review-ready.
+        @if (isDetailRoute()) {
+          Inspect scoring basis, evidence coverage, missing items, and run context for this generated output.
+        } @else {
+          Review recent Eval Agent cases. Open a case to inspect scoring details.
+        }
       </p>
     </div>
-    <div class="index-beacon">
-      <span></span>
-      <strong>Rule-based eval</strong>
-      <small>default local gate</small>
-    </div>
+    @if (isDetailRoute() && selectedScorecard(); as card) {
+      <div class="index-beacon">
+        <span></span>
+        <strong>Grade {{ card.grade }} / {{ card.overallScore }}</strong>
+        <small>{{ formatLabel(card.passStatus) }}</small>
+      </div>
+    }
   </header>
 
-  <section class="score-grid" aria-label="Evaluation scorecards">
-    @for (card of scorecards(); track card.evaluationId) {
-      <article class="score-card">
-        <div class="score-ring">{{ card.overallScore }}</div>
-        <strong>{{ card.targetType }} / Grade {{ card.grade }}</strong>
-        <p>{{ card.recommendations.join(' ') }}</p>
-        <span class="status-pill" [class]="card.passStatus === 'pass' ? 'status-success' : card.passStatus === 'warning' ? 'status-warning' : 'status-error'">
-          {{ card.passStatus }}
-        </span>
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+
+  @if (!isDetailRoute()) {
+    <section class="list-heading">
+      <div>
+        <h2>Eval Cases</h2>
+        <p>{{ visibleScorecards().length }} total cases. Showing {{ pagedScorecards().length }} on this page.</p>
+      </div>
+      <div class="pager">
+        <button class="secondary-button" type="button" (click)="previousScorePage()" [disabled]="scorePage() === 1">Previous</button>
+        <span>Page {{ scorePage() }} / {{ totalScorePages() }}</span>
+        <button class="secondary-button" type="button" (click)="nextScorePage()" [disabled]="scorePage() === totalScorePages()">Next</button>
+      </div>
+    </section>
+
+    <section class="score-grid" aria-label="Evaluation scorecards">
+      @for (card of pagedScorecards(); track card.evaluationId) {
+        <a
+          class="score-card score-card-link"
+          [class.active]="isSelectedScorecard(card)"
+          [attr.href]="'/audit/' + card.evaluationId"
+          (click)="openScorecard(card, $event)"
+        >
+          <div class="score-ring">{{ card.overallScore }}</div>
+          <strong>{{ formatLabel(card.targetType) }} / Grade {{ card.grade }}</strong>
+          <div class="score-card-summary" aria-label="Evaluation summary">
+            <span>
+              <strong>{{ failedDimensionCount(card) }}</strong>
+              failed dimensions
+            </span>
+            <span>
+              <strong>{{ missingItemCount(card) }}</strong>
+              missing items
+            </span>
+            <span>
+              <strong>{{ recommendationCount(card) }}</strong>
+              recommendations
+            </span>
+          </div>
+          <p>{{ cardReviewHint(card) }}</p>
+          <span
+            class="status-pill"
+            [class]="card.passStatus === 'pass' ? 'status-success' : card.passStatus === 'warning' ? 'status-warning' : 'status-error'"
+          >
+            {{ formatLabel(card.passStatus) }}
+          </span>
+        </a>
+      }
+    </section>
+  }
+
+  @if (isDetailRoute() && selectedScorecard(); as card) {
+    <a class="back-link" href="/audit" (click)="openEvalList($event)">Back to eval cases</a>
+    <section id="eval-detail" class="detail-grid" aria-label="Selected eval detail">
+      <article class="panel case-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Case Detail</h2>
+            <p>{{ formatLabel(card.targetType) }} / {{ card.targetId }}</p>
+          </div>
+          <span
+            class="status-pill"
+            [class]="card.passStatus === 'pass' ? 'status-success' : card.passStatus === 'warning' ? 'status-warning' : 'status-error'"
+          >
+            {{ scoreBand(card.overallScore) }}
+          </span>
+        </div>
+        <div class="panel-body">
+          <dl class="metadata-list">
+            <div>
+              <dt>Evaluation ID</dt>
+              <dd>{{ card.evaluationId }}</dd>
+            </div>
+            <div>
+              <dt>Target</dt>
+              <dd>{{ formatLabel(card.targetType) }} / {{ card.targetId }}</dd>
+            </div>
+            <div>
+              <dt>Overall</dt>
+              <dd>{{ card.overallScore }} / 10, Grade {{ card.grade }}, {{ formatLabel(card.passStatus) }}</dd>
+            </div>
+            @if (selectedRequirementCase(); as requirementCase) {
+              <div>
+                <dt>Request</dt>
+                <dd>{{ requirementCase.rawRequest }}</dd>
+              </div>
+              <div>
+                <dt>Open Questions</dt>
+                <dd>{{ requirementCase.questions.length }} total / {{ openQuestionCount(requirementCase) }} still open</dd>
+              </div>
+            }
+            @if (selectedRun(); as run) {
+              <div>
+                <dt>Run</dt>
+                <dd>{{ run.runId }} / {{ formatLabel(run.useCase) }} / {{ run.app }}</dd>
+              </div>
+              <div>
+                <dt>Provider</dt>
+                <dd>{{ run.modelProvider }} / {{ run.modelName }}</dd>
+              </div>
+              <div>
+                <dt>Warnings</dt>
+                <dd>{{ run.warnings.length ? run.warnings.join(', ') : 'None' }}</dd>
+              </div>
+            }
+          </dl>
+
+          <h3 class="section-title">Scoring Standard</h3>
+          <div class="standard-list">
+            @for (standard of scoringStandards; track standard.label) {
+              <div>
+                <strong>{{ standard.label }}</strong>
+                <span>{{ standard.rule }}</span>
+                <small>{{ standard.note }}</small>
+              </div>
+            }
+          </div>
+        </div>
       </article>
-    }
-  </section>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Evidence Coverage</h2>
+          <span class="status-pill status-info">{{ coverageCount(card) }} checks</span>
+        </div>
+        <div class="coverage-list">
+          @for (item of card.sourceCoverage | keyvalue; track item.key) {
+            <div>
+              <span>{{ formatLabel(item.key) }}</span>
+              <strong class="status-pill" [class]="coverageStatusClass(item.value)">
+                {{ coverageStatus(item.value) }}
+              </strong>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Evaluation dimensions">
+      <div class="panel-header">
+        <div>
+          <h2>Dimension Scores</h2>
+          <p>Each dimension shows the scoring basis the Eval Agent used for this case.</p>
+        </div>
+        <span class="status-pill status-info">{{ selectedDimensions().length }} dimensions</span>
+      </div>
+      <div class="dimension-list">
+        @for (dimension of selectedDimensions(); track dimension.name) {
+          <article class="dimension-row">
+            <div class="dimension-score">
+              <strong>{{ dimension.score }}</strong>
+              <span>/ 10</span>
+            </div>
+            <div class="dimension-main">
+              <div class="dimension-heading">
+                <h3>{{ formatLabel(dimension.name) }}</h3>
+                <span class="status-pill" [class]="dimensionStatusClass(dimension)">
+                  {{ dimension.passed ? 'Passed' : 'Needs Work' }}
+                </span>
+              </div>
+              <p>{{ dimension.rationale }}</p>
+              <details class="dimension-more">
+                <summary>Evidence and actions</summary>
+                <dl>
+                  <div>
+                    <dt>Weight</dt>
+                    <dd>{{ dimension.weight }}</dd>
+                  </div>
+                  <div>
+                    <dt>Evidence</dt>
+                    <dd>{{ dimension.evidence.join(', ') }}</dd>
+                  </div>
+                  <div>
+                    <dt>Missing</dt>
+                    <dd>{{ dimension.missingItems.length ? dimension.missingItems.join(', ') : 'None' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Recommendation</dt>
+                    <dd>{{ dimension.recommendations.length ? dimension.recommendations.join(', ') : 'No action required' }}</dd>
+                  </div>
+                </dl>
+              </details>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
 
   <section class="grid-2">
     <article class="panel scan-panel">
       <div class="panel-header">
         <h2>Audit Runs</h2>
-        <span class="status-pill status-info">{{ runs().length }} mock runs</span>
+        <span class="status-pill status-info">{{ visibleRuns().length }} runs</span>
       </div>
       <div class="table-wrap">
         <table aria-label="Audit runs">
@@ -48,7 +231,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (run of runs(); track run.runId) {
+            @for (run of pagedRuns(); track run.runId) {
               <tr (click)="selectRun(run)" tabindex="0">
                 <td>{{ run.runId }}</td>
                 <td>{{ run.useCase }}</td>
@@ -67,30 +250,37 @@
           </tbody>
         </table>
       </div>
+      <div class="pager table-pager">
+        <button class="secondary-button" type="button" (click)="previousAuditPage()" [disabled]="auditPage() === 1">Previous</button>
+        <span>Page {{ auditPage() }} / {{ totalAuditPages() }}</span>
+        <button class="secondary-button" type="button" (click)="nextAuditPage()" [disabled]="auditPage() === totalAuditPages()">Next</button>
+      </div>
     </article>
 
     <article class="panel">
       <div class="panel-header">
-        <h2>Run Detail & Rating</h2>
+        <h2>Human Rating</h2>
       </div>
       <div class="panel-body">
         @if (selectedRun(); as run) {
           <dl class="metadata-list">
             <div>
-              <dt>Run ID</dt>
+              <dt>Selected Run</dt>
               <dd>{{ run.runId }}</dd>
             </div>
             <div>
-              <dt>Provider</dt>
-              <dd>{{ run.modelProvider }} / {{ run.modelName }}</dd>
-            </div>
-            <div>
               <dt>Sources</dt>
-              <dd>{{ run.sourcesUsed.length ? run.sourcesUsed.join(', ') : 'None' }}</dd>
-            </div>
-            <div>
-              <dt>Warnings</dt>
-              <dd>{{ run.warnings.length ? run.warnings.join(', ') : 'None' }}</dd>
+              <dd>
+                @if (run.sourcesUsed.length) {
+                  <span class="source-chip-list">
+                    @for (source of run.sourcesUsed; track source) {
+                      <span [attr.title]="source">{{ sourceFileName(source) }}</span>
+                    }
+                  </span>
+                } @else {
+                  None
+                }
+              </dd>
             </div>
           </dl>
 
@@ -123,15 +313,8 @@
               <div class="info-callout">No rating for this run yet.</div>
             }
           </div>
-
-          <h3 class="section-title">Evidence Coverage</h3>
-          <div class="concept-cloud">
-            @for (item of scorecards()[0].sourceCoverage | keyvalue; track item.key) {
-              <button type="button" [class.coverage-on]="item.value">
-                {{ item.key }}: {{ item.value ? 'yes' : 'no' }}
-              </button>
-            }
-          </div>
+        } @else {
+          <div class="info-callout">Select an audit run to rate or inspect sources.</div>
         }
       </div>
     </article>

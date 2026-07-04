@@ -30,6 +30,25 @@ def test_codebase_index_and_search_endpoints() -> None:
     assert search_response.status_code == 200
     assert any("AsyncJobStatusTracker" in item["title"] for item in search_response.json())
 
+    artifact_response = client.get(
+        "/codebase/index",
+        params={"team_id": "demo_team", "repo_name": "java-demo-repo"},
+    )
+    assert artifact_response.status_code == 200
+    assert artifact_response.json()["index"]["repo_name"] == "java-demo-repo"
+    assert artifact_response.json()["index_path"].endswith("java-demo-repo.json")
+
+    file_response = client.get(
+        "/codebase/file-content",
+        params={
+            "team_id": "demo_team",
+            "repo_name": "java-demo-repo",
+            "file_path": "src/main/java/com/democorp/demo/AsyncJobStatusTracker.java",
+        },
+    )
+    assert file_response.status_code == 200
+    assert "class AsyncJobStatusTracker" in file_response.json()["content"]
+
 
 def test_requirement_case_endpoints() -> None:
     client = TestClient(create_app())
@@ -82,6 +101,43 @@ def test_evidence_graph_endpoints() -> None:
     )
     assert search_response.status_code == 200
     assert any("StatusTracker" in str(item) for item in search_response.json())
+
+
+def test_pr_review_accepts_inline_diff_and_jira_context() -> None:
+    client = TestClient(create_app())
+    diff_text = """diff --git a/src/OutputCollector.java b/src/OutputCollector.java
+--- a/src/OutputCollector.java
++++ b/src/OutputCollector.java
+@@ -1 +1,2 @@
+-old output status
++new output reconciliation status
++retry needed when skipped files remain
+"""
+
+    response = client.post(
+        "/review/pr",
+        json={
+            "team_id": "demo_team",
+            "pr_diff_text": diff_text,
+            "jira_context_text": "Jira asks for output reconciliation retry behavior.",
+            "repo_name": "dfp-demo-repo",
+            "app": "ForecastDemo",
+            "component": "output-collection",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["run_id"].startswith("pr-")
+    assert "# AI PR Review Summary" in response.json()["markdown"]
+
+
+def test_pr_review_rejects_missing_diff_input() -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/review/pr", json={"team_id": "demo_team"})
+
+    assert response.status_code == 400
+    assert "pr_diff_text or pr_diff_path" in response.json()["detail"]
 
 
 def test_memory_distillation_endpoints() -> None:

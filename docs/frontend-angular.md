@@ -2,63 +2,88 @@
 
 # Angular Frontend
 
-DREAM includes an Angular mock-data workbench under `frontend/`.
+DREAM includes an Angular 19 frontend under `frontend/`. The current UI is a
+live FastAPI workbench, not a mock-only route gallery.
 
-## Long-Term Goal
+## Current Routes
 
-Build a production-ready enterprise frontend for DREAM that can start with local
-mock data and later connect to the FastAPI API without changing the user-facing
-workflows.
+Primary navigation exposes five product surfaces:
 
-## Phase 1 Scope
+| Route | Purpose |
+| --- | --- |
+| `/mission-control` | Work queue and primary start actions. |
+| `/memory` | Source intake lifecycle and codebase index summary. |
+| `/workbench` | Default engineering workbench, starting in Jira draft mode. |
+| `/requirements` | Engineering workbench opened directly in Jira draft mode. |
+| `/review` | Engineering workbench opened directly in PR review mode. |
+| `/codebase` | Repo browser and saved codebase index JSON. |
+| `/audit` | Eval agent list, selected case detail, audit runs, and human rating UI. |
+| `/audit/:targetId` | Case-by-case eval detail route. |
 
-- Dashboard
-- Knowledge Base search
-- Requirement Draft generation
-- PR Review summary generation
-- TestGen Stub workflow
-- Audit & Eval with human rating
-- Settings and guardrail visibility
+Legacy routes such as `/knowledge`, `/knowledge-intake`, `/graph`,
+`/context-intelligence`, `/trust`, `/settings`, and `/testgen` redirect into the
+current primary surfaces. Their old standalone mock components remain in the
+tree only as historical implementation references.
 
-The TestGen page does not generate unit tests, write files, run Maven, or call an
-external JTestGen command. It only validates the provider workflow surface.
+## Runtime Dependencies
 
-## Design System
+Run FastAPI on port 8000:
 
-The frontend uses a conservative enterprise visual system:
-
-- Deep navy app shell
-- Teal primary actions
-- Cool gray background
-- White data surfaces
-- 8px maximum radius
-- Dense tables
-- Clear status pills
-- Visible focus states
-- Typed reactive forms
-
-The style is inspired by mortgage-finance enterprise web applications, but it
-does not copy third-party branding or assets.
-
-## Commands
-
-```bash
-cd frontend
-npm install
-npm run build
-npm test -- --watch=false --browsers=ChromeHeadless
-npm start
+```powershell
+uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Open `http://localhost:4200/`.
+Run Angular on port 4300 for the current demo and runbook tooling:
 
-## Future Integration
+```powershell
+cd frontend
+npm install
+npm start -- --host 127.0.0.1 --port 4300
+```
 
-Planned next steps:
+The FastAPI app allows `http://localhost:4300` and `http://127.0.0.1:4300` for
+local CORS.
 
-- Add API adapter service for FastAPI endpoints.
-- Add `GET /kb/teams` and `POST /kb/search` backend endpoints.
-- Add `POST /testgen/plan` and `POST /eval/rate` backend endpoints.
-- Replace mock service calls route-by-route.
-- Add Playwright e2e smoke tests.
+## Live Workflows
 
+- Mission Control reads FastAPI intake documents, requirement cases, audit
+  records, eval scorecards, and codebase files.
+- Memory Hub can register a local source, parse it, approve it, promote it into
+  `knowledge_packs`, and show the promoted structured Markdown path.
+- Codebase Index reads saved repo index JSON, repo files, file content, concepts,
+  search results, and impact map data from FastAPI.
+- Requirement Draft creates a requirement case, analyzes context, generates a
+  Jira proposal, runs strict eval, and links to `/audit/:evaluationId`.
+- PR Review sends inline PR diff and Jira context text to FastAPI, runs strict
+  eval, and links to `/audit/:evaluationId`.
+- Audit & Eval reads stored eval scorecards and audit runs. Human Rating is still
+  local UI state and is not persisted by FastAPI.
+
+## Validation Commands
+
+```powershell
+python -m pytest
+python -m ruff check .
+```
+
+```powershell
+cd frontend
+npm run build
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+Known warning: `npm run build` currently reports
+`codebase-memory.component.scss` over the Angular component style budget. The
+build still succeeds.
+
+## Runbook Regeneration
+
+The runbook artifacts under `docs/frontend-runbook/` are generated from browser
+screenshots and an annotation manifest. Regenerate them only after the local app
+is running on port 4300:
+
+```powershell
+node docs/frontend-runbook/capture_screenshots_cdp.mjs
+python docs/frontend-runbook/annotate_screenshots.py
+python docs/frontend-runbook/generate_runbooks.py
+```

@@ -214,6 +214,27 @@ def test_engineering_brief_and_jira_draft_include_sources(tmp_path) -> None:
     assert jira.sources_used
 
 
+def test_jira_draft_preserves_output_reconciliation_intent(tmp_path) -> None:
+    service = _service(tmp_path)
+    snapshot = service.create_case(
+        RequirementCaseCreateRequest(
+            team_id="demo_team",
+            raw_request=(
+                "Output reconciliation should show collected, skipped, and "
+                "retry-needed files after partial completion"
+            ),
+        )
+    )
+    service.analyze_case(snapshot.case.case_id)
+
+    jira = service.generate_jira_draft(snapshot.case.case_id)
+
+    assert "output reconciliation" in jira.markdown.lower()
+    assert "skipped" in jira.markdown.lower()
+    assert "retry" in jira.markdown.lower()
+    assert "submitted/running" not in jira.markdown.lower()
+
+
 def test_question_answers_drive_jira_readiness_and_audit(tmp_path) -> None:
     audit_repository = AuditRepository(tmp_path / "audit.sqlite")
     service = _service(tmp_path, audit_repository=audit_repository)

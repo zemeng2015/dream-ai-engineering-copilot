@@ -159,6 +159,7 @@ class KnowledgeIntakeService:
         self.repository.save_draft(draft)
         document = self.repository.get_document(draft.document_id)
         document.status = "promoted"
+        document.promoted_path = display_path(target_path)
         document.updated_at = datetime.now(UTC).isoformat()
         self.repository.save_document(document)
         result = PromotionResult(
@@ -205,6 +206,7 @@ def _normalized_markdown(
     concepts: list[ExtractedConcept],
 ) -> str:
     concept_values = ", ".join(concept.concept for concept in concepts[:8])
+    app, component = _infer_app_component(document, sections, concepts)
     body = []
     for section in sections:
         heading = "#" * min(max(section.level, 2), 4)
@@ -216,8 +218,8 @@ def _normalized_markdown(
         body.append("")
     return f"""---
 title: {document.title}
-app: ForecastDemo
-component: knowledge-intake
+app: {app}
+component: {component}
 doc_type: {document.document_type}
 concepts: [{concept_values}]
 source: {document.original_path}
@@ -231,6 +233,38 @@ this as authoritative context.
 
 {chr(10).join(body).rstrip()}
 """
+
+
+def _infer_app_component(
+    document: IntakeDocument,
+    sections,
+    concepts: list[ExtractedConcept],
+) -> tuple[str, str]:
+    text = " ".join(
+        [
+            document.title,
+            document.document_type,
+            document.original_path,
+            " ".join(section.heading for section in sections),
+            " ".join(section.text for section in sections),
+            " ".join(concept.concept for concept in concepts),
+        ]
+    ).lower()
+    app = "ForecastDemo"
+    if "batch" in text:
+        app = "BatchJobDemo"
+    elif "output preview" in text or "preview" in text:
+        app = "OutputPreviewDemo"
+
+    if "output" in text or "reconciliation" in text or "artifact" in text:
+        component = "output-collection"
+    elif "status" in text or "running" in text or "execution" in text:
+        component = "job-execution"
+    elif "batch" in text or "scheduler" in text:
+        component = "batch-job"
+    else:
+        component = "knowledge-intake"
+    return app, component
 
 
 def _safe_slug(value: str) -> str:

@@ -888,19 +888,22 @@ class EvaluationAgent:
         json_path = eval_dir / f"{scorecard.evaluation_id}.json"
         markdown_path = eval_dir / f"{scorecard.evaluation_id}.md"
         scorecard.output_path = display_path(markdown_path)
+        warnings = list(target.warnings or [])
+        if request.expected_profile:
+            warnings.append(f"Used eval profile: {request.expected_profile}")
+        scorecard.json_path = display_path(json_path)
+        scorecard.markdown_path = display_path(markdown_path)
+        scorecard.warnings = _dedupe(warnings)
         markdown_report = render_scorecard_report(scorecard)
         json_path.write_text(scorecard.model_dump_json(indent=2), encoding="utf-8")
         markdown_path.write_text(markdown_report, encoding="utf-8")
         self.repository.save(scorecard)
-        warnings = list(target.warnings or [])
-        if request.expected_profile:
-            warnings.append(f"Used eval profile: {request.expected_profile}")
         return EvaluationResult(
             scorecard=scorecard,
             markdown_report=markdown_report,
             json_path=display_path(json_path),
             markdown_path=display_path(markdown_path),
-            warnings=_dedupe(warnings),
+            warnings=scorecard.warnings,
         )
 
     @staticmethod

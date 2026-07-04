@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="page reveal-page">
+<section class="page pr-review-page">
   <header class="page-header command-header">
     <div>
       <span class="eyebrow">Pull request review aid</span>
       <h1>PR Review</h1>
       <p>
-        Review synthetic diffs with DFP knowledge, codebase memory, historical incident context,
-        test-gap detection, and an evaluation scorecard.
+        Paste a diff and Jira context. DREAM finds related memory, summarizes code impact,
+        and produces a review aid for the human PR reviewer.
       </p>
     </div>
     <div class="index-beacon">
@@ -17,53 +17,66 @@
     </div>
   </header>
 
-  <section class="grid-2">
-    <article class="panel scan-panel">
+  <section class="review-start" [class.has-result]="result()">
+    <article class="panel input-panel">
       <div class="panel-header">
-        <h2>Review Input</h2>
-        <span class="status-pill status-warning">Review Aid Only</span>
+        <div>
+          <h2>Review Input</h2>
+          <p>Keep the reviewer focused on the diff and the business intent.</p>
+        </div>
+        <span class="status-pill status-info">Input</span>
       </div>
       <div class="panel-body">
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="generate()">
+        <form class="review-form" [formGroup]="form" (ngSubmit)="generate()">
           <div class="form-field-full">
-            <label for="pr-mode">Execution mode</label>
-            <select id="pr-mode" formControlName="executionMode">
-              <option value="mock">Mock local provider</option>
-              <option value="openai">Real FastAPI + OpenAI-compatible provider</option>
-            </select>
-            <span class="helper-text">Real API mode uses the synthetic DFP diff/Jira files on the backend.</span>
-          </div>
-          <div class="form-field">
-            <label for="pr-team">Team</label>
-            <input id="pr-team" formControlName="teamId" />
-          </div>
-          <div class="form-field">
-            <label for="pr-app">Application</label>
-            <select id="pr-app" formControlName="app">
-              @for (app of apps; track app) {
-                <option [value]="app">{{ app }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="pr-component">Component</label>
-            <input id="pr-component" formControlName="component" />
-          </div>
-          <div class="form-field">
-            <label for="pr-top-k">Top K</label>
-            <input id="pr-top-k" type="number" min="1" max="20" formControlName="topK" />
+            <label for="pr-jira">Jira context</label>
+            <textarea id="pr-jira" class="jira-context" formControlName="jiraContext"></textarea>
           </div>
           <div class="form-field-full">
-            <label for="pr-diff">Synthetic diff</label>
+            <label for="pr-diff">PR diff</label>
             <textarea id="pr-diff" formControlName="diffText"></textarea>
           </div>
-          <div class="form-field-full">
-            <label for="pr-jira">Synthetic Jira context</label>
-            <textarea id="pr-jira" formControlName="jiraContext"></textarea>
-          </div>
-          <div class="form-field-full">
+
+          <button
+            class="link-button advanced-toggle"
+            type="button"
+            (click)="toggleAdvancedSettings()"
+            [attr.aria-expanded]="advancedOpen()"
+            aria-controls="pr-advanced-settings"
+          >
+            <app-ui-icon [name]="advancedOpen() ? 'chevron-up' : 'chevron-down'" />
+            Advanced settings
+          </button>
+
+          @if (advancedOpen()) {
+            <div id="pr-advanced-settings" class="advanced-grid">
+              <div class="form-field">
+                <label for="pr-team">Team</label>
+                <input id="pr-team" formControlName="teamId" />
+              </div>
+              <div class="form-field">
+                <label for="pr-app">Application</label>
+                <select id="pr-app" formControlName="app">
+                  @for (app of apps; track app) {
+                    <option [value]="app">{{ app }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="pr-component">Component</label>
+                <input id="pr-component" formControlName="component" />
+              </div>
+              <div class="form-field">
+                <label for="pr-top-k">Top K</label>
+                <input id="pr-top-k" type="number" min="1" max="20" formControlName="topK" />
+              </div>
+            </div>
+          }
+
+          <div class="review-actions">
             <button class="primary-button" type="submit" [disabled]="isLoading()">
-              {{ isLoading() ? 'Calling OpenAI Provider...' : 'Generate PR Review Summary' }}
+              <app-ui-icon name="clipboard" />
+              {{ isLoading() ? 'Generating...' : 'Generate PR Review' }}
             </button>
             @if (apiError(); as message) {
               <div class="warning-callout">{{ message }}</div>
@@ -73,61 +86,184 @@
       </div>
     </article>
 
-    <article class="panel">
+    @if (result(); as review) {
+      <article class="panel eval-compact">
+        <div class="panel-header">
+          <h2>Eval Agent</h2>
+          <span
+            class="status-pill"
+            [class.status-success]="evalStatusClass(review) === 'status-success'"
+            [class.status-warning]="evalStatusClass(review) === 'status-warning'"
+            [class.status-error]="evalStatusClass(review) === 'status-error'"
+          >
+            {{ evalDecision(review) }}
+          </span>
+        </div>
+        <div class="panel-body eval-body">
+          <div class="risk-lockup">
+            <div
+              class="risk-badge"
+              [class.risk-low]="review.risk === 'Low'"
+              [class.risk-medium]="review.risk === 'Medium'"
+              [class.risk-high]="review.risk === 'High'"
+            >
+              {{ review.risk }}
+            </div>
+            <div>
+              <strong>Grade {{ review.scorecard.grade }}</strong>
+              <span>Coverage {{ coverageText(review) }}</span>
+            </div>
+          </div>
+          <p>{{ evalReason(review) }}</p>
+          <ul>
+            @for (recommendation of review.scorecard.recommendations.slice(0, 2); track recommendation) {
+              <li>{{ recommendation }}</li>
+            }
+          </ul>
+          <a class="secondary-button detail-link" [routerLink]="['/audit', review.scorecard.evaluationId]">
+            View eval details
+            <app-ui-icon name="chevron-right" />
+          </a>
+        </div>
+      </article>
+    }
+  </section>
+
+  @if (result(); as review) {
+    <article class="panel memory-code-panel">
       <div class="panel-header">
-        <h2>Review Memory</h2>
+        <div>
+          <h2>Memory & Code Impact</h2>
+          <p>Default view keeps the review path compact; details open only when needed.</p>
+        </div>
+        <a class="link-button" routerLink="/audit">
+          View eval trail
+          <app-ui-icon name="chevron-right" />
+        </a>
       </div>
       <div class="panel-body">
-        <div class="warning-callout">
-          This is an AI-generated review aid. Human review is required. The mock frontend does
-          not post PR comments, approve code, reject code, or call GitHub.
+        <div class="summary-metrics" aria-label="PR review memory and code metrics">
+          <button
+            class="summary-tile summary-button"
+            type="button"
+            (click)="toggleCodeDetails()"
+            [attr.aria-expanded]="codeDetailsOpen()"
+            aria-controls="pr-code-detail-panel"
+          >
+            <span>Changed files</span>
+            <strong>{{ review.changedFiles.length }}</strong>
+            <small>{{ codeDetailsOpen() ? 'Hide details' : 'View details' }}</small>
+          </button>
+          <div class="summary-tile">
+            <span>Related code</span>
+            <strong>{{ review.relatedCode.length }}</strong>
+            <small>{{ codeLayers(review) }}</small>
+          </div>
+          <div class="summary-tile">
+            <span>Memory docs used</span>
+            <strong>{{ review.sourcesUsed.length }}</strong>
+            <small>{{ sourceFamilies(review).length }} source families</small>
+          </div>
+          <div class="summary-tile">
+            <span>Risk</span>
+            <strong>{{ review.risk }}</strong>
+            <small>human reviewer required</small>
+          </div>
         </div>
-        @if (result(); as review) {
-          <h3 class="section-title">Overall Risk: {{ review.risk }}</h3>
-          <div class="score-card">
-            <div class="score-ring">{{ review.scorecard.overallScore }}</div>
-            <strong>Eval grade {{ review.scorecard.grade }}</strong>
-            <p>{{ review.scorecard.recommendations.join(' ') }}</p>
+
+        <div class="logic-strip" aria-label="PR review logic">
+          <div>
+            <strong>1. Parse diff</strong>
+            <p>{{ review.changedFiles.length }} changed files detected.</p>
           </div>
-          <h3 class="section-title">Changed Files</h3>
-          <div class="source-list">
-            @for (file of review.changedFiles; track file) {
-              <div>
-                <strong>{{ file.split('/').pop() }}</strong>
-                <span>{{ file }}</span>
-              </div>
-            }
+          <div>
+            <strong>2. Match code memory</strong>
+            <p>{{ review.relatedCode.length }} related implementation or test files.</p>
           </div>
-          <h3 class="section-title">Related Codebase Memory</h3>
-          <div class="source-list">
-            @for (file of review.relatedCode; track file.id) {
-              <div>
-                <strong>{{ file.path.split('/').pop() }}</strong>
-                <span>{{ file.summary }}</span>
-              </div>
-            }
+          <div>
+            <strong>3. Ground business logic</strong>
+            <p>
+              @for (family of sourceFamilies(review); track family.label) {
+                <span>{{ family.label }} {{ family.count }}</span>
+              }
+            </p>
           </div>
-          <h3 class="section-title">Sources</h3>
-          <div class="source-list">
-            @for (source of review.sourcesUsed; track source.id) {
-              <div>
-                <strong>{{ source.title }}</strong>
-                <span>{{ source.sourcePath }}</span>
+          <div>
+            <strong>4. Produce review aid</strong>
+            <p>Risk, test gaps, and reviewer questions stay in the markdown output.</p>
+          </div>
+        </div>
+
+        @if (codeDetailsOpen()) {
+          <div id="pr-code-detail-panel" class="code-detail">
+            <div>
+              <h3 class="section-title">Changed Files</h3>
+              <div class="file-list">
+                @for (file of review.changedFiles; track file) {
+                  <div>
+                    <span class="status-pill status-neutral">diff</span>
+                    <strong>{{ changedFileName(file) }}</strong>
+                    <small>{{ file }}</small>
+                  </div>
+                }
               </div>
-            }
+            </div>
+            <div>
+              <h3 class="section-title">Related Codebase Memory</h3>
+              <div class="file-list">
+                @for (file of review.relatedCode; track file.id) {
+                  <div>
+                    <span class="status-pill status-info">{{ file.layer }} / {{ file.role }}</span>
+                    <strong>{{ changedFileName(file.path) }}</strong>
+                    <small>{{ file.path }}</small>
+                    <p>{{ file.summary }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Memory Sources</h3>
+              <div class="file-list">
+                @for (source of review.sourcesUsed; track source.id) {
+                  <div>
+                    <span class="status-pill status-neutral">{{ sourceTypeLabel(source.sourceType) }}</span>
+                    <strong>{{ source.title }}</strong>
+                    <small>{{ source.sourcePath }}</small>
+                  </div>
+                }
+              </div>
+            </div>
           </div>
         }
       </div>
     </article>
-  </section>
 
-  @if (result(); as review) {
-    <article class="panel">
+    <article class="panel review-output-panel">
       <div class="panel-header">
-        <h2>Markdown Output</h2>
-        <span class="status-pill status-warning">{{ review.run.runId }}</span>
+        <div>
+          <h2>PR Review Output</h2>
+          <p>Reviewer-facing markdown. This does not approve, reject, merge, or post comments.</p>
+        </div>
+        <span
+          class="status-pill"
+          [class.status-success]="riskStatusClass(review) === 'status-success'"
+          [class.status-warning]="riskStatusClass(review) === 'status-warning'"
+          [class.status-error]="riskStatusClass(review) === 'status-error'"
+        >
+          {{ review.risk }} risk
+        </span>
       </div>
       <pre class="markdown-preview">{{ review.markdown }}</pre>
+    </article>
+  } @else {
+    <article class="panel empty-state">
+      <div class="panel-body">
+        <strong>Generated PR review will appear here.</strong>
+        <p>
+          After generation, the page will show changed files, related code memory,
+          source docs, risk, Eval Agent judgment, and reviewer-facing output.
+        </p>
+      </div>
     </article>
   }
 </section>

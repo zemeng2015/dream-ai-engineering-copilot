@@ -41,6 +41,9 @@ class EvaluationScorecard(BaseModel):
     recommendations: list[str] = Field(default_factory=list)
     evaluated_artifact_path: str | None = None
     output_path: str | None = None
+    json_path: str | None = None
+    markdown_path: str | None = None
+    warnings: list[str] = Field(default_factory=list)
 
 
 class EvaluationRequest(BaseModel):
