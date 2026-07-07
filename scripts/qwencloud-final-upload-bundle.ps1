@@ -753,6 +753,70 @@ function Invoke-VideoPublicationHandoff {
     }
 }
 
+function Invoke-ExternalHandoff {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "external-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-final-external-handoff.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-RepoName", $RepoName,
+        "-OutputDir", $OutputDir,
+        "-LocalVideoPath", $LocalDemoVideoPath,
+        "-SkipActionBoard"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipGitHubSecrets) { $args += "-SkipGitHubSecrets" }
+    if ($AllowDraft) { $args += "-AllowDraft" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-external-handoff-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-external-handoff-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Final external handoff generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            zip = ""
+            ready = $false
+            blockers = @("external_handoff_generation_failed")
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "external-handoff-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            zip = ""
+            ready = $false
+            blockers = @("external_handoff_json_missing")
+            details = "stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        zip = [string]$data.zipPath
+        ready = [bool]$data.readyForExternalHandoff
+        blockers = @($data.blockers)
+        details = if ($data.readyForExternalHandoff) { "READY: $($json.FullName)" } else { "DRAFT; blockers=$(@($data.blockers) -join ', ')" }
+    }
+}
+
 $deadlineGuard = Invoke-DeadlineGuard
 $liveInputs = Invoke-LiveInputsIntake
 $githubCiProof = Invoke-GitHubCiProof
@@ -766,6 +830,7 @@ $officialSourceRefresh = Invoke-OfficialSourceRefresh
 $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 $actionBoard = Invoke-ActionBoard
+$externalHandoff = Invoke-ExternalHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ready -Details $deadlineGuard.details
@@ -781,6 +846,7 @@ Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.re
 Add-ExternalRequirement -Name "official_source_refresh_ready" -Ok $officialSourceRefresh.ready -Details $officialSourceRefresh.details
 Add-ExternalRequirement -Name "official_rules_gate_ready" -Ok $officialRulesGate.ready -Details $(if ($officialRulesGate.ready) { "READY" } else { "DRAFT; missing=$($officialRulesGate.missing -join ', ')" })
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
+Add-ExternalRequirement -Name "external_handoff_ready" -Ok $externalHandoff.ready -Details $externalHandoff.details -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
 Add-Item -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
@@ -831,11 +897,11 @@ Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
 Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json
 Add-Item -Name "final_action_board_markdown" -Path $actionBoard.markdown -Required $false
 Add-Item -Name "final_action_board_json" -Path $actionBoard.json -Required $false
+Add-Item -Name "final_external_handoff_markdown" -Path $externalHandoff.markdown -Required $false
+Add-Item -Name "final_external_handoff_json" -Path $externalHandoff.json -Required $false
+Add-Item -Name "final_external_handoff_zip" -Path $externalHandoff.zip -Required $false
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
 Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
-Add-LatestItem -Name "latest_final_external_handoff_markdown" -Filter "external-handoff-*.md"
-Add-LatestItem -Name "latest_final_external_handoff_json" -Filter "external-handoff-*.json"
-Add-LatestItem -Name "latest_final_external_handoff_zip" -Filter "external-handoff-*.zip"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
