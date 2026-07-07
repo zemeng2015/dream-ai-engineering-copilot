@@ -104,6 +104,7 @@ Add-Criterion `
         "Dockerfile",
         ".github/workflows/ci.yml",
         ".github/workflows/qwencloud-release.yml",
+        "scripts/qwencloud-run-local-proof.sh",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
         "docs/qwencloud-architecture.md",

@@ -41,6 +41,7 @@ param(
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",
         "scripts/qwencloud-run-local-proof.ps1",
+        "scripts/qwencloud-run-local-proof.sh",
         "scripts/qwencloud-hackathon-submission-packet.ps1",
         "scripts/qwencloud-devpost-autofill-snippet.ps1",
         "scripts/qwencloud-frontend-build-proof.ps1",

@@ -156,6 +156,12 @@ Or run the local proof flow on an isolated port:
 scripts/qwencloud-run-local-proof.ps1
 ```
 
+On Linux/macOS or a Bash runner:
+
+```bash
+bash scripts/qwencloud-run-local-proof.sh --skip-draft
+```
+
 Key submission artifacts:
 
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)

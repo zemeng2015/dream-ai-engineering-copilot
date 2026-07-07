@@ -44,6 +44,18 @@ uvicorn dream.api.app:app --host 127.0.0.1 --port 8000
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://127.0.0.1:8000
 ```
 
+Linux/macOS judges can run the isolated Bash proof runner without opening a
+second terminal:
+
+```bash
+git clone https://github.com/zemeng2015/dream-ai-engineering-copilot.git
+cd dream-ai-engineering-copilot
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+bash scripts/qwencloud-run-local-proof.sh --skip-draft
+```
+
 ## Rights and Asset Notes
 
 - Source code is published under Apache-2.0 in the root `LICENSE`.

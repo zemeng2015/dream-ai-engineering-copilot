@@ -81,6 +81,11 @@ notes.
 waits for hackathon `/health` proof, runs verify/proof/submit gate/audit, and
 then stops the API process.
 
+`scripts/qwencloud-run-local-proof.sh` is the Linux/macOS Bash equivalent for
+judge or CI smoke reproduction. It starts the local API, verifies the Track 1
+MemoryAgent `/health` proof, runs the API/Qwen provider pytest smoke tests, and
+writes `local-proof-bash-*.json` plus `local-proof-bash-*.md` reports.
+
 Use `-AllowDirty` only while developing local changes; omit it for the final
 pre-submit proof so the audit enforces a clean pushed worktree.
 

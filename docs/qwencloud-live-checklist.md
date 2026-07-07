@@ -29,6 +29,7 @@
 - [ ] GitHub release secrets handoff present:
   `scripts/qwencloud-github-secrets-handoff.ps1`.
 - [ ] One-command local proof script present: `scripts/qwencloud-run-local-proof.ps1`.
+- [ ] Bash local proof script present: `scripts/qwencloud-run-local-proof.sh`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 
 ## Runbook (submission window)
@@ -107,6 +108,10 @@ For local proof before deploy, run:
 
 ```powershell
 scripts/qwencloud-run-local-proof.ps1
+```
+
+```bash
+bash scripts/qwencloud-run-local-proof.sh --skip-draft
 ```
 
 Optional strict gate (health + draft + field checks):
