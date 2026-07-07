@@ -16,6 +16,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RunsJsonPath = "",
     [Parameter(Mandatory = $false)]
+    [string]$RepoJsonPath = "",
+    [Parameter(Mandatory = $false)]
     [string]$GitHead = "",
     [Parameter(Mandatory = $false)]
     [string]$ExpectedTitle = "DREAM",
@@ -158,6 +160,26 @@ function Test-Url {
     }
     catch {
         return [pscustomobject]@{ ok = $false; status = 0; content = ""; details = $_.Exception.Message }
+    }
+}
+
+function Get-GitHubRepoMetadata([string]$RepoName) {
+    if (-not [string]::IsNullOrWhiteSpace($RepoJsonPath)) {
+        return Read-JsonPath -Path $RepoJsonPath
+    }
+
+    if ([string]::IsNullOrWhiteSpace($RepoName)) {
+        return $null
+    }
+
+    try {
+        return Invoke-RestMethod `
+            -Uri "https://api.github.com/repos/$RepoName" `
+            -UserAgent "dream-qwencloud-post-submit-verification/1.0" `
+            -TimeoutSec 25
+    }
+    catch {
+        return $null
     }
 }
 
@@ -347,6 +369,17 @@ else {
 
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
 Add-Check -Name "repo_url_github" -Ok (-not [string]::IsNullOrWhiteSpace($repoName)) -Details $(if ($repoName) { $repoName } else { "not a normalized GitHub HTTPS repo URL: $RepoUrl" })
+$repoMetadata = Get-GitHubRepoMetadata -RepoName $repoName
+if ($repoMetadata) {
+    $licenseKey = if ($repoMetadata.licenseInfo) { [string]$repoMetadata.licenseInfo.key } elseif ($repoMetadata.license) { [string]$repoMetadata.license.spdx_id } else { "" }
+    $visibility = if ($repoMetadata.visibility) { [string]$repoMetadata.visibility } elseif ([bool]$repoMetadata.private) { "private" } else { "public" }
+    Add-Check -Name "repo_github_public" -Ok (($visibility.ToLowerInvariant() -eq "public") -and -not [bool]$repoMetadata.private) -Details "repo=$repoName; visibility=$visibility; private=$($repoMetadata.private)"
+    Add-Check -Name "repo_license_apache_2_0" -Ok ($licenseKey -eq "Apache-2.0" -or $licenseKey -eq "apache-2.0") -Details "repo=$repoName; license=$licenseKey"
+}
+else {
+    Add-Check -Name "repo_github_public" -Ok $false -Details "GitHub metadata unavailable for $repoName"
+    Add-Check -Name "repo_license_apache_2_0" -Ok $false -Details "GitHub metadata unavailable for $repoName"
+}
 $repo = Test-Url -Url $RepoUrl -Method "Get"
 Add-Check -Name "repo_public_page_reachable" -Ok $repo.ok -Details $repo.details
 
