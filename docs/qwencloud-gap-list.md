@@ -29,6 +29,9 @@
 - Seeded judge demo artifact generator,
   `scripts/qwencloud_seed_demo_artifact.py`, that creates a portable artifact
   root with latest memory scan, approved review ledger, context card, and ZIP.
+- Judge rehearsal dashboard, `scripts/qwencloud-judge-rehearsal.ps1`, that
+  refreshes seeded memory, local runtime proof, frontend build proof, judging
+  scorecard, and final readiness into a single demo-shot report.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost

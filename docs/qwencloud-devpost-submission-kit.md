@@ -23,6 +23,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-run-local-proof.sh`
   - `scripts/qwencloud_seed_demo_artifact.py`
+  - `scripts/qwencloud-judge-rehearsal.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
   - `scripts/qwencloud-cloud-credentials-handoff.ps1`
@@ -122,6 +123,12 @@ is available before a manual claim-review walkthrough:
 
 ```powershell
 python scripts/qwencloud_seed_demo_artifact.py --promote-count 6
+```
+
+Run a one-command judge rehearsal dashboard before recording the final demo:
+
+```powershell
+scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```
 
 Or use the full release orchestrator after credentials, registry login, and

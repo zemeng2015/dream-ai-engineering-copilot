@@ -49,6 +49,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `docs/qwencloud-devpost-form-fields.md`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
   - `scripts/qwencloud_seed_demo_artifact.py`
+  - `scripts/qwencloud-judge-rehearsal.ps1`
 
 - Open the judge-facing Angular route:
   `http://localhost:4300/hackathon-demo`
@@ -73,6 +74,12 @@ Optional one-command pre-submit audit:
 
 ```powershell
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
+```
+
+Optional judge rehearsal dashboard before recording or presenting:
+
+```powershell
+scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```
 
 ## Step 3 - Alibaba deploy proof (about 1 minute)

@@ -168,6 +168,13 @@ Build a seeded judge demo state with approved source-backed memory claims:
 python scripts/qwencloud_seed_demo_artifact.py --promote-count 6
 ```
 
+Run the judge rehearsal dashboard to refresh seeded memory, local proof,
+frontend proof, scorecard, and readiness evidence in one place:
+
+```powershell
+scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
+```
+
 The judge-facing Angular route at `/hackathon-demo` reads
 `http://127.0.0.1:8000/health` and shows a live Qwen Cloud proof panel with the
 track, provider, model, deployment target, region, API-key status, and proof

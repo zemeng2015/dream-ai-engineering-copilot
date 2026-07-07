@@ -529,6 +529,9 @@ Add-Item -Name "hackathon_demo_route_styles" -Path "frontend/src/app/features/ha
 Add-Item -Name "hackathon_demo_route_tests" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts" -Required $false
 Add-Item -Name "seeded_demo_artifact_script" -Path "scripts/qwencloud_seed_demo_artifact.py" -Required $false
 Add-LatestItem -Name "latest_seeded_demo_artifact_zip" -Filter "seeded-demo-artifact-*.zip"
+Add-Item -Name "judge_rehearsal_script" -Path "scripts/qwencloud-judge-rehearsal.ps1" -Required $false
+Add-LatestItem -Name "latest_judge_rehearsal_markdown" -Filter "judge-rehearsal-*.md"
+Add-LatestItem -Name "latest_judge_rehearsal_json" -Filter "judge-rehearsal-*.json"
 Add-LatestItem -Name "latest_frontend_build_proof_markdown" -Filter "frontend-build-proof-*.md"
 Add-LatestItem -Name "latest_frontend_build_proof_json" -Filter "frontend-build-proof-*.json"
 Add-LatestItem -Name "latest_frontend_install_stdout" -Filter "frontend-npm-ci-*.out"
