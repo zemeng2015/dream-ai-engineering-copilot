@@ -11,6 +11,10 @@ param(
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
     [string]$LocalVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
+    [Parameter(Mandatory = $false)]
+    [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
     [switch]$SkipBackendDraft,
     [switch]$AllowDraft
 )
@@ -108,6 +112,23 @@ function Is-HttpUrl([string]$Url) {
     return [bool]($Url -match "^https?://")
 }
 
+function Test-UploadAsset([string]$Path, [string[]]$Extensions, [int]$MaxMb) {
+    if (-not (Test-Path $Path)) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing: $Path"
+        }
+    }
+
+    $item = Get-Item $Path
+    $extensionOk = $Extensions -contains $item.Extension.ToLowerInvariant()
+    $sizeOk = $item.Length -le ($MaxMb * 1024 * 1024)
+    return [pscustomobject]@{
+        ok = ($extensionOk -and $sizeOk)
+        details = "path=$Path; extension=$($item.Extension); size=$($item.Length); maxMb=$MaxMb"
+    }
+}
+
 function Get-FileUrl([string]$Repo, [string]$Path) {
     return "$Repo/blob/main/$Path"
 }
@@ -162,6 +183,12 @@ Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $repoUsed) -Details $repoUsed
 $repoCheck = Test-PublicGitHubRepo -Url $repoUsed
 Add-Check -Name "repo_public_github" -Ok $repoCheck.ok -Details $repoCheck.details
 Add-Check -Name "license_apache_2_detected" -Ok ($repoCheck.license -eq "Apache-2.0" -or ((Test-Path "LICENSE") -and ((Get-Content "LICENSE" -Raw) -match "Apache License"))) -Details $(if ($repoCheck.license) { $repoCheck.license } else { "local LICENSE fallback" })
+
+$architectureAsset = Test-UploadAsset -Path $ArchitectureUploadPath -Extensions @(".png", ".jpg", ".jpeg", ".pdf") -MaxMb 35
+Add-Check -Name "devpost_architecture_upload_asset" -Ok $architectureAsset.ok -Details $architectureAsset.details
+
+$alibabaScreenshotAsset = Test-UploadAsset -Path $AlibabaScreenshotPath -Extensions @(".png", ".jpg", ".jpeg") -MaxMb 35
+Add-Check -Name "devpost_alibaba_deployment_screenshot" -Ok $alibabaScreenshotAsset.ok -Details $alibabaScreenshotAsset.details
 
 $videoExists = Test-Path $LocalVideoPath
 Add-Check -Name "local_video_exists" -Ok $videoExists -Details $LocalVideoPath -Required $false
@@ -234,6 +261,23 @@ $packet = [ordered]@{
         backendUrl = $BackendUrl
         blogPostUrl = $BlogPostUrl
     }
+    uploadAssets = [ordered]@{
+        architectureDiagram = $ArchitectureUploadPath
+        alibabaDeploymentScreenshot = $AlibabaScreenshotPath
+        localDemoVideo = $LocalVideoPath
+    }
+    devpostAdditionalInfo = [ordered]@{
+        submitterType = "Individual"
+        countryOfResidence = "United States"
+        projectStatus = "New"
+        projectStartDate = "06-21-26"
+        beforeMay26UpdateExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
+        selectedTrack = $track
+        repositoryUrl = $repoUsed
+        alibabaProofCodeFile = $deploymentProofUrl
+        aiToolsUsed = "Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation."
+        learningLevel = "Significant"
+    }
     links = [ordered]@{
         license = $licenseUrl
         architectureSvg = $architectureSvgUrl
@@ -264,6 +308,8 @@ $md = @(
     "- Demo video: $videoLine",
     "- Testing backend: $backendLine",
     "- Optional blog/social post: $blogLine",
+    "- Architecture upload file: $ArchitectureUploadPath",
+    "- Alibaba deployment screenshot file: $AlibabaScreenshotPath",
     "",
     "## Required Links",
     "",
@@ -300,6 +346,22 @@ $md = @(
     "### Built with",
     "",
     "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript.",
+    "",
+    "## Devpost Additional Info",
+    "",
+    "- Submitter type: Individual",
+    "- Country of residence: United States",
+    "- Newly built or existing project: New",
+    "- Project start date: 06-21-26",
+    "- If started/existed before May 26: Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period.",
+    "- Track: $track",
+    "- Code repository URL: $repoUsed",
+    "- Alibaba Cloud deployment proof code file: $deploymentProofUrl",
+    "- Architecture diagram file upload: $ArchitectureUploadPath",
+    "- Alibaba deployment screenshot upload: $AlibabaScreenshotPath",
+    "- Blog/social URL: $blogLine",
+    "- AI tools leveraged: Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.",
+    "- Learning level: Significant",
     "",
     "### Testing instructions",
     "",
@@ -346,6 +408,7 @@ $md += @(
     "- Configure Alibaba access with `s config add`.",
     "- Set `DASHSCOPE_API_KEY`, `ALIBABA_CLOUD_REGION`, and `ALIBABA_CLOUD_CONTAINER_IMAGE`.",
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
+    "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Youku and paste the public URL.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."

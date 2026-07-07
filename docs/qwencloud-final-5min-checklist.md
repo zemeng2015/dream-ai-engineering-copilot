@@ -64,6 +64,12 @@ scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
   model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
+- Capture the required Devpost screenshot showing the Alibaba Cloud deployment
+  workbench or deployed `/health` proof and save it as:
+
+```powershell
+artifacts/qwencloud-proof/alibaba-deployment-screenshot.png
+```
 
 ## Step 4 - Demo video (about 1 minute)
 
@@ -94,8 +100,10 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Add public repo link
 - Add Apache-2.0 link
 - Upload `docs/assets/qwencloud-architecture.png`
+- Upload `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
+- Fill the Additional Info fields from `docs/qwencloud-devpost-form-fields.md`
 - Add optional blog/social link if published
 
 ## Step 7 - Submit
