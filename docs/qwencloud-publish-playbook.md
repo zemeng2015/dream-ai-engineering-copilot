@@ -40,6 +40,7 @@ scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
+scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
@@ -91,6 +92,10 @@ artifact readiness, and final Devpost packet readiness.
 assets, the generated Devpost packet, and a manifest so the final submission
 files are all in one place.
 
+`qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
+with official requirement coverage, copy fields, blockers, upload paths, and
+next commands for the final Devpost form.
+
 Use `docs/qwencloud-video-upload-handoff.md` for the public video upload title,
 description, accepted platforms, visibility check, and Chrome file-access
 troubleshooting.
@@ -107,7 +112,7 @@ troubleshooting.
 8. Upload demo video link after verifying the public video page plays
 9. Generate the final submission packet and copy testing instructions
 10. Run final readiness and confirm `READY`
-11. Create the final upload bundle
+11. Create the final upload bundle and open the generated `devpost-handoff-*.html`
 12. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
 13. Add optional build journey link if published
 14. Submit and immediately open public project page to confirm links are visible

@@ -210,6 +210,12 @@ Render the final under-3-minute Devpost upload video:
 scripts/qwencloud-render-demo-video.ps1
 ```
 
+Generate a local Devpost handoff page with copy fields and upload paths:
+
+```powershell
+scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
+```
+
 Upload the rendered MP4 using the video handoff:
 
 ```text

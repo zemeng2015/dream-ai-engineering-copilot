@@ -134,7 +134,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 }
 
 try {
-    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1")) {
+    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required release file missing: $path"
         }
@@ -264,6 +264,18 @@ try {
         $packetArgs += "-AllowDraft"
     }
     Invoke-Logged -FilePath "powershell" -ArgumentList $packetArgs -Name "submission-packet" | Out-Null
+
+    $handoffArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-handoff.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
+    if ($DemoVideoUrl) {
+        $handoffArgs += @("-DemoVideoUrl", $DemoVideoUrl)
+    }
+    if ($BlogPostUrl) {
+        $handoffArgs += @("-BlogPostUrl", $BlogPostUrl)
+    }
+    if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
+        $handoffArgs += "-AllowDraft"
+    }
+    Invoke-Logged -FilePath "powershell" -ArgumentList $handoffArgs -Name "devpost-handoff" | Out-Null
 
     Write-ReleaseReport -EffectiveBackendUrl $effectiveBackendUrl
     Write-Host "Alibaba release flow completed. Report: $releaseMd"

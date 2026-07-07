@@ -133,6 +133,9 @@ scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/...
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+- Open the generated `devpost-handoff-*.html` from the upload bundle and use it
+  as the final copy/paste dashboard while filling Devpost.
+
 ## Step 6 - Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`

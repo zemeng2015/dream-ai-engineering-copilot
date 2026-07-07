@@ -19,6 +19,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
+  - `scripts/qwencloud-devpost-handoff.ps1`
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `docs/qwencloud-build-journey-post.md`
@@ -106,6 +107,12 @@ scripts/qwencloud-hackathon-submission-packet.ps1 `
   -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+Generate a local browser handoff with copy fields, blockers, and upload paths:
+
+```powershell
+scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
+```
+
 ### Project Title
 
 `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -141,7 +148,8 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 5. Run `scripts/qwencloud-final-readiness.ps1` with real URLs and confirm it
    reports `READY`.
 6. Run `scripts/qwencloud-final-upload-bundle.ps1` with real URLs and keep the
-   generated zip nearby for upload fields and manual review.
+   generated zip nearby for upload fields, the Devpost handoff HTML, and manual
+   review.
 7. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
 8. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
 9. Submit only after the external Devpost form shows accepted URLs.

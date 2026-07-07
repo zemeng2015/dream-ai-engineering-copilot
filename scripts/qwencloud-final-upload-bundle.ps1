@@ -138,11 +138,59 @@ function Invoke-Packet {
     }
 }
 
+function Invoke-Handoff {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-devpost-handoff.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-ArchitectureUploadPath", $ArchitectureUploadPath,
+        "-LocalDemoVideoPath", $LocalDemoVideoPath,
+        "-AlibabaScreenshotPath", $AlibabaScreenshotPath,
+        "-AlibabaProofVideoPath", $AlibabaProofVideoPath
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($AllowDraft -or [string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) {
+        $args += "-AllowDraft"
+    }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-handoff-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-handoff-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Devpost handoff generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-handoff-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Devpost handoff JSON was not found."
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [string]$data.markdown
+        html = [string]$data.html
+        ready = [bool]$data.readyForDevpostFinalSubmit
+        blockers = @($data.blockers)
+    }
+}
+
 $packet = Invoke-Packet
+$handoff = Invoke-Handoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
+Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
@@ -150,6 +198,9 @@ Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
 Add-Item -Name "devpost_packet_markdown" -Path $packet.markdown
 Add-Item -Name "devpost_packet_json" -Path $packet.json
+Add-Item -Name "devpost_handoff_markdown" -Path $handoff.markdown
+Add-Item -Name "devpost_handoff_html" -Path $handoff.html
+Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 
 $ready = $missing.Count -eq 0
 $manifest = [ordered]@{

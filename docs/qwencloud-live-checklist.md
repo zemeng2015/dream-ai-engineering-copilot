@@ -127,6 +127,10 @@ This must report `READY` before the Devpost form is submitted.
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
 ```
 
+The bundle includes `devpost-handoff-*.html`; open it locally while filling the
+Devpost form so the copy fields, file paths, blockers, and URLs are in one
+place.
+
 ## Submission packet
 
 - GitHub link

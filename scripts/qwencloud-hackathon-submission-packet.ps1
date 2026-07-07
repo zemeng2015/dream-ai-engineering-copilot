@@ -240,6 +240,7 @@ $requiredPaths = @(
     "deploy/alibaba/serverless-devs.yaml",
     "deploy/alibaba/README.md",
     "examples/config/dream.qwen.yaml",
+    "scripts/qwencloud-devpost-handoff.ps1",
     "scripts/qwencloud-alibaba-release.ps1",
     "scripts/qwencloud-capture-alibaba-proof.ps1",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
@@ -532,6 +533,7 @@ $md += @(
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
     "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, Facebook Video, or fb.watch URL.",
+    "- Generate `scripts/qwencloud-devpost-handoff.ps1 -AllowDraft` for one local HTML page with final copy fields and upload paths.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."
 )
