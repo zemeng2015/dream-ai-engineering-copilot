@@ -125,7 +125,8 @@ produce traceable requirement and review outputs instead of one-shot chat answer
    `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, and the
    under-3-minute video.
 3. Add public repo link and Apache-2.0 license.
-4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs.
+4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs
+   and confirm it reports `READY`.
 5. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
 6. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
 7. Submit only after the external Devpost form shows accepted URLs.

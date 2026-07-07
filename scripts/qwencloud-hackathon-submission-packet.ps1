@@ -15,6 +15,7 @@ param(
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
+    [switch]$SkipExternalUrlChecks,
     [switch]$SkipBackendDraft,
     [switch]$AllowDraft
 )
@@ -112,6 +113,38 @@ function Is-HttpUrl([string]$Url) {
     return [bool]($Url -match "^https?://")
 }
 
+function Test-HttpReachable([string]$Url) {
+    if (-not (Is-HttpUrl $Url)) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "not an http(s) URL"
+        }
+    }
+
+    try {
+        $response = Invoke-WebRequest -Method Head -Uri $Url -UserAgent "dream-qwencloud-submission-packet/1.0" -TimeoutSec 20 -MaximumRedirection 5 -ErrorAction Stop
+        return [pscustomobject]@{
+            ok = ([int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 400)
+            details = "HEAD status=$([int]$response.StatusCode)"
+        }
+    }
+    catch {
+        try {
+            $response = Invoke-WebRequest -Method Get -Uri $Url -UserAgent "dream-qwencloud-submission-packet/1.0" -TimeoutSec 20 -MaximumRedirection 5 -ErrorAction Stop
+            return [pscustomobject]@{
+                ok = ([int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 400)
+                details = "GET status=$([int]$response.StatusCode)"
+            }
+        }
+        catch {
+            return [pscustomobject]@{
+                ok = $false
+                details = $_.Exception.Message
+            }
+        }
+    }
+}
+
 function Test-UploadAsset([string]$Path, [string[]]$Extensions, [int]$MaxMb) {
     if (-not (Test-Path $Path)) {
         return [pscustomobject]@{
@@ -126,6 +159,52 @@ function Test-UploadAsset([string]$Path, [string[]]$Extensions, [int]$MaxMb) {
     return [pscustomobject]@{
         ok = ($extensionOk -and $sizeOk)
         details = "path=$Path; extension=$($item.Extension); size=$($item.Length); maxMb=$MaxMb"
+    }
+}
+
+function Get-PngDimensions([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+
+    $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $Path))
+    if ($bytes.Length -lt 24) {
+        return $null
+    }
+
+    $signature = @(137, 80, 78, 71, 13, 10, 26, 10)
+    for ($i = 0; $i -lt $signature.Count; $i++) {
+        if ([int]$bytes[$i] -ne $signature[$i]) {
+            return $null
+        }
+    }
+
+    $width = ([int]$bytes[16] -shl 24) -bor ([int]$bytes[17] -shl 16) -bor ([int]$bytes[18] -shl 8) -bor [int]$bytes[19]
+    $height = ([int]$bytes[20] -shl 24) -bor ([int]$bytes[21] -shl 16) -bor ([int]$bytes[22] -shl 8) -bor [int]$bytes[23]
+    return [pscustomobject]@{
+        width = $width
+        height = $height
+    }
+}
+
+function Get-VideoMetadata([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+    if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
+        return $null
+    }
+
+    $probeJson = & ffprobe -v error -show_entries format=duration,size,format_name -show_streams -of json $Path
+    $probe = $probeJson | ConvertFrom-Json
+    $videoStream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
+    return [pscustomobject]@{
+        duration = [double]$probe.format.duration
+        size = [int64]$probe.format.size
+        format = $probe.format.format_name
+        width = if ($videoStream) { [int]$videoStream.width } else { 0 }
+        height = if ($videoStream) { [int]$videoStream.height } else { 0 }
+        codec = if ($videoStream) { [string]$videoStream.codec_name } else { "" }
     }
 }
 
@@ -189,27 +268,40 @@ Add-Check -Name "license_apache_2_detected" -Ok ($repoCheck.license -eq "Apache-
 
 $architectureAsset = Test-UploadAsset -Path $ArchitectureUploadPath -Extensions @(".png", ".jpg", ".jpeg", ".pdf") -MaxMb 35
 Add-Check -Name "devpost_architecture_upload_asset" -Ok $architectureAsset.ok -Details $architectureAsset.details
+$architectureDims = Get-PngDimensions -Path $ArchitectureUploadPath
+Add-Check -Name "architecture_png_dimensions" -Ok ($architectureDims -and $architectureDims.width -ge 1000 -and $architectureDims.height -ge 600) -Details $(if ($architectureDims) { "$($architectureDims.width)x$($architectureDims.height)" } else { "not a readable PNG" })
 
 $alibabaScreenshotAsset = Test-UploadAsset -Path $AlibabaScreenshotPath -Extensions @(".png", ".jpg", ".jpeg") -MaxMb 35
 Add-Check -Name "devpost_alibaba_deployment_screenshot" -Ok $alibabaScreenshotAsset.ok -Details $alibabaScreenshotAsset.details
+if (Test-Path $AlibabaScreenshotPath) {
+    $alibabaScreenshotDims = Get-PngDimensions -Path $AlibabaScreenshotPath
+    Add-Check -Name "alibaba_screenshot_png_dimensions" -Ok ($null -ne $alibabaScreenshotDims) -Details $(if ($alibabaScreenshotDims) { "$($alibabaScreenshotDims.width)x$($alibabaScreenshotDims.height)" } else { "not a readable PNG" }) -Required $false
+}
 
 $videoExists = Test-Path $LocalVideoPath
 Add-Check -Name "local_video_exists" -Ok $videoExists -Details $LocalVideoPath -Required $false
-if ($videoExists -and (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
-    try {
-        $probeJson = & ffprobe -v error -show_entries format=duration,size -of json $LocalVideoPath
-        $probe = $probeJson | ConvertFrom-Json
-        Add-Check -Name "local_video_under_3_minutes" -Ok ([double]$probe.format.duration -lt 180) -Details "duration=$($probe.format.duration); size=$($probe.format.size)" -Required $false
-    }
-    catch {
-        Add-Check -Name "local_video_under_3_minutes" -Ok $false -Details $_.Exception.Message -Required $false
-    }
+$videoMetadata = Get-VideoMetadata -Path $LocalVideoPath
+if ($videoMetadata) {
+    Add-Check -Name "local_video_under_3_minutes" -Ok ($videoMetadata.duration -gt 0 -and $videoMetadata.duration -lt 180) -Details "duration=$($videoMetadata.duration); size=$($videoMetadata.size); format=$($videoMetadata.format)" -Required $false
+    Add-Check -Name "local_video_minimum_resolution" -Ok ($videoMetadata.width -ge 1280 -and $videoMetadata.height -ge 720) -Details "$($videoMetadata.width)x$($videoMetadata.height); codec=$($videoMetadata.codec)" -Required $false
 }
 else {
     Add-Check -Name "local_video_under_3_minutes" -Ok $false -Details "ffprobe unavailable or video missing" -Required $false
+    Add-Check -Name "local_video_minimum_resolution" -Ok $false -Details "ffprobe unavailable or video missing" -Required $false
 }
 
-Add-Check -Name "demo_video_public_url" -Ok (Is-PublicVideoUrl $DemoVideoUrl) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+$demoVideoUrlOk = Is-PublicVideoUrl $DemoVideoUrl
+Add-Check -Name "demo_video_public_url" -Ok $demoVideoUrlOk -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+if ($demoVideoUrlOk) {
+    if ($SkipExternalUrlChecks) {
+        Add-Check -Name "demo_video_public_url_reachable" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
+    }
+    else {
+        $videoReachable = Test-HttpReachable -Url $DemoVideoUrl
+        Add-Check -Name "demo_video_public_url_reachable" -Ok $videoReachable.ok -Details $videoReachable.details
+    }
+}
+
 Add-Check -Name "backend_url_present" -Ok (Is-HttpUrl $BackendUrl) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing deployed or test backend URL" })
 
 if (Is-HttpUrl $BackendUrl) {
@@ -250,7 +342,12 @@ else {
     Add-Check -Name "backend_draft_response" -Ok $false -Details "BackendUrl missing"
 }
 
-Add-Check -Name "blog_post_url_optional" -Ok ([string]::IsNullOrWhiteSpace($BlogPostUrl) -or (Is-HttpUrl $BlogPostUrl)) -Details $(if ($BlogPostUrl) { $BlogPostUrl } else { "not provided" }) -Required $false
+$blogUrlOk = [string]::IsNullOrWhiteSpace($BlogPostUrl) -or (Is-HttpUrl $BlogPostUrl)
+Add-Check -Name "blog_post_url_optional" -Ok $blogUrlOk -Details $(if ($BlogPostUrl) { $BlogPostUrl } else { "not provided" }) -Required $false
+if (-not [string]::IsNullOrWhiteSpace($BlogPostUrl) -and $blogUrlOk -and -not $SkipExternalUrlChecks) {
+    $blogReachable = Test-HttpReachable -Url $BlogPostUrl
+    Add-Check -Name "blog_post_url_reachable_optional" -Ok $blogReachable.ok -Details $blogReachable.details -Required $false
+}
 
 $packet = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")

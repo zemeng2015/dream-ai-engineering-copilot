@@ -71,8 +71,9 @@ and renders the Devpost-required Alibaba deployment screenshot.
 `qwencloud-export-architecture-png.ps1` regenerates the Devpost-friendly PNG
 architecture upload asset from the source SVG.
 
-`qwencloud-hackathon-submission-packet.ps1` validates final public URLs and
-generates the copy/paste Devpost packet with testing instructions.
+`qwencloud-hackathon-submission-packet.ps1` validates final public URLs,
+architecture PNG dimensions, local demo video duration/resolution, backend
+health proof, Alibaba screenshot readiness, and copy/paste Devpost text.
 
 ## Devpost fill order
 

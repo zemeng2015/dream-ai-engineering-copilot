@@ -104,6 +104,9 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 ```
 
 - Open the generated `artifacts/qwencloud-proof/devpost-submission-packet-*.md`.
+- Confirm the packet reports `READY`, including public video URL reachability,
+  backend health proof, architecture PNG dimensions, Alibaba screenshot
+  readiness, and local demo video under 3 minutes.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 

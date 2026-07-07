@@ -100,6 +100,10 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl <deployed-url>
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
 ```
 
+The packet must report `READY`; failures on the public video URL, deployed
+backend URL, Alibaba screenshot, or upload asset checks mean the Devpost
+submission is still not complete.
+
 ## Submission packet
 
 - GitHub link
