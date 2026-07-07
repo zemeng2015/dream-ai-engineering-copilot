@@ -3,7 +3,9 @@ param(
     [string[]]$RequiredFiles = @(
         "docs/qwencloud-submission.md",
         "docs/qwencloud-architecture.md",
+        "docs/assets/qwencloud-architecture.png",
         "docs/qwencloud-demo-video-script.md",
+        "docs/qwencloud-build-journey-post.md",
         "docs/qwencloud-devpost-form-fields.md",
         "docs/qwencloud-devpost-submission-kit.md",
         "docs/qwencloud-final-5min-checklist.md",
@@ -12,6 +14,7 @@ param(
         "deploy/alibaba/serverless-devs.yaml",
         "deploy/alibaba/README.md",
         "scripts/qwencloud-deploy-preflight.ps1",
+        "scripts/qwencloud-export-architecture-png.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",

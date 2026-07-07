@@ -17,6 +17,8 @@
   local container smoke before Alibaba Cloud push/deploy.
 - Devpost submission packet generator that validates final URLs and produces
   copy/paste fields plus judge testing instructions.
+- Devpost-friendly architecture PNG upload asset and reproducible export script.
+- Blog/social build journey draft for optional bonus eligibility.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -26,7 +28,8 @@
   plus `/health` output.
 - Upload the rendered sub-3-minute demo video to YouTube/Vimeo/Youku.
 - Generate the final submission packet with public video and deployed backend URLs.
-- Paste the architecture SVG into the Devpost submission.
+- Upload the architecture PNG into the Devpost submission.
+- Publish the optional build journey post if pursuing the blog/social bonus.
 - Confirm repository visibility is public and license is Apache-2.0.
 
 ## High-Leverage Stretch Work
@@ -36,4 +39,5 @@
   requirement case, context trail, and audit/eval.
 - Add a tiny seeded demo artifact so judges can run the Track 1 flow without
   manually approving claims first.
-- Publish a short build-log post for the Devpost blog/social bonus.
+- Replace placeholders in `docs/qwencloud-build-journey-post.md` with deployed
+  backend and video links after publishing.

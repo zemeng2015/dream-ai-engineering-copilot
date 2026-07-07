@@ -8,6 +8,7 @@
 - [ ] Public repo url ready.
 - [ ] `LICENSE` visible as Apache-2.0.
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
+- [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 
 ## Runbook (submission window)
@@ -39,7 +40,9 @@ Invoke-RestMethod -Method Post `
 - `docs/qwencloud-submission.md`
 - `docs/qwencloud-architecture.md`
 - `docs/assets/qwencloud-architecture.svg`
+- `docs/assets/qwencloud-architecture.png`
 - `docs/qwencloud-demo-video-script.md`
+- `docs/qwencloud-build-journey-post.md`
 - `deploy/alibaba/serverless-devs.yaml`
 - `deploy/alibaba/README.md`
 - `docs/qwencloud-devpost-form-fields.md`

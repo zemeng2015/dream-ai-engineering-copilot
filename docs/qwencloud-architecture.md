@@ -4,6 +4,9 @@
 
 ![DREAM Qwen Cloud architecture](assets/qwencloud-architecture.svg)
 
+Devpost upload asset: [`assets/qwencloud-architecture.png`](assets/qwencloud-architecture.png).
+Regenerate it with `scripts/qwencloud-export-architecture-png.ps1`.
+
 ## Runtime Path
 
 1. User opens the Angular workbench or calls the FastAPI API.

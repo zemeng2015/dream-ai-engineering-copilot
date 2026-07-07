@@ -6,8 +6,10 @@
 
 - Video file name: `DREAM-Qwen-Cloud-MemoryAgent-Demo.mp4`
 - Video length target: `2:45` to `3:00`
-- Architecture file: `docs/assets/qwencloud-architecture.svg` (also include PNG export if preferred for Devpost upload)
+- Architecture file: `docs/assets/qwencloud-architecture.png` for Devpost upload
+- Source architecture SVG: `docs/assets/qwencloud-architecture.svg`
 - Demo proof file: `deploy/alibaba/serverless-devs.yaml`
+- Blog/social draft: `docs/qwencloud-build-journey-post.md`
 
 ## Command bundle
 
@@ -25,6 +27,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 
 ```powershell
 scripts/qwencloud-hackathon-smoke.ps1
+scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
@@ -47,6 +50,9 @@ repo/docs presence, public repo license visibility checks, and endpoint checks.
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
 and local container smoke before the image is pushed to Container Registry.
 
+`qwencloud-export-architecture-png.ps1` regenerates the Devpost-friendly PNG
+architecture upload asset from the source SVG.
+
 `qwencloud-hackathon-submission-packet.ps1` validates final public URLs and
 generates the copy/paste Devpost packet with testing instructions.
 
@@ -60,4 +66,5 @@ generates the copy/paste Devpost packet with testing instructions.
 6. Upload video (link if supported by platform)
 7. Generate the final submission packet and copy testing instructions
 8. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
-9. Submit and immediately open public project page to confirm links are visible
+9. Add optional build journey link if published
+10. Submit and immediately open public project page to confirm links are visible

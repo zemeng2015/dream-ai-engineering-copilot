@@ -161,13 +161,21 @@ Key submission artifacts:
 - [Qwen Cloud Devpost form fields](docs/qwencloud-devpost-form-fields.md)
 - [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
 - [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
+- [Qwen Cloud build journey post draft](docs/qwencloud-build-journey-post.md)
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
+- [Architecture PNG upload asset](docs/assets/qwencloud-architecture.png)
 
 Run deployment preflight before pushing to Alibaba Cloud:
 
 ```powershell
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
+Regenerate the PNG architecture upload asset:
+
+```powershell
+scripts/qwencloud-export-architecture-png.ps1
 ```
 
 Render the final under-3-minute Devpost upload video:

@@ -13,6 +13,8 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-submission.md`
   - `docs/qwencloud-architecture.md`
   - `docs/qwencloud-demo-video-script.md`
+  - `docs/assets/qwencloud-architecture.png`
+  - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
 
@@ -101,11 +103,12 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 ## 6) Final 30-minute Submission Run
 
 1. Fill in Devpost fields (project, description, links).
-2. Attach architecture image and under-3-minute video.
+2. Attach `docs/assets/qwencloud-architecture.png` and under-3-minute video.
 3. Add public repo link and Apache-2.0 license.
 4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs.
 5. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
-6. Submit only after the external Devpost form shows accepted URLs.
+6. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
+7. Submit only after the external Devpost form shows accepted URLs.
 
 ## 7) Reproducibility Commands
 
@@ -124,3 +127,4 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-proof.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 - `scripts/qwencloud-hackathon-submission-packet.ps1`
+- `scripts/qwencloud-export-architecture-png.ps1`

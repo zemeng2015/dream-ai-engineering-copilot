@@ -80,7 +80,9 @@ and `deploy/alibaba/README.md` for Devpost.
 - Source code: public GitHub repository
 - License: Apache-2.0
 - Architecture diagram: `docs/assets/qwencloud-architecture.svg`
+- Architecture upload asset: `docs/assets/qwencloud-architecture.png`
 - Alibaba Cloud proof: `deploy/alibaba/serverless-devs.yaml`
 - Deploy preflight: `scripts/qwencloud-deploy-preflight.ps1`
 - Submission packet: `scripts/qwencloud-hackathon-submission-packet.ps1`
+- Blog/social bonus draft: `docs/qwencloud-build-journey-post.md`
 - Demo video: target under 3 minutes

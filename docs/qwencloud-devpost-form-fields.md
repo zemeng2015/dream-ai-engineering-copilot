@@ -70,8 +70,10 @@ The video covers:
 - Source code: (public GitHub repository)
 - License: Apache-2.0
 - Architecture diagram: `docs/assets/qwencloud-architecture.svg`
+- Architecture PNG upload asset: `docs/assets/qwencloud-architecture.png`
 - Deployment proof: `deploy/alibaba/serverless-devs.yaml`
 - Qwen mode entry: `examples/config/dream.qwen.yaml`
+- Optional blog/social draft: `docs/qwencloud-build-journey-post.md`
 
 ## Notes
 

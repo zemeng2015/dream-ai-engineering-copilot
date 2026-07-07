@@ -114,10 +114,12 @@ function Get-FileUrl([string]$Repo, [string]$Path) {
 
 $repoUsed = Normalize-RepoUrl -Url $RepoUrl
 $licenseUrl = Get-FileUrl -Repo $repoUsed -Path "LICENSE"
-$architectureUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.svg"
+$architectureSvgUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.svg"
+$architecturePngUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.png"
 $deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverless-devs.yaml"
 $deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deploy-preflight.ps1"
 $qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
+$buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
 $ciUrl = "$repoUsed/actions/workflows/ci.yml"
 
 $requiredPaths = @(
@@ -130,9 +132,12 @@ $requiredPaths = @(
     "docs/qwencloud-final-5min-checklist.md",
     "docs/qwencloud-architecture.md",
     "docs/assets/qwencloud-architecture.svg",
+    "docs/assets/qwencloud-architecture.png",
+    "docs/qwencloud-build-journey-post.md",
     "deploy/alibaba/serverless-devs.yaml",
     "deploy/alibaba/README.md",
     "examples/config/dream.qwen.yaml",
+    "scripts/qwencloud-export-architecture-png.ps1",
     "scripts/qwencloud-deploy-preflight.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
     "scripts/qwencloud-hackathon-proof.ps1",
@@ -231,10 +236,12 @@ $packet = [ordered]@{
     }
     links = [ordered]@{
         license = $licenseUrl
-        architecture = $architectureUrl
+        architectureSvg = $architectureSvgUrl
+        architecturePng = $architecturePngUrl
         deploymentProof = $deploymentProofUrl
         deployPreflight = $deployPreflightUrl
         qwenConfig = $qwenConfigUrl
+        buildJourneyDraft = $buildJourneyDraftUrl
         ci = $ciUrl
     }
     checks = $checks
@@ -262,10 +269,12 @@ $md = @(
     "",
     "- Source code: $repoUsed",
     "- License: $licenseUrl",
-    "- Architecture diagram: $architectureUrl",
+    "- Architecture diagram (SVG): $architectureSvgUrl",
+    "- Architecture diagram (PNG upload asset): $architecturePngUrl",
     "- Alibaba Cloud deployment proof: $deploymentProofUrl",
     "- Deploy preflight script: $deployPreflightUrl",
     "- Qwen mode config: $qwenConfigUrl",
+    "- Blog/social build journey draft: $buildJourneyDraftUrl",
     "- CI proof: $ciUrl",
     "",
     "## Copy To Devpost",
@@ -338,6 +347,7 @@ $md += @(
     "- Set `DASHSCOPE_API_KEY`, `ALIBABA_CLOUD_REGION`, and `ALIBABA_CLOUD_CONTAINER_IMAGE`.",
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Youku and paste the public URL.",
+    "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."
 )
 

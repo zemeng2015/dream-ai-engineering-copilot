@@ -32,7 +32,9 @@ scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
   - `docs/qwencloud-submission.md`
   - `docs/qwencloud-architecture.md`
   - `docs/assets/qwencloud-architecture.svg`
+  - `docs/assets/qwencloud-architecture.png`
   - `docs/qwencloud-demo-video-script.md`
+  - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
   - `docs/qwencloud-devpost-form-fields.md`
@@ -91,9 +93,10 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Description: paste from `docs/qwencloud-devpost-form-fields.md`
 - Add public repo link
 - Add Apache-2.0 link
-- Upload architecture image
+- Upload `docs/assets/qwencloud-architecture.png`
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
+- Add optional blog/social link if published
 
 ## Step 7 - Submit
 
