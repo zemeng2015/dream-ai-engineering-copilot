@@ -88,20 +88,28 @@ def test_official_source_refresh_detects_current_devpost_requirements(tmp_path) 
 
     report = json.loads(reports[0].read_text(encoding="utf-8-sig"))
     checks = {item["name"]: item for item in report["checks"]}
+    fingerprints = report["sourceFingerprints"]
 
     assert report["status"] == "READY"
     assert report["readyForOfficialSourceSnapshot"] is True
+    assert len(fingerprints["overviewNormalizedSha256"]) == 64
+    assert len(fingerprints["rulesNormalizedSha256"]) == 64
+    assert len(fingerprints["combinedNormalizedSha256"]) == 64
+    assert fingerprints["overviewNormalizedChars"] > 0
+    assert fingerprints["rulesNormalizedChars"] > 0
     assert report["acceptedVideoPlatformUnion"] == [
         "YouTube",
         "Vimeo",
         "Facebook Video",
         "Youku",
     ]
+    assert checks["source_fingerprints_recorded"]["ok"] is True
     assert checks["video_platform_overview_facebook_present"]["ok"] is True
     assert checks["video_platform_rules_youku_present"]["ok"] is True
     assert checks["judging_weights_present"]["ok"] is True
 
     markdown = markdown_reports[0].read_text(encoding="utf-8-sig")
+    assert "Source Fingerprints" in markdown
     assert "Video Platform Note" in markdown
     assert "YouTube, Vimeo, and Youku" in markdown
 
@@ -136,3 +144,22 @@ def test_finalize_after_urls_refreshes_official_sources_before_final_gates() -> 
         '"video-upload-status"'
     )
     assert "officialSourceJson" in finalizer
+
+
+def test_final_upload_bundle_refreshes_official_sources_for_each_bundle() -> None:
+    final_bundle = (ROOT / "scripts" / "qwencloud-final-upload-bundle.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "function Invoke-OfficialSourceRefresh" in final_bundle
+    assert '"scripts/qwencloud-official-source-refresh.ps1"' in final_bundle
+    assert "$officialSourceRefresh = Invoke-OfficialSourceRefresh" in final_bundle
+    assert "official_source_refresh_ready" in final_bundle
+    assert "officialSourceFingerprints = $officialSourceRefresh.sourceFingerprints" in final_bundle
+    assert "official_source_refresh_markdown" in final_bundle
+    assert "official_source_refresh_json" in final_bundle
+    source_refresh_index = final_bundle.index(
+        "$officialSourceRefresh = Invoke-OfficialSourceRefresh"
+    )
+    rules_gate_index = final_bundle.index("$officialRulesGate = Invoke-OfficialRulesGate")
+    assert source_refresh_index < rules_gate_index

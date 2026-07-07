@@ -297,6 +297,57 @@ function Invoke-GitHubCiProof {
     }
 }
 
+function Invoke-OfficialSourceRefresh {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-source-refresh-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-official-source-refresh.ps1",
+        "-OutputDir", $OutputDir
+    )
+    if ($AllowDraft) { $args += "-AllowDraft" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-official-source-refresh-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-official-source-refresh-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Official source refresh generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+            sourceFingerprints = $null
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-source-refresh-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "official source refresh JSON missing; stdout=$stdout; stderr=$stderr"
+            sourceFingerprints = $null
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForOfficialSourceSnapshot
+        details = if ($data.readyForOfficialSourceSnapshot) { "READY: $($json.FullName)" } else { "DRAFT; missing=$(@($data.missingRequiredChecks) -join ', ')" }
+        sourceFingerprints = $data.sourceFingerprints
+    }
+}
+
 function Invoke-Packet {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -651,6 +702,7 @@ $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
 $autofillSnippet = Invoke-AutofillSnippet -PayloadJson $draftPayload.json
 $judgingScorecard = Invoke-JudgingScorecard
+$officialSourceRefresh = Invoke-OfficialSourceRefresh
 $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
@@ -665,6 +717,7 @@ Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Detail
 Add-ExternalRequirement -Name "devpost_draft_payload_ready" -Ok $draftPayload.ready -Details $(if ($draftPayload.ready) { "READY" } else { "DRAFT; publicTextReady=$($draftPayload.publicTextReady); missing=$($draftPayload.failures -join ', ')" })
 Add-ExternalRequirement -Name "devpost_autofill_snippet_ready" -Ok $autofillSnippet.ready -Details $(if ($autofillSnippet.ready) { "READY" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.ready -Details $(if ($judgingScorecard.ready) { "READY" } else { "DRAFT; missing=$($judgingScorecard.missing -join ', ')" })
+Add-ExternalRequirement -Name "official_source_refresh_ready" -Ok $officialSourceRefresh.ready -Details $officialSourceRefresh.details
 Add-ExternalRequirement -Name "official_rules_gate_ready" -Ok $officialRulesGate.ready -Details $(if ($officialRulesGate.ready) { "READY" } else { "DRAFT; missing=$($officialRulesGate.missing -join ', ')" })
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
@@ -744,6 +797,8 @@ Add-Item -Name "official_rules_gate_markdown" -Path $officialRulesGate.markdown
 Add-Item -Name "official_rules_gate_json" -Path $officialRulesGate.json
 Add-Item -Name "official_rules_gate_script" -Path "scripts/qwencloud-official-rules-gate.ps1" -Required $false
 Add-Item -Name "official_source_refresh_script" -Path "scripts/qwencloud-official-source-refresh.ps1" -Required $false
+Add-Item -Name "official_source_refresh_markdown" -Path $officialSourceRefresh.markdown
+Add-Item -Name "official_source_refresh_json" -Path $officialSourceRefresh.json
 Add-Item -Name "official_requirements_snapshot" -Path "docs/qwencloud-official-requirements-snapshot.md" -Required $false
 Add-LatestItem -Name "latest_official_source_refresh_markdown" -Filter "official-source-refresh-*.md"
 Add-LatestItem -Name "latest_official_source_refresh_json" -Filter "official-source-refresh-*.json"
@@ -794,6 +849,7 @@ $manifest = [ordered]@{
     blogPostUrl = $BlogPostUrl
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
+    officialSourceFingerprints = $officialSourceRefresh.sourceFingerprints
     bundleRoot = $bundleRoot
     zipPath = $zipPath
     missingRequiredItems = $missing

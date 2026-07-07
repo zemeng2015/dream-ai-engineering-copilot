@@ -34,6 +34,17 @@ function Normalize-SourceText([string]$Text) {
     return (($decoded -replace "\u00a0", " ") -replace "\s+", " ").Trim()
 }
 
+function Get-TextSha256([string]$Text) {
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+        return (($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") }) -join "")
+    }
+    finally {
+        $sha.Dispose()
+    }
+}
+
 function Get-SourceText([string]$Url, [string]$Path, [string]$Label) {
     if (-not [string]::IsNullOrWhiteSpace($Path)) {
         if (-not (Test-Path -LiteralPath $Path)) {
@@ -110,9 +121,21 @@ function Get-MatchSnippet([string]$Text, [string]$Pattern) {
 $overview = Get-SourceText -Url $OverviewUrl -Path $OverviewHtmlPath -Label "Overview"
 $rules = Get-SourceText -Url $RulesUrl -Path $RulesHtmlPath -Label "Rules"
 $combined = "$($overview.text) $($rules.text)"
+$sourceFingerprints = [ordered]@{
+    overviewNormalizedSha256 = Get-TextSha256 -Text $overview.text
+    rulesNormalizedSha256 = Get-TextSha256 -Text $rules.text
+    combinedNormalizedSha256 = Get-TextSha256 -Text $combined
+    overviewNormalizedChars = $overview.text.Length
+    rulesNormalizedChars = $rules.text.Length
+    combinedNormalizedChars = $combined.Length
+}
 
 Add-Check -Name "overview_source_available" -Ok $overview.ok -Details $overview.details
 Add-Check -Name "rules_source_available" -Ok $rules.ok -Details $rules.details
+Add-Check `
+    -Name "source_fingerprints_recorded" `
+    -Ok (($sourceFingerprints.overviewNormalizedSha256.Length -eq 64) -and ($sourceFingerprints.rulesNormalizedSha256.Length -eq 64) -and ($sourceFingerprints.combinedNormalizedSha256.Length -eq 64) -and ($sourceFingerprints.overviewNormalizedChars -gt 0) -and ($sourceFingerprints.rulesNormalizedChars -gt 0)) `
+    -Details "overviewSha256=$($sourceFingerprints.overviewNormalizedSha256); rulesSha256=$($sourceFingerprints.rulesNormalizedSha256); combinedSha256=$($sourceFingerprints.combinedNormalizedSha256)"
 Add-Check `
     -Name "deadline_overview_present" `
     -Ok (Test-Text -Text $overview.text -Pattern "Deadline:\s*Jul\s+9,\s+2026\s+@\s+2:00pm\s+PDT") `
@@ -181,6 +204,7 @@ $result = [ordered]@{
     rulesHtmlPath = $RulesHtmlPath
     overviewSource = $overview.source
     rulesSource = $rules.source
+    sourceFingerprints = $sourceFingerprints
     acceptedVideoPlatformUnion = $videoPlatformUnion
     recommendedVideoPlatforms = @("YouTube", "Vimeo")
     checks = $checks
@@ -195,6 +219,9 @@ $lines = @(
     "- Ready for official source snapshot: $ready",
     "- Overview source: $($overview.source)",
     "- Rules source: $($rules.source)",
+    "- Overview normalized SHA256: $($sourceFingerprints.overviewNormalizedSha256)",
+    "- Rules normalized SHA256: $($sourceFingerprints.rulesNormalizedSha256)",
+    "- Combined normalized SHA256: $($sourceFingerprints.combinedNormalizedSha256)",
     "- Accepted video platform union: $($videoPlatformUnion -join ', ')",
     "- Recommended final video platforms: YouTube, Vimeo",
     "",
@@ -209,6 +236,19 @@ foreach ($check in $checks) {
     $details = ([string]$check.details) -replace "\|", "/"
     $lines += "| $($check.name) | $required | $resultText | $details |"
 }
+
+$lines += @(
+    "",
+    "## Source Fingerprints",
+    "",
+    "These hashes are computed from normalized public Devpost text after script/style/tag removal and HTML decoding. Re-run this script immediately before final submit; any changed hash means the official wording should be re-reviewed.",
+    "",
+    "| Source | Normalized Chars | SHA256 |",
+    "|---|---:|---|",
+    "| Overview | $($sourceFingerprints.overviewNormalizedChars) | $($sourceFingerprints.overviewNormalizedSha256) |",
+    "| Rules | $($sourceFingerprints.rulesNormalizedChars) | $($sourceFingerprints.rulesNormalizedSha256) |",
+    "| Combined | $($sourceFingerprints.combinedNormalizedChars) | $($sourceFingerprints.combinedNormalizedSha256) |"
+)
 
 if ($requiredFailures.Count -gt 0) {
     $lines += @(
