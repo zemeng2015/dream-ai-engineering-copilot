@@ -147,6 +147,14 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "Summarize release proof" in workflow
     assert "scripts/qwencloud-release-summary.ps1" in workflow
     assert "$GITHUB_STEP_SUMMARY" not in workflow
+    assert "Install proof capture tooling" in workflow
+    assert "sudo apt-get install -y ffmpeg" in workflow
+    assert "ffprobe -version" in workflow
+    assert "Chrome or Chromium is required for Alibaba proof screenshot capture." in workflow
+    assert (
+        "scripts/qwencloud-final-upload-bundle.ps1 @common -SkipGitHubSecrets "
+        "-SkipLocalVideoChecks -AllowDraft"
+    ) in workflow
     assert "latest_github_release_summary_markdown" in final_bundle
     assert "latest_github_release_summary_json" in final_bundle
     assert "github_release_summary_script" in final_bundle
@@ -160,3 +168,5 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "workflow run summary" in docs
     assert "Qwen Cloud Release" in docs
     assert "showcase proof" in docs
+    assert "Proof capture tooling setup" in docs
+    assert "skips the GitHub secrets audit inside Actions" in docs

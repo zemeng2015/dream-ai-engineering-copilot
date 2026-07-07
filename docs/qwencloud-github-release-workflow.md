@@ -73,6 +73,8 @@ the current PowerShell process only.
 The workflow runs:
 
 - Python install and release script validation.
+- Proof capture tooling setup: installs `ffmpeg`, validates `ffprobe`, and
+  confirms Chrome/Chromium is available before deployment proof capture.
 - Public demo video URL validation without requiring the local MP4 on the
   GitHub runner.
 - Serverless Devs configuration from GitHub secrets.
@@ -80,6 +82,9 @@ The workflow runs:
 - `scripts/qwencloud-alibaba-release.ps1`.
 - Final readiness and final upload bundle generation.
 - Final action board generation when local diagnostics are needed.
+- Final upload bundle generation skips the GitHub secrets audit inside Actions,
+  because the workflow has already validated required secrets from the current
+  run environment and should not call `gh secret list`.
 - `scripts/qwencloud-release-summary.ps1`, which writes the latest backend URL,
   showcase proof, final bundle hash, and remaining blockers to the GitHub job
   summary and artifact folder even when the run remains DRAFT.
