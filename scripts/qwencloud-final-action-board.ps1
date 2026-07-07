@@ -341,6 +341,7 @@ $result = [ordered]@{
         liveInputsReady = $liveInputsReady
         judgingScorecardReady = $scorecardReady
         judgingScorecardWeightedEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedEvidenceReady } else { $null }
+        judgingScorecardWeightedStaticEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedStaticEvidenceReady } else { $null }
         judgingScorecardWeightedTotal = if ($scorecardReport.data) { $scorecardReport.data.weightedTotal } else { $null }
         githubSecretsReady = $secretsReady
         githubSecretsSkipped = [bool]$SkipGitHubSecrets

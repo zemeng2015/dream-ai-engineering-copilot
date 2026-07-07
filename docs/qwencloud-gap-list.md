@@ -32,6 +32,9 @@
 - Judge rehearsal dashboard, `scripts/qwencloud-judge-rehearsal.ps1`, that
   refreshes seeded memory, local runtime proof, frontend build proof, judging
   scorecard, and final readiness into a single demo-shot report.
+- Judging evidence matrix, `docs/qwencloud-judging-evidence-matrix.md`, that
+  maps each official scoring area to static repo evidence and the live external
+  proof still required before final submit.
 - Final external handoff pack, `scripts/qwencloud-final-external-handoff.ps1`,
   that packages the action-time order, safety boundaries, generated reports,
   and copy/paste commands for real video upload, Alibaba secrets/deploy,

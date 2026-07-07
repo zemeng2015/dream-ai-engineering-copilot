@@ -39,14 +39,16 @@ function Add-Criterion {
     )
 
     $evidence = @($EvidencePaths | ForEach-Object { Test-EvidencePath -Path $_ })
-    $missing = @($evidence | Where-Object { -not $_.exists } | ForEach-Object { $_.path })
+    $missingEvidencePaths = @($evidence | Where-Object { -not $_.exists } | ForEach-Object { $_.path })
+    $missingExternalInputs = @()
 
     if ($RequiresDemoVideo -and [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
-        $missing += "public_demo_video_url"
+        $missingExternalInputs += "public_demo_video_url"
     }
     if ($RequiresBackend -and [string]::IsNullOrWhiteSpace($BackendUrl)) {
-        $missing += "deployed_backend_url"
+        $missingExternalInputs += "deployed_backend_url"
     }
+    $missing = @($missingEvidencePaths + $missingExternalInputs)
 
     $script:criteria += [ordered]@{
         name = $Name
@@ -56,7 +58,10 @@ function Add-Criterion {
         evidence = $evidence
         requiresDemoVideo = $RequiresDemoVideo
         requiresBackend = $RequiresBackend
+        staticEvidenceComplete = ($missingEvidencePaths.Count -eq 0)
         complete = ($missing.Count -eq 0)
+        missingEvidencePaths = $missingEvidencePaths
+        missingExternalInputs = $missingExternalInputs
         missing = $missing
     }
 }
@@ -72,7 +77,8 @@ Add-Criterion `
         "dream/llm/qwen_cloud.py",
         "tests/test_qwen_cloud_provider.py",
         "deploy/alibaba/serverless-devs.yaml",
-        "docs/qwencloud-submission.md"
+        "docs/qwencloud-submission.md",
+        "docs/qwencloud-judging-evidence-matrix.md"
     ) `
     -RequiresBackend $true
 
@@ -109,7 +115,8 @@ Add-Criterion `
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
         "docs/qwencloud-architecture.md",
-        "docs/assets/qwencloud-architecture.png"
+        "docs/assets/qwencloud-architecture.png",
+        "docs/qwencloud-judging-evidence-matrix.md"
     ) `
     -RequiresBackend $true
 
@@ -158,16 +165,21 @@ Add-Criterion `
         "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-official-requirements-snapshot.md",
         "docs/qwencloud-devpost-submission-kit.md",
+        "docs/qwencloud-judging-evidence-matrix.md",
         "scripts/qwencloud-official-source-refresh.ps1"
     ) `
     -RequiresDemoVideo $true
 
 $missingRequired = @($criteria | Where-Object { -not $_.complete } | ForEach-Object { $_.name })
 $weightedEvidenceReady = 0
+$weightedStaticEvidenceReady = 0
 $weightedTotal = 0
 foreach ($criterion in $criteria) {
     if ($criterion.weight -gt 0) {
         $weightedTotal += $criterion.weight
+        if ($criterion.staticEvidenceComplete) {
+            $weightedStaticEvidenceReady += $criterion.weight
+        }
         if ($criterion.complete) {
             $weightedEvidenceReady += $criterion.weight
         }
@@ -183,6 +195,7 @@ $result = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     weightedEvidenceReady = $weightedEvidenceReady
+    weightedStaticEvidenceReady = $weightedStaticEvidenceReady
     weightedTotal = $weightedTotal
     criteria = $criteria
     missingRequiredCriteria = $missingRequired
@@ -195,18 +208,19 @@ $lines = @(
     "- Status: $($result.status)",
     "- Ready for judging narrative: $ready",
     "- Weighted evidence ready: $weightedEvidenceReady / $weightedTotal",
+    "- Weighted static evidence ready: $weightedStaticEvidenceReady / $weightedTotal",
     "- Repo: $RepoUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "",
     "## Criteria",
     "",
-    "| Criterion | Weight | Complete | Official focus | DREAM claim | Missing |",
-    "|---|---:|---:|---|---|---|"
+    "| Criterion | Weight | Static Evidence | Complete | Official focus | DREAM claim | Missing Evidence | Missing External |",
+    "|---|---:|---:|---:|---|---|---|---|"
 )
 
 foreach ($criterion in $criteria) {
-    $lines += "| $($criterion.name) | $($criterion.weight)% | $(if ($criterion.complete) { 'yes' } else { 'no' }) | $($criterion.officialFocus -replace '\|', '/') | $($criterion.dreamClaim -replace '\|', '/') | $(@($criterion.missing) -join ', ' -replace '\|', '/') |"
+    $lines += "| $($criterion.name) | $($criterion.weight)% | $(if ($criterion.staticEvidenceComplete) { 'yes' } else { 'no' }) | $(if ($criterion.complete) { 'yes' } else { 'no' }) | $($criterion.officialFocus -replace '\|', '/') | $($criterion.dreamClaim -replace '\|', '/') | $(@($criterion.missingEvidencePaths) -join ', ' -replace '\|', '/') | $(@($criterion.missingExternalInputs) -join ', ' -replace '\|', '/') |"
 }
 
 foreach ($criterion in $criteria) {
@@ -215,6 +229,7 @@ foreach ($criterion in $criteria) {
         "## $($criterion.name)",
         "",
         "- Weight: $($criterion.weight)%",
+        "- Static evidence complete: $(if ($criterion.staticEvidenceComplete) { 'yes' } else { 'no' })",
         "- Complete: $(if ($criterion.complete) { 'yes' } else { 'no' })",
         "- Official focus: $($criterion.officialFocus)",
         "- DREAM claim: $($criterion.dreamClaim)",
@@ -224,10 +239,17 @@ foreach ($criterion in $criteria) {
     foreach ($evidence in $criterion.evidence) {
         $lines += "- $(if ($evidence.exists) { '[x]' } else { '[ ]' }) $($evidence.path) - $($evidence.repoUrl)"
     }
-    if ($criterion.missing.Count -gt 0) {
+    if ($criterion.missingEvidencePaths.Count -gt 0) {
         $lines += ""
-        $lines += "Missing:"
-        foreach ($missing in $criterion.missing) {
+        $lines += "Missing evidence paths:"
+        foreach ($missing in $criterion.missingEvidencePaths) {
+            $lines += "- $missing"
+        }
+    }
+    if ($criterion.missingExternalInputs.Count -gt 0) {
+        $lines += ""
+        $lines += "Missing external inputs:"
+        foreach ($missing in $criterion.missingExternalInputs) {
             $lines += "- $missing"
         }
     }

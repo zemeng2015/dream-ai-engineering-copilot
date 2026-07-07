@@ -756,6 +756,7 @@ Add-LatestItem -Name "latest_post_submit_verification_json" -Filter "devpost-pos
 Add-Item -Name "judging_scorecard_markdown" -Path $judgingScorecard.markdown
 Add-Item -Name "judging_scorecard_json" -Path $judgingScorecard.json
 Add-Item -Name "judging_scorecard_script" -Path "scripts/qwencloud-judging-scorecard.ps1" -Required $false
+Add-Item -Name "judging_evidence_matrix" -Path "docs/qwencloud-judging-evidence-matrix.md"
 Add-Item -Name "cloud_credentials_handoff_markdown" -Path $cloudHandoff.markdown
 Add-Item -Name "cloud_credentials_template" -Path $cloudHandoff.template
 Add-Item -Name "cloud_credentials_handoff_json" -Path $cloudHandoff.json

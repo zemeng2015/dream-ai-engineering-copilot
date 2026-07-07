@@ -59,6 +59,24 @@ def test_qwencloud_judge_rehearsal_generates_lightweight_report(tmp_path) -> Non
     assert Path(report["seedSummaryJson"]).exists()
     assert Path(report["seedZip"]).exists()
     assert Path(report["judgingScorecardJson"]).exists()
+
+    scorecard = json.loads(
+        Path(report["judgingScorecardJson"]).read_text(encoding="utf-8-sig")
+    )
+    criteria = {criterion["name"]: criterion for criterion in scorecard["criteria"]}
+    assert scorecard["weightedEvidenceReady"] == 55
+    assert scorecard["weightedStaticEvidenceReady"] == scorecard["weightedTotal"]
+    assert criteria["Technical Depth and Engineering"]["staticEvidenceComplete"] is True
+    assert (
+        "deployed_backend_url"
+        in criteria["Technical Depth and Engineering"]["missingExternalInputs"]
+    )
+    assert criteria["Presentation and Documentation"]["staticEvidenceComplete"] is True
+    assert (
+        "public_demo_video_url"
+        in criteria["Presentation and Documentation"]["missingExternalInputs"]
+    )
+
     assert shots["Seeded Memory Hub claim review"]["ready"] is True
     assert shots["Audit, eval, and judging alignment"]["ready"] is True
     assert steps["seeded-demo-artifact"]["ok"] is True
@@ -76,6 +94,7 @@ def test_qwencloud_judge_rehearsal_generates_lightweight_report(tmp_path) -> Non
 
 def test_qwencloud_judge_rehearsal_registered_in_submission_flow() -> None:
     script_path = "scripts/qwencloud-judge-rehearsal.ps1"
+    evidence_matrix_path = "docs/qwencloud-judging-evidence-matrix.md"
 
     for path in [
         "README.md",
@@ -104,3 +123,17 @@ def test_qwencloud_judge_rehearsal_registered_in_submission_flow() -> None:
     assert "final-sprint-judging-scorecard" in final_sprint
     assert "judgingScorecardReady" in final_sprint
     assert "Close judging scorecard gaps" in final_sprint
+
+    for path in [
+        "README.md",
+        "docs/qwencloud-devpost-submission-kit.md",
+        "docs/qwencloud-gap-list.md",
+        "docs/qwencloud-final-5min-checklist.md",
+        "scripts/qwencloud-judging-scorecard.ps1",
+        "scripts/qwencloud-final-upload-bundle.ps1",
+    ]:
+        assert evidence_matrix_path in (ROOT / path).read_text(encoding="utf-8-sig")
+
+    assert (
+        "judgingScorecardWeightedStaticEvidenceReady" in final_action_board
+    )

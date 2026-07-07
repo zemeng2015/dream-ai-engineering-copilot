@@ -17,6 +17,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-demo-video-transcript.md`
   - `docs/qwencloud-video-upload-handoff.md`
   - `docs/qwencloud-official-requirements-snapshot.md`
+  - `docs/qwencloud-judging-evidence-matrix.md`
   - `docs/qwencloud-testing-and-rights-notes.md`
   - `docs/assets/qwencloud-architecture.png`
   - `scripts/qwencloud-alibaba-release.ps1`
@@ -135,6 +136,10 @@ Run a one-command judge rehearsal dashboard before recording the final demo:
 ```powershell
 scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```
+
+Use `docs/qwencloud-judging-evidence-matrix.md` with the latest
+`judging-scorecard-*.md` report to keep the Devpost narrative aligned with the
+actual static evidence and the remaining live URL/proof gates.
 
 Or use the full release orchestrator after credentials, registry login, and
 video URL are ready:

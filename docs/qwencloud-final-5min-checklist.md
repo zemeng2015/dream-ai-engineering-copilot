@@ -43,6 +43,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `docs/qwencloud-demo-video-captions.srt`
   - `docs/qwencloud-demo-video-transcript.md`
   - `docs/qwencloud-video-upload-handoff.md`
+  - `docs/qwencloud-judging-evidence-matrix.md`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -86,6 +87,10 @@ Optional judge rehearsal dashboard before recording or presenting:
 ```powershell
 scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```
+
+- Open `docs/qwencloud-judging-evidence-matrix.md` next to the latest
+  `judging-scorecard-*.md` to separate static evidence that is already complete
+  from live video/backend proof still being filled.
 
 ## Step 3 - Alibaba deploy proof (about 1 minute)
 

@@ -190,6 +190,7 @@ Key submission artifacts:
 - [Qwen Cloud demo video transcript](docs/qwencloud-demo-video-transcript.md)
 - [Qwen Cloud demo video upload handoff](docs/qwencloud-video-upload-handoff.md)
 - [Qwen Cloud submission kit](docs/qwencloud-devpost-submission-kit.md)
+- [Qwen Cloud judging evidence matrix](docs/qwencloud-judging-evidence-matrix.md)
 - [Qwen Cloud contest launch checklist](docs/qwencloud-live-checklist.md)
 - [Qwen Cloud final 5-minute checklist](docs/qwencloud-final-5min-checklist.md)
 - [Qwen Cloud Devpost form fields](docs/qwencloud-devpost-form-fields.md)
