@@ -269,6 +269,7 @@ elseif ($releaseAfterDeploy.data) {
 else {
     ""
 }
+$finalizeSkippedForDraft = $false
 
 $finalizeArgs = @(
     "-NoProfile",
@@ -284,7 +285,16 @@ if ($BlogPostUrl) { $finalizeArgs += @("-BlogPostUrl", $BlogPostUrl) }
 if ($EnvFile) { $finalizeArgs += @("-EnvFile", $EnvFile) }
 if ($RefreshAlibabaProof) { $finalizeArgs += "-RefreshAlibabaProof" }
 if ($SkipExternalUrlChecks) { $finalizeArgs += "-SkipExternalUrlChecks" }
-Invoke-SprintStep -Name "final-sprint-finalize-after-urls" -Arguments $finalizeArgs | Out-Null
+if ($AllowDraft -and ([string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($backendForFinalize))) {
+    $finalizeSkippedForDraft = $true
+    Add-Step `
+        -Name "final-sprint-finalize-after-urls" `
+        -Ok $true `
+        -Details "skipped in draft mode until both DemoVideoUrl and BackendUrl are available"
+}
+else {
+    Invoke-SprintStep -Name "final-sprint-finalize-after-urls" -Arguments $finalizeArgs | Out-Null
+}
 
 $actionBoardArgs = @(
     "-NoProfile",
@@ -308,17 +318,30 @@ $liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
-$finalize = Read-LatestJson -Filter "finalize-after-urls-*.json"
+$finalize = if ($finalizeSkippedForDraft) {
+    [pscustomobject]@{
+        file = $null
+        data = $null
+    }
+}
+else {
+    Read-LatestJson -Filter "finalize-after-urls-*.json"
+}
 $readiness = Read-LatestJson -Filter "final-readiness-*.json"
 $officialRules = Read-LatestJson -Filter "official-rules-gate-*.json"
 $actionBoard = Read-LatestJson -Filter "final-action-board-*.json"
-$uploadBundleManifest = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
-    Sort-Object LastWriteTime -Descending |
-    ForEach-Object {
-        $candidate = Join-Path $_.FullName "manifest.json"
-        if (Test-Path $candidate) { Get-Item -LiteralPath $candidate }
-    } |
-    Select-Object -First 1
+$uploadBundleManifest = if ($finalizeSkippedForDraft) {
+    $null
+}
+else {
+    Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        ForEach-Object {
+            $candidate = Join-Path $_.FullName "manifest.json"
+            if (Test-Path $candidate) { Get-Item -LiteralPath $candidate }
+        } |
+        Select-Object -First 1
+}
 $uploadBundle = [pscustomobject]@{ file = $null; data = $null }
 if ($uploadBundleManifest) {
     $uploadBundle = [pscustomobject]@{
@@ -453,6 +476,7 @@ $result = [ordered]@{
         setGitHubSecrets = [bool]$SetGitHubSecrets
         runLocalRelease = [bool]$RunLocalRelease
         refreshAlibabaProof = [bool]$RefreshAlibabaProof
+        finalizeAfterUrlsSkippedForDraft = [bool]$finalizeSkippedForDraft
     }
     signals = $signals
     reports = [ordered]@{
@@ -488,6 +512,7 @@ $lines = @(
     "- Set GitHub secrets requested: $([bool]$SetGitHubSecrets)",
     "- Run local release requested: $([bool]$RunLocalRelease)",
     "- Refresh Alibaba proof requested: $([bool]$RefreshAlibabaProof)",
+    "- Finalize after URLs skipped for draft: $([bool]$finalizeSkippedForDraft)",
     "",
     "## Signals",
     "",
