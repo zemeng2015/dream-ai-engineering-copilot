@@ -95,7 +95,8 @@ def _check_declared_env_vars(config, diagnostics: list[ConfigDiagnostic]) -> Non
                             "A default base URL will be used if available."
                         ),
                         recommended_fix=(
-                            f"Set {env_name}, or hardcode llm.base_url in dream.yaml to avoid this warning."
+                            f"Set {env_name}, or hardcode llm.base_url in dream.yaml "
+                            "to avoid this warning."
                         ),
                     )
                 )
