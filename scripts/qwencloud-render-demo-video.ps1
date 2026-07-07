@@ -4,10 +4,27 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputVideo = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
-    [string]$WorkDir = "artifacts/qwencloud-proof/video-render"
+    [string]$WorkDir = "artifacts/qwencloud-proof/video-render",
+    [Parameter(Mandatory = $false)]
+    [string]$ReportDir = "artifacts/qwencloud-proof"
 )
 
 $ErrorActionPreference = "Stop"
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+
+function Get-FileSha256([string]$Path) {
+    if (-not (Test-Path $Path)) { return "" }
+    return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
+}
+
+function Get-AssetRecord([string]$Name, [string]$Path) {
+    return [ordered]@{
+        name = $Name
+        path = $Path
+        exists = Test-Path $Path
+        sha256 = Get-FileSha256 -Path $Path
+    }
+}
 
 if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
     throw "ffmpeg is required to render the final Devpost demo video."
@@ -22,6 +39,7 @@ if (-not (Test-Path $InputVideo)) {
 }
 
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
+New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 $intro = Join-Path $WorkDir "intro.mp4"
 $problem = Join-Path $WorkDir "problem.mp4"
 $architecture = Join-Path $WorkDir "architecture.mp4"
@@ -198,11 +216,63 @@ Set-Content -Path $concatFile -Value ($concatLines -join "`n") -Encoding ASCII
 & ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i $concatFile -c copy -movflags +faststart $OutputVideo
 if ($LASTEXITCODE -ne 0) { throw "Failed to concatenate final video." }
 
-$probeJson = & ffprobe -v error -show_entries format=duration,size -of json $OutputVideo
+$probeJson = & ffprobe -v error -show_entries format=duration,size,format_name -show_streams -of json $OutputVideo
 $probe = $probeJson | ConvertFrom-Json
 if ([double]$probe.format.duration -ge 180) {
     throw "Final demo video must stay under 180 seconds. Duration: $($probe.format.duration)"
 }
 
+$videoStream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
+$sourceAssets = @(
+    Get-AssetRecord -Name "input_walkthrough_video" -Path $InputVideo
+    Get-AssetRecord -Name "architecture_diagram" -Path $architecturePng
+    Get-AssetRecord -Name "memory_hub_screenshot" -Path $memoryHubPng
+    Get-AssetRecord -Name "knowledge_intake_screenshot" -Path $knowledgeIntakePng
+    Get-AssetRecord -Name "retrieval_trace_screenshot" -Path $retrievalTracePng
+    Get-AssetRecord -Name "jira_draft_screenshot" -Path $jiraDraftPng
+    Get-AssetRecord -Name "eval_audit_screenshot" -Path $evalAuditPng
+)
+
+$reportJson = Join-Path $ReportDir "demo-video-render-$timestamp.json"
+$reportMd = Join-Path $ReportDir "demo-video-render-$timestamp.md"
+$outputHash = Get-FileSha256 -Path $OutputVideo
+$result = [ordered]@{
+    generatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    outputVideo = $OutputVideo
+    outputSha256 = $outputHash
+    durationSeconds = [double]$probe.format.duration
+    sizeBytes = [int64]$probe.format.size
+    format = [string]$probe.format.format_name
+    width = if ($videoStream) { [int]$videoStream.width } else { 0 }
+    height = if ($videoStream) { [int]$videoStream.height } else { 0 }
+    codec = if ($videoStream) { [string]$videoStream.codec_name } else { "" }
+    underDevpostLimit = ([double]$probe.format.duration -lt 180)
+    sourceAssets = $sourceAssets
+    reportJson = $reportJson
+    reportMarkdown = $reportMd
+}
+Set-Content -Path $reportJson -Value ($result | ConvertTo-Json -Depth 12) -Encoding UTF8
+
+$lines = @(
+    "# Qwen Cloud Demo Video Render ($timestamp)",
+    "",
+    "- Output video: ``$OutputVideo``",
+    "- SHA256: ``$outputHash``",
+    "- Duration: $($result.durationSeconds) seconds",
+    "- Resolution: $($result.width)x$($result.height)",
+    "- Codec: $($result.codec)",
+    "- Devpost limit: $(if ($result.underDevpostLimit) { 'PASS (< 180 seconds)' } else { 'FAIL' })",
+    "",
+    "## Source Assets",
+    "",
+    "| Asset | Exists | SHA256 | Path |",
+    "|---|---:|---|---|"
+)
+foreach ($asset in $sourceAssets) {
+    $lines += "| $($asset.name) | $(if ($asset.exists) { 'yes' } else { 'no' }) | $($asset.sha256) | $($asset.path) |"
+}
+Set-Content -Path $reportMd -Value ($lines -join "`r`n") -Encoding UTF8
+
 Write-Host "Final Devpost demo video rendered: $OutputVideo"
 Write-Host $probeJson
+Write-Host "Render report: $reportMd"

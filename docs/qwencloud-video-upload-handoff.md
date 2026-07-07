@@ -17,6 +17,11 @@ scripts/qwencloud-render-demo-video.ps1
 scripts/qwencloud-video-upload-status.ps1 -AllowDraft
 ```
 
+The render command also writes `artifacts/qwencloud-proof/demo-video-render-*.md`
+and `.json` manifests with the final MP4 duration, resolution, codec, SHA256,
+and source asset hashes. Use the SHA256 to confirm the uploaded video came from
+the reviewed local file.
+
 Expected metadata:
 
 - Duration: under 3 minutes, target around 2:15 to 2:45.
