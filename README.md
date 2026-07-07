@@ -345,6 +345,11 @@ scripts/qwencloud-frontend-build-proof.ps1
 
 Open `http://localhost:4300/`.
 
+For the Qwen Cloud submission demo, open `http://localhost:4300/hackathon-demo`
+first. It gives judges a guided route through Memory Hub, Jira drafting,
+context trail, codebase evidence, audit/eval, and the remaining external proof
+gates.
+
 If local development ports are already occupied, build and serve the static
 bundle from `frontend/dist/frontend/browser` on any free local port.
 

@@ -1,0 +1,124 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page hackathon-demo-page">
+  <header class="demo-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Qwen Cloud Hackathon</span>
+      <h1>Hackathon Demo</h1>
+      <p>
+        A judge-facing route through DREAM's MemoryAgent story: approved memory,
+        source-grounded generation, context trail, codebase evidence, and audit proof.
+      </p>
+    </div>
+    <div class="hero-actions" aria-label="Hackathon demo shortcuts">
+      <a class="primary-button" routerLink="/memory">
+        <app-ui-icon name="database" />
+        Start Memory
+      </a>
+      <a class="secondary-button" routerLink="/requirements">Draft Jira</a>
+      <a class="secondary-button" routerLink="/audit">Audit Proof</a>
+    </div>
+  </header>
+
+  <section class="runtime-strip" aria-label="Qwen Cloud runtime proof">
+    @for (signal of runtimeSignals; track signal.label) {
+      <article class="runtime-signal" [attr.data-tone]="signal.tone">
+        <span>{{ signal.label }}</span>
+        <strong>{{ signal.value }}</strong>
+        <small>{{ signal.detail }}</small>
+      </article>
+    }
+  </section>
+
+  <section class="demo-layout" aria-label="Guided hackathon demo">
+    <article class="panel flow-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Five-minute Judge Flow</h2>
+          <p>Each step opens the live Angular surface used in the rendered demo video.</p>
+        </div>
+      </div>
+
+      <div class="flow-list">
+        @for (step of demoSteps; track step.order) {
+          <a class="flow-step" [routerLink]="step.route">
+            <span class="step-order">{{ step.order }}</span>
+            <span class="step-icon">
+              <app-ui-icon [name]="step.icon" />
+            </span>
+            <span class="step-copy">
+              <strong>{{ step.title }}</strong>
+              <span>{{ step.outcome }}</span>
+              <small>{{ step.evidence }}</small>
+            </span>
+            <span class="link-button">{{ step.routeLabel }}</span>
+          </a>
+        }
+      </div>
+    </article>
+
+    <aside class="panel evidence-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Submission Evidence</h2>
+          <p>Ready signals stay separate from action-time external requirements.</p>
+        </div>
+      </div>
+
+      <div class="evidence-list">
+        @for (item of submissionEvidence; track item.name) {
+          <article class="evidence-row" [attr.data-tone]="item.tone">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <span>{{ item.proof }}</span>
+            </div>
+            <em>{{ item.state }}</em>
+          </article>
+        }
+      </div>
+    </aside>
+  </section>
+
+  <section class="proof-layout" aria-label="Local proof commands and Devpost status">
+    <article class="panel proof-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Local Proof Commands</h2>
+          <p>Cross-platform checks used by CI and the final upload bundle.</p>
+        </div>
+      </div>
+      <div class="command-list">
+        @for (command of quickProofCommands; track command) {
+          <code>{{ command }}</code>
+        }
+      </div>
+    </article>
+
+    <article class="panel submit-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Final Submit Gate</h2>
+          <p>Current local evidence is reproducible; external proof remains explicit.</p>
+        </div>
+      </div>
+      <div class="submit-grid">
+        <div>
+          <span>Green local CI</span>
+          <strong>yes</strong>
+        </div>
+        <div>
+          <span>Video file rendered</span>
+          <strong>151s</strong>
+        </div>
+        <div>
+          <span>Backend URL</span>
+          <strong>pending</strong>
+        </div>
+        <div>
+          <span>Devpost packet</span>
+          <strong>draft</strong>
+        </div>
+      </div>
+    </article>
+  </section>
+</section>

@@ -23,6 +23,7 @@ describe('AppComponent', () => {
     const app = fixture.componentInstance;
     expect(app.navItems.map((item) => item.label)).toEqual([
       'Mission Control',
+      'Hackathon Demo',
       'Memory Hub',
       'Engineering Workbench',
       'Codebase Index',

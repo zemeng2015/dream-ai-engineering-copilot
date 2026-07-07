@@ -10,6 +10,9 @@ Engineering teams often ask AI for help, but existing context is scattered acros
 tickets, runbooks, code, PRs, incidents, and past decisions. The AI often
 forgets this history. DREAM turns this into durable, governed memory.
 
+Open `/hackathon-demo` first to frame the judge flow and show the Track 1,
+Qwen Cloud, local proof, and remaining external submission gates.
+
 ## 0:20 - 0:45 Architecture Proof
 
 Show `docs/assets/qwencloud-architecture.svg`, then open `/health`.
@@ -24,7 +27,7 @@ Call out:
 
 ## 0:45 - 1:20 Memory Intake and Review
 
-Open Memory Hub and show:
+Use the `/hackathon-demo` Start Memory entry, then show:
 
 - raw source document intake
 - parsed sections with source spans

@@ -21,6 +21,8 @@
 - Alibaba proof integrity gate that validates the capture JSON, screenshot,
   proof recording, and backend URL as one evidence chain.
 - Blog/social build journey draft for optional bonus eligibility.
+- Guided Angular `/hackathon-demo` route that links the judge flow, Qwen proof
+  signals, local proof commands, and remaining Devpost gates.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -37,8 +39,6 @@
 ## High-Leverage Stretch Work
 
 - Add a Qwen Cloud status chip to the Angular Settings or Trust Center page.
-- Add one guided "Hackathon Demo" route that chains memory intake, claim review,
-  requirement case, context trail, and audit/eval.
 - Add a tiny seeded demo artifact so judges can run the Track 1 flow without
   manually approving claims first.
 - Replace placeholders in `docs/qwencloud-build-journey-post.md` with deployed

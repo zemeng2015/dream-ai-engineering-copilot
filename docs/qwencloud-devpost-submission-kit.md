@@ -31,6 +31,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
   - `scripts/qwencloud-frontend-build-proof.ps1`
+  - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -69,7 +70,7 @@ caption SHA256, and Chrome file upload troubleshooting.
 
 Recommended 4-shot order:
 
-1. `/health` proof (Track, provider, model, region, proof file).
+1. `/hackathon-demo` guided route and `/health` proof (Track, provider, model, region, proof file).
 2. Memory Hub intake and claim review.
 3. Requirement case flow (prompt -> impact map -> brief -> Jira draft).
 4. Audit/eval and manual scoring.
@@ -82,6 +83,12 @@ Record a local Angular build proof for the demo UI:
 
 ```powershell
 scripts/qwencloud-frontend-build-proof.ps1
+```
+
+Open the judge-facing Angular route for the first screen of the demo:
+
+```text
+http://localhost:4300/hackathon-demo
 ```
 
 Run preflight before a real deployment:

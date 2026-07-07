@@ -147,6 +147,7 @@ Add-Criterion `
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-devpost-draft-payload.ps1",
+        "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts",
         "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-official-requirements-snapshot.md",
         "docs/qwencloud-devpost-submission-kit.md"

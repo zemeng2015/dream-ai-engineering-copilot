@@ -22,6 +22,7 @@ export class AppComponent {
 
   readonly navItems: NavItem[] = [
     { label: 'Mission Control', path: '/mission-control', icon: 'dashboard' },
+    { label: 'Hackathon Demo', path: '/hackathon-demo', icon: 'spark' },
     { label: 'Memory Hub', path: '/memory', icon: 'database' },
     { label: 'Engineering Workbench', path: '/workbench', icon: 'code' },
     { label: 'Codebase Index', path: '/codebase', icon: 'branch' },
