@@ -16,6 +16,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$ThumbnailPath = "docs/assets/qwencloud-video-thumbnail.png",
     [Parameter(Mandatory = $false)]
+    [string]$CaptionPath = "docs/qwencloud-demo-video-captions.srt",
+    [Parameter(Mandatory = $false)]
     [string]$Title = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence",
     [Parameter(Mandatory = $false)]
     [string]$Description = "",
@@ -104,12 +106,16 @@ $videoSha256 = Get-FileSha256 -Path $LocalVideoPath
 $thumbnailExists = Test-Path -LiteralPath $ThumbnailPath
 $resolvedThumbnailPath = if ($thumbnailExists) { (Resolve-Path -LiteralPath $ThumbnailPath).Path } else { $ThumbnailPath }
 $thumbnailSha256 = Get-FileSha256 -Path $ThumbnailPath
+$captionExists = Test-Path -LiteralPath $CaptionPath
+$resolvedCaptionPath = if ($captionExists) { (Resolve-Path -LiteralPath $CaptionPath).Path } else { $CaptionPath }
+$captionSha256 = Get-FileSha256 -Path $CaptionPath
 $metadata = Get-VideoMetadata -Path $LocalVideoPath
 $render = Get-LatestJson -Filter "demo-video-render-*.json"
 $urlCheck = Test-AcceptedVideoUrl -Url $DemoVideoUrl
 
 Add-Check -Name "local_video_exists" -Ok $fileExists -Details $(if ($fileExists) { $resolvedVideoPath } else { "missing: $LocalVideoPath" })
 Add-Check -Name "thumbnail_exists" -Ok $thumbnailExists -Details $(if ($thumbnailExists) { $resolvedThumbnailPath } else { "missing: $ThumbnailPath" }) -Required $false
+Add-Check -Name "caption_file_exists" -Ok $captionExists -Details $(if ($captionExists) { $resolvedCaptionPath } else { "missing: $CaptionPath" }) -Required $false
 if ($metadata) {
     Add-Check -Name "local_video_under_3_minutes" -Ok ($metadata.duration -gt 0 -and $metadata.duration -lt 180) -Details "duration=$($metadata.duration)"
     Add-Check -Name "local_video_720p" -Ok ($metadata.width -ge 1280 -and $metadata.height -ge 720) -Details "resolution=$($metadata.width)x$($metadata.height)"
@@ -158,6 +164,9 @@ $result = [ordered]@{
     thumbnailPath = $ThumbnailPath
     resolvedThumbnailPath = $resolvedThumbnailPath
     thumbnailSha256 = $thumbnailSha256
+    captionPath = $CaptionPath
+    resolvedCaptionPath = $resolvedCaptionPath
+    captionSha256 = $captionSha256
     renderManifestJson = if ($render) { $render.path } else { "" }
     demoVideoUrl = $DemoVideoUrl
     title = $Title
@@ -183,6 +192,8 @@ $lines = @(
     "- Local video SHA256: ``$videoSha256``",
     "- Thumbnail: ``$resolvedThumbnailPath``",
     "- Thumbnail SHA256: ``$thumbnailSha256``",
+    "- Captions: ``$resolvedCaptionPath``",
+    "- Captions SHA256: ``$captionSha256``",
     "- Public video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "",
     "## Upload Copy",
@@ -211,10 +222,17 @@ $lines = @(
     $resolvedThumbnailPath,
     '```',
     "",
+    "Captions/subtitles:",
+    "",
+    '```text',
+    $resolvedCaptionPath,
+    '```',
+    "",
     "## Confirmation Boundary",
     "",
     "- Selecting the MP4 in YouTube/Vimeo/Facebook Video transmits the local file to that service.",
     "- Selecting the custom thumbnail transmits the thumbnail image to that service.",
+    "- Selecting the caption/subtitle file transmits the caption text to that service.",
     "- Confirm the destination account/channel and visibility at action time before selecting the file.",
     "- Do not paste the resulting URL into Devpost until the public page is reachable without private login.",
     "",

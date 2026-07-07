@@ -406,6 +406,8 @@ foreach ($path in @(
     "docs/assets/qwencloud-architecture.png",
     "docs/assets/qwencloud-video-thumbnail.svg",
     "docs/assets/qwencloud-video-thumbnail.png",
+    "docs/qwencloud-demo-video-captions.srt",
+    "docs/qwencloud-demo-video-transcript.md",
     "docs/qwencloud-video-upload-handoff.md",
     "scripts/qwencloud-frontend-build-proof.ps1",
     "scripts/qwencloud-render-demo-video.ps1",

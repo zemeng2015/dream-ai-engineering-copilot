@@ -1,0 +1,63 @@
+1
+00:00:00,000 --> 00:00:08,000
+DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence.
+
+2
+00:00:08,000 --> 00:00:20,000
+Engineering context is scattered across tickets, runbooks, code, incidents, PRs, and past decisions.
+
+3
+00:00:20,000 --> 00:00:34,000
+The architecture uses Qwen Cloud generation, governed memory, FastAPI, and Alibaba Function Compute packaging.
+
+4
+00:00:34,000 --> 00:00:43,000
+Memory Hub makes source intake, parsed sections, review state, and evidence coverage visible.
+
+5
+00:00:43,000 --> 00:00:52,000
+Knowledge intake promotes reviewed source cards and quarantines stale or unsafe claims.
+
+6
+00:00:52,000 --> 00:01:01,000
+Retrieval traces show why docs, incidents, code, tests, Jira items, and PRs were selected.
+
+7
+00:01:01,000 --> 00:01:10,000
+DREAM turns retrieved memory into questions, impact maps, engineering briefs, and Jira-ready drafts.
+
+8
+00:01:10,000 --> 00:01:19,000
+Audit and evaluation loops capture scores, source coverage, warnings, and human ratings.
+
+9
+00:01:19,000 --> 00:01:25,000
+DREAM turns scattered engineering context into persistent memory.
+
+10
+00:01:25,000 --> 00:01:32,000
+Memory Hub keeps source intake, parsed sections, review state, and evidence visible.
+
+11
+00:01:32,000 --> 00:01:40,000
+Knowledge intake promotes only reviewed source cards into reusable memory.
+
+12
+00:01:40,000 --> 00:01:49,000
+Retrieval paths explain why docs, incidents, code, tests, Jira, and PRs were selected.
+
+13
+00:01:49,000 --> 00:01:58,000
+Requirement workflows turn retrieved memory into review-ready Jira drafts.
+
+14
+00:01:58,000 --> 00:02:08,000
+Runtime settings expose backend mode before local or Alibaba Cloud execution.
+
+15
+00:02:08,000 --> 00:02:21,000
+The proof chain validates Qwen config, Alibaba deployment files, CI, video, backend health, and final readiness gates.
+
+16
+00:02:21,000 --> 00:02:31,000
+DREAM remembers source truth, retrieves evidence, generates with Qwen Cloud, and proves deployment on Alibaba Cloud.

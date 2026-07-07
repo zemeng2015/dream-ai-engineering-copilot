@@ -137,6 +137,8 @@ Add-Criterion `
         "docs/assets/qwencloud-video-thumbnail.svg",
         "docs/assets/qwencloud-video-thumbnail.png",
         "docs/qwencloud-demo-video-script.md",
+        "docs/qwencloud-demo-video-captions.srt",
+        "docs/qwencloud-demo-video-transcript.md",
         "scripts/qwencloud-frontend-build-proof.ps1",
         "scripts/qwencloud-render-demo-video.ps1",
         "scripts/qwencloud-export-video-thumbnail.ps1",

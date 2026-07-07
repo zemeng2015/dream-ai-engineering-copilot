@@ -50,6 +50,20 @@ scripts/qwencloud-export-video-thumbnail.ps1
 The publication handoff includes the thumbnail path and SHA256 next to the MP4
 hash, so the selected upload assets can be checked against the final bundle.
 
+## Captions
+
+Use this optional English subtitle file when the upload platform asks for
+captions or subtitles:
+
+`docs/qwencloud-demo-video-captions.srt`
+
+The readable transcript lives at:
+
+`docs/qwencloud-demo-video-transcript.md`
+
+The publication handoff includes the caption file path and SHA256 next to the
+MP4 and thumbnail hashes.
+
 ## Upload Target
 
 Preferred platform: YouTube.
@@ -65,9 +79,9 @@ Acceptable Devpost public URL platforms:
 Set visibility to public or another Devpost-accessible mode that does not
 require a private login, password, or invitation.
 
-Selecting the MP4 or custom thumbnail in the upload UI transmits that local
-file to the chosen third-party video platform. Confirm the account/channel and
-visibility at action time before selecting either file.
+Selecting the MP4, custom thumbnail, or caption file in the upload UI transmits
+that local file to the chosen third-party video platform. Confirm the
+account/channel and visibility at action time before selecting any file.
 
 ## Copy Fields
 

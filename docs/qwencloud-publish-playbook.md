@@ -8,6 +8,8 @@
 - Video length target: `2:45` to `3:00`
 - Video upload handoff: `docs/qwencloud-video-upload-handoff.md`
 - Video thumbnail: `docs/assets/qwencloud-video-thumbnail.png`
+- Video captions: `docs/qwencloud-demo-video-captions.srt`
+- Video transcript: `docs/qwencloud-demo-video-transcript.md`
 - Architecture file: `docs/assets/qwencloud-architecture.png` for Devpost upload
 - Alibaba proof screenshot: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Alibaba proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`

@@ -292,6 +292,8 @@ $requiredPaths = @(
     "docs/assets/qwencloud-architecture.png",
     "docs/assets/qwencloud-video-thumbnail.svg",
     "docs/assets/qwencloud-video-thumbnail.png",
+    "docs/qwencloud-demo-video-captions.srt",
+    "docs/qwencloud-demo-video-transcript.md",
     "docs/qwencloud-build-journey-post.md",
     "deploy/alibaba/serverless-devs.yaml",
     "deploy/alibaba/README.md",

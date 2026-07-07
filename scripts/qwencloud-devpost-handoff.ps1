@@ -96,6 +96,9 @@ function Html($Value) {
 $uploadItems = @(
     Get-UploadItem -Name "architecture_diagram" -Path $ArchitectureUploadPath
     Get-UploadItem -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
+    Get-UploadItem -Name "demo_video_thumbnail" -Path "docs/assets/qwencloud-video-thumbnail.png" -Required $false
+    Get-UploadItem -Name "demo_video_captions_srt" -Path "docs/qwencloud-demo-video-captions.srt" -Required $false
+    Get-UploadItem -Name "demo_video_transcript" -Path "docs/qwencloud-demo-video-transcript.md" -Required $false
     Get-UploadItem -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
     Get-UploadItem -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
     Get-UploadItem -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false

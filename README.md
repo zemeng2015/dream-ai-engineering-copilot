@@ -161,6 +161,8 @@ Key submission artifacts:
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)
 - [Qwen Cloud architecture](docs/qwencloud-architecture.md)
 - [Qwen Cloud demo video script](docs/qwencloud-demo-video-script.md)
+- [Qwen Cloud demo video captions](docs/qwencloud-demo-video-captions.srt)
+- [Qwen Cloud demo video transcript](docs/qwencloud-demo-video-transcript.md)
 - [Qwen Cloud demo video upload handoff](docs/qwencloud-video-upload-handoff.md)
 - [Qwen Cloud submission kit](docs/qwencloud-devpost-submission-kit.md)
 - [Qwen Cloud contest launch checklist](docs/qwencloud-live-checklist.md)

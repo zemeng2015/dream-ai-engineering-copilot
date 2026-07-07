@@ -7,6 +7,8 @@ param(
         "docs/assets/qwencloud-video-thumbnail.svg",
         "docs/assets/qwencloud-video-thumbnail.png",
         "docs/qwencloud-demo-video-script.md",
+        "docs/qwencloud-demo-video-captions.srt",
+        "docs/qwencloud-demo-video-transcript.md",
         "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-build-journey-post.md",
         "docs/qwencloud-devpost-form-fields.md",
