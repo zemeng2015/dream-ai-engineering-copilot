@@ -64,12 +64,13 @@ scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
   model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
-- Capture the required Devpost screenshot showing the Alibaba Cloud deployment
-  workbench or deployed `/health` proof and save it as:
+- Capture the required Devpost screenshot from the deployed `/health` proof:
 
 ```powershell
-artifacts/qwencloud-proof/alibaba-deployment-screenshot.png
+scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 ```
+
+This writes `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 
 ## Step 4 - Demo video (about 1 minute)
 

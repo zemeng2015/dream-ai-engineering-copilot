@@ -49,3 +49,12 @@ Validate the deployed endpoint quickly:
 ```powershell
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl "https://<function-compute-endpoint>"
 ```
+
+Generate the Devpost-required Alibaba deployment screenshot:
+
+```powershell
+scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
+```
+
+The screenshot is written to
+`artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.

@@ -91,6 +91,7 @@ hackathon.
 - Alibaba Cloud deployment proof code file: `https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs.yaml`
 - Architecture diagram upload: `docs/assets/qwencloud-architecture.png`
 - Alibaba deployment screenshot upload: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
+  generated with `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "<deployed-backend-url>"`
 - Blog/social journey URL: optional; use a published copy of `docs/qwencloud-build-journey-post.md` if available
 - AI tools leveraged: `Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.`
 - Learning level: `Significant`

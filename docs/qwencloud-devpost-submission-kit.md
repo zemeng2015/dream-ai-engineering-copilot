@@ -14,6 +14,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-architecture.md`
   - `docs/qwencloud-demo-video-script.md`
   - `docs/assets/qwencloud-architecture.png`
+  - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -64,6 +65,8 @@ scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 Required proof artifacts:
 
 - FC build/deploy success output or screenshot.
+- Devpost screenshot from:
+  `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"`
 - `curl` or browser result from `/health`.
 - One successful `POST /requirements/draft` response.
 
@@ -103,7 +106,9 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 ## 6) Final 30-minute Submission Run
 
 1. Fill in Devpost fields (project, description, links).
-2. Attach `docs/assets/qwencloud-architecture.png` and under-3-minute video.
+2. Attach `docs/assets/qwencloud-architecture.png`,
+   `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, and the
+   under-3-minute video.
 3. Add public repo link and Apache-2.0 license.
 4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs.
 5. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
@@ -127,4 +132,5 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-proof.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 - `scripts/qwencloud-hackathon-submission-packet.ps1`
+- `scripts/qwencloud-capture-alibaba-proof.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`

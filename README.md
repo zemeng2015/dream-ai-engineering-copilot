@@ -172,6 +172,12 @@ Run deployment preflight before pushing to Alibaba Cloud:
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 
+After deployment, capture the Devpost-ready Alibaba proof screenshot:
+
+```powershell
+scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
+```
+
 Regenerate the PNG architecture upload asset:
 
 ```powershell

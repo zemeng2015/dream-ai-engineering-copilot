@@ -7,6 +7,7 @@
 - Video file name: `DREAM-Qwen-Cloud-MemoryAgent-Demo.mp4`
 - Video length target: `2:45` to `3:00`
 - Architecture file: `docs/assets/qwencloud-architecture.png` for Devpost upload
+- Alibaba proof screenshot: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Source architecture SVG: `docs/assets/qwencloud-architecture.svg`
 - Demo proof file: `deploy/alibaba/serverless-devs.yaml`
 - Blog/social draft: `docs/qwencloud-build-journey-post.md`
@@ -29,6 +30,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
@@ -50,6 +52,9 @@ repo/docs presence, public repo license visibility checks, and endpoint checks.
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
 and local container smoke before the image is pushed to Container Registry.
 
+`qwencloud-capture-alibaba-proof.ps1` verifies the deployed `/health` response
+and renders the Devpost-required Alibaba deployment screenshot.
+
 `qwencloud-export-architecture-png.ps1` regenerates the Devpost-friendly PNG
 architecture upload asset from the source SVG.
 
@@ -63,8 +68,9 @@ generates the copy/paste Devpost packet with testing instructions.
 3. Description: copy from `docs/qwencloud-devpost-form-fields.md`
 4. Add repo link and Apache-2.0 link
 5. Upload architecture image
-6. Upload video (link if supported by platform)
-7. Generate the final submission packet and copy testing instructions
-8. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
-9. Add optional build journey link if published
-10. Submit and immediately open public project page to confirm links are visible
+6. Upload Alibaba deployment screenshot
+7. Upload video (link if supported by platform)
+8. Generate the final submission packet and copy testing instructions
+9. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
+10. Add optional build journey link if published
+11. Submit and immediately open public project page to confirm links are visible

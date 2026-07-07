@@ -158,6 +158,7 @@ $requiredPaths = @(
     "deploy/alibaba/serverless-devs.yaml",
     "deploy/alibaba/README.md",
     "examples/config/dream.qwen.yaml",
+    "scripts/qwencloud-capture-alibaba-proof.ps1",
     "scripts/qwencloud-export-architecture-png.ps1",
     "scripts/qwencloud-deploy-preflight.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",

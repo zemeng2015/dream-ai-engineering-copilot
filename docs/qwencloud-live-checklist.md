@@ -9,6 +9,7 @@
 - [ ] `LICENSE` visible as Apache-2.0.
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
+- [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 
 ## Runbook (submission window)
@@ -56,6 +57,10 @@ Invoke-RestMethod -Method Post `
 - Build and push image to `$env:ALIBABA_CLOUD_CONTAINER_IMAGE`.
 - Run Serverless Devs deployment using `deploy/alibaba/serverless-devs.yaml`.
 - Re-test deployed URL `.../health`.
+- Capture Devpost proof screenshot:
+  ```powershell
+  scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl <deployed-url>
+  ```
 
 6. Save reproducible proof bundle:
 
@@ -88,6 +93,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - GitHub link
 - Apache 2.0 link
 - Architecture image
+- Alibaba deployment screenshot
 - Demo video link
 - Proof files / deployment proof
 - 1-2 sentence demo result summary from live run
