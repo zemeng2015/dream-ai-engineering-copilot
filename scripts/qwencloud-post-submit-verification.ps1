@@ -12,6 +12,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
+    [string]$FinalBundleManifest = "",
+    [Parameter(Mandatory = $false)]
     [string]$ExpectedTitle = "DREAM",
     [Parameter(Mandatory = $false)]
     [string]$ExpectedTrack = "Track 1: MemoryAgent",
@@ -37,6 +39,24 @@ function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required =
         ok = $Ok
         required = $Required
         details = $Details
+    }
+}
+
+function Has-Command([string]$Name) {
+    return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
+}
+
+function Invoke-GitText([string[]]$Arguments) {
+    try {
+        $output = & git @Arguments 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return ""
+        }
+
+        return (($output | Out-String).Trim())
+    }
+    catch {
+        return ""
     }
 }
 
@@ -106,6 +126,51 @@ function Get-PngDimensions([string]$Path) {
     }
 }
 
+function Test-HeadCiSuccess {
+    if (-not (Has-Command "gh")) {
+        return [pscustomobject]@{ ok = $false; details = "gh command missing" }
+    }
+
+    try {
+        $head = (Invoke-GitText -Arguments @("rev-parse", "HEAD"))
+        if ([string]::IsNullOrWhiteSpace($head)) {
+            return [pscustomobject]@{ ok = $false; details = "git HEAD unavailable" }
+        }
+
+        $runsJson = gh run list --branch main --limit 10 --json headSha,status,conclusion,url,displayTitle
+        $runs = $runsJson | ConvertFrom-Json
+        $run = @($runs | Where-Object { $_.headSha -eq $head } | Select-Object -First 1)
+        if (-not $run) {
+            return [pscustomobject]@{ ok = $false; details = "no CI run found for HEAD $head" }
+        }
+
+        return [pscustomobject]@{
+            ok = ($run.status -eq "completed" -and $run.conclusion -eq "success")
+            details = "$($run.displayTitle); status=$($run.status); conclusion=$($run.conclusion); $($run.url)"
+        }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; details = $_.Exception.Message }
+    }
+}
+
+function Get-LatestFinalBundleManifest([string]$ExplicitPath) {
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
+        return $ExplicitPath
+    }
+
+    $candidate = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        ForEach-Object {
+            $manifest = Join-Path $_.FullName "manifest.json"
+            if (Test-Path -LiteralPath $manifest) { Get-Item -LiteralPath $manifest }
+        } |
+        Select-Object -First 1
+
+    if ($candidate) { return $candidate.FullName }
+    return ""
+}
+
 function Get-VideoMetadata([string]$Path) {
     if (-not (Test-Path $Path)) { return $null }
     if (-not (Get-Command "ffprobe" -ErrorAction SilentlyContinue)) { return $null }
@@ -120,6 +185,56 @@ function Get-VideoMetadata([string]$Path) {
         width = if ($stream) { [int]$stream.width } else { 0 }
         height = if ($stream) { [int]$stream.height } else { 0 }
         codec = if ($stream) { [string]$stream.codec_name } else { "" }
+    }
+}
+
+$headCommit = Invoke-GitText -Arguments @("rev-parse", "HEAD")
+$headCi = Test-HeadCiSuccess
+Add-Check -Name "latest_head_ci_success" -Ok $headCi.ok -Details $headCi.details
+
+$bundleManifestPath = Get-LatestFinalBundleManifest -ExplicitPath $FinalBundleManifest
+Add-Check -Name "final_bundle_manifest_present" -Ok (-not [string]::IsNullOrWhiteSpace($bundleManifestPath) -and (Test-Path -LiteralPath $bundleManifestPath)) -Details $(if ($bundleManifestPath) { $bundleManifestPath } else { "missing final-upload-bundle-*/manifest.json" })
+if (-not [string]::IsNullOrWhiteSpace($bundleManifestPath) -and (Test-Path -LiteralPath $bundleManifestPath)) {
+    try {
+        $bundle = Get-Content -LiteralPath $bundleManifestPath -Raw | ConvertFrom-Json
+        $bundleZipPath = [string]$bundle.zipPath
+        Add-Check -Name "final_bundle_ready_for_upload" -Ok ([bool]$bundle.readyForUpload) -Details "readyForUpload=$($bundle.readyForUpload)"
+        Add-Check -Name "final_bundle_git_commit_matches_head" -Ok (-not [string]::IsNullOrWhiteSpace($headCommit) -and [string]$bundle.gitCommit -eq $headCommit) -Details "bundle=$($bundle.gitCommit); head=$headCommit"
+        Add-Check -Name "final_bundle_worktree_clean" -Ok ([bool]$bundle.gitWorktreeClean) -Details "gitWorktreeClean=$($bundle.gitWorktreeClean)"
+        Add-Check -Name "final_bundle_remote_synced" -Ok ([bool]$bundle.gitRemoteSynced) -Details "gitRemoteSynced=$($bundle.gitRemoteSynced)"
+        Add-Check -Name "final_bundle_zip_exists" -Ok (-not [string]::IsNullOrWhiteSpace($bundleZipPath) -and (Test-Path -LiteralPath $bundleZipPath)) -Details $(if ($bundleZipPath) { $bundleZipPath } else { "missing zipPath" })
+
+        $itemNames = @($bundle.items | ForEach-Object { [string]$_.name })
+        foreach ($name in @(
+            "devpost_packet_markdown",
+            "devpost_handoff_html",
+            "official_rules_gate_json",
+            "local_demo_video_for_public_upload",
+            "alibaba_deployment_screenshot",
+            "alibaba_backend_proof_recording"
+        )) {
+            Add-Check -Name "final_bundle_item.$name" -Ok ($itemNames -contains $name) -Details $(if ($itemNames -contains $name) { "present" } else { "missing" })
+        }
+    }
+    catch {
+        Add-Check -Name "final_bundle_manifest_parseable" -Ok $false -Details $_.Exception.Message
+    }
+}
+else {
+    foreach ($name in @(
+        "final_bundle_ready_for_upload",
+        "final_bundle_git_commit_matches_head",
+        "final_bundle_worktree_clean",
+        "final_bundle_remote_synced",
+        "final_bundle_zip_exists",
+        "final_bundle_item.devpost_packet_markdown",
+        "final_bundle_item.devpost_handoff_html",
+        "final_bundle_item.official_rules_gate_json",
+        "final_bundle_item.local_demo_video_for_public_upload",
+        "final_bundle_item.alibaba_deployment_screenshot",
+        "final_bundle_item.alibaba_backend_proof_recording"
+    )) {
+        Add-Check -Name $name -Ok $false -Details "final bundle manifest missing"
     }
 }
 
@@ -225,6 +340,7 @@ $result = [ordered]@{
     repoUrl = $RepoUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
+    finalBundleManifest = $bundleManifestPath
     alibabaScreenshotPath = $AlibabaScreenshotPath
     alibabaProofVideoPath = $AlibabaProofVideoPath
     reportJson = $reportJson
@@ -241,6 +357,7 @@ $lines = @(
     "- Devpost public project URL: $(if ($DevpostProjectUrl) { $DevpostProjectUrl } else { '<missing>' })",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
+    "- Final bundle manifest: $(if ($bundleManifestPath) { $bundleManifestPath } else { '<missing>' })",
     "- Repo URL: $RepoUrl",
     "- Alibaba screenshot: $AlibabaScreenshotPath",
     "- Alibaba proof video: $AlibabaProofVideoPath",
@@ -272,7 +389,7 @@ $lines += @(
     "## Final Evidence Command",
     "",
     '```powershell',
-    'scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+    'scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -FinalBundleManifest "artifacts/qwencloud-proof/final-upload-bundle-<timestamp>/manifest.json"',
     '```'
 )
 Set-Content -Path $reportMd -Value ($lines -join "`r`n") -Encoding UTF8
