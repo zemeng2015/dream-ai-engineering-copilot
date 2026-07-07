@@ -14,6 +14,10 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$FinalBundleManifest = "",
     [Parameter(Mandatory = $false)]
+    [string]$RunsJsonPath = "",
+    [Parameter(Mandatory = $false)]
+    [string]$GitHead = "",
+    [Parameter(Mandatory = $false)]
     [string]$ExpectedTitle = "DREAM",
     [Parameter(Mandatory = $false)]
     [string]$ExpectedTrack = "Track 1: MemoryAgent",
@@ -59,6 +63,34 @@ function Invoke-GitText([string[]]$Arguments) {
     catch {
         return ""
     }
+}
+
+function Read-JsonPath([string]$Path) {
+    return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+}
+
+function ConvertTo-FlatArray([AllowNull()][object]$Value) {
+    $items = @()
+    foreach ($item in @($Value)) {
+        if ($item -is [System.Array]) {
+            foreach ($nestedItem in $item) {
+                $items += $nestedItem
+            }
+        }
+        else {
+            $items += $item
+        }
+    }
+
+    return $items
+}
+
+function Get-LocalHead {
+    if (-not [string]::IsNullOrWhiteSpace($GitHead)) {
+        return $GitHead
+    }
+
+    return Invoke-GitText -Arguments @("rev-parse", "HEAD")
 }
 
 function Is-HttpUrl([string]$Url) {
@@ -132,26 +164,46 @@ function Get-PngDimensions([string]$Path) {
 }
 
 function Test-HeadCiSuccess {
-    if (-not (Has-Command "gh")) {
+    if ([string]::IsNullOrWhiteSpace($RunsJsonPath) -and -not (Has-Command "gh")) {
         return [pscustomobject]@{ ok = $false; details = "gh command missing" }
     }
 
     try {
-        $head = (Invoke-GitText -Arguments @("rev-parse", "HEAD"))
+        $head = Get-LocalHead
         if ([string]::IsNullOrWhiteSpace($head)) {
             return [pscustomobject]@{ ok = $false; details = "git HEAD unavailable" }
         }
 
-        $runsJson = gh run list --branch main --limit 10 --json headSha,status,conclusion,url,displayTitle
-        $runs = $runsJson | ConvertFrom-Json
-        $run = @($runs | Where-Object { $_.headSha -eq $head } | Select-Object -First 1)
+        $runs = if (-not [string]::IsNullOrWhiteSpace($RunsJsonPath)) {
+            ConvertTo-FlatArray -Value (Read-JsonPath -Path $RunsJsonPath)
+        }
+        else {
+            $runsJson = gh run list --branch main --limit 10 --json databaseId,headSha,status,conclusion,url,displayTitle,createdAt,updatedAt
+            ConvertTo-FlatArray -Value ($runsJson | ConvertFrom-Json)
+        }
+        $matchingRuns = @(
+            $runs |
+                Where-Object { $_.headSha -eq $head } |
+                Sort-Object -Property @(
+                    @{ Expression = {
+                            $runDate = if ($_.createdAt) { $_.createdAt } elseif ($_.updatedAt) { $_.updatedAt } else { "" }
+                            try { [DateTimeOffset]::Parse([string]$runDate).UtcDateTime } catch { [datetime]::MinValue }
+                        }; Descending = $true
+                    },
+                    @{ Expression = {
+                            try { [int64]$_.databaseId } catch { 0 }
+                        }; Descending = $true
+                    }
+                )
+        )
+        $run = if ($matchingRuns.Count -gt 0) { $matchingRuns[0] } else { $null }
         if (-not $run) {
             return [pscustomobject]@{ ok = $false; details = "no CI run found for HEAD $head" }
         }
 
         return [pscustomobject]@{
             ok = ($run.status -eq "completed" -and $run.conclusion -eq "success")
-            details = "$($run.displayTitle); status=$($run.status); conclusion=$($run.conclusion); $($run.url)"
+            details = "run=$($run.databaseId); $($run.displayTitle); status=$($run.status); conclusion=$($run.conclusion); $($run.url)"
         }
     }
     catch {
@@ -193,7 +245,7 @@ function Get-VideoMetadata([string]$Path) {
     }
 }
 
-$headCommit = Invoke-GitText -Arguments @("rev-parse", "HEAD")
+$headCommit = Get-LocalHead
 $headCi = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $headCi.ok -Details $headCi.details
 
