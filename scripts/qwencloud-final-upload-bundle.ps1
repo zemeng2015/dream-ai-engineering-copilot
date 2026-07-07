@@ -53,7 +53,7 @@ function Get-FileSha256([string]$Path) {
 }
 
 function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
-    $exists = Test-Path $Path
+    $exists = (-not [string]::IsNullOrWhiteSpace($Path)) -and (Test-Path $Path)
     $dest = $null
     $details = ""
     $sourceSha256 = ""
@@ -70,7 +70,7 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
         $details = "copied=$dest; size=$size; sha256=$sourceSha256"
     }
     else {
-        $details = "missing=$Path"
+        $details = "missing=$(if ([string]::IsNullOrWhiteSpace($Path)) { '<empty path>' } else { $Path })"
         if ($Required) {
             $script:missing += $Name
         }
@@ -138,6 +138,60 @@ function Invoke-GitText([string[]]$Arguments) {
     }
     catch {
         return ""
+    }
+}
+
+function Invoke-GitHubCiProof {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-github-ci-proof.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-Branch", "main"
+    )
+    if ($AllowDraft) { $args += "-AllowDraft" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-github-ci-proof-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-github-ci-proof-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "GitHub CI proof generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            failures = @("github_ci_proof_generation_failed")
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            failures = @("github_ci_proof_json_missing")
+            details = "stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($data.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForGitHubCiProof
+        failures = $failedRequired
+        details = if ($data.readyForGitHubCiProof) { "READY: $($json.FullName)" } else { "DRAFT; missing=$($failedRequired -join ', ')" }
     }
 }
 
@@ -485,6 +539,7 @@ function Invoke-VideoPublicationHandoff {
     }
 }
 
+$githubCiProof = Invoke-GitHubCiProof
 $videoPublicationHandoff = Invoke-VideoPublicationHandoff
 $packet = Invoke-Packet
 $handoff = Invoke-Handoff
@@ -495,6 +550,7 @@ $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+Add-ExternalRequirement -Name "github_ci_proof_ready" -Ok $githubCiProof.ready -Details $githubCiProof.details
 Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
@@ -543,6 +599,9 @@ Add-LatestItem -Name "latest_frontend_test_stderr" -Filter "frontend-npm-test-*.
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
 Add-Item -Name "final_sprint_script" -Path "scripts/qwencloud-final-sprint.ps1" -Required $false
 Add-Item -Name "final_external_handoff_script" -Path "scripts/qwencloud-final-external-handoff.ps1" -Required $false
+Add-Item -Name "github_ci_proof_script" -Path "scripts/qwencloud-github-ci-proof.ps1" -Required $false
+Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
+Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
 Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
 Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"

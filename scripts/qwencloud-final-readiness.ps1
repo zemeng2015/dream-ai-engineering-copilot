@@ -187,6 +187,49 @@ function Test-HeadCiSuccess {
     }
 }
 
+function Invoke-GitHubCiProof {
+    if (-not (Test-Path "scripts/qwencloud-github-ci-proof.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-github-ci-proof.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-github-ci-proof.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-Branch", "main",
+        "-AllowDraft"
+    )
+
+    $stdout = Join-Path $OutputDir "final-readiness-github-ci-proof-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-github-ci-proof-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "github CI proof JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $proof = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($proof.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$proof.readyForGitHubCiProof
+        details = if ($proof.readyForGitHubCiProof) { "GitHub CI proof READY: $($newest.FullName)" } else { "GitHub CI proof DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Test-RepoPublication([string]$Url) {
     if (-not (Has-Command "gh")) {
         return [pscustomobject]@{
@@ -378,6 +421,9 @@ catch {
 $ci = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $ci.ok -Details $ci.details
 
+$githubCiProof = Invoke-GitHubCiProof
+Add-Check -Name "github_ci_proof_ready" -Ok $githubCiProof.ok -Details $githubCiProof.details
+
 $repoPublication = Test-RepoPublication -Url $RepoUrl
 Add-Check -Name "repo_public" -Ok $repoPublication.publicOk -Details $repoPublication.details
 Add-Check -Name "repo_license_apache_2_0" -Ok $repoPublication.licenseOk -Details $repoPublication.details
@@ -431,6 +477,7 @@ foreach ($path in @(
     "scripts/qwencloud-final-action-board.ps1",
     "scripts/qwencloud-post-submit-verification.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
+    "scripts/qwencloud-github-ci-proof.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",
     "docs/qwencloud-testing-and-rights-notes.md",
