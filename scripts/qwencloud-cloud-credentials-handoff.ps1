@@ -19,8 +19,19 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-env.ps1")
 $importedEnvNames = @()
+$envFileExists = $true
+$envFileImportIssue = ""
 if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
-    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+    $envFileExists = Test-Path -LiteralPath $EnvFile
+    if ($envFileExists) {
+        $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+    }
+    elseif ($AllowDraft) {
+        $envFileImportIssue = "missing env file: $EnvFile"
+    }
+    else {
+        throw "Env file not found: $EnvFile"
+    }
 }
 
 $handoffJson = Join-Path $OutputDir "cloud-credentials-handoff-$timestamp.json"
@@ -93,6 +104,9 @@ $envChecks = @(
 )
 
 $blockers = @()
+if (-not $envFileExists) {
+    $blockers += "env_file_missing"
+}
 if (-not $sAccess.ok) {
     $blockers += "serverless_devs_default_access"
 }
@@ -136,6 +150,8 @@ $handoff = [ordered]@{
     readyForCloudRelease = $ready
     blockers = $blockers
     serverlessDevsDefaultAccess = $sAccess
+    envFileExists = $envFileExists
+    envFileImportIssue = $envFileImportIssue
     envChecks = $envChecks
     region = $Region
     containerImage = $ContainerImage
@@ -156,7 +172,7 @@ $md = @(
     "- Region: $Region",
     "- Container image: $ContainerImage",
     "- Registry host: $registryHost",
-    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
+    "- Env file imported: $(if ($EnvFile -and $envFileExists) { $EnvFile } elseif ($EnvFile) { '<missing: ' + $EnvFile + '>' } else { '<none>' })",
     "- Template: $handoffPs1",
     "",
     "## Safety",
@@ -170,6 +186,7 @@ $md = @(
     "",
     "| Check | Required | Result | Details |",
     "|---|---:|---:|---|",
+    "| env_file | $(if ($EnvFile) { 'yes' } else { 'no' }) | $(if ($envFileExists) { 'PASS' } elseif ($EnvFile) { 'FAIL' } else { 'WARN' }) | $(if ($EnvFile) { if ($envFileExists) { 'found' } else { $envFileImportIssue } } else { 'not requested' }) |",
     "| serverless_devs_default_access | yes | $(if ($sAccess.ok) { 'PASS' } else { 'FAIL' }) | $($sAccess.details -replace '\|', '/') |"
 )
 foreach ($check in $envChecks) {
