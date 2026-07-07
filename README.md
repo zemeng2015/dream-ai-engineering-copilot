@@ -238,6 +238,12 @@ Check local video readiness and the public video URL after upload:
 scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
+For CI/release runners that only validate the public video URL:
+
+```powershell
+scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "https://www.youtube.com/..." -SkipLocalVideoChecks
+```
+
 Generate the final copy/paste Devpost packet after the public video and deployed
 backend URLs are ready:
 

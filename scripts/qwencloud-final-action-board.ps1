@@ -13,6 +13,7 @@ param(
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [switch]$SkipExternalUrlChecks,
     [switch]$SkipGitHubSecrets,
+    [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraft
 )
 
@@ -104,6 +105,7 @@ $videoArgs = @(
 )
 if ($DemoVideoUrl) { $videoArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($SkipExternalUrlChecks) { $videoArgs += "-SkipExternalUrlChecks" }
+if ($SkipLocalVideoChecks) { $videoArgs += "-SkipLocalVideoChecks" }
 Invoke-BoardStep -Name "video-upload-status" -Arguments $videoArgs
 
 $cloudArgs = @(
@@ -233,6 +235,7 @@ $result = [ordered]@{
         cloudReady = $cloudReady
         githubSecretsReady = $secretsReady
         githubSecretsSkipped = [bool]$SkipGitHubSecrets
+        localVideoChecksSkipped = [bool]$SkipLocalVideoChecks
         latestCiReady = [bool]($ciCheck -and $ciCheck.ok)
         alibabaProofIntegrityReady = [bool]($proofCheck -and $proofCheck.ok)
         devpostPacketReady = [bool]($packetCheck -and $packetCheck.ok)

@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [switch]$SkipExternalUrlChecks,
+    [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraft
 )
 
@@ -82,17 +83,23 @@ function Test-ExternalReachable([string]$Url) {
     }
 }
 
-$fileExists = Test-Path $LocalVideoPath
-Add-Check -Name "local_demo_video_exists" -Ok $fileExists -Details $(if ($fileExists) { $LocalVideoPath } else { "missing: $LocalVideoPath" })
-
-$metadata = Get-VideoMetadata -Path $LocalVideoPath
-if ($metadata) {
-    Add-Check -Name "local_demo_video_under_3_minutes" -Ok ($metadata.duration -gt 0 -and $metadata.duration -lt 180) -Details "duration=$($metadata.duration); size=$($metadata.size); resolution=$($metadata.width)x$($metadata.height); codec=$($metadata.codec)"
-    Add-Check -Name "local_demo_video_720p" -Ok ($metadata.width -ge 1280 -and $metadata.height -ge 720) -Details "resolution=$($metadata.width)x$($metadata.height)"
-    Add-Check -Name "local_demo_video_h264" -Ok ($metadata.codec -eq "h264") -Details "codec=$($metadata.codec)"
+if ($SkipLocalVideoChecks) {
+    Add-Check -Name "local_demo_video_exists" -Ok $true -Details "skipped by -SkipLocalVideoChecks" -Required $false
+    Add-Check -Name "local_demo_video_metadata" -Ok $true -Details "skipped by -SkipLocalVideoChecks" -Required $false
 }
 else {
-    Add-Check -Name "local_demo_video_metadata" -Ok $false -Details "ffprobe unavailable or video missing"
+    $fileExists = Test-Path $LocalVideoPath
+    Add-Check -Name "local_demo_video_exists" -Ok $fileExists -Details $(if ($fileExists) { $LocalVideoPath } else { "missing: $LocalVideoPath" })
+
+    $metadata = Get-VideoMetadata -Path $LocalVideoPath
+    if ($metadata) {
+        Add-Check -Name "local_demo_video_under_3_minutes" -Ok ($metadata.duration -gt 0 -and $metadata.duration -lt 180) -Details "duration=$($metadata.duration); size=$($metadata.size); resolution=$($metadata.width)x$($metadata.height); codec=$($metadata.codec)"
+        Add-Check -Name "local_demo_video_720p" -Ok ($metadata.width -ge 1280 -and $metadata.height -ge 720) -Details "resolution=$($metadata.width)x$($metadata.height)"
+        Add-Check -Name "local_demo_video_h264" -Ok ($metadata.codec -eq "h264") -Details "codec=$($metadata.codec)"
+    }
+    else {
+        Add-Check -Name "local_demo_video_metadata" -Ok $false -Details "ffprobe unavailable or video missing"
+    }
 }
 
 $platform = Test-AcceptedVideoUrl -Url $DemoVideoUrl
@@ -110,6 +117,7 @@ $result = [ordered]@{
     status = $status
     readyForDevpostVideoField = $ready
     localVideoPath = $LocalVideoPath
+    skipLocalVideoChecks = [bool]$SkipLocalVideoChecks
     demoVideoUrl = $DemoVideoUrl
     reportJson = $reportJson
     reportMarkdown = $reportMd

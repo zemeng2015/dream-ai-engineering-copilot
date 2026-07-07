@@ -112,6 +112,10 @@ jobs:
             throw "Missing required release inputs/secrets: $($missing -join ', ')"
           }
 
+      - name: Validate public demo video URL
+        shell: pwsh
+        run: ./scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "${{ inputs.demoVideoUrl }}" -SkipLocalVideoChecks
+
       - name: Configure Serverless Devs access
         shell: pwsh
         run: |
@@ -180,7 +184,7 @@ jobs:
           }
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-readiness.ps1 @common -AllowDraftPacket
           $readinessCode = $LASTEXITCODE
-          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-action-board.ps1 @common -SkipGitHubSecrets -AllowDraft
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-action-board.ps1 @common -SkipGitHubSecrets -SkipLocalVideoChecks -AllowDraft
           $actionBoardCode = $LASTEXITCODE
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-upload-bundle.ps1 @common -AllowDraft
           $bundleCode = $LASTEXITCODE

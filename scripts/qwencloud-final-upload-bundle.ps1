@@ -251,7 +251,7 @@ Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-sta
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
 Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"
 Add-LatestItem -Name "latest_final_action_board_json" -Filter "final-action-board-*.json"
-Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
+Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
 Add-Item -Name "alibaba_proof_integrity_script" -Path "scripts/qwencloud-validate-alibaba-proof.ps1" -Required $false

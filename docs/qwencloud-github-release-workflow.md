@@ -56,6 +56,8 @@ secret values into its JSON or Markdown reports.
 The workflow runs:
 
 - Python install and release script validation.
+- Public demo video URL validation without requiring the local MP4 on the
+  GitHub runner.
 - Serverless Devs configuration from GitHub secrets.
 - Docker login to Alibaba Container Registry.
 - `scripts/qwencloud-alibaba-release.ps1`.

@@ -100,5 +100,12 @@ scripts/qwencloud-final-upload-bundle.ps1 `
   -BackendUrl "<deployed-url>"
 ```
 
+For GitHub Actions or other environments that only need to validate the public
+video page and do not have the local MP4 artifact, use:
+
+```powershell
+scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>" -SkipLocalVideoChecks
+```
+
 The final packet and readiness dashboard must report `READY` before Devpost is
 submitted.
