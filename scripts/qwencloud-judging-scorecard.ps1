@@ -147,6 +147,7 @@ Add-Criterion `
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-devpost-draft-payload.ps1",
         "docs/qwencloud-video-upload-handoff.md",
+        "docs/qwencloud-official-requirements-snapshot.md",
         "docs/qwencloud-devpost-submission-kit.md"
     ) `
     -RequiresDemoVideo $true

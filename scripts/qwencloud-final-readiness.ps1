@@ -409,6 +409,7 @@ foreach ($path in @(
     "docs/qwencloud-demo-video-captions.srt",
     "docs/qwencloud-demo-video-transcript.md",
     "docs/qwencloud-video-upload-handoff.md",
+    "docs/qwencloud-official-requirements-snapshot.md",
     "scripts/qwencloud-frontend-build-proof.ps1",
     "scripts/qwencloud-render-demo-video.ps1",
     "scripts/qwencloud-export-video-thumbnail.ps1",

@@ -17,6 +17,8 @@ param(
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaProofVideoPath = "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4",
+    [Parameter(Mandatory = $false)]
+    [string]$OfficialRequirementsSnapshotPath = "docs/qwencloud-official-requirements-snapshot.md",
     [switch]$SkipExternalUrlChecks,
     [switch]$SkipLocalVideoChecks,
     [switch]$SkipBackendDraft,
@@ -204,9 +206,16 @@ $backend = Get-BackendHealth -Url $BackendUrl
 $health = $backend.health
 $localVideo = Get-VideoMetadata -Path $LocalVideoPath
 $proofVideo = Get-VideoMetadata -Path $AlibabaProofVideoPath
+$requirementsSnapshot = Test-File -Path $OfficialRequirementsSnapshotPath
 $nowUtc = (Get-Date).ToUniversalTime()
 $runtimeQwenOk = if ($null -ne $health) { $health.llm_provider -eq "qwen-cloud" } else { $true }
 $runtimeTrackOk = if ($null -ne $health) { $health.track -eq "Track 1: MemoryAgent" } else { $true }
+
+Add-Requirement `
+    -Id "official_requirements_snapshot" `
+    -OfficialRequirement "Keep a local snapshot of the current public Devpost requirements used by readiness gates." `
+    -Ok ($requirementsSnapshot.ok -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "July 9, 2026") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Facebook Video")) `
+    -Evidence $requirementsSnapshot.details
 
 Add-Requirement `
     -Id "submission_period_open" `
@@ -324,6 +333,7 @@ $result = [ordered]@{
     status = if ($ready) { "READY" } else { "DRAFT" }
     readyForOfficialRules = $ready
     officialRulesUrl = $officialRulesUrl
+    officialRequirementsSnapshotPath = $OfficialRequirementsSnapshotPath
     repoUrl = $repo.normalized
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl

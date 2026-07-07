@@ -10,6 +10,7 @@ param(
         "docs/qwencloud-demo-video-captions.srt",
         "docs/qwencloud-demo-video-transcript.md",
         "docs/qwencloud-video-upload-handoff.md",
+        "docs/qwencloud-official-requirements-snapshot.md",
         "docs/qwencloud-build-journey-post.md",
         "docs/qwencloud-devpost-form-fields.md",
         "docs/qwencloud-devpost-submission-kit.md",

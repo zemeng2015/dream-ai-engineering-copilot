@@ -16,6 +16,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-demo-video-captions.srt`
   - `docs/qwencloud-demo-video-transcript.md`
   - `docs/qwencloud-video-upload-handoff.md`
+  - `docs/qwencloud-official-requirements-snapshot.md`
   - `docs/qwencloud-testing-and-rights-notes.md`
   - `docs/assets/qwencloud-architecture.png`
   - `scripts/qwencloud-alibaba-release.ps1`

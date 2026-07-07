@@ -557,6 +557,7 @@ Add-Item -Name "devpost_autofill_snippet_script" -Path "scripts/qwencloud-devpos
 Add-Item -Name "official_rules_gate_markdown" -Path $officialRulesGate.markdown
 Add-Item -Name "official_rules_gate_json" -Path $officialRulesGate.json
 Add-Item -Name "official_rules_gate_script" -Path "scripts/qwencloud-official-rules-gate.ps1" -Required $false
+Add-Item -Name "official_requirements_snapshot" -Path "docs/qwencloud-official-requirements-snapshot.md" -Required $false
 Add-Item -Name "testing_and_rights_notes" -Path "docs/qwencloud-testing-and-rights-notes.md" -Required $false
 Add-Item -Name "post_submit_verification_script" -Path "scripts/qwencloud-post-submit-verification.ps1" -Required $false
 Add-LatestItem -Name "latest_post_submit_verification_markdown" -Filter "devpost-post-submit-verification-*.md"
