@@ -281,7 +281,10 @@ if (-not $secretsReady) {
 if (-not $cloudReady) {
     Add-Action -Name "Configure local Alibaba release environment" -Reason "Local release needs Serverless Devs default access and required env vars." -RequiresUser $true -Commands @(
         'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
-        's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
+        "# Fill .env.qwencloud.local or run the generated cloud-credentials-template-*.ps1 before this block.",
+        '$sConfigArgs = @("config", "add", "-a", "default", "--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID, "--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET, "--force")',
+        'if (-not [string]::IsNullOrWhiteSpace($env:ALIBABA_CLOUD_ACCOUNT_ID) -and $env:ALIBABA_CLOUD_ACCOUNT_ID -notmatch "^<.*>$") { $sConfigArgs += @("--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID) }',
+        '& s @sConfigArgs',
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
     )
 }

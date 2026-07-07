@@ -75,6 +75,10 @@ def test_qwencloud_final_external_handoff_builds_safe_pack(tmp_path) -> None:
     assert "Final Devpost legal submit" in markdown
     assert "qwencloud-post-submit-verification.ps1" in commands
     assert "qwencloud-final-completion-evidence.ps1" in commands
+    assert "s config add -a default --AccessKeyID" not in commands
+    assert '"--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID' in commands
+    assert '"--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET' in commands
+    assert "& s @sConfigArgs" in commands
 
 
 def test_qwencloud_final_external_handoff_registered_in_submission_flow() -> None:
@@ -91,3 +95,15 @@ def test_qwencloud_final_external_handoff_registered_in_submission_flow() -> Non
         "scripts/qwencloud-hackathon-submission-packet.ps1",
     ]:
         assert script_path in (ROOT / path).read_text(encoding="utf-8-sig")
+
+
+def test_final_action_board_uses_env_driven_serverless_devs_access() -> None:
+    action_board = (ROOT / "scripts" / "qwencloud-final-action-board.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "Configure local Alibaba release environment" in action_board
+    assert "s config add -a default --AccessKeyID" not in action_board
+    assert '"--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID' in action_board
+    assert '"--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET' in action_board
+    assert "& s @sConfigArgs" in action_board
