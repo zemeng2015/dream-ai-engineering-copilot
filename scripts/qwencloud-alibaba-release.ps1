@@ -303,6 +303,9 @@ try {
     if ($BlogPostUrl) {
         $handoffArgs += @("-BlogPostUrl", $BlogPostUrl)
     }
+    if ($EnvFile) {
+        $handoffArgs += @("-EnvFile", $EnvFile)
+    }
     if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
         $handoffArgs += "-AllowDraft"
     }

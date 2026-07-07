@@ -359,6 +359,7 @@ function Invoke-Handoff {
         "-AlibabaScreenshotPath", $AlibabaScreenshotPath,
         "-AlibabaProofVideoPath", $AlibabaProofVideoPath
     )
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
     if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
     if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
     if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }

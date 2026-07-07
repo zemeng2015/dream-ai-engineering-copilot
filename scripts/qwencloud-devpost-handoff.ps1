@@ -10,6 +10,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
+    [Parameter(Mandatory = $false)]
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
     [string]$LocalDemoVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
@@ -23,6 +25,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $handoffJson = Join-Path $OutputDir "devpost-handoff-$timestamp.json"
 $handoffMd = Join-Path $OutputDir "devpost-handoff-$timestamp.md"
@@ -40,7 +47,7 @@ $deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs.yaml"
 $licenseUrl = "$RepoUrl/blob/main/LICENSE"
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Test-ServerlessDevsDefaultAccess {
@@ -181,6 +188,8 @@ $handoff = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     blockers = $blockers
     deployInputChecks = $deployInputChecks
     uploadItems = $uploadItems
