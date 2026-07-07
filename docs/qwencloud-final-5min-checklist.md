@@ -74,7 +74,17 @@ scripts/qwencloud-render-demo-video.ps1
 - Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
 - Confirm the public video page plays and remains under 3 minutes.
 
-## Step 5 - Devpost fill (about 1.5 minutes)
+## Step 5 - Submission packet (about 1 minute)
+
+- Generate the final packet with real URLs:
+
+```powershell
+scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
+- Open the generated `artifacts/qwencloud-proof/devpost-submission-packet-*.md`.
+
+## Step 6 - Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
 - Track: `Track 1: MemoryAgent`
@@ -85,7 +95,7 @@ scripts/qwencloud-render-demo-video.ps1
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
 
-## Step 6 - Submit
+## Step 7 - Submit
 
 - Click submit on Devpost.
 - Immediately open the public project page and confirm links, video, and video

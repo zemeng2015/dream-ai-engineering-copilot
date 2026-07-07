@@ -15,6 +15,7 @@ param(
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",
+        "scripts/qwencloud-hackathon-submission-packet.ps1",
         "scripts/qwencloud-render-demo-video.ps1",
         "examples/config/dream.qwen.yaml",
         "LICENSE"

@@ -176,6 +176,13 @@ Render the final under-3-minute Devpost upload video:
 scripts/qwencloud-render-demo-video.ps1
 ```
 
+Generate the final copy/paste Devpost packet after the public video and deployed
+backend URLs are ready:
+
+```powershell
+scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,

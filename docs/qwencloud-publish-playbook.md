@@ -30,6 +30,7 @@ scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
+scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
@@ -46,6 +47,9 @@ repo/docs presence, public repo license visibility checks, and endpoint checks.
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
 and local container smoke before the image is pushed to Container Registry.
 
+`qwencloud-hackathon-submission-packet.ps1` validates final public URLs and
+generates the copy/paste Devpost packet with testing instructions.
+
 ## Devpost fill order
 
 1. Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -54,5 +58,6 @@ and local container smoke before the image is pushed to Container Registry.
 4. Add repo link and Apache-2.0 link
 5. Upload architecture image
 6. Upload video (link if supported by platform)
-7. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
-8. Submit and immediately open public project page to confirm links are visible
+7. Generate the final submission packet and copy testing instructions
+8. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
+9. Submit and immediately open public project page to confirm links are visible

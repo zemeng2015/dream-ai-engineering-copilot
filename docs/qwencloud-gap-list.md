@@ -15,6 +15,8 @@
   `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
 - Deploy preflight script that checks env, Serverless Devs, Docker build, and
   local container smoke before Alibaba Cloud push/deploy.
+- Devpost submission packet generator that validates final URLs and produces
+  copy/paste fields plus judge testing instructions.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -23,6 +25,7 @@
 - Deploy the container or at least produce a Function Compute dry-run screenshot
   plus `/health` output.
 - Upload the rendered sub-3-minute demo video to YouTube/Vimeo/Youku.
+- Generate the final submission packet with public video and deployed backend URLs.
 - Paste the architecture SVG into the Devpost submission.
 - Confirm repository visibility is public and license is Apache-2.0.
 

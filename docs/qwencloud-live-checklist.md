@@ -72,7 +72,13 @@ Optional full audit report (includes file + repo + remote visibility checks):
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl <deployed-url>
 ```
 
-7. Record demo with <3 minute duration.
+7. Record or render demo with <3 minute duration.
+
+8. Generate final Devpost packet:
+
+```powershell
+scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
 
 ## Submission packet
 

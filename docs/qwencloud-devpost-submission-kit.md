@@ -67,6 +67,15 @@ Required proof artifacts:
 
 ## 5) Devpost Copy (Optional Paste-ready)
 
+Generate the packet after the deployed backend and public video URLs are ready:
+
+```powershell
+scripts/qwencloud-hackathon-submission-packet.ps1 `
+  -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" `
+  -DemoVideoUrl "https://www.youtube.com/..." `
+  -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ### Project Title
 
 `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -94,8 +103,9 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 1. Fill in Devpost fields (project, description, links).
 2. Attach architecture image and under-3-minute video.
 3. Add public repo link and Apache-2.0 license.
-4. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
-5. Submit only after the external Devpost form shows accepted URLs.
+4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs.
+5. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
+6. Submit only after the external Devpost form shows accepted URLs.
 
 ## 7) Reproducibility Commands
 
@@ -113,3 +123,4 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-verify.ps1`
 - `scripts/qwencloud-hackathon-proof.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
+- `scripts/qwencloud-hackathon-submission-packet.ps1`
