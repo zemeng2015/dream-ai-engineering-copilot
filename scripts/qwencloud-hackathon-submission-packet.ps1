@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 $packetJson = Join-Path $OutputDir "devpost-submission-packet-$timestamp.json"
 $packetMd = Join-Path $OutputDir "devpost-submission-packet-$timestamp.md"
@@ -100,7 +100,7 @@ function Is-PublicVideoUrl([string]$Url) {
     if ($Url -match "[<>]|\.\.\.") {
         return $false
     }
-    return [bool]($Url -match "^https?://(www\.)?(youtube\.com|youtu\.be|vimeo\.com|youku\.com)/")
+    return [bool]($Url -match "^https?://((www|m)\.)?(youtube\.com|youtu\.be|vimeo\.com|facebook\.com|fb\.watch)/")
 }
 
 function Is-HttpUrl([string]$Url) {
@@ -394,7 +394,7 @@ $packet = [ordered]@{
 Set-Content -Path $packetJson -Value ($packet | ConvertTo-Json -Depth 12) -Encoding UTF8
 
 $statusWord = if ($ready) { "READY" } else { "DRAFT - missing required external URLs or backend proof" }
-$videoLine = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Youku URL>" }
+$videoLine = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Facebook Video URL>" }
 $backendLine = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function Compute backend URL>" }
 $blogLine = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
@@ -509,7 +509,7 @@ $md += @(
     "- Set `DASHSCOPE_API_KEY`, `ALIBABA_CLOUD_REGION`, and `ALIBABA_CLOUD_CONTAINER_IMAGE`.",
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
-    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Youku and paste the public URL.",
+    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Facebook Video and paste the public URL.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."
 )
