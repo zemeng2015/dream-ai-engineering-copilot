@@ -268,6 +268,7 @@ $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
 $finalize = Read-LatestJson -Filter "finalize-after-urls-*.json"
 $readiness = Read-LatestJson -Filter "final-readiness-*.json"
+$officialRules = Read-LatestJson -Filter "official-rules-gate-*.json"
 $actionBoard = Read-LatestJson -Filter "final-action-board-*.json"
 $uploadBundleManifest = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
     Sort-Object LastWriteTime -Descending |
@@ -294,6 +295,7 @@ $signals = [ordered]@{
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
     deployedBackendUrlPresent = -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)
+    officialRulesGateReady = [bool]($officialRules.data -and $officialRules.data.readyForOfficialRules)
     finalizeAfterUrlsReady = [bool]($finalize.data -and $finalize.data.readyForDevpostSubmit)
     finalUploadBundleReady = [bool]($uploadBundle.data -and $uploadBundle.data.readyForUpload)
     finalReadinessReady = [bool]($readiness.data -and $readiness.data.readyForFinalSubmit)
@@ -340,6 +342,14 @@ if ($signals.deployedBackendUrlPresent -and -not $signals.finalReadinessReady) {
         -RequiresZackConfirmation $false
 }
 
+if (-not $signals.officialRulesGateReady) {
+    Add-NextAction `
+        -Name "Clear official rules gate" `
+        -Reason "The official Devpost requirement matrix is still DRAFT." `
+        -Command 'scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"' `
+        -RequiresZackConfirmation $false
+}
+
 if ($signals.finalReadinessReady) {
     Add-NextAction `
         -Name "Save Devpost draft and final submit" `
@@ -374,6 +384,7 @@ $result = [ordered]@{
         githubSecretsHandoffJson = $github.file
         alibabaReleaseJson = $release.file
         finalizeAfterUrlsJson = $finalize.file
+        officialRulesGateJson = $officialRules.file
         finalReadinessJson = $readiness.file
         finalActionBoardJson = $actionBoard.file
         finalUploadBundleManifestJson = $uploadBundle.file
@@ -426,6 +437,7 @@ $lines += @(
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",
     "- Finalize after URLs: $(if ($finalize.file) { $finalize.file } else { '<missing>' })",
+    "- Official rules gate: $(if ($officialRules.file) { $officialRules.file } else { '<missing>' })",
     "- Final readiness: $(if ($readiness.file) { $readiness.file } else { '<missing>' })",
     "- Final action board: $(if ($actionBoard.file) { $actionBoard.file } else { '<missing>' })",
     "- Final upload bundle manifest: $(if ($uploadBundle.file) { $uploadBundle.file } else { '<missing>' })",
