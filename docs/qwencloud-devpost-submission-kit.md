@@ -13,6 +13,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-submission.md`
   - `docs/qwencloud-architecture.md`
   - `docs/qwencloud-demo-video-script.md`
+  - `docs/qwencloud-video-upload-handoff.md`
   - `docs/assets/qwencloud-architecture.png`
   - `scripts/qwencloud-alibaba-release.ps1`
   - `scripts/qwencloud-run-local-proof.ps1`
@@ -49,6 +50,10 @@ scripts/qwencloud-render-demo-video.ps1
 Expected local upload file:
 
 `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
+
+Use `docs/qwencloud-video-upload-handoff.md` for the public upload title,
+description, accepted video platforms, visibility check, and Chrome file upload
+troubleshooting.
 
 Recommended 4-shot order:
 

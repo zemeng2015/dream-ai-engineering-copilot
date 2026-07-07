@@ -161,6 +161,7 @@ Key submission artifacts:
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)
 - [Qwen Cloud architecture](docs/qwencloud-architecture.md)
 - [Qwen Cloud demo video script](docs/qwencloud-demo-video-script.md)
+- [Qwen Cloud demo video upload handoff](docs/qwencloud-video-upload-handoff.md)
 - [Qwen Cloud submission kit](docs/qwencloud-devpost-submission-kit.md)
 - [Qwen Cloud contest launch checklist](docs/qwencloud-live-checklist.md)
 - [Qwen Cloud final 5-minute checklist](docs/qwencloud-final-5min-checklist.md)
@@ -207,6 +208,12 @@ Render the final under-3-minute Devpost upload video:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
+```
+
+Upload the rendered MP4 using the video handoff:
+
+```text
+docs/qwencloud-video-upload-handoff.md
 ```
 
 Generate the final copy/paste Devpost packet after the public video and deployed

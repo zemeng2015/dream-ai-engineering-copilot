@@ -5,6 +5,7 @@ param(
         "docs/qwencloud-architecture.md",
         "docs/assets/qwencloud-architecture.png",
         "docs/qwencloud-demo-video-script.md",
+        "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-build-journey-post.md",
         "docs/qwencloud-devpost-form-fields.md",
         "docs/qwencloud-devpost-submission-kit.md",

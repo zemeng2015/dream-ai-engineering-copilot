@@ -40,6 +40,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `docs/assets/qwencloud-architecture.svg`
   - `docs/assets/qwencloud-architecture.png`
   - `docs/qwencloud-demo-video-script.md`
+  - `docs/qwencloud-video-upload-handoff.md`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -101,6 +102,11 @@ scripts/qwencloud-render-demo-video.ps1
 ```
 
 - Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
+- Use `docs/qwencloud-video-upload-handoff.md` for the title, description,
+  platform rules, and Chrome upload troubleshooting.
+- If Codex-controlled Chrome reports `Not allowed` on file upload, open
+  `chrome://extensions`, click Details under the Codex extension, and enable
+  `Allow access to file URLs`.
 - Confirm the public video page plays and remains under 3 minutes.
 
 ## Step 5 - Submission packet (about 1 minute)

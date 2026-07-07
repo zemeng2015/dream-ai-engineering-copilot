@@ -9,6 +9,7 @@
 - [ ] `LICENSE` visible as Apache-2.0.
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
+- [ ] Demo video upload handoff ready: `docs/qwencloud-video-upload-handoff.md`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] Alibaba deployment proof recording path reserved: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
@@ -46,6 +47,7 @@ Invoke-RestMethod -Method Post `
 - `docs/assets/qwencloud-architecture.svg`
 - `docs/assets/qwencloud-architecture.png`
 - `docs/qwencloud-demo-video-script.md`
+- `docs/qwencloud-video-upload-handoff.md`
 - `docs/qwencloud-build-journey-post.md`
 - `deploy/alibaba/serverless-devs.yaml`
 - `deploy/alibaba/README.md`
@@ -97,7 +99,9 @@ Optional full audit report (includes file + repo + remote visibility checks):
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl <deployed-url>
 ```
 
-7. Record or render demo with <3 minute duration.
+7. Record or render demo with <3 minute duration, then upload it using
+   `docs/qwencloud-video-upload-handoff.md`. The final video URL must be public
+   on YouTube, Vimeo, Facebook Video, or `fb.watch`.
 
 8. Generate final Devpost packet:
 

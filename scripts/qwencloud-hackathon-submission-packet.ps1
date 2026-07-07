@@ -232,6 +232,7 @@ $requiredPaths = @(
     "docs/qwencloud-devpost-form-fields.md",
     "docs/qwencloud-devpost-submission-kit.md",
     "docs/qwencloud-final-5min-checklist.md",
+    "docs/qwencloud-video-upload-handoff.md",
     "docs/qwencloud-architecture.md",
     "docs/assets/qwencloud-architecture.svg",
     "docs/assets/qwencloud-architecture.png",
@@ -530,7 +531,7 @@ $md += @(
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
     "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
-    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Facebook Video and paste the public URL.",
+    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, Facebook Video, or fb.watch URL.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."
 )

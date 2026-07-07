@@ -6,6 +6,7 @@
 
 - Video file name: `DREAM-Qwen-Cloud-MemoryAgent-Demo.mp4`
 - Video length target: `2:45` to `3:00`
+- Video upload handoff: `docs/qwencloud-video-upload-handoff.md`
 - Architecture file: `docs/assets/qwencloud-architecture.png` for Devpost upload
 - Alibaba proof screenshot: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Alibaba proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`
@@ -90,6 +91,10 @@ artifact readiness, and final Devpost packet readiness.
 assets, the generated Devpost packet, and a manifest so the final submission
 files are all in one place.
 
+Use `docs/qwencloud-video-upload-handoff.md` for the public video upload title,
+description, accepted platforms, visibility check, and Chrome file-access
+troubleshooting.
+
 ## Devpost fill order
 
 1. Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -99,7 +104,7 @@ files are all in one place.
 5. Upload architecture image
 6. Upload Alibaba deployment screenshot
 7. Upload or link Alibaba backend proof recording if Devpost requests it
-8. Upload demo video link
+8. Upload demo video link after verifying the public video page plays
 9. Generate the final submission packet and copy testing instructions
 10. Run final readiness and confirm `READY`
 11. Create the final upload bundle
