@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoName = "zemeng2015/dream-ai-engineering-copilot",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -21,6 +23,7 @@ param(
     [string]$EnvFile = "",
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
+    [switch]$SkipGitHubSecrets,
     [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraft
 )
@@ -240,6 +243,63 @@ function Invoke-LiveInputsIntake {
         markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
         ready = [bool]$data.readyForLiveInputs
         details = if ($data.readyForLiveInputs) { "READY: $($json.FullName)" } else { "DRAFT; missing=$(@($data.missingRequiredChecks) -join ', ')" }
+    }
+}
+
+function Invoke-ActionBoard {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "final-action-board-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-final-action-board.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-RepoName", $RepoName,
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipGitHubSecrets) { $args += "-SkipGitHubSecrets" }
+    if ($SkipLocalVideoChecks) { $args += "-SkipLocalVideoChecks" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-action-board-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-action-board-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Final action board generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "final-action-board-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "final action board JSON missing; stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForFinalSubmit
+        details = if ($data.readyForFinalSubmit) { "READY: $($json.FullName)" } else { "DRAFT; nextActions=$(@($data.nextActions | ForEach-Object { $_.name }) -join ', ')" }
     }
 }
 
@@ -705,6 +765,7 @@ $judgingScorecard = Invoke-JudgingScorecard
 $officialSourceRefresh = Invoke-OfficialSourceRefresh
 $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
+$actionBoard = Invoke-ActionBoard
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ready -Details $deadlineGuard.details
@@ -768,10 +829,10 @@ Add-Item -Name "live_inputs_intake_json" -Path $liveInputs.json
 Add-Item -Name "github_ci_proof_script" -Path "scripts/qwencloud-github-ci-proof.ps1" -Required $false
 Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
 Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json
+Add-Item -Name "final_action_board_markdown" -Path $actionBoard.markdown -Required $false
+Add-Item -Name "final_action_board_json" -Path $actionBoard.json -Required $false
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
 Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
-Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"
-Add-LatestItem -Name "latest_final_action_board_json" -Filter "final-action-board-*.json"
 Add-LatestItem -Name "latest_final_external_handoff_markdown" -Filter "external-handoff-*.md"
 Add-LatestItem -Name "latest_final_external_handoff_json" -Filter "external-handoff-*.json"
 Add-LatestItem -Name "latest_final_external_handoff_zip" -Filter "external-handoff-*.zip"
