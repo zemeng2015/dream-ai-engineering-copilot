@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: Apache-2.0
+
+:host {
+  display: block;
+}
+
+.index-json-panel {
+  display: grid;
+  min-height: 650px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.json-card {
+  border-top: 1px solid var(--dream-border);
+}
+
+.json-card summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  padding: 0 14px;
+}
+
+.json-card summary strong {
+  color: var(--dream-navy);
+}
+
+.json-card summary span {
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.json-block {
+  max-height: 510px;
+  overflow: auto;
+  margin: 0 14px 14px;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: #f7fafc;
+  color: #13364c;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 12px;
+  white-space: pre;
+}
+
+.selected-json-block {
+  border-color: rgb(12 119 186 / 38%);
+  background: #eaf5ff;
+  box-shadow: inset 4px 0 0 var(--dream-blue);
+}
+
+@media (width <= 1320px) {
+  .index-json-panel {
+    min-height: auto;
+  }
+}

@@ -2,11 +2,12 @@
 
 import re
 import zipfile
+from hashlib import sha256
 from html.parser import HTMLParser
 from pathlib import Path
 from xml.etree import ElementTree
 
-from dream.intake.models import ParsedSection
+from dream.intake.models import ParsedSection, SourceSpan
 
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]{2,}")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
@@ -29,16 +30,19 @@ class IntakeParser:
 
 def parse_markdown(raw: str, *, source_path: str) -> list[ParsedSection]:
     raw = raw.lstrip("\ufeff")
+    source_lines = raw.splitlines()
     sections: list[ParsedSection] = []
     current_heading = "Overview"
     current_level = 1
+    current_start_line = 1
     current_lines: list[str] = []
 
-    def flush() -> None:
+    def flush(end_line: int) -> None:
         text = "\n".join(current_lines).strip()
         if not text and sections:
             return
         section_number = len(sections) + 1
+        section_hash = _section_hash(current_heading, text)
         sections.append(
             ParsedSection(
                 section_id=f"section-{section_number}",
@@ -46,20 +50,29 @@ def parse_markdown(raw: str, *, source_path: str) -> list[ParsedSection]:
                 level=current_level,
                 text=text,
                 concepts=_concepts(f"{current_heading}\n{text}"),
-                source_reference=f"{source_path}#section-{section_number}",
+                source_reference=(
+                    f"{source_path}#section-{section_number}:"
+                    f"L{current_start_line}-L{max(current_start_line, end_line)}"
+                ),
+                source_span=SourceSpan(
+                    start_line=current_start_line,
+                    end_line=max(current_start_line, end_line),
+                ),
+                section_hash=section_hash,
             )
         )
 
-    for line in raw.splitlines():
+    for line_number, line in enumerate(source_lines, start=1):
         match = HEADING_RE.match(line.strip())
         if match:
-            flush()
+            flush(line_number - 1)
             current_heading = match.group(2).strip()
             current_level = len(match.group(1))
+            current_start_line = line_number
             current_lines = []
         else:
             current_lines.append(line)
-    flush()
+    flush(len(source_lines))
     return [section for section in sections if section.text or section.heading != "Overview"]
 
 
@@ -86,6 +99,11 @@ def _concepts(text: str) -> list[str]:
         if all(part in tokens for part in parts)
     ]
     return sorted(set(phrases + selected[:6]))
+
+
+def _section_hash(heading: str, text: str) -> str:
+    normalized = "\n".join([heading.strip(), text.strip()]).encode("utf-8")
+    return f"sha256:{sha256(normalized).hexdigest()}"
 
 
 def _docx_text(path: Path) -> str:

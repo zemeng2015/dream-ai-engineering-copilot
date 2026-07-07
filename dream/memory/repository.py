@@ -5,6 +5,8 @@ from pathlib import Path
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, ensure_artifacts_dir
 from dream.memory.models import (
+    MemoryConflictResolutionEvent,
+    MemoryConflictResolutionLedger,
     MemoryEvalResult,
     MemoryLedgerSnapshot,
     MemoryReviewEvent,
@@ -72,8 +74,26 @@ class MemoryDistillationRepository:
         ledger.updated_at = event.reviewed_at
         return self.save_ledger(ledger)
 
+    def append_conflict_resolution_event(
+        self,
+        event: MemoryConflictResolutionEvent,
+    ) -> Path:
+        ledger = self.load_conflict_resolution_ledger(event.team_id)
+        ledger.events.append(event)
+        ledger.updated_at = event.resolved_at
+        return self.save_conflict_resolution_ledger(ledger)
+
     def save_ledger(self, ledger: MemoryLedgerSnapshot) -> Path:
         path = self.ledger_path(ledger.team_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(ledger.model_dump_json(indent=2), encoding="utf-8")
+        return path
+
+    def save_conflict_resolution_ledger(
+        self,
+        ledger: MemoryConflictResolutionLedger,
+    ) -> Path:
+        path = self.conflict_resolution_ledger_path(ledger.team_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(ledger.model_dump_json(indent=2), encoding="utf-8")
         return path
@@ -83,6 +103,17 @@ class MemoryDistillationRepository:
         if not path.exists():
             return MemoryLedgerSnapshot(team_id=team_id, updated_at="", events=[])
         return MemoryLedgerSnapshot.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def load_conflict_resolution_ledger(
+        self,
+        team_id: str,
+    ) -> MemoryConflictResolutionLedger:
+        path = self.conflict_resolution_ledger_path(team_id)
+        if not path.exists():
+            return MemoryConflictResolutionLedger(team_id=team_id, updated_at="", events=[])
+        return MemoryConflictResolutionLedger.model_validate_json(
+            path.read_text(encoding="utf-8")
+        )
 
     def latest_review_statuses(self, team_id: str) -> dict[str, MemoryReviewEvent]:
         latest: dict[str, MemoryReviewEvent] = {}
@@ -107,6 +138,13 @@ class MemoryDistillationRepository:
     def ledger_path(self, team_id: str) -> Path:
         return self.artifacts_dir / "memory-ledgers" / f"{self._safe_name(team_id)}.json"
 
+    def conflict_resolution_ledger_path(self, team_id: str) -> Path:
+        return (
+            self.artifacts_dir
+            / "memory-conflict-resolutions"
+            / f"{self._safe_name(team_id)}.json"
+        )
+
     def display_scan_path(self, team_id: str, scan_id: str) -> str:
         return display_path(self.scan_path(team_id, scan_id))
 
@@ -118,6 +156,9 @@ class MemoryDistillationRepository:
 
     def display_ledger_path(self, team_id: str) -> str:
         return display_path(self.ledger_path(team_id))
+
+    def display_conflict_resolution_ledger_path(self, team_id: str) -> str:
+        return display_path(self.conflict_resolution_ledger_path(team_id))
 
     def _scan_dir(self, team_id: str) -> Path:
         return self.artifacts_dir / "memory-scans" / self._safe_name(team_id)

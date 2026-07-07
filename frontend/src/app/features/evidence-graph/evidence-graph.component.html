@@ -3,40 +3,25 @@
 <section class="page reveal-page">
   <header class="page-header command-header">
     <div>
-      <span class="eyebrow">Graph-Lite memory layer</span>
-      <h1>Evidence Graph</h1>
-      <p>
-        Show how DREAM connects concepts to docs, code, tests, incidents, historical Jira, and
-        PR memory without requiring a heavy graph database.
-      </p>
+      <h1>Retrieval Paths</h1>
     </div>
     <div class="index-beacon" aria-label="Evidence graph status">
       <span></span>
       <strong>dfp-demo-repo</strong>
-      <small>graph paths ready</small>
+      <small>paths ready</small>
     </div>
   </header>
-
-  <section class="graph-overview" aria-label="Evidence node types">
-    @for (item of nodeSummary(); track item.type) {
-      <div class="graph-node-stat">
-        <span>{{ item.type }}</span>
-        <strong>{{ item.count }}</strong>
-        <div class="layer-bar"><i [style.width.%]="item.count * 24"></i></div>
-      </div>
-    }
-  </section>
 
   <section class="grid-2">
     <article class="panel scan-panel">
       <div class="panel-header">
-        <h2>Search Evidence Paths</h2>
-        <span class="status-pill status-info">1-hop / 2-hop expansion</span>
+        <h2>Find Retrieval Path</h2>
+        <span class="status-pill status-info">docs -> code -> tests</span>
       </div>
       <div class="panel-body">
         <form class="form-grid" [formGroup]="form" (ngSubmit)="search()">
           <div class="form-field-full">
-            <label for="graph-query">Concept or risk</label>
+            <label for="graph-query">Business concept or risk</label>
             <input id="graph-query" formControlName="query" />
           </div>
           <div class="form-field">
@@ -44,11 +29,11 @@
             <input id="graph-top-k" type="number" min="1" max="12" formControlName="topK" />
           </div>
           <div class="form-field">
-            <label>Storage</label>
+            <label>Artifact</label>
             <div class="readonly-field">JSON artifact</div>
           </div>
           <div class="form-field-full">
-            <button class="primary-button" type="submit">Explain Memory Path</button>
+            <button class="primary-button" type="submit">Trace Sources</button>
           </div>
         </form>
       </div>
@@ -86,8 +71,8 @@
     <div class="side-stack">
       <article class="panel">
         <div class="panel-header">
-          <h2>Selected Path</h2>
-          <span class="status-pill status-warning">human review required</span>
+          <h2>Why These Sources</h2>
+          <span class="status-pill status-warning">review before prompt</span>
         </div>
         <div class="panel-body">
           @if (selectedPath(); as path) {
@@ -108,7 +93,7 @@
                 }
               </ol>
               <div class="review-hint">
-                <span>Review Hint</span>
+                <span>Prompt Use</span>
                 <p>{{ path.reviewHint }}</p>
               </div>
             </div>
@@ -118,12 +103,11 @@
 
       <article class="panel">
         <div class="panel-header">
-          <h2>Why Graph-Lite</h2>
+          <h2>Prompt Boundary</h2>
         </div>
         <div class="panel-body">
           <div class="info-callout">
-            DREAM keeps the user workflow simple: Create Requirement Case, Analyze, Review, Eval.
-            The graph stays underneath retrieval, expanding concepts into source-backed evidence.
+            Retrieval paths explain which docs, incidents, code files, and tests enter the context pack.
           </div>
           <div class="concept-cloud">
             <button type="button" (click)="form.patchValue({ query: 'execution status' }); search()">

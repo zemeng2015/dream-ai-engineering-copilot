@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { MockDreamService } from '../../core/mock-dream.service';
 import { PrReviewComponent } from '../pr-review/pr-review.component';
 import { RequirementDraftComponent } from '../requirement-draft/requirement-draft.component';
 
@@ -23,24 +22,14 @@ interface WorkbenchModeItem {
   styleUrl: './engineering-workbench.component.scss',
 })
 export class EngineeringWorkbenchComponent {
-  private readonly dream = inject(MockDreamService);
-
+  private readonly route = inject(ActivatedRoute);
   readonly activeMode = signal<WorkbenchMode>('requirement');
-  readonly context = this.dream.getContextIntelligenceSnapshot();
-  readonly primaryCase = this.dream.requirementCases()[0];
-  readonly detectedConcepts = [
-    'execution status',
-    'task progress',
-    'stale polling',
-    'operator escalation',
-    'status transition tests',
-  ];
 
   readonly modes: WorkbenchModeItem[] = [
     {
       id: 'requirement',
-      label: 'Requirement Case',
-      summary: 'Rough business request -> impact map -> open questions -> Jira-ready draft.',
+      label: 'Jira Draft',
+      summary: 'Business request -> memory and impact -> open questions -> Jira proposal.',
     },
     {
       id: 'pr',
@@ -49,7 +38,20 @@ export class EngineeringWorkbenchComponent {
     },
   ];
 
+  constructor() {
+    this.route.data.subscribe((data) => {
+      const mode = data['mode'];
+      if (this.isWorkbenchMode(mode)) {
+        this.activeMode.set(mode);
+      }
+    });
+  }
+
   selectMode(mode: WorkbenchMode): void {
     this.activeMode.set(mode);
+  }
+
+  private isWorkbenchMode(value: unknown): value is WorkbenchMode {
+    return value === 'requirement' || value === 'pr';
   }
 }

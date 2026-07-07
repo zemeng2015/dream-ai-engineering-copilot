@@ -19,6 +19,7 @@ from dream.requirement_cases.models import (
     EngineeringBrief,
     ImpactItem,
     JiraDraft,
+    JiraDraftContext,
     JiraReadiness,
     RequirementCase,
     RequirementCaseCreateRequest,
@@ -181,6 +182,9 @@ class RequirementCaseService:
                         "answer": answer_text,
                         "answered_by": answered_by,
                         "answered_at": now,
+                        "waived_reason": None,
+                        "waived_by": None,
+                        "waived_at": None,
                     }
                 )
                 questions.append(updated_question)
@@ -209,6 +213,64 @@ class RequirementCaseService:
             model_name="clarification-answer-v1",
             output_path="sqlite:requirement_cases",
             status="answered",
+            warnings=[],
+        )
+        return updated_question
+
+    def waive_question(
+        self,
+        case_id: str,
+        question_id: str,
+        reason: str,
+        *,
+        waived_by: str | None = None,
+    ) -> ClarificationQuestion:
+        snapshot = self._ensure_analyzed(case_id)
+        reason_text = reason.strip()
+        if not reason_text:
+            raise ValueError("Clarification waiver reason cannot be empty.")
+        updated_question: ClarificationQuestion | None = None
+        now = datetime.now(UTC).isoformat()
+        questions: list[ClarificationQuestion] = []
+        for question in snapshot.questions:
+            if question.question_id == question_id:
+                updated_question = question.model_copy(
+                    update={
+                        "status": "waived",
+                        "answer": None,
+                        "answered_by": None,
+                        "answered_at": None,
+                        "waived_reason": reason_text,
+                        "waived_by": waived_by,
+                        "waived_at": now,
+                    }
+                )
+                questions.append(updated_question)
+            else:
+                questions.append(question)
+        if updated_question is None:
+            raise NotFoundError(f"Clarification question not found: {question_id}")
+        snapshot.questions = questions
+        snapshot.case.status = "questions_answered"
+        snapshot.case.updated_at = now
+        snapshot.jira_readiness = self._jira_readiness(snapshot)
+        self.repository.save(snapshot)
+        self.audit_logger.log_generation(
+            run_id=f"question-waive-{uuid4().hex[:12]}",
+            use_case="requirement_question_waive",
+            team_id=snapshot.case.team_id,
+            case_id=snapshot.case.case_id,
+            input_payload={
+                "case_id": case_id,
+                "question_id": question_id,
+                "reason": reason_text,
+                "waived_by": waived_by,
+            },
+            retrieved_source_paths=updated_question.related_sources,
+            model_provider="human",
+            model_name="clarification-waiver-v1",
+            output_path="sqlite:requirement_cases",
+            status="waived",
             warnings=[],
         )
         return updated_question
@@ -273,6 +335,41 @@ class RequirementCaseService:
             codebase_repository=self.codebase_repository,
         ).prompt_for_case(case_id, target="engineering_brief")
         return brief
+
+    def prepare_jira_draft_context(self, case_id: str) -> JiraDraftContext:
+        snapshot = self._ensure_analyzed(case_id)
+        context = self.jira_generator.prepare(snapshot)
+        output_path = self._case_artifact_dir(case_id) / "jira-draft-context.md"
+        output_path.write_text(
+            "\n\n".join(
+                [
+                    "# Jira Draft Context",
+                    "## Deterministic Draft",
+                    context.deterministic_markdown,
+                    "## LLM Prompt",
+                    context.prompt,
+                ]
+            ),
+            encoding="utf-8",
+        )
+        self.audit_logger.log_generation(
+            run_id=f"jira-context-{uuid4().hex[:12]}",
+            use_case="jira_draft_context",
+            team_id=snapshot.case.team_id,
+            case_id=snapshot.case.case_id,
+            input_payload={
+                "case_id": case_id,
+                "prompt_char_count": context.prompt_char_count,
+                "deterministic_char_count": context.deterministic_char_count,
+            },
+            retrieved_source_paths=context.sources_used,
+            model_provider="deterministic",
+            model_name="jira-draft-context-v1",
+            output_path=display_path(output_path),
+            status="success",
+            warnings=context.warnings,
+        )
+        return context
 
     def generate_jira_draft(self, case_id: str) -> JiraDraft:
         snapshot = self._ensure_analyzed(case_id)
@@ -356,6 +453,9 @@ class RequirementCaseService:
         answered_questions = [
             question for question in snapshot.questions if question.status == "answered"
         ]
+        waived_questions = [
+            question for question in snapshot.questions if question.status == "waived"
+        ]
         draft_exists = (
             snapshot.jira_draft is not None
             if jira_draft_exists is None
@@ -388,6 +488,7 @@ class RequirementCaseService:
             ready=ready,
             status=status,
             answered_questions=len(answered_questions),
+            waived_questions=len(waived_questions),
             open_questions=len(open_questions),
             evidence_items=len(snapshot.evidence),
             impact_items=len(snapshot.impact_items),

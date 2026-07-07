@@ -219,7 +219,7 @@ class ContextIntelligenceService:
             review_id=run_id,
             team_id=request.team_id,
             repo_name=request.repo_name,
-            raw_query=request.pr_diff_path,
+            raw_query=request.pr_diff_path or "inline PR diff",
             detected_concepts=concepts,
             retrieval_steps=[
                 RetrievalStep(
@@ -250,7 +250,7 @@ class ContextIntelligenceService:
             context_pack_id=f"context-pack-{run_id}",
             team_id=request.team_id,
             repo_name=request.repo_name,
-            user_request=request.pr_diff_path,
+            user_request=request.pr_diff_path or "inline PR diff",
             run_id=run_id,
             candidates=selected,
             graph_paths=graph_paths,
@@ -489,6 +489,7 @@ class ContextIntelligenceService:
                     relation=claim.relation.type,
                     value=claim.relation.value or claim.relation.object_entity_id,
                     evidence_paths=[span.path for span in claim.evidence.spans],
+                    intake_proofs=claim.evidence.intake_proofs,
                     reason="Memory claim matched request terms.",
                 )
             )

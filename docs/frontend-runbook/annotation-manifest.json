@@ -1,0 +1,2569 @@
+{
+  "generatedAt": "2026-07-01T12:49:58.521Z",
+  "baseUrl": "http://127.0.0.1:4300",
+  "pages": [
+    {
+      "slug": "mission-control",
+      "route": "/mission-control",
+      "title": "Mission Control",
+      "purpose": "全局驾驶舱，用一屏汇总记忆源、审计、pipeline、需要人工 review 的事项。",
+      "annotations": [
+        {
+          "label": "页面主叙事与入口",
+          "selector": ".mission-hero",
+          "user": "告诉用户 DREAM 的定位，并提供进入 Workbench 和 Trust Trail 的两个主入口。",
+          "dev": "DashboardComponent 的 hero 区，链接到 /workbench 和 /trust。"
+        },
+        {
+          "label": "主工作流按钮",
+          "selector": ".hero-actions",
+          "user": "Open Workbench 进入需求/PR 工作流；Inspect Trust Trail 查看可审计证据链。",
+          "dev": "routerLink 导航，无业务 side effect。"
+        },
+        {
+          "label": "本地演示护栏",
+          "selector": ".hero-ops",
+          "user": "展示当前 demo 是否允许外部修改、默认 provider、是否需要人工审批。",
+          "dev": "静态 guardrails 数组，说明 mock/demo 安全边界。"
+        },
+        {
+          "label": "关键指标条",
+          "selector": ".metric-strip",
+          "user": "快速看当前 mock memory、case、scorecard、rating、待 review 数量。",
+          "dev": "由 MockDreamService 聚合 chunks/files/cases/ratings 计算。"
+        },
+        {
+          "label": "Memory-to-review pipeline",
+          "selector": ".pipeline-panel",
+          "user": "展示从知识包、代码索引、检索路径到 review/audit 的端到端链路。",
+          "dev": "pipelineSteps computed；每个 step 是 routerLink。"
+        },
+        {
+          "label": "Recent Audit Runs",
+          "heading": "Recent Audit Runs",
+          "user": "最近生成/审计 run 的状态表，用于判断哪些输出失败、通过或待审。",
+          "dev": "recentRuns mock table，状态 pill 基于 run.status 映射。"
+        },
+        {
+          "label": "Retrieval Path Preview",
+          "heading": "Retrieval Path Preview",
+          "user": "预览业务概念如何映射到 evidence path。",
+          "dev": "searchEvidenceGraph 默认 query=execution status。"
+        },
+        {
+          "label": "Knowledge Pack Health",
+          "heading": "Knowledge Pack Health",
+          "user": "查看知识包覆盖率和健康状态，定位缺失/危险知识源。",
+          "dev": "listKnowledgePacks 的 coverage/status 展示。"
+        },
+        {
+          "label": "Active Requirement Case",
+          "heading": "Active Requirement Case",
+          "user": "当前最重要需求 case 的摘要、置信度和 evidence/impact 数量。",
+          "dev": "primaryCase() 取 requirementCases()[0]。"
+        },
+        {
+          "label": "Human Review Required",
+          "heading": "Human Review Required",
+          "user": "列出需要人工确认的 run，提醒不能自动发布。",
+          "dev": "needsReview computed 过滤 needs_review/warning。"
+        },
+        {
+          "label": "Quick Actions",
+          "selector": ".quick-action-row",
+          "user": "快捷进入需求、代码索引、PR review、Memory、Trust、Context Trail。",
+          "dev": "quickActions 静态配置，均为 routerLink。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/mission-control",
+      "browserTitle": "DREAM Mission Control",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\mission-control.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/mission-control-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 2827
+        },
+        "doc": {
+          "width": 1280,
+          "height": 2827
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 2827
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "DashboardComponent 的 hero 区，链接到 /workbench 和 /trust。",
+            "label": "页面主叙事与入口",
+            "selector": ".mission-hero",
+            "user": "告诉用户 DREAM 的定位，并提供进入 Workbench 和 Trust Trail 的两个主入口。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 275
+            },
+            "sample": "DemoCorp Forecast PlatformMission Control A source-backed memory cockpit for turning rough engineering requests and PR diffs into evidence paths, review-ready drafts, scorecards, a"
+          },
+          {
+            "dev": "routerLink 导航，无业务 side effect。",
+            "label": "主工作流按钮",
+            "selector": ".hero-actions",
+            "user": "Open Workbench 进入需求/PR 工作流；Inspect Trust Trail 查看可审计证据链。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 329,
+              "y": 296,
+              "width": 582,
+              "height": 42
+            },
+            "sample": "Open Workbench Inspect Trust Trail"
+          },
+          {
+            "dev": "静态 guardrails 数组，说明 mock/demo 安全边界。",
+            "label": "本地演示护栏",
+            "selector": ".hero-ops",
+            "user": "展示当前 demo 是否允许外部修改、默认 provider、是否需要人工审批。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 931,
+              "y": 113,
+              "width": 300,
+              "height": 225
+            },
+            "sample": "Local Demo GuardrailsExternal mutationDisabledProvider defaultMock localHuman approvalRequired"
+          },
+          {
+            "dev": "由 MockDreamService 聚合 chunks/files/cases/ratings 计算。",
+            "label": "关键指标条",
+            "selector": ".metric-strip",
+            "user": "快速看当前 mock memory、case、scorecard、rating、待 review 数量。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 385,
+              "width": 952,
+              "height": 115
+            },
+            "sample": "Memory Sources53docs + codeRequirement Cases1brief readyEval Scorecards1rule-basedHuman Ratings1stored locallyNeeds Review2human gate"
+          },
+          {
+            "dev": "pipelineSteps computed；每个 step 是 routerLink。",
+            "label": "Memory-to-review pipeline",
+            "selector": ".pipeline-panel",
+            "user": "展示从知识包、代码索引、检索路径到 review/audit 的端到端链路。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 523,
+              "width": 952,
+              "height": 257
+            },
+            "sample": "Memory-to-review pipelineKnowledge and code context stay visible all the way through review and audit.Paths enabledKnowledge Packs12 chunksDomain docs, runbooks, incidents, Jira, P"
+          },
+          {
+            "dev": "recentRuns mock table，状态 pill 基于 run.status 映射。",
+            "heading": "Recent Audit Runs",
+            "label": "Recent Audit Runs",
+            "user": "最近生成/审计 run 的状态表，用于判断哪些输出失败、通过或待审。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 803,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Recent Audit RunsView all runs"
+          },
+          {
+            "dev": "searchEvidenceGraph 默认 query=execution status。",
+            "heading": "Retrieval Path Preview",
+            "label": "Retrieval Path Preview",
+            "user": "预览业务概念如何映射到 evidence path。",
+            "id": 9,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 803,
+              "width": 348,
+              "height": 71
+            },
+            "sample": "Retrieval Path PreviewOpen Memory Hub"
+          },
+          {
+            "dev": "listKnowledgePacks 的 coverage/status 展示。",
+            "heading": "Knowledge Pack Health",
+            "label": "Knowledge Pack Health",
+            "user": "查看知识包覆盖率和健康状态，定位缺失/危险知识源。",
+            "id": 10,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 1242,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Knowledge Pack HealthSearch packs"
+          },
+          {
+            "dev": "primaryCase() 取 requirementCases()[0]。",
+            "heading": "Active Requirement Case",
+            "label": "Active Requirement Case",
+            "user": "当前最重要需求 case 的摘要、置信度和 evidence/impact 数量。",
+            "id": 11,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 2107,
+              "width": 348,
+              "height": 92
+            },
+            "sample": "Active Requirement Casejira_draft_needs_answers"
+          },
+          {
+            "dev": "needsReview computed 过滤 needs_review/warning。",
+            "heading": "Human Review Required",
+            "label": "Human Review Required",
+            "user": "列出需要人工确认的 run，提醒不能自动发布。",
+            "id": 12,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 2385,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Human Review RequiredRate outputs"
+          },
+          {
+            "dev": "quickActions 静态配置，均为 routerLink。",
+            "label": "Quick Actions",
+            "selector": ".quick-action-row",
+            "user": "快捷进入需求、代码索引、PR review、Memory、Trust、Context Trail。",
+            "id": 13,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 2599,
+              "width": 952,
+              "height": 204
+            },
+            "sample": "Requirement CaseTurn rough requests into impact maps, briefs, and Jira drafts.Code IndexSearch symbols, layers, concepts, and test mappings.PR ReviewReview fake diffs with source-b"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "memory-hub",
+      "route": "/memory",
+      "title": "Memory Hub",
+      "purpose": "Memory Hub 总览页，管理 source evidence 到 approved workflow context 的闭环。",
+      "annotations": [
+        {
+          "label": "Memory Hub 标题与动作",
+          "selector": ".workspace-header",
+          "user": "Add Source 切到 Intake；Trace Request 切到检索轨迹。",
+          "dev": "openIntake/openTrace 只更新 activeTab signal。"
+        },
+        {
+          "label": "Hub 内部 Tabs",
+          "selector": ".workspace-tabs",
+          "user": "切换 Loop Overview、Intake、Atlas、Trace、Evidence 五个内嵌视图。",
+          "dev": "activeTab signal 控制嵌入组件。"
+        },
+        {
+          "label": "Active Request 卡片",
+          "selector": ".smart-intake",
+          "user": "当前示例请求和 Show Trace/Open Atlas/Review Sources 快捷入口。",
+          "dev": "按钮分别切换 trace/atlas/intake tab。"
+        },
+        {
+          "label": "Memory Loop Stages",
+          "selector": ".loop-strip",
+          "user": "显示 raw source 到 eval/audit 的每一步数量和状态。",
+          "dev": "loopStages 静态数组，data-state 控制样式。"
+        },
+        {
+          "label": "Overview Focus Grid",
+          "selector": ".overview-grid",
+          "user": "当前关注 capability、atlas 高亮、待处理事项。",
+          "dev": "focusMetrics/atlasHighlights/activeWork 展示；按钮切换内部 tab。"
+        },
+        {
+          "label": "Retrieval Trace Preview",
+          "selector": ".trace-preview",
+          "user": "预览 request -> concepts -> memory -> code -> prompt -> eval 的链路。",
+          "dev": "traceSteps 静态数组，Inspect full path 切 trace tab。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/memory",
+      "browserTitle": "DREAM Memory Hub",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\memory-hub.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/memory-hub-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1155
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1155
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1155
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "openIntake/openTrace 只更新 activeTab signal。",
+            "label": "Memory Hub 标题与动作",
+            "selector": ".workspace-header",
+            "user": "Add Source 切到 Intake；Trace Request 切到检索轨迹。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 56
+            },
+            "sample": "Memory HubGovern the loop from raw source evidence to approved workflow context.Add SourceTrace Request"
+          },
+          {
+            "dev": "activeTab signal 控制嵌入组件。",
+            "label": "Hub 内部 Tabs",
+            "selector": ".workspace-tabs",
+            "user": "切换 Loop Overview、Intake、Atlas、Trace、Evidence 五个内嵌视图。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 158,
+              "width": 952,
+              "height": 36
+            },
+            "sample": "Loop OverviewIntake & ReviewMemory AtlasRetrieval TraceEvidence Browser"
+          },
+          {
+            "dev": "按钮分别切换 trace/atlas/intake tab。",
+            "label": "Active Request 卡片",
+            "selector": ".smart-intake",
+            "user": "当前示例请求和 Show Trace/Open Atlas/Review Sources 快捷入口。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 208,
+              "width": 952,
+              "height": 148
+            },
+            "sample": "Active requestExplain billing access before AI product research runs DREAM should connect the business request to approved memory, local code index, tests, prompt preview, and retr"
+          },
+          {
+            "dev": "loopStages 静态数组，data-state 控制样式。",
+            "label": "Memory Loop Stages",
+            "selector": ".loop-strip",
+            "user": "显示 raw source 到 eval/audit 的每一步数量和状态。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 370,
+              "width": 952,
+              "height": 165
+            },
+            "sample": "Raw Source18Uploaded docs waiting for parse, review, or promotion.Memory Cards42Structured claims split from runbooks, HLDs, and notes.Approved Memory128Human-approved claims avail"
+          },
+          {
+            "dev": "focusMetrics/atlasHighlights/activeWork 展示；按钮切换内部 tab。",
+            "label": "Overview Focus Grid",
+            "selector": ".overview-grid",
+            "user": "当前关注 capability、atlas 高亮、待处理事项。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 549,
+              "width": 952,
+              "height": 375
+            },
+            "sample": "Current focusView in AtlasLicense and Billing Gates Security-sensitive memory controls checkout, credits, usage authorization, and prompt redaction for paid workflows. 3Approved cl"
+          },
+          {
+            "dev": "traceSteps 静态数组，Inspect full path 切 trace tab。",
+            "label": "Retrieval Trace Preview",
+            "selector": ".trace-preview",
+            "user": "预览 request -> concepts -> memory -> code -> prompt -> eval 的链路。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 938,
+              "width": 952,
+              "height": 193
+            },
+            "sample": "Retrieval traceInspect full pathRequestUser asks for billing-aware product discovery workflow changes.Conceptslicense gate, credits, checkout, usage metering, secret redactionMemor"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "engineering-workbench",
+      "route": "/workbench",
+      "title": "Engineering Workbench",
+      "purpose": "需求分析和 PR Review 的工作台容器，旁边固定显示 context trust sidebar。",
+      "annotations": [
+        {
+          "label": "Workbench 标题与 Trust 入口",
+          "selector": ".workspace-header",
+          "user": "说明工作台目的，右侧 Trust Center 链接用于打开检索审计。",
+          "dev": "trust-link routerLink=/trust。"
+        },
+        {
+          "label": "Workflow Mode Switch",
+          "selector": ".mode-switch",
+          "user": "在 Requirement Case 与 PR Review 两种工作模式间切换。",
+          "dev": "activeMode signal 控制 app-requirement-draft/app-pr-review。"
+        },
+        {
+          "label": "嵌入工作流区域",
+          "selector": ".workbench-main .workspace-embedded",
+          "user": "当前模式的实际表单和结果输出区。",
+          "dev": "默认 requirement；PR 模式复用 PrReviewComponent。"
+        },
+        {
+          "label": "Context Sidebar",
+          "selector": ".context-rail",
+          "user": "持续显示检测到的概念、检索 trail、context eval 和 active case。",
+          "dev": "由 getContextIntelligenceSnapshot + primaryCase mock 数据驱动。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/workbench",
+      "browserTitle": "DREAM Engineering Workbench",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\engineering-workbench.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/engineering-workbench-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1219
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1219
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1219
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "trust-link routerLink=/trust。",
+            "label": "Workbench 标题与 Trust 入口",
+            "selector": ".workspace-header",
+            "user": "说明工作台目的，右侧 Trust Center 链接用于打开检索审计。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 121
+            },
+            "sample": "Source-backed engineering workflowEngineering Workbench Turn a rough requirement or PR diff into selected evidence, an impact map, open questions, draft output, and a traceable rea"
+          },
+          {
+            "dev": "activeMode signal 控制 app-requirement-draft/app-pr-review。",
+            "label": "Workflow Mode Switch",
+            "selector": ".mode-switch",
+            "user": "在 Requirement Case 与 PR Review 两种工作模式间切换。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 227,
+              "width": 574,
+              "height": 92
+            },
+            "sample": "Requirement CaseRough business request -> impact map -> open questions -> Jira-ready draft.PR ReviewDiff and Jira context -> related code -> evidence-backed review aid."
+          },
+          {
+            "dev": "默认 requirement；PR 模式复用 PrReviewComponent。",
+            "label": "嵌入工作流区域",
+            "selector": ".workbench-main .workspace-embedded",
+            "user": "当前模式的实际表单和结果输出区。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 334,
+              "width": 574,
+              "height": 786
+            },
+            "sample": "Requirement intelligenceRequirement Case Turn incomplete business requests into source-backed evidence, impact maps, role questions, an engineering brief, and a Jira-ready draft. H"
+          },
+          {
+            "dev": "由 getContextIntelligenceSnapshot + primaryCase mock 数据驱动。",
+            "label": "Context Sidebar",
+            "selector": ".context-rail",
+            "user": "持续显示检测到的概念、检索 trail、context eval 和 active case。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 896,
+              "y": 227,
+              "width": 360,
+              "height": 969
+            },
+            "sample": "Context SidebarAsync Status Context PackUsers want to know which task is still running when a forecast job takes too long. The execution page should show better progress.Detected C"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "trust-center",
+      "route": "/trust",
+      "title": "Trust Center",
+      "purpose": "检索可信度、prompt preview、eval/audit 和 human rating 的治理入口。",
+      "annotations": [
+        {
+          "label": "Trust Center 标题",
+          "selector": ".workspace-header",
+          "user": "解释这是 review/governance 面板。",
+          "dev": "TrustCenterComponent 容器页。"
+        },
+        {
+          "label": "汇总数字",
+          "selector": ".trust-summary",
+          "user": "快速看 trail steps、scorecards、audit runs 数量。",
+          "dev": "snapshot/auditRuns/scorecards 数据聚合。"
+        },
+        {
+          "label": "Trust Tabs",
+          "selector": ".workspace-tabs",
+          "user": "切换 Retrieval Trust 和 Eval & Audit。",
+          "dev": "activeTab signal 控制 ContextIntelligence 或 AuditEval。"
+        },
+        {
+          "label": "嵌入治理视图",
+          "selector": ".workspace-embedded",
+          "user": "当前 tab 的实际 trust/audit 内容。",
+          "dev": "默认加载 app-context-intelligence。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/trust",
+      "browserTitle": "DREAM Trust Center",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\trust-center.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/trust-center-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 3441
+        },
+        "doc": {
+          "width": 1280,
+          "height": 3441
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 3441
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "TrustCenterComponent 容器页。",
+            "label": "Trust Center 标题",
+            "selector": ".workspace-header",
+            "user": "解释这是 review/governance 面板。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 121
+            },
+            "sample": "Retrieval trust and governanceTrust Center A consolidated review surface for context selection, prompt preview, retrieval eval, human ratings, and audit records. Trail Steps5Scorec"
+          },
+          {
+            "dev": "snapshot/auditRuns/scorecards 数据聚合。",
+            "label": "汇总数字",
+            "selector": ".trust-summary",
+            "user": "快速看 trail steps、scorecards、audit runs 数量。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 896,
+              "y": 129,
+              "width": 360,
+              "height": 80
+            },
+            "sample": "Trail Steps5Scorecards1Audit Runs5"
+          },
+          {
+            "dev": "activeTab signal 控制 ContextIntelligence 或 AuditEval。",
+            "label": "Trust Tabs",
+            "selector": ".workspace-tabs",
+            "user": "切换 Retrieval Trust 和 Eval & Audit。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 227,
+              "width": 952,
+              "height": 92
+            },
+            "sample": "Retrieval TrustInspect retrieval trail, context pack, evidence cards, prompt preview, and logic chain.Eval & AuditReview scorecards, human ratings, run history, and deterministic q"
+          },
+          {
+            "dev": "默认加载 app-context-intelligence。",
+            "label": "嵌入治理视图",
+            "selector": ".workspace-embedded",
+            "user": "当前 tab 的实际 trust/audit 内容。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 336,
+              "width": 952,
+              "height": 3080
+            },
+            "sample": "Context intelligence layerContext Intelligence Show how DREAM turns rough intent into a source-backed context pack, evaluates retrieval quality, assembles prompt instructions, and "
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "knowledge-memory",
+      "route": "/knowledge",
+      "title": "Knowledge Memory",
+      "purpose": "知识源搜索和 chunk 预览页面，用于查 domain docs/runbooks/incidents/Jira/PR/test docs。",
+      "annotations": [
+        {
+          "label": "页面说明与索引状态",
+          "selector": ".page-header",
+          "user": "说明当前搜索 demo_team synthetic knowledge pack。",
+          "dev": "index-beacon 静态显示 synthetic only。"
+        },
+        {
+          "label": "搜索与筛选面板",
+          "selector": "article.scan-panel",
+          "user": "输入 query、app、doc type、component、Top K 后搜索来源。",
+          "dev": "Reactive form 调 dream.searchKnowledge 并更新 chunks/selectedChunk。"
+        },
+        {
+          "label": "展开后的搜索表单",
+          "selector": "#knowledge-search-form",
+          "user": "高级过滤条件，搜索后会自动折叠并更新结果。",
+          "dev": "searchCollapsed signal 控制。"
+        },
+        {
+          "label": "Knowledge Source Tree",
+          "selector": ".source-tree",
+          "user": "按 source type 分组展示命中的 chunk，点击任意 chunk 查看右侧详情。",
+          "dev": "sourceGroups computed 按 sourceType group。"
+        },
+        {
+          "label": "Chunk Preview",
+          "heading": "Chunk Preview",
+          "user": "查看选中 chunk 的摘要、概念标签、metadata 和 GitHub source link。",
+          "dev": "selectedChunk signal；concept 按钮会回填 query 并 search。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/knowledge",
+      "browserTitle": "Knowledge Base",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\knowledge-memory.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/knowledge-memory-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1380
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1380
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1380
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "index-beacon 静态显示 synthetic only。",
+            "label": "页面说明与索引状态",
+            "selector": ".page-header",
+            "user": "说明当前搜索 demo_team synthetic knowledge pack。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Team knowledge packKnowledge Memory Search DFP domain docs, architecture notes, runbooks, incidents, historical Jira/PR, testing plans, and concept memory. demo_teamsynthetic only"
+          },
+          {
+            "dev": "Reactive form 调 dream.searchKnowledge 并更新 chunks/selectedChunk。",
+            "label": "搜索与筛选面板",
+            "selector": "article.scan-panel",
+            "user": "输入 query、app、doc type、component、Top K 后搜索来源。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 219,
+              "width": 584,
+              "height": 1137
+            },
+            "sample": "Search Knowledgedemo_teamQueryApplicationAll applicationsForecastDemoBatchJobDemoOutputPreviewDemoDocument typeAll document typesdomainarchitecturerunbooksincidentshistorical-jirah"
+          },
+          {
+            "dev": "searchCollapsed signal 控制。",
+            "label": "展开后的搜索表单",
+            "selector": "#knowledge-search-form",
+            "user": "高级过滤条件，搜索后会自动折叠并更新结果。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 283,
+              "width": 582,
+              "height": 327
+            },
+            "sample": "QueryApplicationAll applicationsForecastDemoBatchJobDemoOutputPreviewDemoDocument typeAll document typesdomainarchitecturerunbooksincidentshistorical-jirahistorical-prtestingpr-rev"
+          },
+          {
+            "dev": "sourceGroups computed 按 sourceType group。",
+            "label": "Knowledge Source Tree",
+            "selector": ".source-tree",
+            "user": "按 source type 分组展示命中的 chunk，点击任意 chunk 查看右侧详情。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 610,
+              "width": 582,
+              "height": 745
+            },
+            "sample": "IncidentsINC-103 Status Stuck RUNNINGknowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.mdArchitectureStatus Tracking Designknowledge_packs/demo_team/docs/archit"
+          },
+          {
+            "dev": "selectedChunk signal；concept 按钮会回填 query 并 search。",
+            "heading": "Chunk Preview",
+            "label": "Chunk Preview",
+            "user": "查看选中 chunk 的摘要、概念标签、metadata 和 GitHub source link。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 220,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Chunk Preview"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "knowledge-intake",
+      "route": "/knowledge-intake",
+      "title": "Knowledge Intake",
+      "purpose": "把上传/导入的 source parse 成候选 memory cards，并经过 approve/promote 流程。",
+      "annotations": [
+        {
+          "label": "Intake 标题",
+          "selector": ".page-header",
+          "user": "进入 source intake/review 工作台。",
+          "dev": "KnowledgeIntakeComponent standalone route。"
+        },
+        {
+          "label": "Sources Queue",
+          "heading": "Sources",
+          "user": "展示待处理 source、解析状态、reviewer、memory card 数量和目标 pack。",
+          "dev": "queue signal 来自 listKnowledgeIntakeQueue。"
+        },
+        {
+          "label": "Upload Source",
+          "selector": ".upload-strip",
+          "user": "上传 md/txt/docx/html/json；本地读取并解析成 proposed memory cards。",
+          "dev": "File.text() + buildUploadedIntakeItem，不调用后端。"
+        },
+        {
+          "label": "Review & Approve Console",
+          "selector": ".review-console",
+          "user": "对选中 source 进行 re-parse、approve、promote，并记录 review comment。",
+          "dev": "reparse/approve/promote 更新 queue signal。"
+        },
+        {
+          "label": "Proposed Memory Cards",
+          "heading": "Proposed Memory Cards",
+          "user": "展示解析出来的候选 memory cards、摘要、source span 和 retrieval tags。",
+          "dev": "item.sections 渲染，状态取决于 reviewStatus。"
+        },
+        {
+          "label": "Retrieval Tags",
+          "heading": "Retrieval Tags",
+          "user": "解析出的概念标签，用于后续检索匹配。",
+          "dev": "item.parsedConcepts 展示，不可编辑。"
+        },
+        {
+          "label": "Checks & Reviewer Notes",
+          "heading": "Checks & Reviewer Notes",
+          "user": "系统检查和人工 review note 的审计说明。",
+          "dev": "reviewNotes 数组，comment 文案会插入。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/knowledge-intake",
+      "browserTitle": "Knowledge Intake",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\knowledge-intake.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/knowledge-intake-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1594
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1594
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1594
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "KnowledgeIntakeComponent standalone route。",
+            "label": "Intake 标题",
+            "selector": ".page-header",
+            "user": "进入 source intake/review 工作台。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 41
+            },
+            "sample": "Knowledge Intake"
+          },
+          {
+            "dev": "queue signal 来自 listKnowledgeIntakeQueue。",
+            "heading": "Sources",
+            "label": "Sources Queue",
+            "user": "展示待处理 source、解析状态、reviewer、memory card 数量和目标 pack。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 152,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Sources3 sources"
+          },
+          {
+            "dev": "File.text() + buildUploadedIntakeItem，不调用后端。",
+            "label": "Upload Source",
+            "selector": ".upload-strip",
+            "user": "上传 md/txt/docx/html/json；本地读取并解析成 proposed memory cards。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 208,
+              "width": 582,
+              "height": 61
+            },
+            "sample": "Upload sourceNo file selectedReady."
+          },
+          {
+            "dev": "reparse/approve/promote 更新 queue signal。",
+            "label": "Review & Approve Console",
+            "selector": ".review-console",
+            "user": "对选中 source 进行 re-parse、approve、promote，并记录 review comment。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 906,
+              "y": 151,
+              "width": 350,
+              "height": 704
+            },
+            "sample": "Review & Approve needs review ImportedJun 21, 10:12 AMReviewerOps EnablementCards3 proposedDestinationDFP Operations Memory Re-parse Approve Cards Promote Cards Review commentRevie"
+          },
+          {
+            "dev": "item.sections 渲染，状态取决于 reviewStatus。",
+            "heading": "Proposed Memory Cards",
+            "label": "Proposed Memory Cards",
+            "user": "展示解析出来的候选 memory cards、摘要、source span 和 retrieval tags。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 878,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Proposed Memory Cards3 cards"
+          },
+          {
+            "dev": "item.parsedConcepts 展示，不可编辑。",
+            "heading": "Retrieval Tags",
+            "label": "Retrieval Tags",
+            "user": "解析出的概念标签，用于后续检索匹配。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 878,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Retrieval Tagsdocs -> code/tests"
+          },
+          {
+            "dev": "reviewNotes 数组，comment 文案会插入。",
+            "heading": "Checks & Reviewer Notes",
+            "label": "Checks & Reviewer Notes",
+            "user": "系统检查和人工 review note 的审计说明。",
+            "id": 9,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 1162,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Checks & Reviewer Notes"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "memory-atlas",
+      "route": "/codebase",
+      "title": "Memory Atlas",
+      "purpose": "代码库 capability memory atlas，把业务能力、代码文件、测试、风险和 prompt 用途连接起来。",
+      "annotations": [
+        {
+          "label": "Atlas 标题与 Repo 状态",
+          "selector": ".page-header",
+          "user": "说明当前索引的 repo 和 provider snapshot。",
+          "dev": "repoName/providerLabel/indexedAt 静态 mock。"
+        },
+        {
+          "label": "左侧 Atlas Rail",
+          "selector": ".atlas-rail",
+          "user": "查看 indexed repo、attention queue、trust states 和高级搜索。",
+          "dev": "reviewQueue/healthStats/searchCollapsed 驱动。"
+        },
+        {
+          "label": "Advanced Search",
+          "selector": ".search-card",
+          "user": "按 query/topK 搜索代码 evidence，并选中第一个 match。",
+          "dev": "dream.searchCodebase 更新 results 和 selectedFile。"
+        },
+        {
+          "label": "Selected Memory Hero",
+          "selector": ".atlas-hero",
+          "user": "当前选中 capability 的摘要、状态、trust 和 evidence 数量。",
+          "dev": "selectedCapability computed。"
+        },
+        {
+          "label": "Capability Network",
+          "selector": ".capability-canvas",
+          "user": "点击 capability node 切换上下文，查看能力之间的关联。",
+          "dev": "selectCapability 更新 selectedCapabilityId/selectedFileId。"
+        },
+        {
+          "label": "Impact Map",
+          "selector": ".impact-map",
+          "user": "把能力拆成 source code、tests、docs，可点击具体文件/路径。",
+          "dev": "selectedFiles/selectedTests/selectedDocs computed。"
+        },
+        {
+          "label": "Prompt Assembly Trace",
+          "selector": ".trace-strip",
+          "user": "说明 request 到 prompt slots 的组装步骤。",
+          "dev": "traceSteps 静态数组。"
+        },
+        {
+          "label": "Evidence Library",
+          "selector": ".evidence-library",
+          "user": "按 frontend/API/service/domain/tests 分组列出当前 capability 的 evidence。",
+          "dev": "evidenceGroups computed。"
+        },
+        {
+          "label": "Decision Inspector",
+          "selector": ".decision-inspector",
+          "user": "右侧查看为什么信任、风险缺口、概念、选中 evidence 和搜索 matches。",
+          "dev": "selectedCapability/selectedFile/results 联动展示。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/codebase",
+      "browserTitle": "Code Index",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\memory-atlas.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/memory-atlas-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 2138
+        },
+        "doc": {
+          "width": 1280,
+          "height": 2138
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 2138
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "repoName/providerLabel/indexedAt 静态 mock。",
+            "label": "Atlas 标题与 Repo 状态",
+            "selector": ".page-header",
+            "user": "说明当前索引的 repo 和 provider snapshot。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 41
+            },
+            "sample": "Memory Atlasecom-product-discovery-aiLocal repo scanner snapshot"
+          },
+          {
+            "dev": "reviewQueue/healthStats/searchCollapsed 驱动。",
+            "label": "左侧 Atlas Rail",
+            "selector": ".atlas-rail",
+            "user": "查看 indexed repo、attention queue、trust states 和高级搜索。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 151,
+              "width": 250,
+              "height": 1963
+            },
+            "sample": "Indexed repoecom-product-discovery-aiSourceexternal repo / indexed metadata onlyUpdatedJun 30, 2026 07:15Memory10 capabilities / 41 filesAttention6Collection PlanningNeeds Human Re"
+          },
+          {
+            "dev": "dream.searchCodebase 更新 results 和 selectedFile。",
+            "label": "Advanced Search",
+            "selector": ".search-card",
+            "user": "按 query/topK 搜索代码 evidence，并选中第一个 match。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 1192,
+              "width": 250,
+              "height": 266
+            },
+            "sample": "Advanced searchbilling checkout license creditsQueryTop K Search evidence"
+          },
+          {
+            "dev": "selectedCapability computed。",
+            "label": "Selected Memory Hero",
+            "selector": ".atlas-hero",
+            "user": "当前选中 capability 的摘要、状态、trust 和 evidence 数量。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 566,
+              "y": 151,
+              "width": 367,
+              "height": 405
+            },
+            "sample": "Selected memory cardLicense and Billing GatesControls feature access, credits, checkout sessions, usage authorization, and remote monetization adapters.StatusSecurity SensitiveTrus"
+          },
+          {
+            "dev": "selectCapability 更新 selectedCapabilityId/selectedFileId。",
+            "label": "Capability Network",
+            "selector": ".capability-canvas",
+            "user": "点击 capability node 切换上下文，查看能力之间的关联。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 566,
+              "y": 566,
+              "width": 367,
+              "height": 341
+            },
+            "sample": "Capability networkWhat this repo knows how to doClick a node to inspect memory and code impact.Ready for PR ContextUniversal Intake4 files / 2 testsNeeds Human ReviewCollection Pla"
+          },
+          {
+            "dev": "selectedFiles/selectedTests/selectedDocs computed。",
+            "label": "Impact Map",
+            "selector": ".impact-map",
+            "user": "把能力拆成 source code、tests、docs，可点击具体文件/路径。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 566,
+              "y": 917,
+              "width": 367,
+              "height": 323
+            },
+            "sample": "CapabilityLicense and Billing GatesAdds governance constraints for AI calls, image generation, export downloads, and paid access.Source code license.py license.py adapters.py monet"
+          },
+          {
+            "dev": "traceSteps 静态数组。",
+            "label": "Prompt Assembly Trace",
+            "selector": ".trace-strip",
+            "user": "说明 request 到 prompt slots 的组装步骤。",
+            "id": 9,
+            "missing": false,
+            "rect": {
+              "x": 566,
+              "y": 1251,
+              "width": 367,
+              "height": 228
+            },
+            "sample": "RequestNeed billing-aware AI workflow behavior.Conceptslicense gate, credits, checkout, usage metering.Memory claimsUse approved claims and flag security-sensitive evidence.Code im"
+          },
+          {
+            "dev": "evidenceGroups computed。",
+            "label": "Evidence Library",
+            "selector": ".evidence-library",
+            "user": "按 frontend/API/service/domain/tests 分组列出当前 capability 的 evidence。",
+            "id": 10,
+            "missing": false,
+            "rect": {
+              "x": 566,
+              "y": 1489,
+              "width": 367,
+              "height": 625
+            },
+            "sample": "Evidence cardsSource and test links selected for this memory8 indexed itemsFrontendcheckout-flow.tsfrontend-angular/src/app/checkout-flow.tsAPI Routeslicense.pyapp/api/routes/licen"
+          },
+          {
+            "dev": "selectedCapability/selectedFile/results 联动展示。",
+            "label": "Decision Inspector",
+            "selector": ".decision-inspector",
+            "user": "右侧查看为什么信任、风险缺口、概念、选中 evidence 和搜索 matches。",
+            "id": 11,
+            "missing": false,
+            "rect": {
+              "x": 926,
+              "y": 151,
+              "width": 330,
+              "height": 1963
+            },
+            "sample": "Security Sensitive License and Billing GatesLicense routes, LicenseService, billing adapters, and checkout helpers enforce product access and hide secret values.Why DREAM trusts it"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "retrieval-paths",
+      "route": "/graph",
+      "title": "Retrieval Paths",
+      "purpose": "按业务概念查 docs -> code -> tests 的 evidence graph path。",
+      "annotations": [
+        {
+          "label": "页面标题与图谱状态",
+          "selector": ".page-header",
+          "user": "显示当前 demo repo 的 graph path ready 状态。",
+          "dev": "EvidenceGraphComponent route。"
+        },
+        {
+          "label": "Find Retrieval Path 表单",
+          "selector": "article.scan-panel",
+          "user": "输入 business concept/risk 和 topK 后 trace sources。",
+          "dev": "Reactive form 调 searchEvidenceGraph。"
+        },
+        {
+          "label": "Graph Path Results",
+          "selector": ".graph-path-list",
+          "user": "点击结果选择某条 evidence path。",
+          "dev": "selectedPath signal 更新右侧 Why These Sources。"
+        },
+        {
+          "label": "Why These Sources",
+          "heading": "Why These Sources",
+          "user": "解释选中 path 中每个节点为什么进入 prompt context。",
+          "dev": "path.path/evidenceTypes/reviewHint 展示。"
+        },
+        {
+          "label": "Prompt Boundary",
+          "heading": "Prompt Boundary",
+          "user": "提醒哪些 docs/incidents/code/tests 会进入 context pack，并提供快捷 query。",
+          "dev": "快捷按钮 patchValue + search。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/graph",
+      "browserTitle": "Retrieval Paths",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\retrieval-paths.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/retrieval-paths-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1120
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1120
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1120
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "EvidenceGraphComponent route。",
+            "label": "页面标题与图谱状态",
+            "selector": ".page-header",
+            "user": "显示当前 demo repo 的 graph path ready 状态。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 61
+            },
+            "sample": "Retrieval Pathsdfp-demo-repopaths ready"
+          },
+          {
+            "dev": "Reactive form 调 searchEvidenceGraph。",
+            "label": "Find Retrieval Path 表单",
+            "selector": "article.scan-panel",
+            "user": "输入 business concept/risk 和 topK 后 trace sources。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 171,
+              "width": 584,
+              "height": 925
+            },
+            "sample": "Find Retrieval Pathdocs -> code -> testsBusiness concept or riskTop KArtifactJSON artifactTrace Sourcesexecution statusStale RUNNING state or missing task-level transition could mi"
+          },
+          {
+            "dev": "selectedPath signal 更新右侧 Why These Sources。",
+            "label": "Graph Path Results",
+            "selector": ".graph-path-list",
+            "user": "点击结果选择某条 evidence path。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 472,
+              "width": 582,
+              "height": 361
+            },
+            "sample": "execution statusStale RUNNING state or missing task-level transition could mislead Analyst and Operator views.execution statusStatus Tracking DesignStatusTracker.javaStatusTrackerT"
+          },
+          {
+            "dev": "path.path/evidenceTypes/reviewHint 展示。",
+            "heading": "Why These Sources",
+            "label": "Why These Sources",
+            "user": "解释选中 path 中每个节点为什么进入 prompt context。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 172,
+              "width": 348,
+              "height": 71
+            },
+            "sample": "Why These Sourcesreview before prompt"
+          },
+          {
+            "dev": "快捷按钮 patchValue + search。",
+            "heading": "Prompt Boundary",
+            "label": "Prompt Boundary",
+            "user": "提醒哪些 docs/incidents/code/tests 会进入 context pack，并提供快捷 query。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 796,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Prompt Boundary"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "context-intelligence",
+      "route": "/context-intelligence",
+      "title": "Context Intelligence",
+      "purpose": "展示 intent 到 source-backed context pack、prompt preview、logic chain 的完整组装过程。",
+      "annotations": [
+        {
+          "label": "Context 页面说明",
+          "selector": ".page-header",
+          "user": "说明当前 caseId 和 context pack ready 状态。",
+          "dev": "snapshot 来自 getContextIntelligenceSnapshot。"
+        },
+        {
+          "label": "Active Request Summary",
+          "selector": ".context-hero",
+          "user": "当前请求、trail/pack/evidence 的摘要计数。",
+          "dev": "snapshot.title/request/sections/evidenceCards。"
+        },
+        {
+          "label": "Retrieval Eval Metrics",
+          "selector": ".grid-4",
+          "user": "衡量 coverage、freshness、source mix 等检索质量。",
+          "dev": "snapshot.metrics + statusClass。"
+        },
+        {
+          "label": "Retrieval Trail Timeline",
+          "heading": "Retrieval Trail Timeline",
+          "user": "逐步展示 query、匹配 source 数和状态。",
+          "dev": "retrievalTrail 渲染。"
+        },
+        {
+          "label": "Context Pack Sections",
+          "heading": "Context Pack Sections",
+          "user": "点击 section 查看该 section 的 guardrail 和 linked evidence。",
+          "dev": "selectedSectionId signal 控制 selectedEvidence。"
+        },
+        {
+          "label": "Evidence Cards",
+          "heading": "Evidence Cards",
+          "user": "显示当前 section 绑定的 source excerpt、relevance 和 why selected。",
+          "dev": "selectedEvidence computed。"
+        },
+        {
+          "label": "Prompt Preview",
+          "heading": "Prompt Preview",
+          "user": "查看最终将送给模型的 system/developer/user/evidence instructions 预览。",
+          "dev": "promptText computed 拼装；draft only。"
+        },
+        {
+          "label": "Standardized Logic Chain",
+          "heading": "Standardized Logic Chain",
+          "user": "标准化记录 input/output/evidence，方便审计和复盘。",
+          "dev": "snapshot.logicChain 渲染。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/context-intelligence",
+      "browserTitle": "Context Intelligence",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\context-intelligence.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/context-intelligence-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 3340
+        },
+        "doc": {
+          "width": 1280,
+          "height": 3340
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 3340
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "snapshot 来自 getContextIntelligenceSnapshot。",
+            "label": "Context 页面说明",
+            "selector": ".page-header",
+            "user": "说明当前 caseId 和 context pack ready 状态。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Context intelligence layerContext Intelligence Show how DREAM turns rough intent into a source-backed context pack, evaluates retrieval quality, assembles prompt instructions, and "
+          },
+          {
+            "dev": "snapshot.title/request/sections/evidenceCards。",
+            "label": "Active Request Summary",
+            "selector": ".context-hero",
+            "user": "当前请求、trail/pack/evidence 的摘要计数。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 219,
+              "width": 952,
+              "height": 148
+            },
+            "sample": "Active requestAsync Status Context PackUsers want to know which task is still running when a forecast job takes too long. The execution page should show better progress.Trail steps"
+          },
+          {
+            "dev": "snapshot.metrics + statusClass。",
+            "label": "Retrieval Eval Metrics",
+            "selector": ".grid-4",
+            "user": "衡量 coverage、freshness、source mix 等检索质量。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 389,
+              "width": 952,
+              "height": 193
+            },
+            "sample": "Source coverage7 / 8>= 6 source familiesDocs, incidents, Jira, PR, tests, code, and concept memory are represented.Retrieval precision0.86>= 0.80Top evidence centers on execution s"
+          },
+          {
+            "dev": "retrievalTrail 渲染。",
+            "heading": "Retrieval Trail Timeline",
+            "label": "Retrieval Trail Timeline",
+            "user": "逐步展示 query、匹配 source 数和状态。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 606,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Retrieval Trail Timelinedeterministic mock"
+          },
+          {
+            "dev": "selectedSectionId signal 控制 selectedEvidence。",
+            "heading": "Context Pack Sections",
+            "label": "Context Pack Sections",
+            "user": "点击 section 查看该 section 的 guardrail 和 linked evidence。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 606,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Context Pack Sections pass"
+          },
+          {
+            "dev": "selectedEvidence computed。",
+            "heading": "Evidence Cards",
+            "label": "Evidence Cards",
+            "user": "显示当前 section 绑定的 source excerpt、relevance 和 why selected。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 1580,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Evidence Cards2 linked"
+          },
+          {
+            "dev": "promptText computed 拼装；draft only。",
+            "heading": "Prompt Preview",
+            "label": "Prompt Preview",
+            "user": "查看最终将送给模型的 system/developer/user/evidence instructions 预览。",
+            "id": 9,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 1580,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Prompt Previewdraft only"
+          },
+          {
+            "dev": "snapshot.logicChain 渲染。",
+            "heading": "Standardized Logic Chain",
+            "label": "Standardized Logic Chain",
+            "user": "标准化记录 input/output/evidence，方便审计和复盘。",
+            "id": 10,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 2161,
+              "width": 950,
+              "height": 56
+            },
+            "sample": "Standardized Logic Chainintent -> evidence -> impact -> prompt"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "requirement-case",
+      "route": "/requirements",
+      "title": "Requirement Case",
+      "purpose": "把粗糙业务需求转为 evidence、impact map、澄清问题、scorecard 和 Jira draft。",
+      "annotations": [
+        {
+          "label": "页面目标与人工门禁",
+          "selector": ".page-header",
+          "user": "说明输出必须人工 review 后才能进 Jira。",
+          "dev": "RequirementDraftComponent route。"
+        },
+        {
+          "label": "Case Intake 表单",
+          "heading": "Case Intake",
+          "user": "选择 execution mode、team/app/component/role/topK，输入 rough request 并分析。",
+          "dev": "Reactive form + Validators；默认 mock。"
+        },
+        {
+          "label": "Sources Used",
+          "heading": "Sources Used",
+          "user": "生成后展示检索到的来源和 source path。",
+          "dev": "result.sourcesUsed。"
+        },
+        {
+          "label": "Impact Map",
+          "heading": "Impact Map",
+          "user": "显示需求可能影响的系统区域、描述和置信度。",
+          "dev": "requirementCase.impactMap。"
+        },
+        {
+          "label": "Evaluation Scorecard",
+          "heading": "Evaluation Scorecard",
+          "user": "用分数和建议判断是否 Jira-ready 或仍需答案。",
+          "dev": "draft.scorecard + readinessLabel。"
+        },
+        {
+          "label": "Role-specific Questions",
+          "heading": "Role-specific Clarification Questions",
+          "user": "不同角色需要回答的问题，可保存答案回填到 case。",
+          "dev": "questionAnswers signal + saveQuestionAnswer。"
+        },
+        {
+          "label": "Jira-ready Draft",
+          "heading": "Jira-ready Draft",
+          "user": "查看/重新生成带人工答案的 Jira markdown 草稿。",
+          "dev": "regenerateJiraDraft 只更新本地 result。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/requirements",
+      "browserTitle": "Requirement Case",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\requirement-case.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/requirement-case-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 3105
+        },
+        "doc": {
+          "width": 1280,
+          "height": 3105
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 3105
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "RequirementDraftComponent route。",
+            "label": "页面目标与人工门禁",
+            "selector": ".page-header",
+            "user": "说明输出必须人工 review 后才能进 Jira。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Requirement intelligenceRequirement Case Turn incomplete business requests into source-backed evidence, impact maps, role questions, an engineering brief, and a Jira-ready draft. H"
+          },
+          {
+            "dev": "Reactive form + Validators；默认 mock。",
+            "heading": "Case Intake",
+            "label": "Case Intake 表单",
+            "user": "选择 execution mode、team/app/component/role/topK，输入 rough request 并分析。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 220,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Case IntakeHuman Review Required"
+          },
+          {
+            "dev": "result.sourcesUsed。",
+            "heading": "Sources Used",
+            "label": "Sources Used",
+            "user": "生成后展示检索到的来源和 source path。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 220,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Sources Used"
+          },
+          {
+            "dev": "requirementCase.impactMap。",
+            "heading": "Impact Map",
+            "label": "Impact Map",
+            "user": "显示需求可能影响的系统区域、描述和置信度。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 988,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Impact Map86% confidence"
+          },
+          {
+            "dev": "draft.scorecard + readinessLabel。",
+            "heading": "Evaluation Scorecard",
+            "label": "Evaluation Scorecard",
+            "user": "用分数和建议判断是否 Jira-ready 或仍需答案。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 988,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Evaluation Scorecard Needs answers"
+          },
+          {
+            "dev": "questionAnswers signal + saveQuestionAnswer。",
+            "heading": "Role-specific Clarification Questions",
+            "label": "Role-specific Questions",
+            "user": "不同角色需要回答的问题，可保存答案回填到 case。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 1589,
+              "width": 950,
+              "height": 56
+            },
+            "sample": "Role-specific Clarification Questions"
+          },
+          {
+            "dev": "regenerateJiraDraft 只更新本地 result。",
+            "heading": "Jira-ready Draft",
+            "label": "Jira-ready Draft",
+            "user": "查看/重新生成带人工答案的 Jira markdown 草稿。",
+            "id": 9,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 2503,
+              "width": 950,
+              "height": 71
+            },
+            "sample": "Jira-ready Draft Regenerate after answers"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "pr-review",
+      "route": "/review",
+      "title": "PR Review",
+      "purpose": "用 synthetic diff/Jira context 生成 evidence-backed PR review aid。",
+      "annotations": [
+        {
+          "label": "页面目标与安全边界",
+          "selector": ".page-header",
+          "user": "明确不发 PR comment、不 approve/reject，只生成 review aid。",
+          "dev": "PrReviewComponent route。"
+        },
+        {
+          "label": "Review Input 表单",
+          "heading": "Review Input",
+          "user": "选择 mode/team/app/component/topK，输入 synthetic diff 和 Jira context。",
+          "dev": "Reactive form；默认 MOCK_DIFF_TEXT/MOCK_JIRA_CONTEXT。"
+        },
+        {
+          "label": "Review Memory",
+          "heading": "Review Memory",
+          "user": "查看风险等级、eval grade、changed files、related code 和 sources。",
+          "dev": "result 后展示 review.risk/scorecard/relatedCode。"
+        },
+        {
+          "label": "Markdown Output",
+          "heading": "Markdown Output",
+          "user": "生成可复制给 reviewer 的 markdown 摘要。",
+          "dev": "review.markdown；不调用 GitHub。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/review",
+      "browserTitle": "PR Review",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\pr-review.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/pr-review-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1648
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1648
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1648
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "PrReviewComponent route。",
+            "label": "页面目标与安全边界",
+            "selector": ".page-header",
+            "user": "明确不发 PR comment、不 approve/reject，只生成 review aid。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Pull request review aidPR Review Review synthetic diffs with DFP knowledge, codebase memory, historical incident context, test-gap detection, and an evaluation scorecard. No PR pos"
+          },
+          {
+            "dev": "Reactive form；默认 MOCK_DIFF_TEXT/MOCK_JIRA_CONTEXT。",
+            "heading": "Review Input",
+            "label": "Review Input 表单",
+            "user": "选择 mode/team/app/component/topK，输入 synthetic diff 和 Jira context。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 220,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Review InputReview Aid Only"
+          },
+          {
+            "dev": "result 后展示 review.risk/scorecard/relatedCode。",
+            "heading": "Review Memory",
+            "label": "Review Memory",
+            "user": "查看风险等级、eval grade、changed files、related code 和 sources。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 220,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Review Memory"
+          },
+          {
+            "dev": "review.markdown；不调用 GitHub。",
+            "heading": "Markdown Output",
+            "label": "Markdown Output",
+            "user": "生成可复制给 reviewer 的 markdown 摘要。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 1061,
+              "width": 950,
+              "height": 56
+            },
+            "sample": "Markdown Outputrun_mr22p3ni_507"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "testgen-stub",
+      "route": "/testgen",
+      "title": "TestGen Stub",
+      "purpose": "展示未来 TestGen provider 接口，但当前不生成测试、不写 repo。",
+      "annotations": [
+        {
+          "label": "页面目标与 Stub 边界",
+          "selector": ".page-header",
+          "user": "说明这是 provider interface only，mock provider，无 repo 写入。",
+          "dev": "TestgenStubComponent route。"
+        },
+        {
+          "label": "范围警告",
+          "selector": ".warning-callout",
+          "user": "提醒 unit-test generation 不在当前 UI phase。",
+          "dev": "静态 guardrail 文案。"
+        },
+        {
+          "label": "Provider Stub Input",
+          "heading": "Provider Stub Input",
+          "user": "输入 team、语言、repo path，保持 dry run only。",
+          "dev": "Reactive form；UI 不读 filesystem。"
+        },
+        {
+          "label": "Plan / Result",
+          "heading": "Plan / Result",
+          "user": "Plan Stub 预览要做的动作。",
+          "dev": "dream.planTestGenStub。"
+        },
+        {
+          "label": "Safe Stub Report",
+          "heading": "Safe Stub Report",
+          "user": "Run Safe Stub 生成安全报告，证明不会写文件。",
+          "dev": "dream.runTestGenStub。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/testgen",
+      "browserTitle": "TestGen Stub",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\testgen-stub.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/testgen-stub-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1252
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1252
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1252
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "TestgenStubComponent route。",
+            "label": "页面目标与 Stub 边界",
+            "selector": ".page-header",
+            "user": "说明这是 provider interface only，mock provider，无 repo 写入。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 85
+            },
+            "sample": "Provider interface onlyTestGen Stub Validate the DREAM plugin surface without implementing or invoking a unit-test generation engine. No repo writesmock provider"
+          },
+          {
+            "dev": "静态 guardrail 文案。",
+            "label": "范围警告",
+            "selector": ".warning-callout",
+            "user": "提醒 unit-test generation 不在当前 UI phase。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 195,
+              "width": 952,
+              "height": 73
+            },
+            "sample": "Unit-test generation is intentionally out of scope for this UI phase. A future JTestGen or external engine can implement the provider contract after separate review."
+          },
+          {
+            "dev": "Reactive form；UI 不读 filesystem。",
+            "heading": "Provider Stub Input",
+            "label": "Provider Stub Input",
+            "user": "输入 team、语言、repo path，保持 dry run only。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 292,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Provider Stub InputNo file writes"
+          },
+          {
+            "dev": "dream.planTestGenStub。",
+            "heading": "Plan / Result",
+            "label": "Plan / Result",
+            "user": "Plan Stub 预览要做的动作。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 292,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Plan / Result"
+          },
+          {
+            "dev": "dream.runTestGenStub。",
+            "heading": "Safe Stub Report",
+            "label": "Safe Stub Report",
+            "user": "Run Safe Stub 生成安全报告，证明不会写文件。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 729,
+              "width": 950,
+              "height": 56
+            },
+            "sample": "Safe Stub Reportstub_only"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "eval-audit",
+      "route": "/audit",
+      "title": "Eval & Audit",
+      "purpose": "查看 deterministic scorecards、run history、human ratings 和 evidence coverage。",
+      "annotations": [
+        {
+          "label": "Audit 页面说明",
+          "selector": ".page-header",
+          "user": "说明输出在 review-ready 前需要 eval 和人工评分。",
+          "dev": "AuditEvalComponent route。"
+        },
+        {
+          "label": "Evaluation Scorecards",
+          "selector": ".score-grid",
+          "user": "分数、grade、recommendation 和 pass/warning/fail 状态。",
+          "dev": "scorecards signal。"
+        },
+        {
+          "label": "Audit Runs Table",
+          "heading": "Audit Runs",
+          "user": "点击 run 查看详情和评分。",
+          "dev": "selectRun 更新 selectedRun。"
+        },
+        {
+          "label": "Run Detail & Rating",
+          "heading": "Run Detail & Rating",
+          "user": "查看 provider、sources、warnings，并填写 usefulness/correctness/comment。",
+          "dev": "ratingForm + submitRating。"
+        },
+        {
+          "label": "Ratings List",
+          "heading": "Ratings",
+          "user": "展示当前 run 已保存的人类评分。",
+          "dev": "selectedRatings computed 从 ratings 过滤。"
+        },
+        {
+          "label": "Evidence Coverage",
+          "heading": "Evidence Coverage",
+          "user": "展示知识/代码/测试/历史等来源覆盖情况。",
+          "dev": "scorecards()[0].sourceCoverage keyvalue。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/audit",
+      "browserTitle": "Audit & Eval",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\eval-audit.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/eval-audit-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 1619
+        },
+        "doc": {
+          "width": 1280,
+          "height": 1619
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 1619
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "AuditEvalComponent route。",
+            "label": "Audit 页面说明",
+            "selector": ".page-header",
+            "user": "说明输出在 review-ready 前需要 eval 和人工评分。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Evaluation agentEval & Audit Inspect deterministic scorecards, evidence coverage, generation runs, warnings, and human ratings before any output is treated as review-ready. Rule-ba"
+          },
+          {
+            "dev": "scorecards signal。",
+            "label": "Evaluation Scorecards",
+            "selector": ".score-grid",
+            "user": "分数、grade、recommendation 和 pass/warning/fail 状态。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 219,
+              "width": 952,
+              "height": 234
+            },
+            "sample": "8.7engineering_brief / Grade AConfirm UI polling interval before ticket grooming. Add explicit partial completion acceptance criteria. pass"
+          },
+          {
+            "dev": "selectRun 更新 selectedRun。",
+            "heading": "Audit Runs",
+            "label": "Audit Runs Table",
+            "user": "点击 run 查看详情和评分。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 476,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Audit Runs5 mock runs"
+          },
+          {
+            "dev": "ratingForm + submitRating。",
+            "heading": "Run Detail & Rating",
+            "label": "Run Detail & Rating",
+            "user": "查看 provider、sources、warnings，并填写 usefulness/correctness/comment。",
+            "id": 6,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 476,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Run Detail & Rating"
+          },
+          {
+            "dev": "selectedRatings computed 从 ratings 过滤。",
+            "heading": "Ratings",
+            "label": "Ratings List",
+            "user": "展示当前 run 已保存的人类评分。",
+            "id": 7,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 532,
+              "width": 348,
+              "height": 1062
+            },
+            "sample": "Run IDrun_20260620_0042Providerdeterministic-eval / rule-based-scorecard-v1Sourcesknowledge_packs/demo_team/eval_profiles/async-status-tracking.yamlWarningsNoneUsefulnessCorrectnes"
+          },
+          {
+            "dev": "scorecards()[0].sourceCoverage keyvalue。",
+            "heading": "Evidence Coverage",
+            "label": "Evidence Coverage",
+            "user": "展示知识/代码/测试/历史等来源覆盖情况。",
+            "id": 8,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 532,
+              "width": 348,
+              "height": 1062
+            },
+            "sample": "Run IDrun_20260620_0042Providerdeterministic-eval / rule-based-scorecard-v1Sourcesknowledge_packs/demo_team/eval_profiles/async-status-tracking.yamlWarningsNoneUsefulnessCorrectnes"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    },
+    {
+      "slug": "settings",
+      "route": "/settings",
+      "title": "Settings",
+      "purpose": "运行模式和 guardrails 的只读配置预览。",
+      "annotations": [
+        {
+          "label": "Settings 页面说明",
+          "selector": ".page-header",
+          "user": "查看 frontend mock-only 状态和健康标识。",
+          "dev": "SettingsComponent 注入 MockDreamService。"
+        },
+        {
+          "label": "Runtime Mode",
+          "heading": "Runtime Mode",
+          "user": "查看 provider、API base URL、frontend mode、status。",
+          "dev": "dream.health 静态配置，base URL 指向 127.0.0.1:8000。"
+        },
+        {
+          "label": "Guardrails",
+          "heading": "Guardrails",
+          "user": "当前 demo 的安全边界：无付费外部 API、无真实公司数据、输出仅草稿、TestGen excluded。",
+          "dev": "静态列表，面向 demo governance。"
+        }
+      ],
+      "url": "http://127.0.0.1:4300/settings",
+      "browserTitle": "Settings",
+      "rawScreenshot": "C:\\Users\\wangz\\OneDrive\\Documents\\Test Generation\\dream-ai-engineering-copilot\\docs\\frontend-runbook\\raw-screenshots\\settings.png",
+      "annotatedScreenshot": "C:/Users/wangz/OneDrive/Documents/Test Generation/dream-ai-engineering-copilot/docs/frontend-runbook/annotated-screenshots/settings-annotated.png",
+      "screenshotInfo": {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "doc": {
+          "width": 1280,
+          "height": 720
+        },
+        "boxes": [
+          {
+            "dev": "AppComponent navItems + sidebar-footer，routerLink 导航。",
+            "label": "全局左侧导航",
+            "selector": ".sidebar",
+            "user": "主导航：DREAM brand、五个顶层页面、mock/demo 环境状态。",
+            "id": 1,
+            "missing": false,
+            "rect": {
+              "x": 0,
+              "y": 0,
+              "width": 280,
+              "height": 720
+            },
+            "sample": "DDREAMMission ControlMemory HubEngineering WorkbenchTrust CenterSettingsMock Data ModeONEnvironmentDemoDemo Commerce"
+          },
+          {
+            "dev": "app.component.html topbar；Toggle navigation 目前只有按钮外观，没有绑定展开逻辑。",
+            "label": "全局顶部栏",
+            "selector": ".topbar",
+            "user": "移动菜单按钮、当前产品标识、mock memory chip、Memory 快捷入口、demo 用户头像。",
+            "id": 2,
+            "missing": false,
+            "rect": {
+              "x": 280,
+              "y": 0,
+              "width": 1000,
+              "height": 64
+            },
+            "sample": "DREAM Mock Commerce Memory MemoryDE"
+          },
+          {
+            "dev": "SettingsComponent 注入 MockDreamService。",
+            "label": "Settings 页面说明",
+            "selector": ".page-header",
+            "user": "查看 frontend mock-only 状态和健康标识。",
+            "id": 3,
+            "missing": false,
+            "rect": {
+              "x": 304,
+              "y": 88,
+              "width": 952,
+              "height": 109
+            },
+            "sample": "Runtime guardrailsSettings Frontend configuration preview. The Angular UI is mock-only and can later be wired to the FastAPI endpoints. okmock"
+          },
+          {
+            "dev": "dream.health 静态配置，base URL 指向 127.0.0.1:8000。",
+            "heading": "Runtime Mode",
+            "label": "Runtime Mode",
+            "user": "查看 provider、API base URL、frontend mode、status。",
+            "id": 4,
+            "missing": false,
+            "rect": {
+              "x": 305,
+              "y": 220,
+              "width": 582,
+              "height": 56
+            },
+            "sample": "Runtime Mode"
+          },
+          {
+            "dev": "静态列表，面向 demo governance。",
+            "heading": "Guardrails",
+            "label": "Guardrails",
+            "user": "当前 demo 的安全边界：无付费外部 API、无真实公司数据、输出仅草稿、TestGen excluded。",
+            "id": 5,
+            "missing": false,
+            "rect": {
+              "x": 907,
+              "y": 220,
+              "width": 348,
+              "height": 56
+            },
+            "sample": "Guardrails"
+          }
+        ]
+      },
+      "missing": [],
+      "consoleIssues": [],
+      "snapshotHasExpectedTitle": true
+    }
+  ],
+  "captureMethod": "Chrome DevTools Protocol viewport-height screenshot"
+}

@@ -126,6 +126,9 @@ def render_jira_draft(
     sources = _source_lines(evidence)
     open_questions = "\n".join(_question_status_line(question) for question in questions[:10])
     impact_names = ", ".join(item.name for item in impact_items[:5]) or "TBD"
+    affected_files = _affected_file_lines(evidence, impact_items)
+    historical_context = _historical_context_lines(evidence)
+    story = _jira_story_context(case)
     return f"""# Jira Story Draft
 
 This is a draft for human review.
@@ -134,17 +137,13 @@ This is a draft for human review.
 {case.title}
 
 ## User Story
-As a DemoCorp user or operator, I want long-running job execution status to be visible
-so that pending, running, completed, and failed work can be understood without guessing.
+{story["user_story"]}
 
 ## Business Goal
-Reduce ambiguity in the DemoCorp job execution workflow and improve cross-role handoff
-between BA, TL, frontend, backend, QA, and operations.
+{story["business_goal"]}
 
 ## In Scope
-- Clarify async job status states and behavior.
-- Update affected backend/API/test areas where confirmed.
-- Keep implementation aligned with the source-backed impact map.
+{story["in_scope"]}
 
 ## Out of Scope
 - Production test-generation engine work.
@@ -152,21 +151,22 @@ between BA, TL, frontend, backend, QA, and operations.
 - Final approval of scope without human review.
 
 ## Acceptance Criteria
-- Status tracking behavior is documented for submitted, running, completed, and failed jobs.
+{story["acceptance_criteria"]}
 - Affected components are reviewed: {impact_names}.
-- Unit or service tests cover success, missing job, and failure-oriented scenarios.
+- Affected files are reviewed or explicitly marked out of scope.
 - Open questions are reviewed by the appropriate roles before implementation.
 
 ## Dev Notes
 - Use the Engineering Brief as the source-backed context package.
 - Preserve existing job execution behavior unless scope explicitly changes it.
 - Keep generated or AI-assisted output subject to human review.
+- Affected files:
+{affected_files}
+- Historical context:
+{historical_context}
 
 ## Test Scenarios
-- Start a long-running job and observe the submitted/running status.
-- Request status for an unknown job and receive a clear response.
-- Simulate downstream batch failure and confirm failure handling expectations.
-- Verify existing calculator demo tests remain unaffected.
+{story["test_scenarios"]}
 
 ## Open Questions
 {open_questions or "- None generated."}
@@ -174,6 +174,80 @@ between BA, TL, frontend, backend, QA, and operations.
 ## Sources Used
 {sources}
 """
+
+
+def _jira_story_context(case: RequirementCase) -> dict[str, str]:
+    request_text = case.raw_request.lower()
+    output_terms = ("output", "reconciliation", "skipped", "partial", "retry")
+    if any(term in request_text for term in output_terms):
+        return {
+            "user_story": (
+                "As a DemoCorp user or operator, I want output reconciliation to show "
+                "collected, skipped, partial, and retry-needed artifacts so that "
+                "handoff and recovery decisions are not based on guesswork."
+            ),
+            "business_goal": (
+                "Reduce ambiguity in DemoCorp output collection and recovery workflows, "
+                "especially when jobs complete partially or require operator retry."
+            ),
+            "in_scope": "\n".join(
+                [
+                    "- Clarify output collection and reconciliation states.",
+                    "- Preserve collected/skipped/retry-needed artifact behavior.",
+                    "- Update affected backend/API/test areas where confirmed.",
+                    "- Keep implementation aligned with the source-backed impact map.",
+                ]
+            ),
+            "acceptance_criteria": "\n".join(
+                [
+                    "- Output reconciliation documents collected and skipped results.",
+                    "- Partial completion behavior is visible to reviewers and operators.",
+                    "- Retry guidance is explicit when reconciliation cannot finish cleanly.",
+                    "- Unit or service tests cover success, partial, skipped, and retry paths.",
+                ]
+            ),
+            "test_scenarios": "\n".join(
+                [
+                    "- Complete output collection and verify collected artifacts are listed.",
+                    "- Simulate skipped or partial artifacts and verify reconciliation status.",
+                    "- Trigger a retry-needed output path and verify operator guidance.",
+                    "- Verify existing job execution tests remain unaffected.",
+                ]
+            ),
+        }
+    return {
+        "user_story": (
+            "As a DemoCorp user or operator, I want long-running job execution status "
+            "to be visible so that pending, running, completed, and failed work can "
+            "be understood without guessing."
+        ),
+        "business_goal": (
+            "Reduce ambiguity in the DemoCorp job execution workflow and improve "
+            "cross-role handoff between BA, TL, frontend, backend, QA, and operations."
+        ),
+        "in_scope": "\n".join(
+            [
+                "- Clarify async job status states and behavior.",
+                "- Update affected backend/API/test areas where confirmed.",
+                "- Keep implementation aligned with the source-backed impact map.",
+            ]
+        ),
+        "acceptance_criteria": "\n".join(
+            [
+                "- Status tracking behavior is documented for submitted jobs.",
+                "- Running, completed, and failed states have clear expected behavior.",
+                "- Unit or service tests cover success, missing job, and failure scenarios.",
+            ]
+        ),
+        "test_scenarios": "\n".join(
+            [
+                "- Start a long-running job and observe the submitted/running status.",
+                "- Request status for an unknown job and receive a clear response.",
+                "- Simulate downstream batch failure and confirm handling expectations.",
+                "- Verify existing calculator demo tests remain unaffected.",
+            ]
+        ),
+    }
 
 
 def render_jira_draft_prompt(
@@ -192,6 +266,19 @@ Hard rules:
 - Do not mention real companies, real Jira URLs, real PR URLs, real repositories, or real endpoints.
 - State that this is a draft for human review.
 - Keep uncertainty visible in Open Questions.
+- Preserve the user's specific business intent; do not broaden output reconciliation
+  requests into generic status tracking unless the evidence requires it.
+- If the raw request mentions output, reconciliation, skipped files, partial files,
+  or retry, the Title and User Story must preserve those terms.
+- Do not replace collected/skipped/retry-needed output behavior with only generic
+  submitted/running/completed/failed status language.
+- Name concrete affected files when evidence or impact items include code, API, test,
+  UI, or runbook paths.
+- Include an impact summary with counts for affected files, memory documents,
+  open questions, and test references inside existing sections.
+- Acceptance Criteria must be concrete, reviewable, and tied to the retrieved evidence.
+- Dev Notes must call out likely implementation files, historical Jira/PR/incident
+  references, and missing tests when available.
 - Include exactly these top-level sections:
   # Jira Story Draft
   ## Title
@@ -204,7 +291,6 @@ Hard rules:
   ## Test Scenarios
   ## Open Questions
   ## Sources Used
-- Acceptance Criteria must be concrete and reviewable.
 - Sources Used must be explicit bullet paths from supplied evidence.
 
 Raw request:
@@ -253,6 +339,40 @@ def _question_lines(questions: list[ClarificationQuestion]) -> str:
     )
 
 
+def _affected_file_lines(
+    evidence: list[ContextEvidence],
+    impact_items: list[ImpactItem],
+) -> str:
+    paths: list[str] = []
+    for item in impact_items:
+        paths.extend(source for source in item.sources if _looks_like_file_path(source))
+    paths.extend(item.source_path for item in evidence if _looks_like_file_path(item.source_path))
+    unique_paths = sorted(dict.fromkeys(paths))
+    if not unique_paths:
+        return "  - No concrete file paths were identified."
+    return "\n".join(f"  - {path}" for path in unique_paths[:12])
+
+
+def _historical_context_lines(evidence: list[ContextEvidence]) -> str:
+    historical = [
+        item
+        for item in evidence
+        if item.source_type in {"incident", "historical_jira", "historical_pr"}
+        or "/incidents/" in item.source_path
+        or "/historical-jira/" in item.source_path
+        or "/historical-pr/" in item.source_path
+    ]
+    if not historical:
+        return "  - No historical Jira, PR, or incident references were retrieved."
+    return "\n".join(
+        f"  - {item.title}: {item.source_path} ({item.reason})" for item in historical[:8]
+    )
+
+
+def _looks_like_file_path(value: str) -> bool:
+    return "." in value.rsplit("/", maxsplit=1)[-1]
+
+
 def _question_status_line(question: ClarificationQuestion) -> str:
     return (
         f"- [{question.target_role}] {question.question} "
@@ -261,6 +381,9 @@ def _question_status_line(question: ClarificationQuestion) -> str:
 
 
 def _answer_line(question: ClarificationQuestion) -> str:
+    if question.status == "waived":
+        reason = question.waived_reason or "No waiver reason supplied."
+        return f"Waived: {reason}"
     if question.answer:
         return f"Answer: {question.answer}"
     return "Answer: _pending human response_."

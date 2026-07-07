@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: Apache-2.0
+
+@use './codebase-memory-shared' as codebase;
+
+@include codebase.empty-state;
+
+:host {
+  display: block;
+}
+
+.code-panel {
+  min-height: 650px;
+}
+
+.file-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--dream-border);
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px 14px;
+}
+
+.file-meta-strip span {
+  border: 1px solid var(--dream-border);
+  border-radius: 999px;
+  background: var(--dream-surface-muted);
+  color: var(--dream-navy);
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.code-block {
+  display: block;
+  max-height: 548px;
+  overflow: auto;
+  margin: 0;
+  background: #0c2333;
+  color: #edf8ff;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 12px 0;
+  tab-size: 2;
+}
+
+.code-line {
+  display: grid;
+  min-width: max-content;
+  grid-template-columns: 54px minmax(0, 1fr);
+  padding: 0 14px 0 0;
+}
+
+.code-line:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.line-number {
+  color: #88a9b9;
+  padding-right: 12px;
+  text-align: right;
+  user-select: none;
+}
+
+.code-line code {
+  color: inherit;
+  white-space: pre;
+}
+
+.code-empty {
+  margin: 14px;
+}
+
+@media (width <= 1100px) {
+  .code-panel {
+    min-height: auto;
+  }
+}

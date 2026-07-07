@@ -30,7 +30,7 @@ def test_memory_distillation_scan_writes_source_backed_claims(tmp_path) -> None:
     assert repository.latest_scan_path("demo_team").exists()
     assert scan.sources
     assert scan.claims
-    assert scan.schema_version == "memory-scan-v0.2"
+    assert scan.schema_version == "memory-scan-v0.3"
     assert scan.provenance is not None
     assert scan.provenance.repo_path == "examples/java-demo-repo"
     assert scan.provenance.scanner_version == "memory-distillation-v0"
@@ -89,7 +89,38 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
         repo_path="examples/java-demo-repo",
         repo_name="java-demo-repo",
     )
-    candidate = next(claim for claim in scan.claims if claim.governance.status == "candidate")
+    candidate = next(
+        claim
+        for claim in scan.claims
+        if claim.governance.status == "candidate"
+        and claim.extraction.method == "heuristic_semantic"
+    )
+    candidate = candidate.model_copy(
+        deep=True,
+        update={
+            "relation": candidate.relation.model_copy(
+                update={"type": "current_policy", "value": "source-backed-policy"}
+            ),
+        },
+    )
+    conflicting_claim = candidate.model_copy(
+        deep=True,
+        update={
+            "claim_id": f"{candidate.claim_id}:conflict",
+            "relation": candidate.relation.model_copy(update={"value": "conflicting-value"}),
+        },
+    )
+    claims_with_conflict = [
+        claim if claim.claim_id != candidate.claim_id else candidate
+        for claim in scan.claims
+    ]
+    repository.save_scan(
+        scan.model_copy(
+            update={
+                "claims": [*claims_with_conflict, conflicting_claim]
+            }
+        )
+    )
 
     event = service.review_claim(
         team_id="demo_team",
@@ -111,7 +142,64 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
     )
 
     assert event.previous_status == "candidate"
+    assert event.reviewer_signature and event.reviewer_signature.startswith("sig:")
+    assert any(diff.field_path == "governance.status" for diff in event.field_diffs)
+    assert event.claim_snapshot is not None
+    assert event.claim_snapshot.claim_id == candidate.claim_id
+    assert event.claim_snapshot.evidence_paths
+    assert "semantic_claim_requires_human_review" in event.risk_signals
+    assert event.conflict_signals
+    assert event.signal_explanations
+    assert any(
+        explanation.signal == "semantic_claim_requires_human_review"
+        and "heuristic semantic extraction" in explanation.explanation
+        for explanation in event.signal_explanations
+    )
+    assert any(
+        explanation.category == "conflict"
+        and explanation.evidence[0] == conflicting_claim.claim_id
+        for explanation in event.signal_explanations
+    )
+    conflict_report = service.conflicts(team_id="demo_team", scan_id=scan.scan_id)
+    assert conflict_report.conflict_count == 1
+    pair = conflict_report.pairs[0]
+    assert pair.entity_id == candidate.entity.entity_id
+    assert pair.relation_type == candidate.relation.type
+    assert pair.signal.category == "conflict"
+    assert pair.signal.severity == "warning"
+    assert {pair.left.claim.claim_id, pair.right.claim.claim_id} == {
+        candidate.claim_id,
+        conflicting_claim.claim_id,
+    }
+    assert any(
+        side.effective_status == "approved"
+        and side.latest_review
+        and side.latest_review.event_id == event.event_id
+        for side in [pair.left, pair.right]
+    )
+    resolution = service.resolve_conflict(
+        team_id="demo_team",
+        conflict_id=pair.conflict_id,
+        winning_claim_id=candidate.claim_id,
+        reviewer="zack",
+        reason="Candidate source is authoritative.",
+        scan_id=scan.scan_id,
+    )
+    resolved_report = service.conflicts(team_id="demo_team", scan_id=scan.scan_id)
+    resolution_ledger = repository.load_conflict_resolution_ledger("demo_team")
+    latest_statuses = repository.latest_review_statuses("demo_team")
+    assert resolution.action == "approve_winner_reject_other"
+    assert resolution.winning_claim_id == candidate.claim_id
+    assert resolution.rejected_claim_id == conflicting_claim.claim_id
+    assert resolution.conflict_snapshot.conflict_id == pair.conflict_id
+    assert resolution.reviewer_signature and resolution.reviewer_signature.startswith("sig:")
+    assert len(resolution.review_event_ids) == 2
+    assert resolution_ledger.events[-1].event_id == resolution.event_id
+    assert latest_statuses[candidate.claim_id].new_status == "approved"
+    assert latest_statuses[conflicting_claim.claim_id].new_status == "rejected"
+    assert resolved_report.conflict_count == 0
     assert repository.ledger_path("demo_team").exists()
+    assert repository.conflict_resolution_ledger_path("demo_team").exists()
     assert any(result.claim.claim_id == candidate.claim_id for result in results)
     assert "DREAM Memory Context Card" in context_card
 

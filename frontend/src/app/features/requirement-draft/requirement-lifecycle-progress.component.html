@@ -1,0 +1,43 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+@if (state !== 'idle') {
+  <section
+    class="lifecycle-panel"
+    [attr.data-state]="state"
+    aria-live="polite"
+    aria-label="Jira draft lifecycle progress"
+  >
+    <div class="lifecycle-header">
+      <div>
+        <strong>Backend lifecycle</strong>
+        @if (activeStep(); as step) {
+          <span>
+            @if (state === 'complete') {
+              Ready for review
+              @if (totalDurationLabel(); as totalDuration) {
+                · total {{ totalDuration }}
+              }
+            } @else {
+              {{ step.runningLabel }}
+            }
+          </span>
+        }
+      </div>
+      <span class="lifecycle-state" [attr.data-state]="state">
+        {{ state }}
+      </span>
+    </div>
+
+    <ol class="lifecycle-steps">
+      @for (step of steps; track step.id; let index = $index) {
+        <li [attr.data-state]="stepState(index)">
+          <span class="step-marker">{{ index + 1 }}</span>
+          <div>
+            <strong>{{ step.label }}</strong>
+            <small>{{ step.detail }}</small>
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+}

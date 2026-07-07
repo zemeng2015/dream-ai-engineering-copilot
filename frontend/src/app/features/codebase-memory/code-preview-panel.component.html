@@ -1,0 +1,38 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<article class="panel code-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Code Preview</h2>
+      @if (selectedFile; as file) {
+        <p [title]="file.path">{{ file.path }}</p>
+      }
+    </div>
+    @if (selectedFile; as file) {
+      <span class="status-pill {{ roleClass(file.role) }}">{{ file.language }}</span>
+    }
+  </div>
+  @if (selectedFile; as file) {
+    <div class="file-meta-strip">
+      <span>{{ file.lineCount }} lines</span>
+      <span>{{ formatBytes(file.sizeBytes) }}</span>
+      <span>{{ file.symbols.length }} symbols</span>
+      <span>{{ file.concepts.length }} concepts</span>
+    </div>
+  }
+  @if (isFileLoading) {
+    <div class="empty-state code-empty">
+      <strong>Loading file...</strong>
+      <span>Reading content through FastAPI.</span>
+    </div>
+  } @else if (codeLines.length) {
+    <pre class="code-block" aria-label="Selected file content">@for (line of codeLines; track $index; let row = $index) {
+<span class="code-line"><span class="line-number">{{ row + 1 }}</span><code>{{ line || ' ' }}</code></span>
+}</pre>
+  } @else {
+    <div class="empty-state code-empty">
+      <strong>No file content loaded.</strong>
+      <span>Select a file from the repo browser.</span>
+    </div>
+  }
+</article>

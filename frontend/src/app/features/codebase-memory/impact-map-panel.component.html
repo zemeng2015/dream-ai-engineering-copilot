@@ -1,0 +1,33 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<article class="panel concept-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Impact Map</h2>
+      <p>{{ concepts.length }} visible concepts</p>
+    </div>
+  </div>
+  <div class="concept-list">
+    @for (concept of concepts; track concept.concept) {
+      <details>
+        <summary>
+          <strong>{{ concept.concept }}</strong>
+          <span>{{ conceptCountLabel(concept) }}</span>
+        </summary>
+        <p>{{ concept.reason }}</p>
+        <div class="path-list">
+          @for (path of concept.relatedFiles.slice(0, 8); track path) {
+            <button type="button" (click)="sourceSelected.emit(path)" [title]="path">
+              {{ fileName(path) }}
+            </button>
+          }
+        </div>
+      </details>
+    } @empty {
+      <div class="empty-state">
+        <strong>No concepts found.</strong>
+        <span>Refresh the repo index to derive concept mappings.</span>
+      </div>
+    }
+  </div>
+</article>

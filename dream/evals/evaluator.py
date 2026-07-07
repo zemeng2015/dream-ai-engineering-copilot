@@ -9,6 +9,7 @@ from dream.audit.repository import AuditRepository
 from dream.core.errors import DreamError, NotFoundError
 from dream.core.paths import display_path, resolve_artifact_path, resolve_project_path
 from dream.evals.evidence import EvalProfileLoader, EvidenceCoverageAnalyzer
+from dream.evals.llm_judge import LLMJudgeRunner
 from dream.evals.models import (
     EvalProfile,
     EvaluationDimension,
@@ -28,6 +29,7 @@ from dream.evals.scorecard import (
     weighted_average,
 )
 from dream.evals.templates import render_scorecard_report
+from dream.llm import BaseLLMProvider
 from dream.requirement_cases.repository import RequirementCaseRepository
 
 
@@ -54,6 +56,8 @@ class EvaluationAgent:
         requirement_repository: RequirementCaseRepository | None = None,
         profile_loader: EvalProfileLoader | None = None,
         coverage_analyzer: EvidenceCoverageAnalyzer | None = None,
+        llm_judge_provider: BaseLLMProvider | None = None,
+        llm_judge_runner: LLMJudgeRunner | None = None,
     ) -> None:
         self.repository = repository or EvaluationRepository()
         self.audit_repository = audit_repository or AuditRepository()
@@ -61,6 +65,8 @@ class EvaluationAgent:
         self.requirement_repository = requirement_repository or RequirementCaseRepository()
         self.profile_loader = profile_loader or EvalProfileLoader()
         self.coverage_analyzer = coverage_analyzer or EvidenceCoverageAnalyzer()
+        self.llm_judge_provider = llm_judge_provider
+        self.llm_judge_runner = llm_judge_runner or LLMJudgeRunner()
 
     def evaluate(self, request: EvaluationRequest) -> EvaluationResult:
         target = self._load_target(request)
@@ -113,7 +119,18 @@ class EvaluationAgent:
             recommendations=self._recommendations(dimensions, missing_critical_items),
             evaluated_artifact_path=target.artifact_path,
         )
+        if self.llm_judge_provider is not None:
+            scorecard.llm_judge = self.llm_judge_runner.judge(
+                provider=self.llm_judge_provider,
+                scorecard=scorecard,
+                markdown=target.markdown,
+                sources=target.sources,
+            )
+            if scorecard.llm_judge.status == "failed" and scorecard.llm_judge.warning:
+                scorecard.warnings.append(scorecard.llm_judge.warning)
         result = self._persist_result(scorecard, target, request)
+        if scorecard.llm_judge is not None:
+            self._log_llm_judge(scorecard, target, result)
         self.audit_logger.log_generation(
             run_id=scorecard.evaluation_id,
             use_case="evaluation_scorecard",
@@ -128,6 +145,26 @@ class EvaluationAgent:
             status=scorecard.pass_status,
             warnings=result.warnings,
         )
+        return result
+
+    def judge_existing(self, evaluation_id: str) -> EvaluationResult:
+        if self.llm_judge_provider is None:
+            raise DreamError("LLM judge requires a judge provider.")
+        scorecard = self.repository.get(evaluation_id)
+        if scorecard is None:
+            raise NotFoundError(f"Evaluation run not found: {evaluation_id}")
+        target = self._load_target(self._request_for_scorecard(scorecard))
+        scorecard.llm_judge = self.llm_judge_runner.judge(
+            provider=self.llm_judge_provider,
+            scorecard=scorecard,
+            markdown=target.markdown,
+            sources=target.sources,
+        )
+        if scorecard.llm_judge.status == "failed" and scorecard.llm_judge.warning:
+            scorecard.warnings.append(scorecard.llm_judge.warning)
+        scorecard.warnings = _dedupe(scorecard.warnings)
+        result = self._rewrite_persisted_result(scorecard)
+        self._log_llm_judge(scorecard, target, result)
         return result
 
     def _load_target(self, request: EvaluationRequest) -> EvaluationTarget:
@@ -888,19 +925,94 @@ class EvaluationAgent:
         json_path = eval_dir / f"{scorecard.evaluation_id}.json"
         markdown_path = eval_dir / f"{scorecard.evaluation_id}.md"
         scorecard.output_path = display_path(markdown_path)
+        warnings = [*(target.warnings or []), *scorecard.warnings]
+        if request.expected_profile:
+            warnings.append(f"Used eval profile: {request.expected_profile}")
+        scorecard.json_path = display_path(json_path)
+        scorecard.markdown_path = display_path(markdown_path)
+        scorecard.warnings = _dedupe(warnings)
         markdown_report = render_scorecard_report(scorecard)
         json_path.write_text(scorecard.model_dump_json(indent=2), encoding="utf-8")
         markdown_path.write_text(markdown_report, encoding="utf-8")
         self.repository.save(scorecard)
-        warnings = list(target.warnings or [])
-        if request.expected_profile:
-            warnings.append(f"Used eval profile: {request.expected_profile}")
         return EvaluationResult(
             scorecard=scorecard,
             markdown_report=markdown_report,
             json_path=display_path(json_path),
             markdown_path=display_path(markdown_path),
-            warnings=_dedupe(warnings),
+            warnings=scorecard.warnings,
+        )
+
+    def _rewrite_persisted_result(self, scorecard: EvaluationScorecard) -> EvaluationResult:
+        eval_dir = resolve_artifact_path("evals")
+        eval_dir.mkdir(parents=True, exist_ok=True)
+        json_path = (
+            resolve_project_path(scorecard.json_path)
+            if scorecard.json_path
+            else eval_dir / f"{scorecard.evaluation_id}.json"
+        )
+        markdown_path = (
+            resolve_project_path(scorecard.markdown_path or scorecard.output_path)
+            if scorecard.markdown_path or scorecard.output_path
+            else eval_dir / f"{scorecard.evaluation_id}.md"
+        )
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
+        scorecard.output_path = display_path(markdown_path)
+        scorecard.json_path = display_path(json_path)
+        scorecard.markdown_path = display_path(markdown_path)
+        markdown_report = render_scorecard_report(scorecard)
+        json_path.write_text(scorecard.model_dump_json(indent=2), encoding="utf-8")
+        markdown_path.write_text(markdown_report, encoding="utf-8")
+        self.repository.save(scorecard)
+        return EvaluationResult(
+            scorecard=scorecard,
+            markdown_report=markdown_report,
+            json_path=display_path(json_path),
+            markdown_path=display_path(markdown_path),
+            warnings=scorecard.warnings,
+        )
+
+    @staticmethod
+    def _request_for_scorecard(scorecard: EvaluationScorecard) -> EvaluationRequest:
+        return EvaluationRequest(
+            target_type=scorecard.target_type,
+            target_id=scorecard.target_id,
+            case_id=scorecard.case_id,
+            run_id=scorecard.run_id,
+            artifact_path=scorecard.evaluated_artifact_path,
+            team_id=scorecard.team_id,
+            repo_name=scorecard.repo_name,
+        )
+
+    def _log_llm_judge(
+        self,
+        scorecard: EvaluationScorecard,
+        target: EvaluationTarget,
+        result: EvaluationResult,
+    ) -> None:
+        judge = scorecard.llm_judge
+        if judge is None:
+            return
+        self.audit_logger.log_generation(
+            run_id=f"{scorecard.evaluation_id}-llm-judge",
+            use_case="llm_judge_eval",
+            team_id=scorecard.team_id or "unknown",
+            case_id=scorecard.case_id,
+            repo_name=scorecard.repo_name,
+            input_payload={
+                "evaluation_id": scorecard.evaluation_id,
+                "target_type": scorecard.target_type,
+                "prompt_version": judge.prompt_version,
+                "input_hash": judge.input_hash,
+                "status": judge.status,
+            },
+            retrieved_source_paths=target.sources,
+            model_provider=judge.provider or "unknown",
+            model_name=judge.model or "unknown",
+            output_path=result.markdown_path,
+            status=judge.status,
+            warnings=[judge.warning] if judge.warning else [],
         )
 
     @staticmethod

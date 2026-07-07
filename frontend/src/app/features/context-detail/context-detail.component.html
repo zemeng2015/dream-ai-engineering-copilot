@@ -1,0 +1,216 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page context-detail-page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Retrieval context</span>
+      <h1>Context Trail Detail</h1>
+      <p>{{ trail()?.rawQuery || 'Inspect retrieval trail, context pack, prompt preview, and source traceability.' }}</p>
+    </div>
+    @if (pack(); as pack) {
+      <div class="index-beacon">
+        <span></span>
+        <strong>{{ pack.selectedEvidenceCount }} selected</strong>
+        <small>{{ pack.contextPackId }}</small>
+      </div>
+    }
+  </header>
+
+  <div class="detail-toolbar">
+    <a class="back-link" [routerLink]="['/audit', caseId()]">Back to Audit Detail</a>
+    <button class="secondary-button" type="button" (click)="loadContext()" [disabled]="isLoading()">Refresh</button>
+  </div>
+
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+
+  @if (isLoading() && !trail()) {
+    <div class="info-callout">Loading context trail...</div>
+  }
+
+  @if (trail(); as trail) {
+    <section class="summary-grid" aria-label="Context summary">
+      <article class="summary-card">
+        <span>Trail Steps</span>
+        <strong>{{ trail.retrievalSteps.length }}</strong>
+        <small>{{ trail.trailId }}</small>
+      </article>
+      <article class="summary-card">
+        <span>Selected Evidence</span>
+        <strong>{{ trail.selectedEvidence.length }}</strong>
+        <small>{{ trail.candidateEvidence.length }} candidates</small>
+      </article>
+      <article class="summary-card">
+        <span>Graph Paths</span>
+        <strong>{{ trail.graphExpansionPaths.length }}</strong>
+        <small>{{ trail.repoName || 'team memory' }}</small>
+      </article>
+      <article class="summary-card">
+        <span>Memory Claims</span>
+        <strong>{{ trail.memoryClaimsUsed.length }}</strong>
+        <small>{{ trail.memoryClaimsConsidered.length }} considered</small>
+      </article>
+    </section>
+
+    <section class="detail-grid">
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Retrieval Trail</h2>
+            <p>{{ trail.finalContextSummary }}</p>
+          </div>
+        </div>
+        <ol class="trail-list">
+          @for (step of trail.retrievalSteps; track step.stepName) {
+            <li class="trail-row">
+              <span>{{ $index + 1 }}</span>
+              <div>
+                <strong>{{ formatLabel(step.stepName) }}</strong>
+                <p>{{ step.provider }} selected {{ step.selectedCount }} of {{ step.candidatesFound }} candidates.</p>
+                <code>{{ step.query }}</code>
+                @if (step.notes.length) {
+                  <small>{{ step.notes.join(', ') }}</small>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Context Pack</h2>
+            <p>{{ pack()?.contextPackId || 'Pack not loaded' }}</p>
+          </div>
+        </div>
+        <div class="pack-groups">
+          @for (group of evidenceGroups(); track group.label) {
+            <details open>
+              <summary>
+                <strong>{{ group.label }}</strong>
+                <span>{{ group.items.length }} items</span>
+              </summary>
+              @for (item of group.items.slice(0, 5); track item.evidenceId) {
+                <div class="pack-row">
+                  <span class="status-pill" [class]="statusClass(item.authorityStatus)">
+                    {{ formatLabel(item.authorityStatus) }}
+                  </span>
+                  <strong>{{ item.title }}</strong>
+                  <small [title]="item.sourcePath">{{ item.sourcePath }}</small>
+                </div>
+              }
+            </details>
+          } @empty {
+            <div class="info-callout">No selected evidence groups were returned.</div>
+          }
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="Selected evidence">
+      <div class="panel-header">
+        <div>
+          <h2>Selected Evidence</h2>
+          <p>Every source below can be checked against the retrieval reason and raw document lineage.</p>
+        </div>
+        <span class="status-pill status-info">{{ trail.selectedEvidence.length }} linked</span>
+      </div>
+      <div class="evidence-list">
+        @for (item of trail.selectedEvidence; track item.evidenceId) {
+          <article class="evidence-row">
+            <div class="evidence-heading">
+              <div>
+                <span class="status-pill status-neutral">{{ formatLabel(item.sourceType) }}</span>
+                <strong>{{ item.title }}</strong>
+              </div>
+              <span class="score-chip">{{ scoreLabel(item.score) }}</span>
+            </div>
+            <p>{{ item.excerpt }}</p>
+            <small [title]="item.sourcePath">{{ item.sourcePath }}</small>
+            <div class="reason-box">
+              <span>Why selected</span>
+              <p>{{ item.reason }}</p>
+            </div>
+            <div class="evidence-actions">
+              @if (sourceDocumentRoute(item.sourcePath); as route) {
+                <a class="link-button" [routerLink]="route">
+                  Source detail
+                  <app-ui-icon name="chevron-right" />
+                </a>
+              } @else {
+                <span>{{ sourceFileName(item.sourcePath) }}</span>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+
+    @if (trail.memoryClaimsUsed.length || trail.memoryClaimsConsidered.length) {
+      <section class="panel" aria-label="Memory claims">
+        <div class="panel-header">
+          <div>
+            <h2>Memory Claims</h2>
+            <p>Approved claims may enter context; candidate claims stay visible for review.</p>
+          </div>
+        </div>
+        <div class="claim-list">
+          @for (claim of trail.memoryClaimsConsidered; track claim.claimId) {
+            <article class="claim-row">
+              <span class="status-pill" [class]="statusClass(claim.status)">{{ formatLabel(claim.status) }}</span>
+              <strong>{{ claim.entity }} / {{ claim.relation }}</strong>
+              <p>{{ claim.value || claim.reason }}</p>
+              <small>{{ claim.evidencePaths.join(', ') || 'No evidence path' }}</small>
+              @if (claim.intakeProofs.length) {
+                <div class="claim-proof-list">
+                  @for (proof of claim.intakeProofs.slice(0, 2); track proof.documentId) {
+                    <div class="claim-proof">
+                      <div>
+                        <span class="status-pill" [class]="statusClass(proof.sourceHashVerified)">
+                          {{ proof.sourceHashVerified === true ? 'Hash verified' : 'Hash unchecked' }}
+                        </span>
+                        <strong>{{ proof.documentId }}</strong>
+                      </div>
+                      <small>
+                        {{ proof.sectionProofs.length }} sections /
+                        {{ proof.intakeAuditRunIds.length }} audit runs /
+                        {{ shortHash(proof.sourceHash) }}
+                      </small>
+                      @if (proof.matchExplanation) {
+                        <small>{{ proof.matchExplanation }}</small>
+                      }
+                      @if (proof.matchedTerms.length) {
+                        <small>Matched terms: {{ proof.matchedTerms.join(', ') }}</small>
+                      }
+                      <a class="link-button" [routerLink]="['/memory', proof.documentId]">
+                        Source detail
+                        <app-ui-icon name="chevron-right" />
+                      </a>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="panel" aria-label="Prompt preview">
+      <div class="panel-header">
+        <div>
+          <h2>Prompt Preview</h2>
+          <p>{{ preview()?.previewId || 'Prompt preview not loaded' }}</p>
+        </div>
+        @if (preview(); as preview) {
+          <span class="status-pill status-warning">{{ formatLabel(preview.target) }}</span>
+        }
+      </div>
+      @if (preview(); as preview) {
+        <pre class="markdown-preview prompt-preview">{{ preview.promptText }}</pre>
+      }
+    </section>
+  }
+</section>

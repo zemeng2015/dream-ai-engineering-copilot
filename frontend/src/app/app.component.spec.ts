@@ -25,8 +25,8 @@ describe('AppComponent', () => {
       'Mission Control',
       'Memory Hub',
       'Engineering Workbench',
-      'Trust Center',
-      'Settings',
+      'Codebase Index',
+      'Audit & Eval',
     ]);
   });
 
@@ -35,6 +35,6 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('DREAM');
-    expect(compiled.textContent).toContain('Mock Data Mode');
+    expect(compiled.textContent).toContain('Live Backend');
   });
 });

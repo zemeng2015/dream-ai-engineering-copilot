@@ -1,189 +1,103 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="page reveal-page">
-  <header class="mission-hero">
-    <div class="mission-copy">
-      <span class="eyebrow">DemoCorp Forecast Platform</span>
-      <h1>Mission Control</h1>
-      <p>
-        A source-backed memory cockpit for turning rough engineering requests and PR diffs into
-        evidence paths, review-ready drafts, scorecards, and auditable human decisions.
-      </p>
-      <div class="hero-actions" aria-label="Primary workflows">
-        <a class="primary-button" routerLink="/workbench">
-          <app-ui-icon name="document" />
-          Open Workbench
-        </a>
-        <a class="secondary-button" routerLink="/trust">
-          <app-ui-icon name="timeline" />
-          Inspect Trust Trail
-        </a>
-      </div>
+<section class="page dashboard-page">
+  <header class="dashboard-hero">
+    <div>
+      <span class="eyebrow">DREAM Mission Control</span>
+      <h1>Work Queue</h1>
+      <p>Start the next live workflow or clear items that need human review. Memory inventory now lives in Memory Hub.</p>
     </div>
-
-    <aside class="hero-ops" aria-label="Workspace guardrails">
-      <div class="ops-heading">
-        <span class="pulse-dot" aria-hidden="true"></span>
-        <strong>Local Demo Guardrails</strong>
-      </div>
-      <div class="guardrail-list">
-        @for (guardrail of guardrails; track guardrail.label) {
-          <div>
-            <span>{{ guardrail.label }}</span>
-            <strong [class]="'guardrail-' + guardrail.status">{{ guardrail.value }}</strong>
-          </div>
-        }
-      </div>
-    </aside>
+    <div class="hero-actions">
+      <a class="primary-button" routerLink="/memory">
+        <app-ui-icon name="document" />
+        Source Intake
+      </a>
+      <a class="secondary-button" routerLink="/requirements">Draft Jira</a>
+      <a class="secondary-button" routerLink="/review">Review PR</a>
+    </div>
   </header>
 
-  <section class="metric-strip" aria-label="DREAM workspace metrics">
-    @for (metric of missionMetrics(); track metric.label) {
-      <div class="metric-tile">
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+
+  <section class="dashboard-metrics" aria-label="Operational review summary">
+    @for (metric of summaryMetrics(); track metric.label) {
+      <article class="metric-card" [class]="'metric-tone-' + metric.tone + ' metric-' + metric.variant">
         <span>{{ metric.label }}</span>
         <strong>{{ metric.value }}</strong>
         <small>{{ metric.note }}</small>
-      </div>
+      </article>
     }
   </section>
 
-  <section class="pipeline-panel" aria-label="DREAM memory workflow">
-    <div class="pipeline-header">
-      <div>
-        <h2>Memory-to-review pipeline</h2>
-        <p>Knowledge and code context stay visible all the way through review and audit.</p>
-      </div>
-      <span class="status-pill status-info">Graph-Lite enabled</span>
-    </div>
-    <div class="pipeline-steps">
-      @for (step of pipelineSteps(); track step.label) {
-        <a class="pipeline-step" [routerLink]="step.route">
-          <span class="step-status" [class]="'step-' + step.status"></span>
-          <small>{{ step.label }}</small>
-          <strong>{{ step.value }}</strong>
-          <p>{{ step.description }}</p>
-        </a>
-      }
-    </div>
-  </section>
-
-  <section class="grid-2">
-    <article class="panel scan-panel">
+  <section class="operations-layout" aria-label="Mission control work">
+    <article class="panel work-panel">
       <div class="panel-header">
-        <h2>Recent Audit Runs</h2>
-        <a class="link-button" routerLink="/trust">View all runs</a>
+        <div>
+          <h2>Needs Attention</h2>
+          <p>{{ workQueue().length }} items waiting across source intake, Jira draft, PR review, and eval.</p>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table aria-label="Recent DREAM runs">
-          <thead>
-            <tr>
-              <th>Run ID</th>
-              <th>Workflow</th>
-              <th>Application</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (run of runs(); track run.runId) {
-              <tr>
-                <td>{{ run.runId }}</td>
-                <td>{{ run.useCase }}</td>
-                <td>{{ run.app }}</td>
-                <td>
-                  <span class="status-pill" [class]="run.status === 'failed' ? 'status-error' : run.status === 'needs_review' || run.status === 'stub_only' ? 'status-warning' : 'status-success'">
-                    {{ run.status }}
-                  </span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+
+      <div class="work-list">
+        @for (item of workQueue(); track item.type + item.id) {
+          <a class="work-row" [routerLink]="item.route" [attr.data-tone]="item.tone">
+            <span class="work-type">{{ item.type }}</span>
+            <div class="row-main">
+              <div class="row-title">
+                <strong>{{ item.title }}</strong>
+                <span class="status-pill" [class]="item.tone === 'success' ? 'status-success' : 'status-warning'">
+                  {{ item.status }}
+                </span>
+              </div>
+              <p>{{ item.meta }}</p>
+              <small>{{ item.note }}</small>
+            </div>
+            <span class="link-button">{{ item.actionLabel }}</span>
+          </a>
+        } @empty {
+          <div class="empty-state">
+            <strong>No work is waiting.</strong>
+            <span>Use a start action to inspect memory, draft Jira, run PR review, or open the codebase index.</span>
+          </div>
+        }
       </div>
     </article>
 
-    <div class="side-stack">
-      <article class="panel graph-preview-panel">
-        <div class="panel-header">
-          <h2>Evidence Graph Preview</h2>
-          <a class="link-button" routerLink="/memory">Open Memory Hub</a>
+    <aside class="panel action-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Start Work</h2>
+      <p>Primary entry points only. Detailed memory management stays in Memory Hub.</p>
         </div>
-        <div class="graph-preview-list">
-          @for (path of graphPaths; track path.id) {
-            <a routerLink="/memory">
-              <strong>{{ path.concept }}</strong>
-              <span>{{ path.path.join(' -> ') }}</span>
-              <small>{{ path.risk }}</small>
-            </a>
-          }
-        </div>
-      </article>
+      </div>
 
-      <article class="panel">
-        <div class="panel-header">
-          <h2>Knowledge Pack Health</h2>
-          <a class="link-button" routerLink="/memory">Search packs</a>
-        </div>
-        <div class="pack-list">
-          @for (pack of packs; track pack.id) {
-            <div class="pack-row">
-              <div>
-                <strong>{{ pack.name }}</strong>
-                <span>{{ pack.app }} / {{ pack.component }}</span>
-              </div>
-              <span
-                class="status-pill"
-                [class]="pack.status === 'Critical' ? 'status-error' : pack.status === 'Warning' ? 'status-warning' : 'status-success'"
-              >
-                {{ pack.status }}
-              </span>
-              <progress [value]="pack.coverage" max="100"></progress>
-              <small>{{ pack.coverage }}%</small>
-            </div>
-          }
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <h2>Active Requirement Case</h2>
-          <span class="status-pill status-success">{{ primaryCase().status }}</span>
-        </div>
-        <div class="case-summary">
-          <strong>{{ primaryCase().title }}</strong>
-          <p>{{ primaryCase().rawRequest }}</p>
-          <div class="confidence-bar"><i [style.width.%]="primaryCase().confidence * 100"></i></div>
-          <small>{{ primaryCase().evidence.length }} evidence items / {{ primaryCase().impactMap.length }} impact items</small>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header">
-          <h2>Human Review Required</h2>
-          <a class="link-button" routerLink="/trust">Rate outputs</a>
-        </div>
-        <div class="review-list">
-          @for (run of needsReview(); track run.runId) {
-            <a routerLink="/trust">
-              <strong>{{ run.runId }}</strong>
-              <span>{{ run.useCase }} / {{ run.app }}</span>
-            </a>
-          } @empty {
-            <p>No current mock runs require review.</p>
-          }
-        </div>
-      </article>
-    </div>
+      <div class="action-list">
+        @for (action of startActions; track action.label) {
+          <a class="start-action" [class.primary-start]="action.tone === 'primary'" [routerLink]="action.route">
+            <span class="action-icon">
+              <app-ui-icon [name]="action.icon" />
+            </span>
+            <span>
+              <strong>{{ action.label }}</strong>
+              <small>{{ action.summary }}</small>
+            </span>
+          </a>
+        }
+      </div>
+    </aside>
   </section>
 
-  <section class="quick-action-row" aria-label="Quick actions">
-    @for (action of quickActions; track action.title) {
-      <a class="quick-action" [routerLink]="action.route">
-        <app-ui-icon [name]="action.icon" />
-        <span>
-          <strong>{{ action.title }}</strong>
-          <small>{{ action.description }}</small>
-        </span>
-      </a>
-    }
-  </section>
+  <details class="advanced-details">
+    <summary>
+      <span>Advanced links</span>
+      <app-ui-icon name="chevron-down" />
+    </summary>
+    <nav class="advanced-links" aria-label="Advanced DREAM pages">
+      <a class="secondary-button" routerLink="/memory">Memory Hub</a>
+      <a class="secondary-button" routerLink="/codebase">Codebase Index</a>
+      <a class="secondary-button" routerLink="/audit">Audit & Eval</a>
+    </nav>
+  </details>
 </section>

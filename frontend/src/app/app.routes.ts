@@ -9,6 +9,14 @@ export const routes: Routes = [
     title: 'DREAM Mission Control',
   },
   {
+    path: 'memory/:documentId',
+    loadComponent: () =>
+      import('./features/memory-document-detail/memory-document-detail.component').then(
+        (module) => module.MemoryDocumentDetailComponent,
+      ),
+    title: 'DREAM Memory Source Detail',
+  },
+  {
     path: 'memory',
     loadComponent: () => import('./features/memory-hub/memory-hub.component').then((module) => module.MemoryHubComponent),
     title: 'DREAM Memory Hub',
@@ -22,65 +30,52 @@ export const routes: Routes = [
     title: 'DREAM Engineering Workbench',
   },
   {
-    path: 'trust',
-    loadComponent: () => import('./features/trust-center/trust-center.component').then((module) => module.TrustCenterComponent),
-    title: 'DREAM Trust Center',
-  },
-  { path: 'dashboard', redirectTo: 'mission-control', pathMatch: 'full' },
-  {
-    path: 'knowledge',
-    loadComponent: () => import('./features/knowledge-base/knowledge-base.component').then((module) => module.KnowledgeBaseComponent),
-    title: 'Knowledge Base',
-  },
-  {
-    path: 'knowledge-intake',
+    path: 'requirements',
     loadComponent: () =>
-      import('./features/knowledge-intake/knowledge-intake.component').then((module) => module.KnowledgeIntakeComponent),
-    title: 'Knowledge Intake',
+      import('./features/engineering-workbench/engineering-workbench.component').then(
+        (module) => module.EngineeringWorkbenchComponent,
+      ),
+    title: 'DREAM Jira Draft',
+    data: { mode: 'requirement' },
+  },
+  {
+    path: 'review',
+    loadComponent: () =>
+      import('./features/engineering-workbench/engineering-workbench.component').then(
+        (module) => module.EngineeringWorkbenchComponent,
+      ),
+    title: 'DREAM PR Review',
+    data: { mode: 'pr' },
+  },
+  {
+    path: 'context/:caseId',
+    loadComponent: () => import('./features/context-detail/context-detail.component').then((module) => module.ContextDetailComponent),
+    title: 'DREAM Context Trail',
   },
   {
     path: 'codebase',
     loadComponent: () =>
       import('./features/codebase-memory/codebase-memory.component').then((module) => module.CodebaseMemoryComponent),
-    title: 'Codebase Memory',
+    title: 'DREAM Codebase Index',
   },
   {
-    path: 'graph',
-    loadComponent: () => import('./features/evidence-graph/evidence-graph.component').then((module) => module.EvidenceGraphComponent),
-    title: 'Evidence Graph',
-  },
-  {
-    path: 'context-intelligence',
-    loadComponent: () =>
-      import('./features/context-intelligence/context-intelligence.component').then((module) => module.ContextIntelligenceComponent),
-    title: 'Context Intelligence',
-  },
-  {
-    path: 'requirements',
-    loadComponent: () =>
-      import('./features/requirement-draft/requirement-draft.component').then((module) => module.RequirementDraftComponent),
-    title: 'Requirement Case',
-  },
-  {
-    path: 'review',
-    loadComponent: () => import('./features/pr-review/pr-review.component').then((module) => module.PrReviewComponent),
-    title: 'PR Review',
-  },
-  {
-    path: 'testgen',
-    loadComponent: () => import('./features/testgen-stub/testgen-stub.component').then((module) => module.TestgenStubComponent),
-    title: 'TestGen Stub',
+    path: 'audit/:targetId',
+    loadComponent: () => import('./features/audit-eval/audit-eval.component').then((module) => module.AuditEvalComponent),
+    title: 'Audit & Eval Detail',
   },
   {
     path: 'audit',
     loadComponent: () => import('./features/audit-eval/audit-eval.component').then((module) => module.AuditEvalComponent),
     title: 'Audit & Eval',
   },
-  {
-    path: 'settings',
-    loadComponent: () => import('./features/settings/settings.component').then((module) => module.SettingsComponent),
-    title: 'Settings',
-  },
+  { path: 'dashboard', redirectTo: 'mission-control', pathMatch: 'full' },
+  { path: 'trust', redirectTo: 'audit', pathMatch: 'full' },
+  { path: 'knowledge', redirectTo: 'memory', pathMatch: 'full' },
+  { path: 'knowledge-intake', redirectTo: 'memory', pathMatch: 'full' },
+  { path: 'graph', redirectTo: 'codebase', pathMatch: 'full' },
+  { path: 'context-intelligence', redirectTo: 'audit', pathMatch: 'full' },
+  { path: 'testgen', redirectTo: 'workbench', pathMatch: 'full' },
+  { path: 'settings', redirectTo: 'mission-control', pathMatch: 'full' },
   { path: '', pathMatch: 'full', redirectTo: 'mission-control' },
   { path: '**', redirectTo: 'mission-control' },
 ];

@@ -1,133 +1,285 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="page reveal-page">
+<section class="page jira-draft-page">
   <header class="page-header command-header">
     <div>
-      <span class="eyebrow">Requirement intelligence</span>
-      <h1>Requirement Case</h1>
+      <span class="eyebrow">Jira draft agent</span>
+      <h1>Jira Draft</h1>
       <p>
-        Turn incomplete business requests into source-backed evidence, impact maps, role
-        questions, an engineering brief, and a Jira-ready draft.
+        Start with a rough business request. DREAM retrieves memory, maps engineering impact,
+        asks unresolved questions, and drafts a Jira proposal for human review.
       </p>
     </div>
     <div class="index-beacon">
       <span></span>
-      <strong>Human review</strong>
-      <small>required before Jira</small>
+      <strong>Draft only</strong>
+      <small>human approval required</small>
     </div>
   </header>
 
-  <section class="grid-2">
-    <article class="panel scan-panel">
+  <section class="draft-start" [class.has-result]="result()">
+    <article class="panel request-panel">
       <div class="panel-header">
-        <h2>Case Intake</h2>
-        <span class="status-pill status-warning">Human Review Required</span>
+        <div>
+          <h2>Business Request</h2>
+          <p>Enter the fuzzy requirement exactly as a stakeholder would describe it.</p>
+        </div>
+        <span class="status-pill status-info">
+          Live API
+        </span>
       </div>
       <div class="panel-body">
-        <form class="form-grid" [formGroup]="form" (ngSubmit)="generate()">
-          <div class="form-field-full">
-            <label for="req-mode">Execution mode</label>
-            <select id="req-mode" formControlName="executionMode">
-              <option value="mock">Mock local provider</option>
-              <option value="openai">Real FastAPI + OpenAI-compatible provider</option>
-            </select>
-            <span class="helper-text">OpenAI API keys stay in the backend environment; the browser only selects the provider.</span>
-          </div>
-          <div class="form-field">
-            <label for="req-team">Team</label>
-            <input id="req-team" formControlName="teamId" />
-          </div>
-          <div class="form-field">
-            <label for="req-app">Application</label>
-            <select id="req-app" formControlName="app">
-              @for (app of apps; track app) {
-                <option [value]="app">{{ app }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="req-component">Component</label>
-            <input id="req-component" formControlName="component" />
-          </div>
-          <div class="form-field">
-            <label for="req-role">Written by role</label>
-            <select id="req-role" formControlName="role">
-              <option value="BA">BA</option>
-              <option value="TL">TL</option>
-              <option value="FE">FE</option>
-              <option value="BE">BE</option>
-              <option value="QA">QA</option>
-              <option value="OPS">OPS</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="req-top-k">Top K</label>
-            <input id="req-top-k" type="number" min="1" max="20" formControlName="topK" />
-          </div>
+        <form class="request-form" [formGroup]="form" (ngSubmit)="generate()">
           <div class="form-field-full">
             <label for="req-request">Rough business request</label>
             <textarea id="req-request" formControlName="roughBusinessRequest"></textarea>
-            <span class="helper-text">MockLLM-style deterministic output; no external API calls.</span>
           </div>
-          <div class="form-field-full">
+
+          <button
+            class="link-button advanced-toggle"
+            type="button"
+            (click)="toggleAdvancedSettings()"
+            [attr.aria-expanded]="advancedOpen()"
+            aria-controls="req-advanced-settings"
+          >
+            <app-ui-icon [name]="advancedOpen() ? 'chevron-up' : 'chevron-down'" />
+            Advanced settings
+          </button>
+
+          @if (advancedOpen()) {
+            <div id="req-advanced-settings" class="advanced-grid">
+              <div class="form-field">
+                <label for="req-team">Team</label>
+                <input id="req-team" formControlName="teamId" />
+              </div>
+              <div class="form-field">
+                <label for="req-app">Application</label>
+                <select id="req-app" formControlName="app">
+                  @for (app of apps; track app) {
+                    <option [value]="app">{{ app }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="req-component">Component</label>
+                <input id="req-component" formControlName="component" />
+              </div>
+              <div class="form-field">
+                <label for="req-role">Written by role</label>
+                <select id="req-role" formControlName="role">
+                  <option value="BA">BA</option>
+                  <option value="TL">TL</option>
+                  <option value="FE">FE</option>
+                  <option value="BE">BE</option>
+                  <option value="QA">QA</option>
+                  <option value="OPS">OPS</option>
+                </select>
+              </div>
+            </div>
+          }
+
+          <div class="request-actions">
             <button class="primary-button" type="submit" [disabled]="isLoading()">
-              {{ isLoading() ? 'Calling OpenAI Provider...' : 'Analyze Requirement Case' }}
+              <app-ui-icon name="clipboard" />
+              {{ isLoading() ? lifecycleButtonLabel() : 'Generate Jira Proposal' }}
             </button>
             @if (apiError(); as message) {
               <div class="warning-callout">{{ message }}</div>
             }
           </div>
+          <app-requirement-lifecycle-progress
+            [steps]="lifecycleSteps"
+            [activeIndex]="lifecycleStepIndex()"
+            [durations]="lifecycleDurations()"
+            [state]="lifecycleState()"
+          />
         </form>
       </div>
     </article>
 
-    <article class="panel">
-      <div class="panel-header">
-        <h2>Sources Used</h2>
-      </div>
-      <div class="panel-body">
-        @if (result(); as draft) {
-          <h3 class="section-title">{{ draft.requirementCase.title }}</h3>
-          <p>{{ draft.requirementCase.evidence.length }} evidence items retrieved from knowledge and codebase memory.</p>
-          <div class="source-list">
-            @for (source of draft.sourcesUsed; track source.id) {
-              <div>
-                <strong>{{ source.title }}</strong>
-                <span>{{ source.sourcePath }}</span>
-              </div>
-            }
+    @if (result(); as draft) {
+      <article class="panel eval-compact">
+        <div class="panel-header">
+          <h2>Eval Agent</h2>
+          <span
+            class="status-pill"
+            [class.status-success]="evalStatusClass(draft) === 'status-success'"
+            [class.status-warning]="evalStatusClass(draft) === 'status-warning'"
+            [class.status-error]="evalStatusClass(draft) === 'status-error'"
+          >
+            {{ evalDecision(draft) }}
+          </span>
+        </div>
+        <div class="panel-body eval-body">
+          <div class="score-lockup">
+            <div class="score-ring">{{ draft.scorecard.overallScore }}</div>
+            <div>
+              <strong>Grade {{ draft.scorecard.grade }}</strong>
+              <span>Coverage {{ coverageText(draft) }}</span>
+            </div>
           </div>
-        } @else {
-          <div class="info-callout">Generate a draft to see retrieved sources.</div>
-        }
-      </div>
-    </article>
+          <p>{{ evalReason(draft) }}</p>
+          <dl class="eval-meta">
+            <div>
+              <dt>Mode</dt>
+              <dd>{{ workflowModeLabel(draft) }}</dd>
+            </div>
+            <div>
+              <dt>Draft</dt>
+              <dd>{{ modelLabel(draft) }}</dd>
+            </div>
+            <div>
+              <dt>Rubric</dt>
+              <dd>deterministic / evaluation-agent-v1</dd>
+            </div>
+            <div>
+              <dt>Case</dt>
+              <dd>{{ draft.requirementCase.caseId }}</dd>
+            </div>
+          </dl>
+          <div class="judge-summary" [attr.data-state]="llmJudgeState(draft)">
+            <strong>{{ llmJudgeStatusLabel(draft) }}</strong>
+            <span>{{ llmJudgeMeta(draft) }}</span>
+            <p>{{ llmJudgeDetail(draft) }}</p>
+          </div>
+          <ul>
+            @for (recommendation of draft.scorecard.recommendations.slice(0, 2); track recommendation) {
+              <li>{{ recommendation }}</li>
+            }
+          </ul>
+          <a class="secondary-button detail-link" [routerLink]="['/audit', draft.scorecard.evaluationId]">
+            View eval details
+            <app-ui-icon name="chevron-right" />
+          </a>
+          <a class="secondary-button detail-link" [routerLink]="['/context', draft.requirementCase.caseId]">
+            View context trail
+            <app-ui-icon name="chevron-right" />
+          </a>
+        </div>
+      </article>
+    }
   </section>
 
   @if (result(); as draft) {
-    <section class="grid-2">
-      <article class="panel">
-        <div class="panel-header">
-          <h2>Impact Map</h2>
-          <span class="status-pill status-success">{{ draft.requirementCase.confidence * 100 | number: '1.0-0' }}% confidence</span>
+    <article class="panel memory-impact-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Memory & Impact Summary</h2>
+          <p>Default view shows why this proposal was grounded and how broad the code impact is.</p>
         </div>
-        <div class="panel-body">
-          <div class="impact-grid">
-            @for (impact of draft.requirementCase.impactMap; track impact.name) {
-              <div class="impact-card">
-                <span class="status-pill status-info">{{ impact.areaType }}</span>
-                <strong>{{ impact.name }}</strong>
-                <p>{{ impact.description }}</p>
-                <div class="confidence-bar"><i [style.width.%]="impact.confidence * 100"></i></div>
-              </div>
-            }
+        <a class="link-button" routerLink="/audit">
+          View eval trail
+          <app-ui-icon name="chevron-right" />
+        </a>
+      </div>
+      <div class="panel-body">
+        <div class="summary-metrics" aria-label="Memory and impact metrics">
+          <div class="summary-tile">
+            <span>Memory docs used</span>
+            <strong>{{ draft.sourcesUsed.length }}</strong>
+            <small>{{ sourceFamilies(draft).length }} source families</small>
+          </div>
+          <button
+            class="summary-tile summary-button"
+            type="button"
+            (click)="toggleImpactDetails()"
+            [attr.aria-expanded]="impactDetailsOpen()"
+            aria-controls="impact-detail-panel"
+          >
+            <span>Affected files</span>
+            <strong>{{ affectedFiles(draft).length }}</strong>
+            <small>{{ impactDetailsOpen() ? 'Hide details' : 'View details' }}</small>
+          </button>
+          <div class="summary-tile">
+            <span>Open questions</span>
+            <strong>{{ openQuestionCount(draft) }}</strong>
+            <small>{{ openQuestionCount(draft) ? 'blocking Jira handoff' : 'ready to regenerate' }}</small>
+          </div>
+          <div class="summary-tile">
+            <span>Case status</span>
+            <strong class="status-text">{{ runStatusLabel(draft) }}</strong>
+            <small>{{ readinessDetail(draft) }}</small>
           </div>
         </div>
-      </article>
 
-      <article class="panel">
+        <div class="logic-strip" aria-label="Memory matching logic">
+          <div>
+            <strong>1. Extract intent</strong>
+            <p>{{ matchedConcepts(draft).join(', ') || 'No concepts detected' }}</p>
+          </div>
+          <div>
+            <strong>2. Match memory</strong>
+            <p>{{ memoryMatchSummary(draft) }}</p>
+          </div>
+          <div>
+            <strong>3. Map impact</strong>
+            <p>{{ impactAreas(draft) }}</p>
+          </div>
+          <div>
+            <strong>4. Preserve ambiguity</strong>
+            <p>{{ openQuestionCount(draft) }} questions stay editable before Jira handoff.</p>
+          </div>
+        </div>
+
+        @if (impactDetailsOpen()) {
+          <div id="impact-detail-panel" class="impact-detail">
+            <div>
+              <h3 class="section-title">Affected Files</h3>
+              <div class="file-impact-list">
+                @for (file of affectedFiles(draft); track file.path) {
+                  <div>
+                    <span class="status-pill status-neutral">{{ file.areaType }}</span>
+                    <strong>{{ fileName(file.path) }}</strong>
+                    <small>{{ file.path }}</small>
+                    <p>{{ file.reason }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Memory Sources</h3>
+              <div class="file-impact-list">
+                @for (source of draft.sourcesUsed; track source.id) {
+                  <div>
+                    <span class="status-pill status-neutral">{{ sourceTypeLabel(source.sourceType) }}</span>
+                    <strong>{{ source.title }}</strong>
+                    <small>{{ source.sourcePath }}</small>
+                    @if (sourceDocumentRoute(source.sourcePath); as route) {
+                      <a class="link-button" [routerLink]="route">
+                        Source detail
+                        <app-ui-icon name="chevron-right" />
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Impact Map</h3>
+              <div class="impact-list">
+                @for (impact of draft.requirementCase.impactMap; track impact.name) {
+                  <div>
+                    <span class="status-pill status-info">{{ impact.areaType }}</span>
+                    <strong>{{ impact.name }}</strong>
+                    <p>{{ impact.description }}</p>
+                    <small>{{ impact.reason }}</small>
+                    <div class="confidence-bar"><i [style.width.%]="impact.confidence * 100"></i></div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </article>
+
+    <section class="draft-output-grid">
+      <article class="panel jira-proposal-panel">
         <div class="panel-header">
-          <h2>Evaluation Scorecard</h2>
+          <div>
+            <h2>Jira Proposal</h2>
+            <p>{{ draft.requirementCase.title }}</p>
+          </div>
           <span
             class="status-pill"
             [class.status-success]="draft.requirementCase.jiraReady"
@@ -136,65 +288,32 @@
             {{ readinessLabel(draft) }}
           </span>
         </div>
-        <div class="panel-body">
-          <div class="score-card">
-            <div class="score-ring">{{ draft.scorecard.overallScore }}</div>
-            <strong>{{ draft.scorecard.passStatus }}</strong>
-            <p>{{ draft.scorecard.recommendations.join(' ') }}</p>
-          </div>
-        </div>
+        <app-jira-proposal-view
+          [markdown]="draft.markdown"
+          [questions]="draft.requirementCase.questions"
+          [questionAnswers]="questionAnswers()"
+          [questionWaivers]="questionWaivers()"
+          [waiverReasons]="waiverReasons"
+          [savingQuestionId]="activeQuestionId()"
+          [affectedFileLinks]="proposalAffectedFileLinks(draft)"
+          [sourceLinks]="proposalSourceLinks(draft)"
+          (questionAnswerChange)="updateQuestionAnswer($event.questionId, $event.value)"
+          (questionAnswerSave)="saveQuestionAnswer($event)"
+          (questionWaiverReasonChange)="updateQuestionWaiverReason($event.questionId, $event.value)"
+          (questionWaiverNoteChange)="updateQuestionWaiverNote($event.questionId, $event.value)"
+          (questionWaive)="waiveQuestion($event)"
+        />
       </article>
     </section>
-
-    <article class="panel">
-      <div class="panel-header">
-        <h2>Role-specific Clarification Questions</h2>
-      </div>
+  } @else {
+    <article class="panel empty-state">
       <div class="panel-body">
-        <div class="question-grid">
-          @for (question of draft.requirementCase.questions; track question.questionId) {
-            <div class="question-card">
-              <div class="cluster-row">
-                <span class="status-pill status-neutral">{{ question.targetRole }}</span>
-                <span
-                  class="status-pill"
-                  [class.status-success]="question.status === 'answered'"
-                  [class.status-warning]="question.status !== 'answered'"
-                >
-                  {{ question.status }}
-                </span>
-              </div>
-              <strong>{{ question.question }}</strong>
-              <p>{{ question.whyItMatters }}</p>
-              @if (question.answer) {
-                <div class="info-callout">{{ question.answer }}</div>
-              }
-              <textarea
-                [value]="questionAnswers()[question.questionId] || question.answer || ''"
-                (input)="updateQuestionAnswer(question.questionId, $event)"
-                placeholder="Capture the human answer that should feed the next Jira draft."
-              ></textarea>
-              <button
-                class="secondary-button"
-                type="button"
-                (click)="saveQuestionAnswer(question.questionId)"
-              >
-                Save answer
-              </button>
-            </div>
-          }
-        </div>
+        <strong>Generated output will appear here.</strong>
+        <p>
+          After generation, the page will show memory docs used, affected file count,
+          editable open questions, Jira proposal, and Eval Agent judgment.
+        </p>
       </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-header">
-        <h2>Jira-ready Draft</h2>
-        <button class="secondary-button" type="button" (click)="regenerateJiraDraft()">
-          Regenerate after answers
-        </button>
-      </div>
-      <pre class="markdown-preview">{{ draft.markdown }}</pre>
     </article>
   }
 </section>

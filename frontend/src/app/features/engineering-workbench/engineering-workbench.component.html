@@ -10,9 +10,9 @@
         draft output, and a traceable readiness decision.
       </p>
     </div>
-    <a class="trust-link" routerLink="/trust">
-      <span>Trust Center</span>
-      <strong>Open retrieval trail</strong>
+    <a class="trust-link" routerLink="/audit">
+      <span>Audit & Eval</span>
+      <strong>Open eval trail</strong>
     </a>
   </header>
 
@@ -39,53 +39,5 @@
         }
       </div>
     </main>
-
-    <aside class="context-rail" aria-label="Context trust sidebar">
-      <div class="rail-header">
-        <span class="eyebrow">Context Sidebar</span>
-        <h2>{{ context.title }}</h2>
-        <p>{{ context.request }}</p>
-      </div>
-
-      <div class="rail-card">
-        <span>Detected Concepts</span>
-        <div class="concept-list">
-          @for (concept of detectedConcepts; track concept) {
-            <strong>{{ concept }}</strong>
-          }
-        </div>
-      </div>
-
-      <div class="rail-card">
-        <span>Retrieval Trail</span>
-        <ol class="mini-trail">
-          @for (step of context.retrievalTrail; track step.id) {
-            <li>
-              <strong>{{ step.step }}. {{ step.label }}</strong>
-              <small>{{ step.sourcesMatched }} sources / {{ step.status }}</small>
-            </li>
-          }
-        </ol>
-      </div>
-
-      <div class="rail-card">
-        <span>Context Eval</span>
-        <div class="metric-list">
-          @for (metric of context.metrics; track metric.label) {
-            <div>
-              <strong>{{ metric.value }}</strong>
-              <small>{{ metric.label }} / {{ metric.status }}</small>
-            </div>
-          }
-        </div>
-      </div>
-
-      <div class="rail-card">
-        <span>Active Case</span>
-        <strong>{{ primaryCase.title }}</strong>
-        <p>{{ primaryCase.evidence.length }} evidence items and {{ primaryCase.impactMap.length }} impact items are ready for review.</p>
-        <div class="confidence-bar"><i [style.width.%]="primaryCase.confidence * 100"></i></div>
-      </div>
-    </aside>
   </section>
 </section>

@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+
+.code-memory-page,
+.repo-workspace,
+.support-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.repo-workspace {
+  grid-template-columns: minmax(340px, 0.36fr) minmax(0, 1fr) minmax(380px, 0.48fr);
+  align-items: start;
+}
+
+.support-layout {
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.55fr);
+  align-items: start;
+}
+
+@media (width <= 1320px) {
+  .repo-workspace {
+    grid-template-columns: minmax(260px, 0.4fr) minmax(0, 1fr);
+  }
+
+  app-index-json-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width <= 1100px) {
+  .repo-workspace,
+  .support-layout {
+    grid-template-columns: 1fr;
+  }
+}

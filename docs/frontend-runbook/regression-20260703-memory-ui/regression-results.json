@@ -1,0 +1,289 @@
+[
+  {
+    "route": "/mission-control",
+    "name": "Mission Control",
+    "purpose": "Review dashboard for memory inventory, source review queue, Jira draft review, PR review session, and approved outputs.",
+    "screenshot": "screenshots/01-mission-control.png",
+    "status": "PASS",
+    "heading": "Review Dashboard",
+    "actions": [
+      "Upload Source",
+      "Open intake",
+      "Review",
+      "Review",
+      "Open workbench",
+      "Jira DraftAsync status tracking for long-running forecast executions Needs Review ForecastDemo / Jul 3, 7:05 PMNeeds final answers before Jira handoff",
+      "Open workbench",
+      "PR Reviewpr review summary DFP 110 Needs Review OutputPreviewDemo / Jun 20, 12:45 PMHuman review required before PR comment posting.",
+      "Advanced details",
+      "Memory Hub",
+      "Trust Center",
+      "Context Trail"
+    ],
+    "visibleText": "DREAM Source MemoryReview DashboardMemory coverage, source intake, and Jira/PR review status. Upload Source Docs in Memory1212 memory cardsUploads Need Review2structured docs pendingJira Drafts Need Review11 draft totalPR Reviews Need Review11 review totalApproved Outputs0ready for handoffStructured Docs Awaiting Review2 parsed docs need review before memory promotionOpen intakeStatus Stuck RUNNING Operator Runbook Needs Review DFP Operations Memory3 structured sections / stuck running, operator escalation, status trackerReviewLong-running Forecast Execution UX Notes Unreviewed DFP Domain Memory3 structured sections / analyst progress, task status labels, partial successReviewJira Draft Review1 need review / 0 approvedOpen workbenchJira DraftAsync status tracking for long-running forecast executions Needs Review ForecastDemo / Jul 3, 7:05 PMNeeds final answers before Jira handoffPR Review Session1 need review / 0 approvedOpen workbenchPR Reviewpr review summary DFP 110 Needs Review OutputPreviewDemo / Jun 20, 12:45 PMHuman review required before PR comment posting.Advanced detailsMemory HubTrust CenterContext Trail",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/memory",
+    "name": "Memory Management",
+    "purpose": "Operational memory management overview with memory counts, structured docs awaiting review, quick actions, memory domains, and advanced diagnostics links.",
+    "screenshot": "screenshots/02-memory-management.png",
+    "status": "PASS",
+    "heading": "Memory Management",
+    "actions": [
+      "Search Memory",
+      "Upload Source",
+      "Open intake",
+      "Status Stuck RUNNING Operator Runbook Needs Review DFP Operations Memory3 structured sections ready for review",
+      "Long-running Forecast Execution UX Notes Unreviewed DFP Domain Memory3 structured sections ready for review",
+      "Upload SourceAdd a runbook, doc, or HLD for parsing.",
+      "Review Structured DocsApprove parsed cards before promotion.",
+      "Search MemoryFind approved evidence by concept.",
+      "Open Code MemoryInspect indexed files and test coverage.",
+      "Open intake",
+      "Search memory",
+      "Open code memory",
+      "Open audit",
+      "Advanced memory diagnostics",
+      "Retrieval Trace",
+      "Context Trail",
+      "Eval & Audit"
+    ],
+    "visibleText": "Memory ManagementMonitor approved memory, structured-source review, code memory, and eval evidence from one place.Search Memory Upload Source Docs in Memory1212 approved memory cardsStructured Docs Need Review21 source already approvedCode Memory Files419 linked test filesEval Evidence83/4 checks passingStructured Docs Awaiting Review2 parsed docs need approval before promotion to memory.Open intakeStatus Stuck RUNNING Operator Runbook Needs Review DFP Operations Memory3 structured sections ready for reviewLong-running Forecast Execution UX Notes Unreviewed DFP Domain Memory3 structured sections ready for reviewQuick ActionsUpload SourceAdd a runbook, doc, or HLD for parsing.Review Structured DocsApprove parsed cards before promotion.Search MemoryFind approved evidence by concept.Open Code MemoryInspect indexed files and test coverage.Memory DomainsEach domain stays shallow here; detailed inspection lives in its own page.Review pending3Source IntakeUploaded source documents parsed into structured memory cards.2 waiting for human review Open intake Approved12Business KnowledgeApproved domain, architecture, runbook, incident, Jira, PR, and testing memory.12 retrievable cards Search memory Indexed41Codebase MemoryIndexed implementation and test files used for impact mapping.9 tests linked Open code memory Watch8Eval & Audit EvidenceRetrieval evidence and scoring used to validate context quality.5 retrieval steps Open audit Advanced memory diagnosticsRetrieval TraceContext TrailEval & Audit",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/workbench",
+    "name": "Engineering Workbench",
+    "purpose": "Entry point for Jira draft and PR review workflows.",
+    "screenshot": "screenshots/03-engineering-workbench.png",
+    "status": "PASS",
+    "heading": "Engineering Workbench",
+    "actions": [
+      "Trust CenterOpen retrieval trail",
+      "Jira DraftBusiness request -> memory and impact -> open questions -> Jira proposal.",
+      "PR ReviewDiff and Jira context -> related code -> evidence-backed review aid.",
+      "Advanced settings",
+      "Generate Jira Proposal"
+    ],
+    "visibleText": "Source-backed engineering workflowEngineering Workbench Turn a rough requirement or PR diff into selected evidence, an impact map, open questions, draft output, and a traceable readiness decision. Trust CenterOpen retrieval trailJira DraftBusiness request -> memory and impact -> open questions -> Jira proposal.PR ReviewDiff and Jira context -> related code -> evidence-backed review aid.Jira draft agentJira Draft Start with a rough business request. DREAM retrieves memory, maps engineering impact, asks unresolved questions, and drafts a Jira proposal for human review. Draft onlyhuman approval requiredBusiness RequestEnter the fuzzy requirement exactly as a stakeholder would describe it.InputRough business request Advanced settings Generate Jira Proposal Generated output will appear here. After generation, the page will show memory docs used, affected file count, editable open questions, Jira proposal, and Eval Agent judgment.",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/knowledge-intake",
+    "name": "Knowledge Intake",
+    "purpose": "Upload, parse, review, approve, and promote source documents into memory cards.",
+    "screenshot": "screenshots/04-knowledge-intake.png",
+    "status": "PASS",
+    "heading": "Knowledge Intake",
+    "actions": [
+      "Re-parse",
+      "Approve Cards",
+      "Promote Cards",
+      "stuck running",
+      "operator escalation",
+      "status tracker",
+      "processor completion"
+    ],
+    "visibleText": "Knowledge IntakeSources3 sourcesUpload sourceNo file selectedReady.SourceProcessingReviewerMemory CardsPromote ToStatus Stuck RUNNING Operator RunbookRunbook / uploads/runbooks/status-stuck-running-runbook.md ready for review Ops Enablement 3 cards needs reviewDFP Operations MemoryLong-running Forecast Execution UX NotesDOCX / uploads/docx/long-running-forecast-execution-ux-notes.docx parsed Product BA 3 cards unreviewedDFP Domain MemoryConfluence HLD: Forecast Execution State ModelConfluence HLD / confluence://DFP/HLD/Forecast-Execution-State-Model promoted Platform TL 3 cards promotedDFP Architecture MemoryReview & Approve needs review ImportedJun 21, 10:12 AMReviewerOps EnablementCards3 proposedDestinationDFP Operations Memory Re-parse Approve Cards Promote Cards Review commentReview the proposed memory cards before promotion.Proposed Memory Cards3 cardsDetect stuck RUNNING execution candidate Operator compares processor completion evidence with StatusTracker terminal-state persistence.Source spanuploads/runbooks/status-stuck-running-runbook.md#runbook-section-detectRetrieval tagsstuck runningstatus trackerterminal stateSafe remediation path candidate Escalate before manual status correction and attach execution id, processor log id, and failed persistence event.Source spanuploads/runbooks/status-stuck-running-runbook.md#runbook-section-remediateRetrieval tagsoperator escalationaudit trailmanual correctionRegression prevention candidate Require StatusTracker tests for RUNNING to COMPLETED and RUNNING to FAILED persistence failures.Source spanuploads/runbooks/status-stuck-running-runbook.md#runbook-section-preventRetrieval tagsregression testsstatus transition testspersistence failureRetrieval Tagsdocs -> code/testsstuck runningoperator escalationstatus trackerprocess",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/knowledge",
+    "name": "Knowledge Memory",
+    "purpose": "Search approved knowledge chunks by concept, app, component, and doc type.",
+    "screenshot": "screenshots/05-knowledge-memory.png",
+    "status": "PASS",
+    "heading": "Knowledge Memory",
+    "actions": [
+      "INC-103 Status Stuck RUNNINGknowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md",
+      "Status Tracking Designknowledge_packs/demo_team/docs/architecture/status-tracking-design.md",
+      "Concept Memory: Execution Statusknowledge_packs/demo_team/docs/concepts/execution-status-memory.md",
+      "Async Execution Review Checklistknowledge_packs/demo_team/docs/pr-review/async-execution-review-checklist.md",
+      "DFP-101 Add Execution Status Trackingknowledge_packs/demo_team/docs/historical-jira/DFP-101-add-execution-status-tracking.md",
+      "PR-502 Add Execution Status Pollingknowledge_packs/demo_team/docs/historical-pr/PR-502-add-execution-status-polling.md",
+      "Status Transition Test Planknowledge_packs/demo_team/docs/testing/status-transition-test-plan.md",
+      "Job Lifecycle and Execution Workflowknowledge_packs/demo_team/docs/domain/job-lifecycle.md",
+      "status stuck running",
+      "status tracker",
+      "operator runbook",
+      "processor completion",
+      "knowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md"
+    ],
+    "visibleText": "Team knowledge packKnowledge Memory Search DFP domain docs, architecture notes, runbooks, incidents, historical Jira/PR, testing plans, and concept memory. demo_teamsynthetic onlySearch KnowledgeQuery: execution status stuck runningdemo_teamIncidentsINC-103 Status Stuck RUNNINGknowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.mdArchitectureStatus Tracking Designknowledge_packs/demo_team/docs/architecture/status-tracking-design.mdConcept MemoryConcept Memory: Execution Statusknowledge_packs/demo_team/docs/concepts/execution-status-memory.mdAsync Execution Review Checklistknowledge_packs/demo_team/docs/pr-review/async-execution-review-checklist.mdHistorical JiraDFP-101 Add Execution Status Trackingknowledge_packs/demo_team/docs/historical-jira/DFP-101-add-execution-status-tracking.mdHistorical PRPR-502 Add Execution Status Pollingknowledge_packs/demo_team/docs/historical-pr/PR-502-add-execution-status-polling.mdTestingStatus Transition Test Planknowledge_packs/demo_team/docs/testing/status-transition-test-plan.mdDomain DocsJob Lifecycle and Execution Workflowknowledge_packs/demo_team/docs/domain/job-lifecycle.mdChunk PreviewINC-103 Status Stuck RUNNINGPython processor completed successfully, but StatusTracker failed to persist COMPLETED. UI continued showing RUNNING and Operator investigation was delayed. status stuck running status tracker operator runbook processor completion Source knowledge_packs/demo_team/docs/incidents/INC-103-status-stuck-running.md AppForecastDemoComponentjob-executionDoc typeincidents",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/codebase",
+    "name": "Codebase Memory",
+    "purpose": "Inspect indexed code capability memory, trust status, affected files, tests, concepts, risks, and evidence links.",
+    "screenshot": "screenshots/06-codebase-memory.png",
+    "status": "PASS",
+    "heading": "Memory Atlas",
+    "actions": [
+      "Collection PlanningNeeds Human Review",
+      "Competitor DiscoverySecurity Sensitive",
+      "Human Review GateWeak Evidence",
+      "Image OpsSecurity Sensitive",
+      "License and Billing GatesSecurity Sensitive",
+      "Supplier OutreachNo Owner",
+      "Ready4",
+      "Review1",
+      "Weak1",
+      "Security3",
+      "No Owner1",
+      "Advanced searchbilling checkout license credits",
+      "Ready for PR ContextUniversal Intake4 files / 2 tests",
+      "Needs Human ReviewCollection Planning4 files / 1 tests",
+      "Ready for PR ContextNormalization and Research4 files / 1 tests",
+      "Security SensitiveCompetitor Discovery3 files / 2 tests",
+      "Ready for PR ContextSelection Scoring4 files / 2 tests",
+      "Weak EvidenceHuman Review Gate3 files / 1 tests"
+    ],
+    "visibleText": "Memory Atlasecom-product-discovery-aiLocal repo scanner snapshotIndexed repoecom-product-discovery-aiSourceexternal repo / indexed metadata onlyUpdatedJun 30, 2026 07:15Memory10 capabilities / 41 filesAttention6Collection PlanningNeeds Human ReviewCompetitor DiscoverySecurity SensitiveHuman Review GateWeak EvidenceImage OpsSecurity SensitiveLicense and Billing GatesSecurity SensitiveSupplier OutreachNo OwnerTrust states5Ready4Review1Weak1Security3No Owner1Advanced searchbilling checkout license creditsSelected memory cardLicense and Billing GatesControls feature access, credits, checkout sessions, usage authorization, and remote monetization adapters.StatusSecurity SensitiveTrust88%Evidence8 filesCapability networkWhat this repo knows how to doClick a node to inspect memory and code impact.Ready for PR ContextUniversal Intake4 files / 2 testsNeeds Human ReviewCollection Planning4 files / 1 testsReady for PR ContextNormalization and Research4 files / 1 testsSecurity SensitiveCompetitor Discovery3 files / 2 testsReady for PR ContextSelection Scoring4 files / 2 testsWeak EvidenceHuman Review Gate3 files / 1 testsSecurity SensitiveImage Ops4 files / 2 testsReady for PR ContextListing Package Export3 files / 1 testsSecurity SensitiveLicense and Billing Gates5 files / 3 testsNo OwnerSupplier Outreach2 files / 1 testsCapabilityLicense and Billing GatesAdds governance constraints for AI calls, image generation, export downloads, and paid access.Source code license.py license.py adapters.py monetization_core_client.py checkout-flow.ts Tests test_license_api.py test_license_service.py test_monetization_core_client.py Docs monetization-core-paid-loop-runbook.md payment-license-mvp-cn.md RequestNeed billing-aware AI workflow behavior.Conceptslicense gate, credits, checkout, usage m",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/graph",
+    "name": "Retrieval Trace",
+    "purpose": "Trace how business concepts expand into docs, incidents, code, tests, Jira, and PR evidence paths.",
+    "screenshot": "screenshots/07-retrieval-trace.png",
+    "status": "PASS",
+    "heading": "Retrieval Paths",
+    "actions": [
+      "Trace Sources",
+      "execution statusStale RUNNING state or missing task-level transition could mislead Analyst and Operator views.execution statusStatus Tracking DesignStatusTracker.javaStatusTrackerTest.javaINC-103 Status stuck RUNNINGDFP-101 Add execution status trackingPR-502 Add execution status polling",
+      "partial recoveryProduct behavior can be ambiguous when optional tasks fail but outputs still exist.partial recoveryExecutionService.javaExecutionStatus.PARTIAL_SUCCESSINC-105 Partial completion undefinedDFP-106 Define partial execution recoveryPR-509 Partial success status",
+      "execution status",
+      "duplicate output",
+      "output preview",
+      "partial recovery"
+    ],
+    "visibleText": "Retrieval Pathsdfp-demo-repopaths readyFind Retrieval Pathdocs -> code -> testsBusiness concept or riskTop KArtifactJSON artifactTrace Sourcesexecution statusStale RUNNING state or missing task-level transition could mislead Analyst and Operator views.execution statusStatus Tracking DesignStatusTracker.javaStatusTrackerTest.javaINC-103 Status stuck RUNNINGDFP-101 Add execution status trackingPR-502 Add execution status pollingpartial recoveryProduct behavior can be ambiguous when optional tasks fail but outputs still exist.partial recoveryExecutionService.javaExecutionStatus.PARTIAL_SUCCESSINC-105 Partial completion undefinedDFP-106 Define partial execution recoveryPR-509 Partial success statusWhy These Sourcesreview before promptexecution statusStale RUNNING state or missing task-level transition could mislead Analyst and Operator views.1execution statusconcept2Status Tracking Designarchitecture_doc3StatusTracker.javacode_file4StatusTrackerTest.javatest_file5INC-103 Status stuck RUNNINGincident6DFP-101 Add execution status trackinghistorical_jira7PR-502 Add execution status pollinghistorical_prPrompt UseAsk BA/TL whether status is job-level, task-level, or both, then require regression tests.Prompt Boundary Retrieval paths explain which docs, incidents, code files, and tests enter the context pack. execution status duplicate output output preview partial recovery",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/context-intelligence",
+    "name": "Context Trail",
+    "purpose": "Review retrieval trail, context pack sections, prompt preview, logic chain, and evidence cards.",
+    "screenshot": "screenshots/08-context-trail.png",
+    "status": "PASS",
+    "heading": "Context Intelligence",
+    "actions": [
+      "Request Interpretation540 tokensKeep the user story focused on Analyst progress visibility for long-running forecast executions.",
+      "Source-backed Evidence Bundle1780 tokensUse architecture, incident, historical Jira, historical PR, testing, and codebase memory together.",
+      "Impact and Risk Lens1120 tokensExplain frontend, backend, API, tests, and Ops runbook impact without treating draft output as approved.",
+      "Open Questions460 tokensSurface partial success and stale RUNNING timeout decisions as explicit role-specific questions."
+    ],
+    "visibleText": "Context intelligence layerContext Intelligence Show how DREAM turns rough intent into a source-backed context pack, evaluates retrieval quality, assembles prompt instructions, and preserves a standardized logic chain. case_async_statuscontext pack readyActive requestAsync Status Context PackUsers want to know which task is still running when a forecast job takes too long. The execution page should show better progress.Trail steps5Pack sections4Evidence cards8Source coverage7 / 8>= 6 source familiesDocs, incidents, Jira, PR, tests, code, and concept memory are represented.Retrieval precision0.86>= 0.80Top evidence centers on execution status rather than unrelated output preview material.Conflict flags10 unresolvedPartial success output availability remains a product decision.Prompt budget3.9k<= 6k tokensContext pack leaves room for draft brief, questions, and Jira story generation.Retrieval Trail Timelinedeterministic mock1Normalize request pass Mapped rough BA wording to execution status, task status, stale polling, and operator escalation concepts.long running forecast task still running progress0 sources matched2Retrieve knowledge chunks pass Pulled domain, architecture, runbook, incident, Jira, PR, testing, and concept memory.execution status stuck running task status polling partial success8 sources matched3Expand evidence graph pass Expanded execution status into code, tests, incidents, historical Jira, and PR review edges.concept:execution-status hops:2 include:code,test,incident7 sources matched4Bind codebase memory pass Attached ExecutionMonitor, StatusTracker, ExecutionService, BatchJobAdapter, and regression tests.ExecutionMonitor StatusTracker ExecutionService status transition tests6 sources matched5Evaluate context pack watch Checked coverage, contradiction",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/trust",
+    "name": "Trust Center",
+    "purpose": "Audit context quality and eval evidence before generated outputs are used.",
+    "screenshot": "screenshots/09-trust-center.png",
+    "status": "PASS",
+    "heading": "Trust Center",
+    "actions": [
+      "Retrieval TrustInspect retrieval trail, context pack, evidence cards, prompt preview, and logic chain.",
+      "Eval & AuditReview scorecards, human ratings, run history, and deterministic quality gates.",
+      "Request Interpretation540 tokensKeep the user story focused on Analyst progress visibility for long-running forecast executions.",
+      "Source-backed Evidence Bundle1780 tokensUse architecture, incident, historical Jira, historical PR, testing, and codebase memory together.",
+      "Impact and Risk Lens1120 tokensExplain frontend, backend, API, tests, and Ops runbook impact without treating draft output as approved.",
+      "Open Questions460 tokensSurface partial success and stale RUNNING timeout decisions as explicit role-specific questions."
+    ],
+    "visibleText": "Retrieval trust and governanceTrust Center A consolidated review surface for context selection, prompt preview, retrieval eval, human ratings, and audit records. Trail Steps5Scorecards1Audit Runs5Retrieval TrustInspect retrieval trail, context pack, evidence cards, prompt preview, and logic chain.Eval & AuditReview scorecards, human ratings, run history, and deterministic quality gates.Context intelligence layerContext Intelligence Show how DREAM turns rough intent into a source-backed context pack, evaluates retrieval quality, assembles prompt instructions, and preserves a standardized logic chain. case_async_statuscontext pack readyActive requestAsync Status Context PackUsers want to know which task is still running when a forecast job takes too long. The execution page should show better progress.Trail steps5Pack sections4Evidence cards8Source coverage7 / 8>= 6 source familiesDocs, incidents, Jira, PR, tests, code, and concept memory are represented.Retrieval precision0.86>= 0.80Top evidence centers on execution status rather than unrelated output preview material.Conflict flags10 unresolvedPartial success output availability remains a product decision.Prompt budget3.9k<= 6k tokensContext pack leaves room for draft brief, questions, and Jira story generation.Retrieval Trail Timelinedeterministic mock1Normalize request pass Mapped rough BA wording to execution status, task status, stale polling, and operator escalation concepts.long running forecast task still running progress0 sources matched2Retrieve knowledge chunks pass Pulled domain, architecture, runbook, incident, Jira, PR, testing, and concept memory.execution status stuck running task status polling partial success8 sources matched3Expand evidence graph pass Expanded execution status into code, tests, inciden",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/requirements",
+    "name": "Jira Draft",
+    "purpose": "Input a fuzzy business request, inspect memory and impact, review eval feedback, answer open questions, and generate a Jira proposal.",
+    "screenshot": "screenshots/10-jira-draft.png",
+    "status": "PASS",
+    "heading": "Jira Draft",
+    "actions": [
+      "Advanced settings",
+      "Generate Jira Proposal"
+    ],
+    "visibleText": "Jira draft agentJira Draft Start with a rough business request. DREAM retrieves memory, maps engineering impact, asks unresolved questions, and drafts a Jira proposal for human review. Draft onlyhuman approval requiredBusiness RequestEnter the fuzzy requirement exactly as a stakeholder would describe it.InputRough business request Advanced settings Generate Jira Proposal Generated output will appear here. After generation, the page will show memory docs used, affected file count, editable open questions, Jira proposal, and Eval Agent judgment.",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/review",
+    "name": "PR Review",
+    "purpose": "Input Jira context and PR diff, inspect memory/code impact and eval feedback, then generate a PR review summary.",
+    "screenshot": "screenshots/11-pr-review.png",
+    "status": "PASS",
+    "heading": "PR Review",
+    "actions": [
+      "Advanced settings",
+      "Generate PR Review"
+    ],
+    "visibleText": "Pull request review aidPR Review Paste a diff and Jira context. DREAM finds related memory, summarizes code impact, and produces a review aid for the human PR reviewer. No PR postingreview aid onlyReview InputKeep the reviewer focused on the diff and the business intent.InputJira contextPR diff Advanced settings Generate PR Review Generated PR review will appear here. After generation, the page will show changed files, related code memory, source docs, risk, Eval Agent judgment, and reviewer-facing output.",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/testgen",
+    "name": "TestGen Stub",
+    "purpose": "Show the placeholder test-generation workflow and mock run report.",
+    "screenshot": "screenshots/12-testgen-stub.png",
+    "status": "PASS",
+    "heading": "TestGen Stub",
+    "actions": [
+      "Plan Stub",
+      "Run Safe Stub"
+    ],
+    "visibleText": "Provider interface onlyTestGen Stub Validate the DREAM plugin surface without implementing or invoking a unit-test generation engine. No repo writesmock provider Unit-test generation is intentionally out of scope for this UI phase. A future JTestGen or external engine can implement the provider contract after separate review. Provider Stub InputNo file writesTeamTarget languagejavatypescriptRepo pathMock path only; this Angular UI does not inspect the filesystem. Dry run only Plan StubRun Safe StubPlan / ResultCreate a plan to preview the provider workflow.",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/audit",
+    "name": "Eval Detail",
+    "purpose": "Inspect audit/evaluation detail for generated Jira draft or PR review outputs.",
+    "screenshot": "screenshots/13-eval-detail.png",
+    "status": "PASS",
+    "heading": "Eval & Audit",
+    "actions": [
+      "Save Human Rating",
+      "architectureDocs: yes",
+      "codeFiles: yes",
+      "conceptMemory: no",
+      "domainDocs: yes",
+      "historicalJira: yes",
+      "historicalPr: no",
+      "incidents: yes",
+      "runbooks: yes",
+      "testFiles: no",
+      "testingDocs: no"
+    ],
+    "visibleText": "Evaluation agentEval & Audit Inspect deterministic scorecards, evidence coverage, generation runs, warnings, and human ratings before any output is treated as review-ready. Rule-based evaldefault local gate8.7engineering_brief / Grade AConfirm UI polling interval before ticket grooming. Add explicit partial completion acceptance criteria. pass Audit Runs5 mock runsRun IDWorkflowAppStatusOutputrun_20260620_0042eval_scorecardForecastDemo completed artifacts/evals/eval_async_status_tracking.mdrun_20260620_0041engineering_briefForecastDemo needs_review artifacts/requirement-cases/case_async_status/engineering-brief.mdrun_20260620_0040pr_review_summaryOutputPreviewDemo needs_review artifacts/pr-review-summary-DFP-110.mdrun_20260620_0039codebase_indexForecastDemo completed artifacts/codebase-indexes/demo_team/dfp-demo-repo.jsonrun_20260620_0038testgen_stubBatchJobDemo stub_only artifacts/testgen-stub-run_20260620_0038.mdRun Detail & RatingRun IDrun_20260620_0042Providerdeterministic-eval / rule-based-scorecard-v1Sourcesknowledge_packs/demo_team/eval_profiles/async-status-tracking.yamlWarningsNoneUsefulnessCorrectnessCommentsSave Human RatingRatingsNo rating for this run yet.Evidence Coverage architectureDocs: yes codeFiles: yes conceptMemory: no domainDocs: yes historicalJira: yes historicalPr: no incidents: yes runbooks: yes testFiles: no testingDocs: no",
+    "overflowX": false,
+    "logs": []
+  },
+  {
+    "route": "/settings",
+    "name": "Settings",
+    "purpose": "Review environment, mock mode, API health, and runtime configuration.",
+    "screenshot": "screenshots/14-settings.png",
+    "status": "PASS",
+    "heading": "Settings",
+    "actions": [],
+    "visibleText": "Runtime guardrailsSettings Frontend configuration preview. The Angular UI is mock-only and can later be wired to the FastAPI endpoints. okmockRuntime ModeProviderMockLLMProviderAPI base URLhttp://127.0.0.1:8000Frontend modemockStatusokGuardrailsNo paid external API calls in mock mode.No real company data, tickets, pull requests, logs, or endpoints.Requirement and PR outputs are draft/review-aid only.TestGen engine execution is excluded from this frontend phase.",
+    "overflowX": false,
+    "logs": []
+  }
+]

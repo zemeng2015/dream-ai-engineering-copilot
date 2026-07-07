@@ -1,0 +1,41 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="panel index-controls" aria-label="Codebase index controls">
+  <form class="control-grid" [formGroup]="form" (ngSubmit)="searchRequested.emit()">
+    <div class="form-field">
+      <label for="code-team">Team</label>
+      <input id="code-team" formControlName="teamId" />
+    </div>
+    <div class="form-field">
+      <label for="code-repo">Repo name</label>
+      <input id="code-repo" formControlName="repoName" />
+    </div>
+    <div class="form-field">
+      <label for="code-path">Repo path</label>
+      <input id="code-path" formControlName="repoPath" />
+    </div>
+    <div class="form-field">
+      <label for="code-top-k">Top K</label>
+      <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
+    </div>
+    <div class="form-field-full search-line">
+      <label for="code-query">Evidence search</label>
+      <div>
+        <input id="code-query" formControlName="query" />
+        <button class="primary-button" type="submit" [disabled]="isLoading">
+          <app-ui-icon name="search" />
+          Search
+        </button>
+        <button
+          class="secondary-button"
+          type="button"
+          (click)="indexRequested.emit()"
+          [disabled]="isIndexing"
+        >
+          <app-ui-icon name="branch" />
+          {{ isIndexing ? 'Indexing...' : 'Index Repo' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,143 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="proposal-view" aria-label="Structured Jira proposal">
+  <header>
+    <span>Draft proposal</span>
+    <h3>{{ view.title }}</h3>
+    @if (view.intro) {
+      <p>{{ view.intro }}</p>
+    }
+  </header>
+
+  <div class="proposal-sections">
+    @for (section of view.sections; track section.heading) {
+      <article>
+        <h4>{{ section.heading }}</h4>
+        @if (isOpenQuestionsSection(section)) {
+          @if (questions.length) {
+            <div class="inline-question-list">
+              @for (question of questions; track question.questionId) {
+                <div class="inline-question">
+                  <div class="question-heading">
+                    <span class="status-pill status-neutral">{{ question.targetRole }}</span>
+                    <span
+                      class="status-pill"
+                      [class.status-success]="question.status === 'answered'"
+                      [class.status-neutral]="question.status === 'waived'"
+                      [class.status-warning]="question.status === 'open'"
+                    >
+                      {{ question.status }}
+                    </span>
+                  </div>
+                  <strong>{{ question.question }}</strong>
+                  <p>{{ question.whyItMatters }}</p>
+                  @if (question.status === 'waived') {
+                    <p class="waiver-summary">Waived: {{ waiverSummary(question) }}</p>
+                  } @else {
+                    <textarea
+                      [value]="answerValue(question)"
+                      (input)="onAnswerInput(question.questionId, $event)"
+                      placeholder="Type the human answer for this Jira draft."
+                    ></textarea>
+                    <div class="question-actions">
+                      <button
+                        class="secondary-button"
+                        type="button"
+                        (click)="questionAnswerSave.emit(question.questionId)"
+                        [disabled]="isSaving(question)"
+                      >
+                        {{ isSaving(question) ? 'Saving...' : 'Save answer' }}
+                      </button>
+                      <details class="waive-control">
+                        <summary>Waive</summary>
+                        <div class="waive-fields">
+                          <select
+                            [value]="waiverValue(question).reason"
+                            (change)="onWaiverReasonInput(question.questionId, $event)"
+                          >
+                            @for (reason of waiverReasons; track reason) {
+                              <option [value]="reason">{{ reason }}</option>
+                            }
+                          </select>
+                          <input
+                            type="text"
+                            [value]="waiverValue(question).note"
+                            (input)="onWaiverNoteInput(question.questionId, $event)"
+                            placeholder="Optional audit note"
+                          />
+                          <button
+                            class="secondary-button compact-waive-button"
+                            type="button"
+                            (click)="questionWaive.emit(question.questionId)"
+                            [disabled]="isSaving(question)"
+                          >
+                            {{ isSaving(question) ? 'Saving...' : 'Confirm waive' }}
+                          </button>
+                        </div>
+                      </details>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p>No open questions.</p>
+          }
+        } @else if (isSourcesSection(section)) {
+          <div class="reference-list">
+            @for (reference of sectionReferences(section); track reference.detail) {
+              @if (reference.route) {
+                <a
+                  class="reference-chip"
+                  [routerLink]="reference.route"
+                  [queryParams]="reference.queryParams || null"
+                  [title]="reference.detail"
+                >
+                  <span>{{ reference.kind }}</span>
+                  <strong>{{ reference.label }}</strong>
+                </a>
+              } @else {
+                <span class="reference-chip is-static" [title]="reference.detail">
+                  <span>{{ reference.kind }}</span>
+                  <strong>{{ reference.label }}</strong>
+                </span>
+              }
+            }
+          </div>
+        } @else {
+          <div class="section-blocks">
+            @for (block of bodyBlocks(section); track $index) {
+              @if (block.kind === 'references') {
+                <div class="reference-list">
+                  @for (reference of block.references ?? []; track reference.detail) {
+                    @if (reference.route) {
+                      <a
+                        class="reference-chip"
+                        [routerLink]="reference.route"
+                        [queryParams]="reference.queryParams || null"
+                        [title]="reference.detail"
+                      >
+                        <span>{{ reference.kind }}</span>
+                        <strong>{{ reference.label }}</strong>
+                      </a>
+                    } @else {
+                      <span class="reference-chip is-static" [title]="reference.detail">
+                        <span>{{ reference.kind }}</span>
+                        <strong>{{ reference.label }}</strong>
+                      </span>
+                    }
+                  }
+                </div>
+              } @else {
+                <p>{{ block.text }}</p>
+              }
+            }
+            @if (!section.body) {
+              <p>No content provided.</p>
+            }
+          </div>
+        }
+      </article>
+    }
+  </div>
+</section>

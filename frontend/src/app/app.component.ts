@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { UiIconComponent, UiIconName } from './shared/ui-icon.component';
@@ -18,11 +18,17 @@ interface NavItem {
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  readonly sidebarCollapsed = signal(false);
+
   readonly navItems: NavItem[] = [
     { label: 'Mission Control', path: '/mission-control', icon: 'dashboard' },
     { label: 'Memory Hub', path: '/memory', icon: 'database' },
     { label: 'Engineering Workbench', path: '/workbench', icon: 'code' },
-    { label: 'Trust Center', path: '/trust', icon: 'shield' },
-    { label: 'Settings', path: '/settings', icon: 'settings' },
+    { label: 'Codebase Index', path: '/codebase', icon: 'branch' },
+    { label: 'Audit & Eval', path: '/audit', icon: 'shield' },
   ];
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((collapsed) => !collapsed);
+  }
 }

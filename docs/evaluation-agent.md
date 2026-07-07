@@ -85,3 +85,28 @@ curl -X POST http://localhost:8000/eval/run \
 
 Use `GET /eval/runs` and `GET /eval/runs/{evaluation_id}` to inspect stored
 scorecards.
+
+## Frontend Detail Flow
+
+The Angular Requirement Draft and PR Review workflows call `POST /eval/run`
+after generation with `strict: true`. The returned scorecard is shown inline and
+links to `/audit/:evaluationId` for case-by-case detail.
+
+The `/audit` page reads:
+
+```text
+GET /eval/runs
+GET /eval/runs/{evaluation_id}
+GET /audit/runs
+GET /requirement-cases
+```
+
+`GET /eval/runs/{evaluation_id}` returns the scorecard fields plus:
+
+- `markdown_report`
+- `json_path`
+- `markdown_path`
+- `warnings`
+
+Human Rating in the current frontend is local UI state. It is useful for product
+review but is not persisted by FastAPI yet.

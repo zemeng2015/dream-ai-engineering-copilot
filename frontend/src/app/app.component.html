@@ -1,14 +1,24 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<div class="app-shell">
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
   <aside class="sidebar" aria-label="Primary navigation">
-    <a class="brand" routerLink="/mission-control" aria-label="DREAM mission control">
-      <span class="brand-mark">D</span>
-      <span>
-        <strong>DREAM</strong>
-        <small>Engineering Memory Platform</small>
-      </span>
-    </a>
+    <div class="sidebar-head">
+      <a class="brand" routerLink="/mission-control" aria-label="DREAM mission control">
+        <span class="brand-mark">D</span>
+        <span class="brand-text">
+          <strong>DREAM</strong>
+        </span>
+      </a>
+      <button
+        class="sidebar-toggle"
+        type="button"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        [attr.aria-expanded]="!sidebarCollapsed()"
+        (click)="toggleSidebar()"
+      >
+        <app-ui-icon [name]="sidebarCollapsed() ? 'chevron-right' : 'chevron-left'" />
+      </button>
+    </div>
 
     <nav class="nav-list">
       @for (item of navItems; track item.path) {
@@ -19,7 +29,7 @@
           [routerLinkActiveOptions]="{ exact: item.path === '/mission-control' }"
         >
           <app-ui-icon [name]="item.icon" />
-          <span>{{ item.label }}</span>
+          <span class="nav-label">{{ item.label }}</span>
         </a>
       }
     </nav>
@@ -27,33 +37,28 @@
     <div class="sidebar-footer">
       <div class="mode-line">
         <span class="pulse-dot" aria-hidden="true"></span>
-        <span>Mock Data Mode</span>
-        <strong>ON</strong>
+        <span>Local Workspace</span>
+        <strong>Live API</strong>
       </div>
       <div class="environment-line">
         <span>Environment</span>
-        <strong>Demo</strong>
+        <strong>Local 4300 / 8000</strong>
       </div>
       <div class="version-line">
-        <strong>DemoCorp DFP</strong>
-        <span>Synthetic data workspace</span>
+        <strong>FastAPI Backend</strong>
       </div>
     </div>
   </aside>
 
   <section class="workspace">
     <header class="topbar">
-      <button class="icon-button" type="button" aria-label="Toggle navigation">
-        <app-ui-icon name="menu" />
-      </button>
       <div class="topbar-title">
-        <strong>DREAM Engineering Memory Workbench</strong>
-        <span>Requirement intelligence, PR review, evaluation, and audit with synthetic DFP data.</span>
+        <strong>DREAM</strong>
       </div>
       <div class="topbar-actions">
         <span class="mode-chip">
           <span class="pulse-dot" aria-hidden="true"></span>
-          Mock DFP Memory
+          Live Backend
         </span>
         <a class="ghost-button" routerLink="/memory">Memory</a>
         <span class="avatar" aria-label="Signed in as Demo Engineer">DE</span>

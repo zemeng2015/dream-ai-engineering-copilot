@@ -122,43 +122,102 @@ ruff check .
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,
-routing, SCSS design tokens, typed reactive forms, and mock data. It is designed
-as a large-enterprise finance engineering workbench: deep navy navigation,
-white and pale blue-gray work surfaces, teal/cyan action accents, dense tables,
-clear review gates, and restrained motion. It does not copy third-party logos,
-trademarks, imagery, or brand assets.
+routing, SCSS design tokens, typed reactive forms, and live FastAPI data. It is
+designed as a large-enterprise finance engineering workbench: deep navy
+navigation, white and pale blue-gray work surfaces, teal/cyan action accents,
+dense tables, clear review gates, and restrained motion. It does not copy
+third-party logos, trademarks, imagery, or brand assets.
 
 Run it locally:
 
-```bash
+```powershell
+uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
+```
+
+```powershell
 cd frontend
 npm install
 npm run build
 npm test -- --watch=false --browsers=ChromeHeadless
-npm start
+npm start -- --host 127.0.0.1 --port 4300
 ```
 
-Open `http://localhost:4200/`.
+Open `http://localhost:4300/`.
 
 If local development ports are already occupied, build and serve the static
 bundle from `frontend/dist/frontend/browser` on any free local port.
 
-Mock-data workflows included:
+Current live workflows included:
 
-- Mission Control dashboard
-- Knowledge Memory search across DFP docs, incidents, Jira, PRs, tests, and concept memory
-- Codebase Memory search across Angular, Java, AWS-style, Python, and test files
-- Evidence Graph search showing source-backed concept paths
-- Requirement Case analysis with evidence, impact map, role questions, Jira draft, and eval scorecard
-- PR Review with changed files, related codebase memory, source-backed comments, and eval scorecard
-- Eval & Audit with deterministic scorecards and human rating
-- TestGen Stub, with no unit-test generation and no repository writes
-- Settings / guardrails preview
+- Mission Control work queue backed by FastAPI intake, requirement, audit, eval,
+  and codebase records.
+- Memory Hub source intake lifecycle: browser file upload or backend path
+  registration, parse, edit draft metadata, approve, promote, and view promoted
+  structured Markdown. `/memory/:documentId` opens a source detail page with raw
+  source preview, parsed sections, source spans, section hashes, normalized
+  Markdown, review state, promoted path, intake audit events, and downstream
+  workflow runs that later consumed the promoted source. Downstream usage shows
+  matched source paths, a match reason, structured match proofs with source hash
+  and section span/hash evidence, and an Audit route when available.
+  Draft metadata updates, review decisions, and promotion actions also write
+  structured review events with field diffs, metadata snapshots, source hash,
+  section hashes, reviewer notes, and linked audit run ids.
+  Intake records include source hashes and duplicate-content warnings for
+  provenance.
+- Memory distillation scans turn promoted intake docs into governed
+  `MemoryClaim` candidates whose evidence includes `intake_proofs`: raw intake
+  document id, draft id, promoted path, source hash verification, intake audit
+  run ids, section-level span/hash proof, deterministic match explanation, and
+  matched terms.
+- Memory Hub includes a Claim Review tab backed by `/memory/diff`,
+  `/memory/conflicts`, `/memory/review`, and `/memory/ledger`. Reviewers can run
+  a memory scan, inspect latest-scan claim evidence and intake proof, compare
+  active single-value conflict pairs with raw source links, then approve, reject,
+  or quarantine claims into the durable ledger. Review proof now includes
+  reviewer signature, field-level governance diffs, a claim snapshot, and
+  risk/conflict signals with reviewer-readable explanations and evidence. Diff
+  state marks added/changed claims without hiding unchanged candidates that still
+  need review.
+- Codebase Index repo browser backed by saved JSON index artifacts and file
+  content endpoints.
+- Requirement Case workflow with impact map, open questions, Jira proposal,
+  source-detail links for matched intake docs, and strict Eval Agent result.
+- PR Review workflow with inline diff/Jira context, codebase memory, source-detail
+  links for matched intake docs, review output, and strict Eval Agent result.
+- Audit & Eval with scorecards, case-by-case detail, audit runs, and
+  FastAPI-backed human ratings persisted in SQLite. Audit run source chips link
+  back to `/memory/:documentId` when a retrieved source matches a registered
+  intake document.
+- Context Trail detail at `/context/:caseId`, backed by FastAPI context trail,
+  context pack, and prompt-preview APIs. Selected evidence rows show retrieval
+  reasons and link back to `/memory/:documentId` for matched intake documents.
+  Memory claim references carry `intake_proofs` through the context APIs, so
+  approved claim usage remains traceable to raw intake documents, section proof,
+  and deterministic claim/source match explanations.
 
-Requirement Case and PR Review pages can switch from local mock mode to
-`Real FastAPI + OpenAI-compatible provider`. In that mode, the browser sends only
-workflow inputs and provider selection to FastAPI; `OPENAI_API_KEY` stays in the
-backend process environment.
+Primary routes are `/mission-control`, `/memory`, `/memory/:documentId`,
+`/workbench`, `/requirements`, `/review`, `/context/:caseId`, `/codebase`,
+`/audit`, and `/audit/:targetId`. Legacy mock routes redirect to these primary
+surfaces.
+
+Requirement Case and PR Review use FastAPI. OpenAI-compatible generation is
+opt-in from the backend process; API keys stay in backend environment variables.
+
+## Current Planning and Handoff Docs
+
+For the latest UI simplification pass and product planning context, start here:
+
+- `docs/recent-changes-planning-handoff.zh-CN.md` - Chinese handoff for the
+  current branch, recent UI changes, product decisions, and the raw doc to
+  structured memory lifecycle.
+- `docs/current-development-handoff.md` - short engineering handoff for runtime,
+  branch state, routes, known limits, and verification commands.
+- `docs/knowledge-intake-pipeline.md` - source intake architecture and current
+  implementation details.
+- `docs/codebase-memory.md` - repo browser, saved JSON index, and codebase
+  memory behavior.
+- `docs/evaluation-agent.md` - Eval Agent scorecards, dimensions, API, and
+  frontend detail flow.
 
 ## CLI Examples
 
@@ -259,6 +318,20 @@ curl -X POST http://localhost:8000/graph/build \
 curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=java-demo-repo&query=execution%20status"
 ```
 
+Knowledge intake:
+
+```bash
+curl -X POST http://localhost:8000/intake/documents \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","file_path":"examples/intake-samples/runbook-output-reconciliation.md","document_type":"runbooks"}'
+
+curl -X POST "http://localhost:8000/intake/documents/<document_id>/parse"
+
+curl "http://localhost:8000/intake/drafts/<draft_id>/review-events"
+
+curl "http://localhost:8000/intake/documents/<document_id>/detail"
+```
+
 Governed memory distillation:
 
 ```bash
@@ -267,6 +340,14 @@ curl -X POST http://localhost:8000/memory/scan \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl "http://localhost:8000/memory/conflicts?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/conflicts/resolve \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","conflict_id":"<conflict_id>","winning_claim_id":"<claim_id>","reviewer":"zack","reason":"Source A is authoritative."}'
+
+curl "http://localhost:8000/memory/conflict-resolutions?team_id=demo_team"
 
 curl -X POST http://localhost:8000/memory/review \
   -H "Content-Type: application/json" \
@@ -279,6 +360,12 @@ curl "http://localhost:8000/memory/context-card?team_id=demo_team&query=executio
 curl -X POST http://localhost:8000/memory/eval \
   -H "Content-Type: application/json" \
   -d '{"team_id":"demo_team","scan_id":"latest"}'
+
+curl -X POST http://localhost:8000/audit/runs/<run_id>/ratings \
+  -H "Content-Type: application/json" \
+  -d '{"usefulness_score":4,"correctness_score":4,"comments":"Good first draft"}'
+
+curl "http://localhost:8000/audit/runs/<run_id>/ratings"
 ```
 
 Requirement Case:
@@ -380,9 +467,24 @@ durable.
 
 The governed review loop adds a durable approval ledger under
 `artifacts/memory-ledgers/{team_id}.json`. Review events can approve, reject,
-quarantine, or return claims to candidate status. Approved claims are available
-through `dream memory search` and `dream memory context`; candidate claims remain
-review-only.
+quarantine, or return claims to candidate status. Each event records the
+reviewer, reason, timestamp, reviewer signature, field-level governance diffs,
+claim snapshot, raw risk/conflict signals, and reviewer-readable signal
+explanations. Approved claims are available through `dream memory search` and
+`dream memory context`; candidate claims remain review-only. The same loop is
+exposed in the Memory Hub Claim Review tab, where recent decisions show
+structured inline proof with decision metadata, field diffs, claim snapshot,
+explained signals, and raw-trace links.
+
+`/memory/conflicts` returns active single-value claim pairs that share an
+entity/relation but disagree on value. Each pair includes both claims, effective
+review status, latest review event when present, evidence paths, intake document
+ids, and a conflict explanation so raw sources can be compared before a claim is
+treated as durable memory. `/memory/conflicts/resolve` currently supports the
+conservative `approve_winner_reject_other` action: it approves the selected
+claim, rejects the other side through the normal review ledger, and writes a
+dedicated conflict resolution event under
+`artifacts/memory-conflict-resolutions/{team_id}.json`.
 
 `dream memory diff` compares the latest scan with the previous scan when one is
 available, showing added, removed, changed, and unchanged claim counts. Without
@@ -390,6 +492,13 @@ a base scan it falls back to a full review queue.
 
 See [Memory Distillation](docs/memory-distillation.md) for the design, CLI/API
 workflow, and acceptance guardrails.
+
+Raw doc to structured memory acceptance can be run without mutating local
+artifacts:
+
+```bash
+python scripts/verify_raw_doc_memory_flow.py
+```
 
 ## Requirement Case
 

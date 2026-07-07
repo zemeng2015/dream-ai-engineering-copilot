@@ -1,0 +1,213 @@
+// SPDX-License-Identifier: Apache-2.0
+
+:host {
+  display: block;
+}
+
+.lifecycle-panel {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgb(12 119 186 / 24%);
+  border-radius: 8px;
+  background: #f4f9fd;
+  padding: 13px;
+}
+
+.lifecycle-panel[data-state='running'] {
+  animation: lifecycle-panel-pulse 1.7s ease-in-out infinite;
+}
+
+.lifecycle-panel[data-state='running']::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgb(12 119 186 / 8%), transparent);
+  content: '';
+  pointer-events: none;
+  transform: translateX(-100%);
+  animation: lifecycle-panel-sheen 2.1s ease-in-out infinite;
+}
+
+.lifecycle-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lifecycle-header div {
+  display: grid;
+  gap: 3px;
+}
+
+.lifecycle-header strong,
+.lifecycle-steps strong {
+  color: var(--dream-navy);
+}
+
+.lifecycle-steps strong,
+.lifecycle-steps small {
+  display: block;
+}
+
+.lifecycle-header span,
+.lifecycle-steps small {
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.lifecycle-steps small {
+  margin-top: 3px;
+}
+
+.lifecycle-state {
+  border: 1px solid var(--dream-border);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--dream-navy);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
+.lifecycle-state[data-state='running'] {
+  border-color: rgb(12 119 186 / 32%);
+  background: var(--dream-info-bg);
+  color: var(--dream-blue);
+}
+
+.lifecycle-state[data-state='complete'] {
+  border-color: rgb(32 114 69 / 28%);
+  background: var(--dream-success-bg);
+  color: var(--dream-success);
+}
+
+.lifecycle-state[data-state='error'] {
+  border-color: rgb(180 35 24 / 26%);
+  background: var(--dream-error-bg);
+  color: var(--dream-error);
+}
+
+.lifecycle-steps {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lifecycle-steps li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.step-marker {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--dream-border);
+  border-radius: 999px;
+  background: var(--dream-surface-muted);
+  color: var(--dream-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lifecycle-steps li[data-state='active'] {
+  border-color: rgb(12 119 186 / 38%);
+  box-shadow: inset 3px 0 0 var(--dream-blue);
+}
+
+.lifecycle-steps li[data-state='active'] .step-marker {
+  border-color: var(--dream-blue);
+  background: #ffffff;
+  color: transparent;
+}
+
+.lifecycle-steps li[data-state='active'] .step-marker::before {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(12 119 186 / 22%);
+  border-top-color: var(--dream-blue);
+  border-radius: 999px;
+  content: '';
+  animation: lifecycle-marker-spin 0.8s linear infinite;
+}
+
+.lifecycle-steps li[data-state='done'] .step-marker {
+  border-color: rgb(32 114 69 / 28%);
+  background: var(--dream-success-bg);
+  color: var(--dream-success);
+}
+
+.lifecycle-steps li[data-state='error'] {
+  border-color: rgb(180 35 24 / 26%);
+  background: var(--dream-error-bg);
+}
+
+.lifecycle-steps li[data-state='error'] .step-marker {
+  border-color: var(--dream-error);
+  color: var(--dream-error);
+}
+
+@media (width <= 900px) {
+  .lifecycle-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifecycle-panel[data-state='running'],
+  .lifecycle-panel[data-state='running']::before,
+  .lifecycle-steps li[data-state='active'] .step-marker::before {
+    animation: none;
+  }
+}
+
+@keyframes lifecycle-marker-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lifecycle-panel-pulse {
+  0%,
+  100% {
+    border-color: rgb(12 119 186 / 24%);
+    box-shadow: 0 0 0 rgb(12 119 186 / 0%);
+  }
+
+  50% {
+    border-color: rgb(12 119 186 / 45%);
+    box-shadow: 0 8px 24px rgb(12 119 186 / 10%);
+  }
+}
+
+@keyframes lifecycle-panel-sheen {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(100%);
+  }
+}

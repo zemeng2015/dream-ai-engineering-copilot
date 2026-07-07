@@ -1,19 +1,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
 from dream.context import ContextEvaluationService, ContextIntelligenceService
-from dream.core.errors import DreamError
+from dream.core.errors import DreamError, NotFoundError, PathTraversalError
+from dream.core.paths import resolve_project_path
 from dream.evals.evaluator import EvaluationAgent
-from dream.evals.models import EvaluationRequest, EvaluationResult
+from dream.evals.models import EvaluationJudgeRequest, EvaluationRequest, EvaluationResult
+from dream.evals.rating import HumanRatingService
 from dream.evals.repository import EvaluationRepository
 from dream.extensions import build_llm_provider
 from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
-from dream.intake import KnowledgeIntakeService, ReviewDecision
+from dream.intake import DraftMetadataUpdate, KnowledgeIntakeService, ReviewDecision
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider
 from dream.memory import (
     MemoryClaimRetriever,
@@ -47,6 +51,20 @@ class CodebaseIndexRequest(BaseModel):
     repo_name: str | None = None
 
 
+class CodebaseIndexArtifactResponse(BaseModel):
+    index_path: str
+    index: dict[str, object]
+
+
+class CodebaseFileContentResponse(BaseModel):
+    path: str
+    language: str
+    role: str
+    size_bytes: int
+    line_count: int
+    content: str
+
+
 class EvidenceGraphBuildRequest(BaseModel):
     team_id: str
     repo_name: str | None = None
@@ -72,6 +90,16 @@ class MemoryReviewRequest(BaseModel):
     scan_id: str = "latest"
 
 
+class MemoryConflictResolveRequest(BaseModel):
+    team_id: str
+    conflict_id: str
+    winning_claim_id: str
+    action: str = "approve_winner_reject_other"
+    reviewer: str | None = None
+    reason: str | None = None
+    scan_id: str = "latest"
+
+
 class IntakeUploadRequest(BaseModel):
     team_id: str
     file_path: str
@@ -90,9 +118,20 @@ class RetrievalEvalRequest(BaseModel):
     profile_id: str
 
 
+class HumanRatingRequest(BaseModel):
+    usefulness_score: int = Field(ge=1, le=5)
+    correctness_score: int = Field(ge=1, le=5)
+    comments: str = Field(min_length=1)
+
+
 class RequirementQuestionAnswerRequest(BaseModel):
     answer: str
     answered_by: str | None = None
+
+
+class RequirementQuestionWaiveRequest(BaseModel):
+    reason: str
+    waived_by: str | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -133,6 +172,19 @@ def index_codebase(request: CodebaseIndexRequest) -> dict[str, object]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.get("/codebase/index", response_model=CodebaseIndexArtifactResponse)
+def get_codebase_index(team_id: str, repo_name: str) -> CodebaseIndexArtifactResponse:
+    try:
+        repository = CodebaseIndexRepository()
+        index = repository.load(team_id, repo_name)
+        return CodebaseIndexArtifactResponse(
+            index_path=repository.display_index_path(team_id, repo_name),
+            index=index.model_dump(),
+        )
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/codebase/search")
 def search_codebase(
     team_id: str,
@@ -165,6 +217,39 @@ def list_codebase_files(team_id: str, repo_name: str) -> list[dict[str, object]]
         return [file_node.model_dump() for file_node in index.files]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/codebase/file-content", response_model=CodebaseFileContentResponse)
+def get_codebase_file_content(
+    team_id: str,
+    repo_name: str,
+    file_path: str,
+) -> CodebaseFileContentResponse:
+    try:
+        index = CodebaseIndexRepository().load(team_id, repo_name)
+        file_node = next((item for item in index.files if item.path == file_path), None)
+        if file_node is None:
+            raise NotFoundError(f"File is not present in the codebase index: {file_path}")
+
+        repo_root = resolve_project_path(index.repo_path, must_exist=True).resolve()
+        target_path = (repo_root / file_node.path).resolve()
+        if not target_path.is_relative_to(repo_root):
+            raise PathTraversalError(f"File path escapes repo root: {file_path}")
+        if not target_path.is_file():
+            raise NotFoundError(f"Indexed file does not exist on disk: {file_path}")
+
+        return CodebaseFileContentResponse(
+            path=file_node.path,
+            language=file_node.language,
+            role=file_node.role,
+            size_bytes=file_node.size_bytes,
+            line_count=file_node.line_count,
+            content=target_path.read_text(encoding="utf-8", errors="replace"),
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/graph/build")
@@ -233,6 +318,28 @@ def upload_intake_document(request: IntakeUploadRequest) -> dict[str, object]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/intake/documents/upload")
+async def upload_intake_document_file(
+    team_id: Annotated[str, Form()],
+    file: Annotated[UploadFile, File()],
+    document_type: Annotated[str, Form()] = "architecture",
+    title: Annotated[str | None, Form()] = None,
+) -> dict[str, object]:
+    try:
+        content = await file.read()
+        return KnowledgeIntakeService().upload_file_content(
+            team_id=team_id,
+            filename=file.filename or "uploaded-source",
+            content=content,
+            document_type=document_type,
+            title=title,
+        ).model_dump()
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        await file.close()
+
+
 @router.get("/intake/documents")
 def list_intake_documents() -> list[dict[str, object]]:
     return [item.model_dump() for item in KnowledgeIntakeService().repository.list_documents()]
@@ -246,11 +353,48 @@ def get_intake_document(document_id: str) -> dict[str, object]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/intake/documents/{document_id}/detail")
+def get_intake_document_detail(document_id: str) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().get_document_detail(document_id).model_dump()
+    except OSError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.post("/intake/documents/{document_id}/parse")
 def parse_intake_document(document_id: str) -> dict[str, object]:
     try:
         return KnowledgeIntakeService().parse_document(document_id).model_dump()
     except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/intake/drafts/{draft_id}")
+def get_intake_draft(draft_id: str) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().repository.get_draft(draft_id).model_dump()
+    except OSError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/intake/drafts/{draft_id}/review-events")
+def list_intake_draft_review_events(draft_id: str) -> list[dict[str, object]]:
+    try:
+        service = KnowledgeIntakeService()
+        service.repository.get_draft(draft_id)
+        return [event.model_dump() for event in service.repository.list_review_events(draft_id)]
+    except OSError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.patch("/intake/drafts/{draft_id}/metadata")
+def update_intake_draft_metadata(
+    draft_id: str,
+    request: DraftMetadataUpdate,
+) -> dict[str, object]:
+    try:
+        return KnowledgeIntakeService().update_draft_metadata(draft_id, request).model_dump()
+    except (DreamError, OSError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
@@ -350,6 +494,40 @@ def diff_memory(
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return diff.model_dump()
+
+
+@router.get("/memory/conflicts")
+def get_memory_conflicts(team_id: str, scan_id: str = "latest") -> dict[str, object]:
+    try:
+        return MemoryDistillationService().conflicts(
+            team_id=team_id,
+            scan_id=scan_id,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/memory/conflicts/resolve")
+def resolve_memory_conflict(request: MemoryConflictResolveRequest) -> dict[str, object]:
+    try:
+        return MemoryDistillationService().resolve_conflict(
+            team_id=request.team_id,
+            conflict_id=request.conflict_id,
+            winning_claim_id=request.winning_claim_id,
+            action=request.action,
+            reviewer=request.reviewer,
+            reason=request.reason,
+            scan_id=request.scan_id,
+        ).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/memory/conflict-resolutions")
+def get_memory_conflict_resolutions(team_id: str) -> dict[str, object]:
+    return MemoryDistillationRepository().load_conflict_resolution_ledger(
+        team_id,
+    ).model_dump()
 
 
 @router.post("/memory/review")
@@ -489,6 +667,25 @@ def answer_requirement_case_question(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.post("/requirement-cases/{case_id}/questions/{question_id}/waive")
+def waive_requirement_case_question(
+    case_id: str,
+    question_id: str,
+    request: RequirementQuestionWaiveRequest,
+) -> dict[str, object]:
+    try:
+        return RequirementCaseService().waive_question(
+            case_id,
+            question_id,
+            request.reason,
+            waived_by=request.waived_by,
+        ).model_dump()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/requirement-cases/{case_id}/brief")
 def get_requirement_case_brief(
     case_id: str,
@@ -511,6 +708,14 @@ def get_requirement_case_jira_draft(
         return RequirementCaseService(
             llm_provider=_optional_llm_provider(llm_provider)
         ).generate_jira_draft(case_id).model_dump()
+    except DreamError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/requirement-cases/{case_id}/jira-draft-context")
+def get_requirement_case_jira_draft_context(case_id: str) -> dict[str, object]:
+    try:
+        return RequirementCaseService().prepare_jira_draft_context(case_id).model_dump()
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -545,10 +750,47 @@ def get_audit_run(run_id: str) -> dict[str, object]:
     return record.model_dump()
 
 
+@router.get("/audit/runs/{run_id}/ratings")
+def list_human_ratings(run_id: str) -> list[dict[str, object]]:
+    repository = AuditRepository()
+    if repository.get_audit_record(run_id) is None:
+        raise HTTPException(status_code=404, detail=f"Audit run not found: {run_id}")
+    return [rating.model_dump() for rating in repository.list_ratings(run_id)]
+
+
+@router.post("/audit/runs/{run_id}/ratings")
+def rate_audit_run(run_id: str, request: HumanRatingRequest) -> dict[str, object]:
+    repository = AuditRepository()
+    if repository.get_audit_record(run_id) is None:
+        raise HTTPException(status_code=404, detail=f"Audit run not found: {run_id}")
+    rating = HumanRatingService(repository=repository).rate(
+        run_id=run_id,
+        usefulness_score=request.usefulness_score,
+        correctness_score=request.correctness_score,
+        comments=request.comments,
+    )
+    return rating.model_dump()
+
+
 @router.post("/eval/run", response_model=EvaluationResult)
 def run_evaluation(request: EvaluationRequest) -> EvaluationResult:
     try:
-        return EvaluationAgent().evaluate(request)
+        return EvaluationAgent(
+            llm_judge_provider=_optional_llm_provider(request.judge_provider)
+        ).evaluate(request)
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/eval/runs/{evaluation_id}/judge", response_model=EvaluationResult)
+def judge_evaluation_run(
+    evaluation_id: str,
+    request: EvaluationJudgeRequest,
+) -> EvaluationResult:
+    try:
+        return EvaluationAgent(
+            llm_judge_provider=_optional_llm_provider(request.judge_provider)
+        ).judge_existing(evaluation_id)
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -574,7 +816,20 @@ def get_evaluation_run(evaluation_id: str) -> dict[str, object]:
     scorecard = EvaluationRepository().get(evaluation_id)
     if scorecard is None:
         raise HTTPException(status_code=404, detail=f"Evaluation not found: {evaluation_id}")
-    return scorecard.model_dump()
+    payload = scorecard.model_dump()
+    markdown_path = scorecard.markdown_path or scorecard.output_path
+    if markdown_path:
+        try:
+            path = resolve_project_path(markdown_path, must_exist=True)
+            payload["markdown_report"] = path.read_text(encoding="utf-8")
+        except (DreamError, OSError):
+            payload["markdown_report"] = ""
+    else:
+        payload["markdown_report"] = ""
+    payload["json_path"] = scorecard.json_path
+    payload["markdown_path"] = markdown_path
+    payload["warnings"] = scorecard.warnings
+    return payload
 
 
 def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
@@ -598,7 +853,7 @@ def _llm_provider(provider: str) -> LLMProvider:
 def _optional_llm_provider(
     provider: str,
 ) -> LLMProvider | None:
-    if provider == "deterministic":
+    if provider in {"deterministic", "none"}:
         return None
     if provider == "mock":
         return MockLLMProvider()

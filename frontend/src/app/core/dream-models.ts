@@ -3,19 +3,51 @@
 export type WorkflowType =
   | 'requirement_draft'
   | 'requirement_case'
+  | 'requirement_case_create'
+  | 'requirement_case_analysis'
+  | 'requirement_question_answer'
+  | 'requirement_question_waive'
   | 'engineering_brief'
+  | 'jira_draft_context'
   | 'jira_draft'
+  | 'jira_readiness_check'
   | 'pr_review_summary'
   | 'knowledge_search'
   | 'knowledge_intake'
+  | 'knowledge_intake_upload'
+  | 'knowledge_intake_parse'
+  | 'knowledge_intake_metadata_update'
+  | 'knowledge_intake_review'
+  | 'knowledge_intake_promote'
   | 'context_intelligence'
+  | 'retrieval_context_eval'
   | 'codebase_index'
   | 'evidence_graph'
   | 'testgen_stub'
   | 'audit_eval'
-  | 'eval_scorecard';
+  | 'evaluation_scorecard'
+  | 'eval_scorecard'
+  | 'llm_judge_eval';
 
-export type RunStatus = 'success' | 'completed' | 'needs_review' | 'warning' | 'failed' | 'stub_only';
+export type RunStatus =
+  | 'success'
+  | 'completed'
+  | 'created'
+  | 'answered'
+  | 'waived'
+  | 'uploaded'
+  | 'parsed'
+  | 'approved'
+  | 'promoted'
+  | 'needs_review'
+  | 'pending_review'
+  | 'warning'
+  | 'failed'
+  | 'fail'
+  | 'pass'
+  | 'stub_only'
+  | 'jira_draft_needs_answers'
+  | 'jira_ready_draft';
 
 export type EvidenceSourceType =
   | 'domain_doc'
@@ -214,6 +246,9 @@ export interface ClarificationQuestion {
   answer?: string;
   answeredBy?: string;
   answeredAt?: string;
+  waivedReason?: string;
+  waivedBy?: string;
+  waivedAt?: string;
 }
 
 export interface RequirementCase {
@@ -252,21 +287,44 @@ export interface EvaluationDimension {
   recommendations: string[];
 }
 
+export interface LLMJudgeResult {
+  status: 'completed' | 'failed';
+  provider?: string;
+  model?: string;
+  promptVersion: string;
+  inputHash?: string;
+  durationMs?: number;
+  readiness?: string;
+  confidence?: number;
+  summary?: string;
+  risks: string[];
+  missingEvidence: string[];
+  recommendations: string[];
+  warning?: string;
+}
+
 export interface EvaluationScorecard {
   evaluationId: string;
   targetType: 'requirement_case' | 'engineering_brief' | 'jira_draft' | 'pr_review' | 'testgen_report';
   targetId: string;
+  caseId?: string;
+  runId?: string;
+  teamId?: string;
+  outputPath?: string;
   overallScore: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
   passStatus: 'pass' | 'warning' | 'fail';
   sourceCoverage: Record<string, boolean>;
   dimensions: EvaluationDimension[];
   missingCriticalItems: string[];
+  hallucinationWarnings?: string[];
   recommendations: string[];
+  llmJudge?: LLMJudgeResult;
 }
 
 export interface AuditRun {
   runId: string;
+  caseId?: string | null;
   useCase: WorkflowType;
   teamId: string;
   app: string;

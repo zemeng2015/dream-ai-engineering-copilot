@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: Apache-2.0
+
+@use './codebase-memory-shared' as codebase;
+
+@include codebase.empty-state;
+
+:host,
+.concept-list,
+.path-list {
+  display: grid;
+}
+
+.concept-list {
+  gap: 10px;
+  padding: 14px;
+}
+
+.concept-list details {
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0 12px;
+}
+
+.concept-list summary {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.concept-list strong {
+  color: var(--dream-navy);
+}
+
+.concept-list summary span,
+.concept-list p {
+  color: var(--dream-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.concept-list summary span {
+  font-weight: 700;
+}
+
+.path-list {
+  gap: 10px;
+  border-top: 1px solid var(--dream-border);
+  margin-top: 10px;
+  padding: 10px 0 12px;
+}
+
+.path-list button {
+  width: 100%;
+  border: 1px solid var(--dream-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: inherit;
+  padding: 11px;
+  text-align: left;
+}
+
+.path-list button:hover {
+  border-color: var(--dream-blue);
+  background: var(--dream-info-bg);
+}

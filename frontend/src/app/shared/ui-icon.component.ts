@@ -4,6 +4,10 @@ import { Component, input } from '@angular/core';
 
 export type UiIconName =
   | 'branch'
+  | 'chevron-down'
+  | 'chevron-left'
+  | 'chevron-right'
+  | 'chevron-up'
   | 'clipboard'
   | 'code'
   | 'dashboard'
@@ -51,6 +55,10 @@ export class UiIconComponent {
 const ICON_PATHS: Record<UiIconName, string> = {
   branch:
     'M6 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 4v4a4 4 0 0 0 4 4h4m4-2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0-8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 4v2a4 4 0 0 1-4 4h-4',
+  'chevron-down': 'M6 9l6 6 6-6',
+  'chevron-left': 'M15 6l-6 6 6 6',
+  'chevron-right': 'M9 6l6 6-6 6',
+  'chevron-up': 'M6 15l6-6 6 6',
   clipboard:
     'M9 5h6m-6 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0H6.8A1.8 1.8 0 0 0 5 6.8v12.4A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.8-1.8V6.8A1.8 1.8 0 0 0 17.2 5H15m-7 7 2.5 2.5L16 9',
   code: 'M8.5 7 4 12l4.5 5M15.5 7 20 12l-4.5 5',
