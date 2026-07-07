@@ -74,6 +74,10 @@ The workflow runs:
 - Final action board generation when local diagnostics are needed.
 - Artifact upload for Devpost proof files and handoff files.
 
+The GitHub runner validates the public video URL but skips the local MP4 file
+check in final readiness, because `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
+is an ignored local upload artifact rather than a committed repo file.
+
 The Alibaba proof screenshot step uses headless Chrome/Chromium. GitHub-hosted
 Ubuntu runners normally include Chrome; local/self-hosted runners must provide
 Chrome, Chromium, Edge, or a compatible command on `PATH`.

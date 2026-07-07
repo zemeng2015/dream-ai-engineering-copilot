@@ -182,7 +182,7 @@ jobs:
           if (-not [string]::IsNullOrWhiteSpace("${{ inputs.blogPostUrl }}")) {
             $common += @("-BlogPostUrl", "${{ inputs.blogPostUrl }}")
           }
-          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-readiness.ps1 @common -AllowDraftPacket
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-readiness.ps1 @common -SkipLocalVideoChecks -AllowDraftPacket
           $readinessCode = $LASTEXITCODE
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-action-board.ps1 @common -SkipGitHubSecrets -SkipLocalVideoChecks -AllowDraft
           $actionBoardCode = $LASTEXITCODE

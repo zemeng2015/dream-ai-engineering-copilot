@@ -14,6 +14,7 @@ param(
     [switch]$SkipPacket,
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
+    [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraftPacket
 )
 
@@ -347,7 +348,6 @@ foreach ($envName in @("QWEN_BASE_URL", "QWEN_MODEL")) {
 foreach ($path in @(
     "docs/assets/qwencloud-architecture.png",
     "docs/qwencloud-video-upload-handoff.md",
-    "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     "scripts/qwencloud-video-upload-status.ps1",
     "deploy/alibaba/serverless-devs.yaml",
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
@@ -370,12 +370,21 @@ foreach ($path in @(
     Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
 }
 
-$demoVideo = Get-VideoMetadata -Path "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4"
-if ($demoVideo) {
-    Add-Check -Name "demo_video_under_3_minutes" -Ok ($demoVideo.duration -gt 0 -and $demoVideo.duration -lt 180) -Details "duration=$($demoVideo.duration); size=$($demoVideo.size); resolution=$($demoVideo.width)x$($demoVideo.height)"
+$localDemoVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4"
+$localDemoVideoFile = Test-File -Path $localDemoVideoPath
+Add-Check -Name "file.$localDemoVideoPath" -Ok ($SkipLocalVideoChecks -or $localDemoVideoFile.ok) -Details $(if ($SkipLocalVideoChecks) { "skipped by -SkipLocalVideoChecks; $($localDemoVideoFile.details)" } else { $localDemoVideoFile.details }) -Required (-not $SkipLocalVideoChecks)
+
+if ($SkipLocalVideoChecks) {
+    Add-Check -Name "demo_video_under_3_minutes" -Ok $true -Details "skipped by -SkipLocalVideoChecks; public video URL is validated by scripts/qwencloud-video-upload-status.ps1" -Required $false
 }
 else {
-    Add-Check -Name "demo_video_under_3_minutes" -Ok $false -Details "ffprobe unavailable or demo video missing"
+    $demoVideo = Get-VideoMetadata -Path $localDemoVideoPath
+    if ($demoVideo) {
+        Add-Check -Name "demo_video_under_3_minutes" -Ok ($demoVideo.duration -gt 0 -and $demoVideo.duration -lt 180) -Details "duration=$($demoVideo.duration); size=$($demoVideo.size); resolution=$($demoVideo.width)x$($demoVideo.height)"
+    }
+    else {
+        Add-Check -Name "demo_video_under_3_minutes" -Ok $false -Details "ffprobe unavailable or demo video missing"
+    }
 }
 
 foreach ($path in @(
@@ -408,6 +417,7 @@ $result = [ordered]@{
     blogPostUrl = $BlogPostUrl
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
+    skipLocalVideoChecks = [bool]$SkipLocalVideoChecks
     reportJson = $reportJson
     reportMarkdown = $reportMd
     checks = $checks
