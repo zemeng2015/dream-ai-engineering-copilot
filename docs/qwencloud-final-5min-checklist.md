@@ -281,6 +281,7 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
 
 ```powershell
 scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"
+scripts/qwencloud-final-completion-evidence.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"
 ```
 
 ## Emergency fallback if LLM generation fails live

@@ -615,6 +615,7 @@ foreach ($path in @(
     "scripts/qwencloud-final-sprint.ps1",
     "scripts/qwencloud-final-action-board.ps1",
     "scripts/qwencloud-post-submit-verification.ps1",
+    "scripts/qwencloud-final-completion-evidence.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
     "scripts/qwencloud-deadline-guard.ps1",
     "scripts/qwencloud-live-inputs-intake.ps1",

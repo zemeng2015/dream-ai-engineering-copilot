@@ -985,10 +985,13 @@ Add-LatestItem -Name "latest_official_source_refresh_markdown" -Filter "official
 Add-LatestItem -Name "latest_official_source_refresh_json" -Filter "official-source-refresh-*.json"
 Add-Item -Name "testing_and_rights_notes" -Path "docs/qwencloud-testing-and-rights-notes.md" -Required $false
 Add-Item -Name "post_submit_verification_script" -Path "scripts/qwencloud-post-submit-verification.ps1" -Required $false
+Add-Item -Name "final_completion_evidence_script" -Path "scripts/qwencloud-final-completion-evidence.ps1" -Required $false
 Add-Item -Name "local_proof_powershell_script" -Path "scripts/qwencloud-run-local-proof.ps1" -Required $false
 Add-Item -Name "local_proof_bash_script" -Path "scripts/qwencloud-run-local-proof.sh" -Required $false
 Add-LatestItem -Name "latest_post_submit_verification_markdown" -Filter "devpost-post-submit-verification-*.md"
 Add-LatestItem -Name "latest_post_submit_verification_json" -Filter "devpost-post-submit-verification-*.json"
+Add-LatestItem -Name "latest_final_completion_evidence_markdown" -Filter "final-completion-evidence-*.md"
+Add-LatestItem -Name "latest_final_completion_evidence_json" -Filter "final-completion-evidence-*.json"
 Add-Item -Name "judging_scorecard_markdown" -Path $judgingScorecard.markdown
 Add-Item -Name "judging_scorecard_json" -Path $judgingScorecard.json
 Add-Item -Name "judging_scorecard_script" -Path "scripts/qwencloud-judging-scorecard.ps1" -Required $false

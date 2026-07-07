@@ -357,7 +357,8 @@ $commandLines = @(
     'scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "<deployed-backend-url>"',
     'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -RefreshAlibabaProof',
     'scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
-    'scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"'
+    'scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+    'scripts/qwencloud-final-completion-evidence.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"'
 )
 Set-Content -Path $commandsPath -Value ($commandLines -join "`r`n") -Encoding UTF8
 
@@ -421,7 +422,7 @@ $lines += @(
     '7. Capture Alibaba `/health` screenshot and render the separate backend proof recording.',
     '8. Run `qwencloud-finalize-after-urls.ps1`, then regenerate the final upload bundle with real URLs.',
     '9. Save non-legal Devpost text/link fields, upload required assets, then let Zack personally confirm legal boxes and submit.',
-    '10. Run post-submit verification and keep the resulting proof report.',
+    '10. Run post-submit verification, then package the final completion evidence archive.',
     "",
     "## Step Reports",
     "",

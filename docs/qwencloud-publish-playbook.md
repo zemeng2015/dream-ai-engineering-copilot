@@ -178,6 +178,11 @@ public repo, deployed Alibaba backend `/health` and `/qwencloud/showcase`, and
 local Alibaba proof screenshot/recording, then writes the final completion
 evidence report.
 
+`qwencloud-final-completion-evidence.ps1` runs after post-submit verification
+reports `READY`. It packages the post-submit report, release summary, final
+bundle manifest, final bundle zip, hashes, and final public URLs into one
+completion evidence archive for goal closeout.
+
 Use `docs/qwencloud-video-upload-handoff.md` for the public video upload title,
 description, accepted platforms, visibility check, and Chrome file-access
 troubleshooting.
@@ -201,3 +206,5 @@ troubleshooting.
 15. Run `scripts/qwencloud-post-submit-verification.ps1` with the public Devpost
     URL and keep the generated `devpost-post-submit-verification-*.md/json`
     report as final completion evidence
+16. Run `scripts/qwencloud-final-completion-evidence.ps1` to package the final
+    completion archive only after post-submit verification reports `READY`

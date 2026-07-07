@@ -74,6 +74,7 @@ def test_qwencloud_final_external_handoff_builds_safe_pack(tmp_path) -> None:
     assert "Action-Time Confirmations" in markdown
     assert "Final Devpost legal submit" in markdown
     assert "qwencloud-post-submit-verification.ps1" in commands
+    assert "qwencloud-final-completion-evidence.ps1" in commands
 
 
 def test_qwencloud_final_external_handoff_registered_in_submission_flow() -> None:
