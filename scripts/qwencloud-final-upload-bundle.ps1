@@ -515,6 +515,15 @@ Add-LatestItem -Name "latest_demo_video_render_markdown" -Filter "demo-video-ren
 Add-LatestItem -Name "latest_demo_video_render_json" -Filter "demo-video-render-*.json"
 Add-LatestItem -Name "latest_video_upload_status_markdown" -Filter "video-upload-status-*.md"
 Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-status-*.json"
+Add-Item -Name "frontend_build_proof_script" -Path "scripts/qwencloud-frontend-build-proof.ps1" -Required $false
+Add-LatestItem -Name "latest_frontend_build_proof_markdown" -Filter "frontend-build-proof-*.md"
+Add-LatestItem -Name "latest_frontend_build_proof_json" -Filter "frontend-build-proof-*.json"
+Add-LatestItem -Name "latest_frontend_install_stdout" -Filter "frontend-npm-ci-*.out"
+Add-LatestItem -Name "latest_frontend_install_stderr" -Filter "frontend-npm-ci-*.err"
+Add-LatestItem -Name "latest_frontend_build_stdout" -Filter "frontend-npm-build-*.out"
+Add-LatestItem -Name "latest_frontend_build_stderr" -Filter "frontend-npm-build-*.err"
+Add-LatestItem -Name "latest_frontend_test_stdout" -Filter "frontend-npm-test-*.out"
+Add-LatestItem -Name "latest_frontend_test_stderr" -Filter "frontend-npm-test-*.err"
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
 Add-Item -Name "final_sprint_script" -Path "scripts/qwencloud-final-sprint.ps1" -Required $false
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"

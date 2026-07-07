@@ -321,6 +321,12 @@ npm test -- --watch=false --browsers=ChromeHeadless
 npm start -- --host 127.0.0.1 --port 4300
 ```
 
+Generate a timestamped hackathon proof report for the Angular build:
+
+```powershell
+scripts/qwencloud-frontend-build-proof.ps1
+```
+
 Open `http://localhost:4300/`.
 
 If local development ports are already occupied, build and serve the static

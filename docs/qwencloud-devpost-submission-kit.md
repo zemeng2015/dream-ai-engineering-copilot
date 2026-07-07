@@ -26,6 +26,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
+  - `scripts/qwencloud-frontend-build-proof.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -72,6 +73,12 @@ Recommended 4-shot order:
 ## 4) Deployability Proof
 
 Use `deploy/alibaba/README.md`.
+
+Record a local Angular build proof for the demo UI:
+
+```powershell
+scripts/qwencloud-frontend-build-proof.ps1
+```
 
 Run preflight before a real deployment:
 
@@ -194,6 +201,7 @@ Run helper scripts as needed:
 - `scripts/qwencloud-run-local-proof.ps1`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`
 - `scripts/qwencloud-render-alibaba-proof-video.ps1`
+- `scripts/qwencloud-frontend-build-proof.ps1`
 - `scripts/qwencloud-final-readiness.ps1`
 - `scripts/qwencloud-final-upload-bundle.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`

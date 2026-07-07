@@ -135,6 +135,7 @@ Add-Criterion `
         "docs/assets/qwencloud-architecture.svg",
         "docs/assets/qwencloud-architecture.png",
         "docs/qwencloud-demo-video-script.md",
+        "scripts/qwencloud-frontend-build-proof.ps1",
         "scripts/qwencloud-render-demo-video.ps1",
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
