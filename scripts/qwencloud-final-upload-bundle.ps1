@@ -141,6 +141,55 @@ function Invoke-GitText([string[]]$Arguments) {
     }
 }
 
+function Invoke-DeadlineGuard {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deadline-guard-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-deadline-guard.ps1",
+        "-OutputDir", $OutputDir
+    )
+    if ($AllowDraft) { $args += "-AllowDraft" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-deadline-guard-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-deadline-guard-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Deadline guard generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deadline-guard-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "deadline guard JSON missing; stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($data.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForSubmissionWindow
+        details = if ($data.readyForSubmissionWindow) { "READY: $($json.FullName); urgency=$($data.urgency); hoursRemaining=$($data.hoursRemaining)" } else { "DRAFT; missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-GitHubCiProof {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -539,6 +588,7 @@ function Invoke-VideoPublicationHandoff {
     }
 }
 
+$deadlineGuard = Invoke-DeadlineGuard
 $githubCiProof = Invoke-GitHubCiProof
 $videoPublicationHandoff = Invoke-VideoPublicationHandoff
 $packet = Invoke-Packet
@@ -550,6 +600,7 @@ $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ready -Details $deadlineGuard.details
 Add-ExternalRequirement -Name "github_ci_proof_ready" -Ok $githubCiProof.ready -Details $githubCiProof.details
 Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
@@ -599,6 +650,9 @@ Add-LatestItem -Name "latest_frontend_test_stderr" -Filter "frontend-npm-test-*.
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
 Add-Item -Name "final_sprint_script" -Path "scripts/qwencloud-final-sprint.ps1" -Required $false
 Add-Item -Name "final_external_handoff_script" -Path "scripts/qwencloud-final-external-handoff.ps1" -Required $false
+Add-Item -Name "deadline_guard_script" -Path "scripts/qwencloud-deadline-guard.ps1" -Required $false
+Add-Item -Name "deadline_guard_markdown" -Path $deadlineGuard.markdown
+Add-Item -Name "deadline_guard_json" -Path $deadlineGuard.json
 Add-Item -Name "github_ci_proof_script" -Path "scripts/qwencloud-github-ci-proof.ps1" -Required $false
 Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
 Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json

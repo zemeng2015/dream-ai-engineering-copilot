@@ -187,6 +187,47 @@ function Test-HeadCiSuccess {
     }
 }
 
+function Invoke-DeadlineGuard {
+    if (-not (Test-Path "scripts/qwencloud-deadline-guard.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-deadline-guard.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deadline-guard-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-deadline-guard.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+
+    $stdout = Join-Path $OutputDir "final-readiness-deadline-guard-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-deadline-guard-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deadline-guard-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "deadline guard JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $guard = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($guard.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$guard.readyForSubmissionWindow
+        details = if ($guard.readyForSubmissionWindow) { "deadline guard READY: $($newest.FullName); urgency=$($guard.urgency); hoursRemaining=$($guard.hoursRemaining)" } else { "deadline guard DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-GitHubCiProof {
     if (-not (Test-Path "scripts/qwencloud-github-ci-proof.ps1")) {
         return [pscustomobject]@{
@@ -421,6 +462,9 @@ catch {
 $ci = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $ci.ok -Details $ci.details
 
+$deadlineGuard = Invoke-DeadlineGuard
+Add-Check -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ok -Details $deadlineGuard.details
+
 $githubCiProof = Invoke-GitHubCiProof
 Add-Check -Name "github_ci_proof_ready" -Ok $githubCiProof.ok -Details $githubCiProof.details
 
@@ -477,6 +521,7 @@ foreach ($path in @(
     "scripts/qwencloud-final-action-board.ps1",
     "scripts/qwencloud-post-submit-verification.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
+    "scripts/qwencloud-deadline-guard.ps1",
     "scripts/qwencloud-github-ci-proof.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",

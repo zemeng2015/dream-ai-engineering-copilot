@@ -195,6 +195,7 @@ Key submission artifacts:
 - [Qwen Cloud Devpost form fields](docs/qwencloud-devpost-form-fields.md)
 - [Qwen Cloud official requirements snapshot](docs/qwencloud-official-requirements-snapshot.md)
 - [Qwen Cloud GitHub release workflow](docs/qwencloud-github-release-workflow.md)
+- [Qwen Cloud deadline guard script](scripts/qwencloud-deadline-guard.ps1)
 - [Qwen Cloud GitHub CI proof script](scripts/qwencloud-github-ci-proof.ps1)
 - [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
 - [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
@@ -313,6 +314,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 Run the final readiness dashboard before submitting:
 
 ```powershell
+scripts/qwencloud-deadline-guard.ps1
 scripts/qwencloud-github-ci-proof.ps1
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
