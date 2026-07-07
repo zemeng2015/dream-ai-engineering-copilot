@@ -102,7 +102,8 @@ The workflow runs:
   GitHub runner.
 - Serverless Devs configuration from GitHub secrets.
 - Docker login to Alibaba Container Registry.
-- `scripts/qwencloud-alibaba-release.ps1`.
+- `scripts/qwencloud-alibaba-release.ps1`, including the release-side Devpost
+  materials audit after packet and handoff generation.
 - Final readiness and final upload bundle generation.
 - Final action board generation when local diagnostics are needed.
 - Final upload bundle generation skips the GitHub secrets audit inside Actions,

@@ -98,7 +98,8 @@ local build/smoke evidence while keeping missing cloud inputs visible.
 
 `qwencloud-alibaba-release.ps1` orchestrates the release path: preflight,
 Docker tag/push, Serverless Devs deploy, backend verification, Alibaba proof
-screenshot, proof recording, and final Devpost packet generation.
+screenshot, proof recording, final Devpost packet generation, and Devpost
+materials audit.
 
 `qwencloud-capture-alibaba-proof.ps1` verifies the deployed `/health` response
 and renders the Devpost-required Alibaba deployment screenshot.

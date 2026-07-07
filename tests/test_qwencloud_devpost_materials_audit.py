@@ -356,6 +356,15 @@ def test_devpost_materials_audit_registered_in_final_flow() -> None:
     final_sprint = (ROOT / "scripts" / "qwencloud-final-sprint.ps1").read_text(
         encoding="utf-8-sig"
     )
+    alibaba_release = (
+        ROOT / "scripts" / "qwencloud-alibaba-release.ps1"
+    ).read_text(encoding="utf-8-sig")
+    github_release_docs = (
+        ROOT / "docs" / "qwencloud-github-release-workflow.md"
+    ).read_text(encoding="utf-8-sig")
+    live_checklist = (ROOT / "docs" / "qwencloud-live-checklist.md").read_text(
+        encoding="utf-8-sig"
+    )
 
     assert script_name in final_readiness
     assert "Invoke-DevpostMaterialsAudit" in final_readiness
@@ -376,3 +385,10 @@ def test_devpost_materials_audit_registered_in_final_flow() -> None:
     assert "devpostMaterialsAuditReady" in final_sprint
     assert "devpostMaterialsAuditJson" in final_sprint
     assert "Clear Devpost materials audit" in final_sprint
+    assert script_name in alibaba_release
+    assert (
+        'Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList '
+        '$materialsAuditArgs -Name "devpost-materials-audit"'
+    ) in alibaba_release
+    assert "release-side Devpost" in github_release_docs
+    assert script_name in live_checklist

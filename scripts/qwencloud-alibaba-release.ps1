@@ -154,7 +154,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 }
 
 try {
-    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-validate-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-cloud-credentials-handoff.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
+    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-validate-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-cloud-credentials-handoff.ps1", "scripts/qwencloud-devpost-handoff.ps1", "scripts/qwencloud-devpost-materials-audit.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required release file missing: $path"
         }
@@ -310,6 +310,24 @@ try {
         $handoffArgs += "-AllowDraft"
     }
     Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $handoffArgs -Name "devpost-handoff" | Out-Null
+
+    $materialsAuditArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-materials-audit.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
+    if ($DemoVideoUrl) {
+        $materialsAuditArgs += @("-DemoVideoUrl", $DemoVideoUrl)
+    }
+    if ($BlogPostUrl) {
+        $materialsAuditArgs += @("-BlogPostUrl", $BlogPostUrl)
+    }
+    if ($EnvFile) {
+        $materialsAuditArgs += @("-EnvFile", $EnvFile)
+    }
+    if ($SkipDraft) {
+        $materialsAuditArgs += "-SkipBackendDraft"
+    }
+    if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
+        $materialsAuditArgs += "-AllowDraft"
+    }
+    Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $materialsAuditArgs -Name "devpost-materials-audit" | Out-Null
 
     Write-ReleaseReport -EffectiveBackendUrl $effectiveBackendUrl
     Write-Host "Alibaba release flow completed. Report: $releaseMd"

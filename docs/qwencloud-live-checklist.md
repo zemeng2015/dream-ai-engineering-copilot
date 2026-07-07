@@ -21,6 +21,8 @@
 - [ ] Chrome extension file upload permission enabled if using browser automation
   for YouTube/Devpost uploads.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
+- [ ] Devpost materials audit present:
+  `scripts/qwencloud-devpost-materials-audit.ps1`.
 - [ ] Final sprint dashboard present: `scripts/qwencloud-final-sprint.ps1`.
 - [ ] Post-submit verifier present:
   `scripts/qwencloud-post-submit-verification.ps1`.
@@ -140,7 +142,15 @@ The packet must report `READY`; failures on the public video URL, deployed
 backend URL, Alibaba screenshot, Alibaba proof video, or upload asset checks
 mean the Devpost submission is still not complete.
 
-9. Run final readiness:
+9. Run Devpost materials audit:
+
+```powershell
+scripts/qwencloud-devpost-materials-audit.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
+
+This must report `READY` before saving Devpost draft fields.
+
+10. Run final readiness:
 
 ```powershell
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
@@ -160,7 +170,7 @@ Last-day dashboard alternative:
 scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>" -RefreshAlibabaProof -AllowDraft
 ```
 
-10. Create final upload bundle:
+11. Create final upload bundle:
 
 ```powershell
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
@@ -174,7 +184,7 @@ Do not click final Submit until Zack confirms the legal eligibility checkboxes,
 the final Official Rules / Devpost Terms of Service checkbox, and the final
 readiness dashboard reports `READY`.
 
-11. Verify public submission after clicking submit:
+12. Verify public submission after clicking submit:
 
 ```powershell
 scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
