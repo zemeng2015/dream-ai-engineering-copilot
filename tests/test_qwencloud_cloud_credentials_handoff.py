@@ -49,6 +49,13 @@ def test_cloud_credentials_template_does_not_shadow_process_env(tmp_path: Path) 
     markdown = Path(report["markdown"]).read_text(encoding="utf-8-sig")
 
     assert "$env:DASHSCOPE_API_KEY" in template
+    assert "$env:ALIBABA_CLOUD_ACCESS_KEY_ID" in template
+    assert "$env:ALIBABA_CLOUD_ACCESS_KEY_SECRET" in template
+    assert "$env:ALIBABA_CLOUD_ACCOUNT_ID" in template
+    assert '"--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID' in template
+    assert '"--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET' in template
+    assert '"--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID' in template
+    assert "s config add -a default --AccessKeyID" not in template
     assert "$env:ALIBABA_CONTAINER_REGISTRY_USERNAME" in template
     assert "$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD" in template
     assert "--password-stdin" in template

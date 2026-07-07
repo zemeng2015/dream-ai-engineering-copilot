@@ -96,6 +96,9 @@ if ([string]::IsNullOrWhiteSpace($ContainerImage)) {
 $registryHost = Get-RegistryHost -Image $ContainerImage
 $sAccess = Test-ServerlessDevsDefaultAccess
 $envChecks = @(
+    Env-State -Name "ALIBABA_CLOUD_ACCESS_KEY_ID" -Required (-not $sAccess.ok)
+    Env-State -Name "ALIBABA_CLOUD_ACCESS_KEY_SECRET" -Required (-not $sAccess.ok)
+    Env-State -Name "ALIBABA_CLOUD_ACCOUNT_ID" -Required $false
     Env-State -Name "DASHSCOPE_API_KEY"
     Env-State -Name "ALIBABA_CLOUD_REGION"
     Env-State -Name "ALIBABA_CLOUD_CONTAINER_IMAGE"
@@ -126,6 +129,9 @@ $backendValue = if ($BackendUrl) { $BackendUrl } else { "<deployed-url>" }
 $setupCommands = @(
     "# Process-env template mode: fill these values, then run this file in the same PowerShell session.",
     "# It intentionally omits -EnvFile below so placeholder .env values cannot override the filled values.",
+    '$env:ALIBABA_CLOUD_ACCESS_KEY_ID="<alibaba-access-key-id>"',
+    '$env:ALIBABA_CLOUD_ACCESS_KEY_SECRET="<alibaba-access-key-secret>"',
+    '$env:ALIBABA_CLOUD_ACCOUNT_ID="<optional-account-id>"',
     '$env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"',
     "`$env:ALIBABA_CLOUD_REGION=`"$Region`"",
     "`$env:ALIBABA_CLOUD_CONTAINER_IMAGE=`"$ContainerImage`"",
@@ -133,7 +139,9 @@ $setupCommands = @(
     '$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD="<registry-password>"',
     '$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"',
     '$env:QWEN_MODEL="qwen3.7-plus"',
-    's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
+    '$sConfigArgs = @("config", "add", "-a", "default", "--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID, "--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET, "--force")',
+    'if (-not [string]::IsNullOrWhiteSpace($env:ALIBABA_CLOUD_ACCOUNT_ID) -and $env:ALIBABA_CLOUD_ACCOUNT_ID -notmatch "^<.*>$") { $sConfigArgs += @("--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID) }',
+    '& s @sConfigArgs',
     's config get -a default',
     "`$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login $registryHost -u `$env:ALIBABA_CONTAINER_REGISTRY_USERNAME --password-stdin",
     'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft',
