@@ -145,7 +145,7 @@ change them after a form refresh.
 ### Current live blockers
 
 - `software_video_url` is empty until the demo MP4 is uploaded to YouTube,
-  Vimeo, Facebook Video, or `fb.watch`.
+  Vimeo, Facebook Video, `fb.watch`, or Youku.
 - `submission_field_file_27544_add_files` needs
   `docs/assets/qwencloud-architecture.png`.
 - `submission_field_file_27832_add_files` needs

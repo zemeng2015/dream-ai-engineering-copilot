@@ -52,10 +52,10 @@ function Test-AcceptedVideoUrl([string]$Url) {
         return [pscustomobject]@{ ok = $false; details = "missing" }
     }
 
-    $pattern = "^https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/|vimeo\.com/|facebook\.com/.*/videos/|fb\.watch/)"
+    $pattern = "^https?://((www|m|v)\.)?(youtube\.com/watch\?v=|youtu\.be/|vimeo\.com/|facebook\.com/.*/videos/|fb\.watch/|youku\.com/)"
     return [pscustomobject]@{
         ok = ($Url -match $pattern)
-        details = if ($Url -match $pattern) { "accepted platform URL" } else { "must be YouTube, Vimeo, Facebook Video, or fb.watch" }
+        details = if ($Url -match $pattern) { "accepted platform URL" } else { "must be YouTube, Vimeo, Facebook Video, fb.watch, or Youku" }
     }
 }
 

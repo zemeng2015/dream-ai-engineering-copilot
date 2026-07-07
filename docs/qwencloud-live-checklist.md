@@ -118,7 +118,7 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl <deployed-url>
 
 7. Record or render demo with <3 minute duration, then upload it using
    `docs/qwencloud-video-upload-handoff.md`. The final video URL must be public
-   on YouTube, Vimeo, Facebook Video, or `fb.watch`.
+   on YouTube, Vimeo, Facebook Video, `fb.watch`, or Youku.
 
 8. Generate final Devpost packet:
 
