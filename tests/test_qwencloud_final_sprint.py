@@ -25,6 +25,8 @@ def test_final_sprint_can_refresh_alibaba_proof_after_urls() -> None:
     assert "timeout after ${StepTimeoutSeconds}s; process tree stopped" in final_sprint
     assert "stepTimeoutSeconds = $StepTimeoutSeconds" in final_sprint
     assert '"- Step timeout seconds: $StepTimeoutSeconds"' in final_sprint
+    assert 'Invoke-SprintStep -Name "final-sprint-release-summary"' in final_sprint
+    assert "releaseSummaryReady" in final_sprint
 
     for path in [
         "docs/qwencloud-final-5min-checklist.md",

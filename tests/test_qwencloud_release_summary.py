@@ -128,6 +128,12 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     final_bundle = (ROOT / "scripts/qwencloud-final-upload-bundle.ps1").read_text(
         encoding="utf-8-sig"
     )
+    finalizer = (ROOT / "scripts/qwencloud-finalize-after-urls.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    final_sprint = (ROOT / "scripts/qwencloud-final-sprint.ps1").read_text(
+        encoding="utf-8-sig"
+    )
     final_readiness = (ROOT / "scripts/qwencloud-final-readiness.ps1").read_text(
         encoding="utf-8-sig"
     )
@@ -144,6 +150,11 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "latest_github_release_summary_markdown" in final_bundle
     assert "latest_github_release_summary_json" in final_bundle
     assert "github_release_summary_script" in final_bundle
+    assert 'Invoke-Step -Name "release-summary"' in finalizer
+    assert "releaseSummaryJson" in finalizer
+    assert 'Invoke-SprintStep -Name "final-sprint-release-summary"' in final_sprint
+    assert "releaseSummaryReady" in final_sprint
+    assert "releaseSummaryJson" in final_sprint
     assert "scripts/qwencloud-release-summary.ps1" in final_readiness
     assert "scripts/qwencloud-release-summary.ps1" in scorecard
     assert "workflow run summary" in docs

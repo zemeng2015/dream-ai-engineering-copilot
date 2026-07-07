@@ -233,10 +233,23 @@ if ($SkipExternalUrlChecks) { $bundleArgs += "-SkipExternalUrlChecks" }
 if ($AllowDraft) { $bundleArgs += "-AllowDraft" }
 Invoke-Step -Name "final-upload-bundle" -ArgumentList $bundleArgs
 
+$releaseSummaryArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-release-summary.ps1",
+    "-OutputDir", $OutputDir,
+    "-NoGitHubStepSummary"
+)
+if ($DemoVideoUrl) { $releaseSummaryArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $releaseSummaryArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $releaseSummaryArgs += @("-BlogPostUrl", $BlogPostUrl) }
+Invoke-Step -Name "release-summary" -ArgumentList $releaseSummaryArgs
+
 $packetJsonFile = Get-NewestFile -Filter "devpost-submission-packet-*.json"
 $liveInputsJsonFile = Get-NewestFile -Filter "live-inputs-intake-*.json"
 $readinessJsonFile = Get-NewestFile -Filter "final-readiness-*.json"
 $officialSourceJsonFile = Get-NewestFile -Filter "official-source-refresh-*.json"
+$releaseSummaryJsonFile = Get-NewestFile -Filter "release-summary-*.json"
 $bundleManifestJsonFile = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
     Sort-Object LastWriteTime -Descending |
     ForEach-Object {
@@ -273,6 +286,7 @@ $result = [ordered]@{
     alibabaScreenshotPath = $AlibabaScreenshotPath
     alibabaProofVideoPath = $AlibabaProofVideoPath
     officialSourceJson = if ($officialSourceJsonFile) { $officialSourceJsonFile.FullName } else { $null }
+    releaseSummaryJson = if ($releaseSummaryJsonFile) { $releaseSummaryJsonFile.FullName } else { $null }
     liveInputsJson = if ($liveInputsJsonFile) { $liveInputsJsonFile.FullName } else { $null }
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
@@ -292,6 +306,7 @@ $lines = @(
     "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Official source refresh: $(if ($SkipOfficialSourceRefresh) { 'skipped' } elseif ($officialSourceJsonFile) { $officialSourceJsonFile.FullName } else { '<missing>' })",
+    "- Release summary: $(if ($releaseSummaryJsonFile) { $releaseSummaryJsonFile.FullName } else { '<missing>' })",
     "- Refresh Alibaba proof: $([bool]$RefreshAlibabaProof)",
     "- Alibaba screenshot: $AlibabaScreenshotPath",
     "- Alibaba proof video: $AlibabaProofVideoPath",

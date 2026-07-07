@@ -343,6 +343,18 @@ if ($EnvFile) { $actionBoardArgs += @("-EnvFile", $EnvFile) }
 if ($SkipExternalUrlChecks) { $actionBoardArgs += "-SkipExternalUrlChecks" }
 Invoke-SprintStep -Name "final-sprint-action-board" -Arguments $actionBoardArgs | Out-Null
 
+$releaseSummaryArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-release-summary.ps1",
+    "-OutputDir", $OutputDir,
+    "-NoGitHubStepSummary"
+)
+if ($DemoVideoUrl) { $releaseSummaryArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($backendForFinalize) { $releaseSummaryArgs += @("-BackendUrl", $backendForFinalize) }
+if ($BlogPostUrl) { $releaseSummaryArgs += @("-BlogPostUrl", $BlogPostUrl) }
+Invoke-SprintStep -Name "final-sprint-release-summary" -Arguments $releaseSummaryArgs | Out-Null
+
 $video = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublication = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
@@ -350,6 +362,7 @@ $liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
+$releaseSummary = Read-LatestJson -Filter "release-summary-*.json"
 $finalize = if ($finalizeSkippedForDraft) {
     [pscustomobject]@{
         file = $null
@@ -410,6 +423,7 @@ $signals = [ordered]@{
     deployedBackendUrlPresent = -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)
     officialRulesGateReady = [bool]($officialRules.data -and $officialRules.data.readyForOfficialRules)
     finalizeAfterUrlsReady = [bool]($finalize.data -and $finalize.data.readyForDevpostSubmit)
+    releaseSummaryReady = [bool]($releaseSummary.data -and $releaseSummary.data.showcase.ready)
     finalUploadBundleReady = [bool]($uploadBundle.data -and $uploadBundle.data.readyForUpload)
     finalReadinessReady = [bool]($readiness.data -and $readiness.data.readyForFinalSubmit)
     actionBoardReady = [bool]($actionBoard.data -and $actionBoard.data.readyForFinalSubmit)
@@ -538,6 +552,7 @@ $result = [ordered]@{
         judgingScorecardJson = $scorecard.file
         githubSecretsHandoffJson = $github.file
         alibabaReleaseJson = $release.file
+        releaseSummaryJson = $releaseSummary.file
         finalizeAfterUrlsJson = $finalize.file
         officialRulesGateJson = $officialRules.file
         finalReadinessJson = $readiness.file
@@ -597,6 +612,7 @@ $lines += @(
     "- Judging scorecard: $(if ($scorecard.file) { $scorecard.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",
+    "- Release summary: $(if ($releaseSummary.file) { $releaseSummary.file } else { '<missing>' })",
     "- Finalize after URLs: $(if ($finalize.file) { $finalize.file } else { '<missing>' })",
     "- Official rules gate: $(if ($officialRules.file) { $officialRules.file } else { '<missing>' })",
     "- Final readiness: $(if ($readiness.file) { $readiness.file } else { '<missing>' })",
