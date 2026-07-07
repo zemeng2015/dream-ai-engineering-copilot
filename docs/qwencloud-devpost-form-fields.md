@@ -48,7 +48,17 @@ decision quality across requirement drafting, PR review, and engineering workflo
 
 ## Video link
 
-Upload a <3-minute demo video covering:
+Render and upload the <3-minute demo video:
+
+```powershell
+scripts/qwencloud-render-demo-video.ps1
+```
+
+Local upload file:
+
+`artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
+
+The video covers:
 
 1) /health proof (Track 1 + qwen-cloud + model + proof file)
 2) Memory Hub intake + claim review

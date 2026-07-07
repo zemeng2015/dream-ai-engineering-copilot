@@ -2,7 +2,7 @@
 
 # Final 5-minute Checklist Before Devpost Submit
 
-## Step 1 — Runtime proof (about 1 minute)
+## Step 1 - Runtime proof (about 1 minute)
 
 - Start API in qwen mode:
 
@@ -26,7 +26,7 @@ scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
   - `track: Track 1: MemoryAgent`
   - `proof_file: deploy/alibaba/serverless-devs.yaml`
 
-## Step 2 — Artifact evidence (about 1 minute)
+## Step 2 - Artifact evidence (about 1 minute)
 
 - Confirm these are in repo:
   - `docs/qwencloud-submission.md`
@@ -52,7 +52,18 @@ Optional one-command pre-submit audit:
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 ```
 
-## Step 3 — Devpost fill (about 1.5 minutes)
+## Step 3 - Demo video (about 1 minute)
+
+- Render the final upload video:
+
+```powershell
+scripts/qwencloud-render-demo-video.ps1
+```
+
+- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
+- Confirm the public video page plays and remains under 3 minutes.
+
+## Step 4 - Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
 - Track: `Track 1: MemoryAgent`
@@ -63,7 +74,7 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
 
-## Step 4 — Submit
+## Step 5 - Submit
 
 - Click submit on Devpost.
 - Immediately open the public project page and confirm links, video, and video
@@ -74,5 +85,5 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 - Keep the video focus on `/health`, memory governance, claim review, and
   traceability.
 - Explain network/key instability and continue with governance + audit proof.
-Use `scripts/qwencloud-hackathon-submit-gate.ps1` on your local or deployed
-endpoint to produce one machine-readable proof bundle and a clear pass/fail summary.
+- Use `scripts/qwencloud-hackathon-submit-gate.ps1` on your local or deployed
+  endpoint to produce one machine-readable proof bundle and a clear pass/fail summary.

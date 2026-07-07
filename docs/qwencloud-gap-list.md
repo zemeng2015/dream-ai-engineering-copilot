@@ -11,6 +11,8 @@
 - Qwen Cloud example config and `.env.example` entries.
 - Alibaba Cloud Function Compute deployment proof.
 - Devpost submission brief, architecture doc, architecture SVG, and demo script.
+- Final demo video renderer that produces
+  `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -18,7 +20,7 @@
 - Run one live Qwen smoke test with the real `DASHSCOPE_API_KEY`.
 - Deploy the container or at least produce a Function Compute dry-run screenshot
   plus `/health` output.
-- Record a sub-3-minute video using `docs/qwencloud-demo-video-script.md`.
+- Upload the rendered sub-3-minute demo video to YouTube/Vimeo/Youku.
 - Paste the architecture SVG into the Devpost submission.
 - Confirm repository visibility is public and license is Apache-2.0.
 

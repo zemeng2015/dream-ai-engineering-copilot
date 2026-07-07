@@ -164,6 +164,12 @@ Key submission artifacts:
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
 
+Render the final under-3-minute Devpost upload video:
+
+```powershell
+scripts/qwencloud-render-demo-video.ps1
+```
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,

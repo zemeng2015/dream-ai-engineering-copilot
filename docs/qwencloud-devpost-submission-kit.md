@@ -31,7 +31,16 @@ Suggested Description points (copy into Devpost):
 
 ## 3) Demo Video (Under 3 Minutes)
 
-Use `docs/qwencloud-demo-video-script.md`.
+Use `docs/qwencloud-demo-video-script.md` for narration and render the local
+upload file with:
+
+```powershell
+scripts/qwencloud-render-demo-video.ps1
+```
+
+Expected local upload file:
+
+`artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
 
 Recommended 4-shot order:
 
