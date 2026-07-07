@@ -46,12 +46,36 @@ def test_github_ci_proof_accepts_fixture_for_current_head(tmp_path) -> None:
         json.dumps(
             [
                 {
+                    "databaseId": 12343,
+                    "headSha": head,
+                    "status": "completed",
+                    "conclusion": "failure",
+                    "displayTitle": "Older Fixture CI",
+                    "url": "https://github.com/example/actions/runs/12343",
+                    "createdAt": "2026-07-07T20:00:00Z",
+                    "updatedAt": "2026-07-07T20:01:00Z",
+                    "workflowName": "main CI",
+                },
+                {
+                    "databaseId": 12346,
+                    "headSha": "other-head",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "displayTitle": "Other Head CI",
+                    "url": "https://github.com/example/actions/runs/12346",
+                    "createdAt": "2026-07-07T20:20:00Z",
+                    "updatedAt": "2026-07-07T20:21:00Z",
+                    "workflowName": "main CI",
+                },
+                {
                     "databaseId": 12345,
                     "headSha": head,
                     "status": "completed",
                     "conclusion": "success",
                     "displayTitle": "Fixture CI",
                     "url": "https://github.com/example/actions/runs/12345",
+                    "createdAt": "2026-07-07T20:10:00Z",
+                    "updatedAt": "2026-07-07T20:11:00Z",
                     "workflowName": "main CI",
                 }
             ]
@@ -91,6 +115,8 @@ def test_github_ci_proof_accepts_fixture_for_current_head(tmp_path) -> None:
     assert report["status"] == "READY"
     assert report["readyForGitHubCiProof"] is True
     assert report["usingFixtures"] is True
+    assert isinstance(report["matchingRun"], dict)
+    assert report["matchingRun"]["databaseId"] == 12345
     assert checks["repo_public"]["ok"] is True
     assert checks["repo_license_apache_2_0"]["ok"] is True
     assert checks["ci_run_for_head_present"]["ok"] is True
@@ -115,3 +141,7 @@ def test_github_ci_proof_registered_in_final_submission_flow() -> None:
     assert "github_ci_proof_ready" in final_bundle
     assert "github_ci_proof_markdown" in final_bundle
     assert "github_ci_proof_json" in final_bundle
+    assert "ConvertTo-FlatArray" in (ROOT / script_path).read_text(
+        encoding="utf-8-sig"
+    )
+    assert "matchingRuns" in (ROOT / script_path).read_text(encoding="utf-8-sig")

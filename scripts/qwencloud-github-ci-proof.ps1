@@ -40,6 +40,22 @@ function Read-JsonPath([string]$Path) {
     return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
 }
 
+function ConvertTo-FlatArray([AllowNull()][object]$Value) {
+    $items = @()
+    foreach ($item in @($Value)) {
+        if ($item -is [System.Array]) {
+            foreach ($nestedItem in $item) {
+                $items += $nestedItem
+            }
+        }
+        else {
+            $items += $item
+        }
+    }
+
+    return $items
+}
+
 function Get-RepoName([string]$Url) {
     if ($Url -match "^https://github.com/(?<owner>[^/]+)/(?<repo>[^/]+?)(\.git)?$") {
         return "$($matches.owner)/$($matches.repo)"
@@ -89,11 +105,11 @@ function Get-RepoData([string]$RepoName) {
 
 function Get-RunData([string]$RepoName) {
     if (-not [string]::IsNullOrWhiteSpace($RunsJsonPath)) {
-        return @(Read-JsonPath -Path $RunsJsonPath)
+        return ConvertTo-FlatArray -Value (Read-JsonPath -Path $RunsJsonPath)
     }
 
     $json = gh run list --repo $RepoName --branch $Branch --limit 20 --json databaseId,headSha,status,conclusion,displayTitle,url,createdAt,updatedAt,event,workflowName
-    return @($json | ConvertFrom-Json)
+    return ConvertTo-FlatArray -Value ($json | ConvertFrom-Json)
 }
 
 $usingFixtures = (-not [string]::IsNullOrWhiteSpace($RepoJsonPath)) -and (-not [string]::IsNullOrWhiteSpace($RunsJsonPath))
@@ -147,7 +163,22 @@ try {
         throw "gh command missing."
     }
     $runs = @(Get-RunData -RepoName $repoName)
-    $matchingRun = @($runs | Where-Object { $_.headSha -eq $head } | Select-Object -First 1)
+    $matchingRuns = @(
+        $runs |
+            Where-Object { $_.headSha -eq $head } |
+            Sort-Object -Property @(
+                @{ Expression = {
+                        $runDate = if ($_.createdAt) { $_.createdAt } elseif ($_.updatedAt) { $_.updatedAt } else { "" }
+                        try { [DateTimeOffset]::Parse([string]$runDate).UtcDateTime } catch { [datetime]::MinValue }
+                    }; Descending = $true
+                },
+                @{ Expression = {
+                        try { [int64]$_.databaseId } catch { 0 }
+                    }; Descending = $true
+                }
+            )
+    )
+    $matchingRun = if ($matchingRuns.Count -gt 0) { $matchingRuns[0] } else { $null }
     Add-Check -Name "ci_run_for_head_present" -Ok ($null -ne $matchingRun) -Details $(if ($matchingRun) { "$($matchingRun.displayTitle); $($matchingRun.url)" } else { "no run found for HEAD $head on branch $Branch" })
     if ($matchingRun) {
         Add-Check -Name "ci_run_completed_success" -Ok ($matchingRun.status -eq "completed" -and $matchingRun.conclusion -eq "success") -Details "status=$($matchingRun.status); conclusion=$($matchingRun.conclusion); url=$($matchingRun.url)"
