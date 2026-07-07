@@ -164,8 +164,9 @@ draft, or submit.
 
 `qwencloud-post-submit-verification.ps1` is the final proof script after
 Devpost submit. It verifies the public Devpost project page, public demo video,
-public repo, deployed Alibaba backend `/health`, and local Alibaba proof
-screenshot/recording, then writes the final completion evidence report.
+public repo, deployed Alibaba backend `/health` and `/qwencloud/showcase`, and
+local Alibaba proof screenshot/recording, then writes the final completion
+evidence report.
 
 Use `docs/qwencloud-video-upload-handoff.md` for the public video upload title,
 description, accepted platforms, visibility check, and Chrome file-access

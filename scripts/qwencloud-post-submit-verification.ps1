@@ -73,6 +73,10 @@ function Is-DevpostVideoUrl([string]$Url) {
     return Test-QwenCloudDevpostVideoUrl -Url $Url
 }
 
+function Is-TrueBoolean($Value) {
+    return ([string]$Value).ToLowerInvariant() -eq "true"
+}
+
 function Test-Url {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -273,8 +277,8 @@ else {
 
 Add-Check -Name "backend_url_present" -Ok (Is-HttpUrl $BackendUrl) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
 if (Is-HttpUrl $BackendUrl) {
+    $base = $BackendUrl.TrimEnd("/")
     try {
-        $base = $BackendUrl.TrimEnd("/")
         $health = Invoke-RestMethod -Method Get -Uri "$base/health" -TimeoutSec 25
         Add-Check -Name "backend_health_status_ok" -Ok ($health.status -eq "ok") -Details "status=$($health.status)"
         Add-Check -Name "backend_track_memoryagent" -Ok ($health.track -eq $ExpectedTrack) -Details "track=$($health.track)"
@@ -297,6 +301,28 @@ if (Is-HttpUrl $BackendUrl) {
             Add-Check -Name $name -Ok $false -Details $_.Exception.Message
         }
     }
+
+    try {
+        $showcase = Invoke-RestMethod -Method Get -Uri "$base/qwencloud/showcase" -TimeoutSec 25
+        Add-Check -Name "backend_showcase_reachable" -Ok ($null -ne $showcase) -Details "$base/qwencloud/showcase"
+        Add-Check -Name "backend_showcase_status_ok" -Ok ($showcase.runtime.status -eq "ok") -Details "status=$($showcase.runtime.status)"
+        Add-Check -Name "backend_showcase_track_memoryagent" -Ok ($showcase.track -eq $ExpectedTrack) -Details "track=$($showcase.track)"
+        Add-Check -Name "backend_showcase_provider_qwen_cloud" -Ok ($showcase.runtime.llm_provider -eq "qwen-cloud") -Details "llm_provider=$($showcase.runtime.llm_provider)"
+        Add-Check -Name "backend_showcase_static_evidence_ready" -Ok ([int]$showcase.scorecard.weighted_static_evidence_ready -eq 100) -Details "$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)"
+        Add-Check -Name "backend_showcase_live_backend_ready" -Ok (Is-TrueBoolean $showcase.runtime.live_backend_ready) -Details "live_backend_ready=$($showcase.runtime.live_backend_ready)"
+    }
+    catch {
+        foreach ($name in @(
+            "backend_showcase_reachable",
+            "backend_showcase_status_ok",
+            "backend_showcase_track_memoryagent",
+            "backend_showcase_provider_qwen_cloud",
+            "backend_showcase_static_evidence_ready",
+            "backend_showcase_live_backend_ready"
+        )) {
+            Add-Check -Name $name -Ok $false -Details $_.Exception.Message
+        }
+    }
 }
 else {
     foreach ($name in @(
@@ -306,7 +332,13 @@ else {
         "backend_deployment_target_alibaba",
         "backend_alibaba_region_present",
         "backend_api_key_configured",
-        "backend_proof_file"
+        "backend_proof_file",
+        "backend_showcase_reachable",
+        "backend_showcase_status_ok",
+        "backend_showcase_track_memoryagent",
+        "backend_showcase_provider_qwen_cloud",
+        "backend_showcase_static_evidence_ready",
+        "backend_showcase_live_backend_ready"
     )) {
         Add-Check -Name $name -Ok $false -Details "BackendUrl missing"
     }

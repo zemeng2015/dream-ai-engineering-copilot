@@ -58,3 +58,16 @@ def test_hackathon_verify_and_proof_collect_showcase_endpoint() -> None:
     assert 'Join-Path $OutputDir "showcase-$timestamp.json"' in proof
     assert "/qwencloud/showcase" in proof
     assert "Collecting showcase proof" in proof
+
+
+def test_post_submit_verification_requires_showcase_endpoint() -> None:
+    post_submit = (ROOT / "scripts" / "qwencloud-post-submit-verification.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "/qwencloud/showcase" in post_submit
+    assert "backend_showcase_reachable" in post_submit
+    assert "backend_showcase_track_memoryagent" in post_submit
+    assert "backend_showcase_provider_qwen_cloud" in post_submit
+    assert "backend_showcase_static_evidence_ready" in post_submit
+    assert "backend_showcase_live_backend_ready" in post_submit

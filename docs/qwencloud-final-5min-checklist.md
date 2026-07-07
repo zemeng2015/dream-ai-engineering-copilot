@@ -261,6 +261,8 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
 - Click submit on Devpost.
 - Immediately open the public project page and confirm links, video, and video
   visibility.
+- Confirm the deployed backend still returns valid `/health` and
+  `/qwencloud/showcase` responses.
 - Save final completion evidence:
 
 ```powershell
