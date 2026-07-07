@@ -27,6 +27,22 @@ Optional:
 The workflow validates secret presence by name only and never writes secret
 values into repo files.
 
+Generate a local status report and placeholder template with:
+
+```powershell
+scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
+```
+
+After setting same-named local environment variables, push them into repository
+secrets with:
+
+```powershell
+scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv
+```
+
+The script sends values through stdin to `gh secret set`; it does not write
+secret values into its JSON or Markdown reports.
+
 ## Manual Run
 
 1. Upload the demo MP4 using `docs/qwencloud-video-upload-handoff.md`.

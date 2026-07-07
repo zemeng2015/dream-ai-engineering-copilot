@@ -249,6 +249,7 @@ foreach ($path in @(
     "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     "deploy/alibaba/serverless-devs.yaml",
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
+    "scripts/qwencloud-github-secrets-handoff.ps1",
     "scripts/qwencloud-devpost-handoff.ps1",
     "scripts/qwencloud-alibaba-release.ps1",
     "scripts/qwencloud-finalize-after-urls.ps1",

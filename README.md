@@ -166,6 +166,7 @@ Key submission artifacts:
 - [Qwen Cloud contest launch checklist](docs/qwencloud-live-checklist.md)
 - [Qwen Cloud final 5-minute checklist](docs/qwencloud-final-5min-checklist.md)
 - [Qwen Cloud Devpost form fields](docs/qwencloud-devpost-form-fields.md)
+- [Qwen Cloud GitHub release workflow](docs/qwencloud-github-release-workflow.md)
 - [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
 - [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
 - [Qwen Cloud build journey post draft](docs/qwencloud-build-journey-post.md)
@@ -177,6 +178,7 @@ Run deployment preflight before pushing to Alibaba Cloud:
 
 ```powershell
 scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
+scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 

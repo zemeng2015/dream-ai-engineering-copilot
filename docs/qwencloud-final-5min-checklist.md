@@ -67,6 +67,7 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 
 ```powershell
 scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
+scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 
@@ -145,6 +146,9 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 - Confirm the bundle also includes the latest `deploy-preflight-*.md/json` so
   the Docker build and container `/health` smoke proof is available with the
   upload files.
+- If deploying through GitHub Actions, confirm
+  `scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft` reports all
+  required secrets present before running `Qwen Cloud Release`.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 
