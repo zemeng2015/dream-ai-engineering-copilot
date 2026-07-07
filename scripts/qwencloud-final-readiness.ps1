@@ -1,0 +1,315 @@
+param(
+    [Parameter(Mandatory = $false)]
+    [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
+    [Parameter(Mandatory = $false)]
+    [string]$DemoVideoUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$BackendUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$BlogPostUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$OutputDir = "artifacts/qwencloud-proof",
+    [switch]$SkipPacket,
+    [switch]$SkipBackendDraft,
+    [switch]$SkipExternalUrlChecks,
+    [switch]$AllowDraftPacket
+)
+
+$ErrorActionPreference = "Stop"
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+$reportJson = Join-Path $OutputDir "final-readiness-$timestamp.json"
+$reportMd = Join-Path $OutputDir "final-readiness-$timestamp.md"
+$checks = @()
+
+function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
+    $script:checks += [ordered]@{
+        name = $Name
+        ok = $Ok
+        required = $Required
+        details = $Details
+    }
+}
+
+function Has-Command([string]$Name) {
+    return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
+}
+
+function Has-Env([string]$Name) {
+    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+}
+
+function Get-PowerShellExe {
+    $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+    if ($pwsh) { return $pwsh.Source }
+
+    $powershell = Get-Command "powershell" -ErrorAction SilentlyContinue
+    if ($powershell) { return $powershell.Source }
+
+    throw "PowerShell executable not found."
+}
+
+function Test-File([string]$Path, [int]$MinBytes = 1) {
+    if (-not (Test-Path $Path)) {
+        return [pscustomobject]@{ ok = $false; details = "missing: $Path" }
+    }
+    $item = Get-Item $Path
+    return [pscustomobject]@{
+        ok = $item.Length -ge $MinBytes
+        details = "path=$Path; size=$($item.Length)"
+    }
+}
+
+function Test-ServerlessDevsDefaultAccess {
+    if (-not (Has-Command "s")) {
+        return [pscustomobject]@{ ok = $false; details = "s command missing" }
+    }
+
+    try {
+        $output = (& s config get -a default 2>&1) -join "`n"
+        $ok = $output -notmatch "not yet|not found|not.*configured|configured key information"
+        $details = if ($ok) { "default access configured" } else { "default access not configured" }
+        return [pscustomobject]@{ ok = $ok; details = $details }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; details = $_.Exception.Message }
+    }
+}
+
+function Test-DockerDaemon {
+    if (-not (Has-Command "docker")) {
+        return [pscustomobject]@{ ok = $false; details = "docker command missing" }
+    }
+
+    try {
+        $stdout = Join-Path $OutputDir "final-readiness-docker-info-$timestamp.out"
+        $stderr = Join-Path $OutputDir "final-readiness-docker-info-$timestamp.err"
+        $proc = Start-Process -FilePath "docker" -ArgumentList @("info") -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        return [pscustomobject]@{ ok = ($proc.ExitCode -eq 0); details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; details = $_.Exception.Message }
+    }
+}
+
+function Get-VideoMetadata([string]$Path) {
+    if (-not (Test-Path $Path)) { return $null }
+    if (-not (Has-Command "ffprobe")) { return $null }
+
+    $probeJson = & ffprobe -v error -show_entries format=duration,size,format_name -show_streams -of json $Path
+    $probe = $probeJson | ConvertFrom-Json
+    $stream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
+    return [pscustomobject]@{
+        duration = [double]$probe.format.duration
+        size = [int64]$probe.format.size
+        format = $probe.format.format_name
+        width = if ($stream) { [int]$stream.width } else { 0 }
+        height = if ($stream) { [int]$stream.height } else { 0 }
+        codec = if ($stream) { [string]$stream.codec_name } else { "" }
+    }
+}
+
+function Test-HeadCiSuccess {
+    if (-not (Has-Command "gh")) {
+        return [pscustomobject]@{ ok = $false; details = "gh command missing" }
+    }
+
+    try {
+        $head = (git rev-parse HEAD).Trim()
+        $runsJson = gh run list --branch main --limit 10 --json headSha,status,conclusion,url,displayTitle
+        $runs = $runsJson | ConvertFrom-Json
+        $run = @($runs | Where-Object { $_.headSha -eq $head } | Select-Object -First 1)
+        if (-not $run) {
+            return [pscustomobject]@{ ok = $false; details = "no CI run found for HEAD $head" }
+        }
+        return [pscustomobject]@{ ok = ($run.status -eq "completed" -and $run.conclusion -eq "success"); details = "$($run.displayTitle); status=$($run.status); conclusion=$($run.conclusion); $($run.url)" }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; details = $_.Exception.Message }
+    }
+}
+
+function Invoke-SubmissionPacket {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-hackathon-submission-packet.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) {
+        $args += "-AllowDraft"
+    }
+
+    $stdout = Join-Path $OutputDir "final-readiness-packet-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-packet-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"; packet = $null }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "packet JSON not found; stdout=$stdout; stderr=$stderr"; packet = $null }
+    }
+
+    $packet = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($packet.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$packet.readyForDevpost
+        details = if ($packet.readyForDevpost) { "packet READY: $($newest.FullName)" } else { "packet DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+        packet = $packet
+    }
+}
+
+try {
+    $gitStatus = @(git status --porcelain)
+    Add-Check -Name "git_worktree_clean" -Ok ($gitStatus.Count -eq 0) -Details $(if ($gitStatus.Count -eq 0) { "clean" } else { "dirty" })
+}
+catch {
+    Add-Check -Name "git_worktree_clean" -Ok $false -Details $_.Exception.Message
+}
+
+try {
+    $sync = (git rev-list --left-right --count "HEAD...@{u}") -split "\s+"
+    $ahead = [int]$sync[0]
+    $behind = [int]$sync[1]
+    Add-Check -Name "git_remote_synced" -Ok ($ahead -eq 0 -and $behind -eq 0) -Details "ahead=$ahead; behind=$behind"
+}
+catch {
+    Add-Check -Name "git_remote_synced" -Ok $false -Details $_.Exception.Message
+}
+
+$ci = Test-HeadCiSuccess
+Add-Check -Name "latest_head_ci_success" -Ok $ci.ok -Details $ci.details
+
+foreach ($tool in @("python", "docker", "s", "ffmpeg", "ffprobe", "gh")) {
+    Add-Check -Name "tool.$tool" -Ok (Has-Command $tool) -Details $(if (Has-Command $tool) { (Get-Command $tool).Source } else { "missing" })
+}
+
+$docker = Test-DockerDaemon
+Add-Check -Name "docker_daemon_ready" -Ok $docker.ok -Details $docker.details
+
+$sAccess = Test-ServerlessDevsDefaultAccess
+Add-Check -Name "serverless_devs_default_access" -Ok $sAccess.ok -Details $sAccess.details
+
+foreach ($envName in @("DASHSCOPE_API_KEY", "ALIBABA_CLOUD_REGION", "ALIBABA_CLOUD_CONTAINER_IMAGE")) {
+    Add-Check -Name "env.$envName" -Ok (Has-Env $envName) -Details $(if (Has-Env $envName) { "set" } else { "missing" })
+}
+foreach ($envName in @("QWEN_BASE_URL", "QWEN_MODEL")) {
+    Add-Check -Name "env.$envName" -Ok (Has-Env $envName) -Details $(if (Has-Env $envName) { "set" } else { "optional default available" }) -Required $false
+}
+
+foreach ($path in @(
+    "docs/assets/qwencloud-architecture.png",
+    "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
+    "deploy/alibaba/serverless-devs.yaml",
+    "scripts/qwencloud-alibaba-release.ps1",
+    "scripts/qwencloud-render-alibaba-proof-video.ps1",
+    "scripts/qwencloud-hackathon-submission-packet.ps1"
+)) {
+    $fileCheck = Test-File -Path $path
+    Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
+}
+
+$demoVideo = Get-VideoMetadata -Path "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4"
+if ($demoVideo) {
+    Add-Check -Name "demo_video_under_3_minutes" -Ok ($demoVideo.duration -gt 0 -and $demoVideo.duration -lt 180) -Details "duration=$($demoVideo.duration); size=$($demoVideo.size); resolution=$($demoVideo.width)x$($demoVideo.height)"
+}
+else {
+    Add-Check -Name "demo_video_under_3_minutes" -Ok $false -Details "ffprobe unavailable or demo video missing"
+}
+
+foreach ($path in @(
+    "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
+    "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4"
+)) {
+    $fileCheck = Test-File -Path $path
+    Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
+}
+
+if (-not $SkipPacket) {
+    $packetCheck = Invoke-SubmissionPacket
+    Add-Check -Name "devpost_submission_packet_ready" -Ok $packetCheck.ok -Details $packetCheck.details
+}
+else {
+    Add-Check -Name "devpost_submission_packet_ready" -Ok $true -Details "skipped by -SkipPacket" -Required $false
+}
+
+$requiredFailures = @($checks | Where-Object { $_.required -and -not $_.ok })
+$ready = $requiredFailures.Count -eq 0
+$result = [ordered]@{
+    generatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    readyForFinalSubmit = $ready
+    repoUrl = $RepoUrl
+    demoVideoUrl = $DemoVideoUrl
+    backendUrl = $BackendUrl
+    blogPostUrl = $BlogPostUrl
+    reportJson = $reportJson
+    reportMarkdown = $reportMd
+    checks = $checks
+}
+Set-Content -Path $reportJson -Value ($result | ConvertTo-Json -Depth 12) -Encoding UTF8
+
+$lines = @(
+    "# Qwen Cloud Final Readiness ($timestamp)",
+    "",
+    "- Ready for final Devpost submit: $ready",
+    "- Repo: $RepoUrl",
+    "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
+    "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
+    "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
+    "",
+    "## Checks",
+    "",
+    "| Check | Required | Result | Details |",
+    "|---|---:|---:|---|"
+)
+
+foreach ($check in $checks) {
+    $resultText = if ($check.ok) { "PASS" } else { "FAIL" }
+    $required = if ($check.required) { "yes" } else { "no" }
+    $lines += "| $($check.name) | $required | $resultText | $($check.details -replace '\|', '/') |"
+}
+
+$lines += @(
+    "",
+    "## Next Command",
+    "",
+    '```powershell',
+    'scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"',
+    '```'
+)
+
+if (-not $ready) {
+    $lines += @(
+        "",
+        "## Missing Required Items",
+        ""
+    )
+    foreach ($failure in $requiredFailures) {
+        $lines += "- $($failure.name): $($failure.details)"
+    }
+}
+
+Set-Content -Path $reportMd -Value ($lines -join "`r`n") -Encoding UTF8
+
+if ($ready) {
+    Write-Host "Final readiness READY: $reportMd"
+}
+else {
+    Write-Host "Final readiness DRAFT: $reportMd" -ForegroundColor Yellow
+    Write-Host "Missing required checks: $($requiredFailures.name -join ', ')"
+    exit 1
+}

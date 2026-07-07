@@ -115,6 +115,11 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Confirm the packet reports `READY`, including public video URL reachability,
   backend health proof, architecture PNG dimensions, Alibaba screenshot
   readiness, Alibaba proof video readiness, and local demo video under 3 minutes.
+- Run the final readiness dashboard and confirm it reports `READY`:
+
+```powershell
+scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 

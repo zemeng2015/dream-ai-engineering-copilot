@@ -109,6 +109,14 @@ The packet must report `READY`; failures on the public video URL, deployed
 backend URL, Alibaba screenshot, Alibaba proof video, or upload asset checks
 mean the Devpost submission is still not complete.
 
+9. Run final readiness:
+
+```powershell
+scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
+
+This must report `READY` before the Devpost form is submitted.
+
 ## Submission packet
 
 - GitHub link

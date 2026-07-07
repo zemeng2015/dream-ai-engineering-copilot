@@ -18,6 +18,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
+  - `scripts/qwencloud-final-readiness.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -131,9 +132,11 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 3. Add public repo link and Apache-2.0 license.
 4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs
    and confirm it reports `READY`.
-5. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
-6. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
-7. Submit only after the external Devpost form shows accepted URLs.
+5. Run `scripts/qwencloud-final-readiness.ps1` with real URLs and confirm it
+   reports `READY`.
+6. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
+7. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
+8. Submit only after the external Devpost form shows accepted URLs.
 
 ## 7) Reproducibility Commands
 
@@ -156,4 +159,5 @@ Run helper scripts as needed:
 - `scripts/qwencloud-run-local-proof.ps1`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`
 - `scripts/qwencloud-render-alibaba-proof-video.ps1`
+- `scripts/qwencloud-final-readiness.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`

@@ -216,6 +216,12 @@ backend URLs are ready:
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+Run the final readiness dashboard before submitting:
+
+```powershell
+scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,

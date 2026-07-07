@@ -40,6 +40,7 @@ scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
@@ -80,6 +81,10 @@ architecture upload asset from the source SVG.
 architecture PNG dimensions, local demo video duration/resolution, backend
 health proof, Alibaba screenshot/video readiness, and copy/paste Devpost text.
 
+`qwencloud-final-readiness.ps1` is the final submit dashboard. It checks clean
+git state, remote sync, latest CI, local tools, cloud env, Serverless Devs,
+artifact readiness, and final Devpost packet readiness.
+
 ## Devpost fill order
 
 1. Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -91,6 +96,7 @@ health proof, Alibaba screenshot/video readiness, and copy/paste Devpost text.
 7. Upload or link Alibaba backend proof recording if Devpost requests it
 8. Upload demo video link
 9. Generate the final submission packet and copy testing instructions
-10. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
-11. Add optional build journey link if published
-12. Submit and immediately open public project page to confirm links are visible
+10. Run final readiness and confirm `READY`
+11. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
+12. Add optional build journey link if published
+13. Submit and immediately open public project page to confirm links are visible
