@@ -350,6 +350,12 @@ def test_devpost_materials_audit_registered_in_final_flow() -> None:
     final_action_board = (
         ROOT / "scripts" / "qwencloud-final-action-board.ps1"
     ).read_text(encoding="utf-8-sig")
+    finalizer = (ROOT / "scripts" / "qwencloud-finalize-after-urls.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    final_sprint = (ROOT / "scripts" / "qwencloud-final-sprint.ps1").read_text(
+        encoding="utf-8-sig"
+    )
 
     assert script_name in final_readiness
     assert "Invoke-DevpostMaterialsAudit" in final_readiness
@@ -362,3 +368,11 @@ def test_devpost_materials_audit_registered_in_final_flow() -> None:
     assert "devpost-materials-audit" in final_action_board
     assert "devpostMaterialsAuditReady" in final_action_board
     assert "Clear Devpost materials audit" in final_action_board
+    assert script_name in finalizer
+    assert 'Invoke-Step -Name "devpost-materials-audit"' in finalizer
+    assert "devpostMaterialsAuditJson" in finalizer
+    assert "devpost-materials-ready" in finalizer
+    assert "Devpost materials audit ready" in finalizer
+    assert "devpostMaterialsAuditReady" in final_sprint
+    assert "devpostMaterialsAuditJson" in final_sprint
+    assert "Clear Devpost materials audit" in final_sprint

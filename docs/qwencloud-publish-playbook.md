@@ -146,10 +146,10 @@ remaining action and whether Zack/action-time confirmation is required.
 
 `qwencloud-final-sprint.ps1` is the last-day cockpit. It refreshes video status,
 cloud credentials, live inputs, judging scorecard, GitHub secrets, release plan,
-Docker deploy preflight, official rules gate, final packet, upload bundle,
-release summary, readiness, and action board in one pass. After the public
-video and backend URL exist, pass `-RefreshAlibabaProof` so the same cockpit
-also captures the
+Docker deploy preflight, official rules gate, final packet, Devpost materials
+audit, upload bundle, release summary, readiness, and action board in one pass.
+After the public video and backend URL exist, pass `-RefreshAlibabaProof` so the
+same cockpit also captures the
 Alibaba screenshot and short proof recording. By default it only writes local
 status reports; use
 `-SetGitHubSecrets` or `-RunLocalRelease` only after action-time confirmation.
@@ -158,10 +158,10 @@ status reports; use
 public video and deployed backend URLs are known. With `-RefreshAlibabaProof`,
 it refreshes the official Devpost overview/rules source, validates the public
 video URL, captures the Alibaba proof screenshot, renders the short proof
-recording, validates proof integrity, runs the submission packet, final
-readiness dashboard, final upload bundle, release summary, and then writes a
-single final status report. The release summary is generated after the final
-upload bundle so it can report the bundle hash. Use
+recording, validates proof integrity, runs the submission packet, Devpost
+materials audit, final readiness dashboard, final upload bundle, release
+summary, and then writes a single final status report. The release summary is
+generated after the final upload bundle so it can report the bundle hash. Use
 `-SkipOfficialSourceRefresh` only for offline local rehearsal.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff

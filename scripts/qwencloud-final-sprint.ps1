@@ -359,6 +359,7 @@ $video = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublication = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
+$materialsAudit = Read-LatestJson -Filter "devpost-materials-audit-*.json"
 $scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $releaseArtifactIngest = Read-LatestJson -Filter "github-release-artifact-ingest-*.json"
@@ -424,6 +425,7 @@ $signals = [ordered]@{
     dockerDeployPreflightReady = [bool]($deployPreflightCheck -and $deployPreflightCheck.ok)
     deployedBackendUrlPresent = -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)
     officialRulesGateReady = [bool]($officialRules.data -and $officialRules.data.readyForOfficialRules)
+    devpostMaterialsAuditReady = [bool]($materialsAudit.data -and $materialsAudit.data.readyForDevpostMaterials)
     finalizeAfterUrlsReady = [bool]($finalize.data -and $finalize.data.readyForDevpostSubmit)
     releaseSummaryReady = [bool]($releaseSummary.data -and $releaseSummary.data.showcase.ready)
     finalUploadBundleReady = [bool]($uploadBundle.data -and $uploadBundle.data.readyForUpload)
@@ -473,6 +475,15 @@ if (-not $signals.judgingScorecardReady) {
             -Command 'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"; scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
             -RequiresZackConfirmation $true
     }
+}
+
+if (-not $signals.devpostMaterialsAuditReady) {
+    $materialsMissing = if ($materialsAudit.data) { @($materialsAudit.data.requiredFailures) -join ', ' } else { "Devpost materials audit report missing" }
+    Add-NextAction `
+        -Name "Clear Devpost materials audit" `
+        -Reason "The Devpost packet, draft payload, handoff, and autofill materials are not mutually READY: $materialsMissing." `
+        -Command 'scripts/qwencloud-devpost-materials-audit.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
+        -RequiresZackConfirmation $true
 }
 
 if (-not $signals.dockerDeployPreflightReady) {
@@ -559,6 +570,7 @@ $result = [ordered]@{
         videoPublicationHandoffJson = $videoPublication.file
         cloudCredentialsHandoffJson = $cloud.file
         liveInputsIntakeJson = $liveInputs.file
+        devpostMaterialsAuditJson = $materialsAudit.file
         judgingScorecardJson = $scorecard.file
         githubSecretsHandoffJson = $github.file
         githubReleaseArtifactIngestJson = $releaseArtifactIngest.file
@@ -620,6 +632,7 @@ $lines += @(
     "- Video publication handoff: $(if ($videoPublication.file) { $videoPublication.file } else { '<missing>' })",
     "- Cloud credentials handoff: $(if ($cloud.file) { $cloud.file } else { '<missing>' })",
     "- Live inputs intake: $(if ($liveInputs.file) { $liveInputs.file } else { '<missing>' })",
+    "- Devpost materials audit: $(if ($materialsAudit.file) { $materialsAudit.file } else { '<missing>' })",
     "- Judging scorecard: $(if ($scorecard.file) { $scorecard.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- GitHub release artifact ingest: $(if ($releaseArtifactIngest.file) { $releaseArtifactIngest.file } else { '<missing>' })",

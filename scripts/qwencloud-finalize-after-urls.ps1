@@ -184,6 +184,22 @@ if ($SkipExternalUrlChecks) { $packetArgs += "-SkipExternalUrlChecks" }
 if ($AllowDraft) { $packetArgs += "-AllowDraft" }
 Invoke-Step -Name "submission-packet" -ArgumentList $packetArgs
 
+$materialsAuditArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
+    "-RepoUrl", $RepoUrl,
+    "-OutputDir", $OutputDir
+)
+if ($DemoVideoUrl) { $materialsAuditArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $materialsAuditArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $materialsAuditArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $materialsAuditArgs += @("-EnvFile", $EnvFile) }
+if ($SkipBackendDraft) { $materialsAuditArgs += "-SkipBackendDraft" }
+if ($SkipExternalUrlChecks) { $materialsAuditArgs += "-SkipExternalUrlChecks" }
+if ($AllowDraft) { $materialsAuditArgs += "-AllowDraft" }
+Invoke-Step -Name "devpost-materials-audit" -ArgumentList $materialsAuditArgs
+
 $readinessArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -246,6 +262,7 @@ if ($BlogPostUrl) { $releaseSummaryArgs += @("-BlogPostUrl", $BlogPostUrl) }
 Invoke-Step -Name "release-summary" -ArgumentList $releaseSummaryArgs
 
 $packetJsonFile = Get-NewestFile -Filter "devpost-submission-packet-*.json"
+$materialsAuditJsonFile = Get-NewestFile -Filter "devpost-materials-audit-*.json"
 $liveInputsJsonFile = Get-NewestFile -Filter "live-inputs-intake-*.json"
 $readinessJsonFile = Get-NewestFile -Filter "final-readiness-*.json"
 $officialSourceJsonFile = Get-NewestFile -Filter "official-source-refresh-*.json"
@@ -259,15 +276,18 @@ $bundleManifestJsonFile = Get-ChildItem -LiteralPath $OutputDir -Filter "final-u
     Select-Object -First 1
 
 $packet = Read-JsonFile -File $packetJsonFile
+$materialsAudit = Read-JsonFile -File $materialsAuditJsonFile
 $readiness = Read-JsonFile -File $readinessJsonFile
 $bundleManifest = Read-JsonFile -File $bundleManifestJsonFile
 
 $packetReady = [bool]($packet -and $packet.readyForDevpost)
+$materialsAuditReady = [bool]($materialsAudit -and $materialsAudit.readyForDevpostMaterials)
 $readinessReady = [bool]($readiness -and $readiness.readyForFinalSubmit)
 $bundleReady = [bool]($bundleManifest -and $bundleManifest.readyForUpload)
-$ready = $packetReady -and $readinessReady -and $bundleReady
+$ready = $packetReady -and $materialsAuditReady -and $readinessReady -and $bundleReady
 
 Add-Step -Name "packet-ready" -Ok $packetReady -Details $(if ($packetJsonFile) { $packetJsonFile.FullName } else { "missing packet JSON" })
+Add-Step -Name "devpost-materials-ready" -Ok $materialsAuditReady -Details $(if ($materialsAuditJsonFile) { $materialsAuditJsonFile.FullName } else { "missing Devpost materials audit JSON" })
 Add-Step -Name "readiness-ready" -Ok $readinessReady -Details $(if ($readinessJsonFile) { $readinessJsonFile.FullName } else { "missing readiness JSON" })
 Add-Step -Name "bundle-ready" -Ok $bundleReady -Details $(if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { "missing bundle manifest JSON" })
 
@@ -289,6 +309,7 @@ $result = [ordered]@{
     releaseSummaryJson = if ($releaseSummaryJsonFile) { $releaseSummaryJsonFile.FullName } else { $null }
     liveInputsJson = if ($liveInputsJsonFile) { $liveInputsJsonFile.FullName } else { $null }
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
+    devpostMaterialsAuditJson = if ($materialsAuditJsonFile) { $materialsAuditJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
     bundleManifestJson = if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { $null }
     bundleZip = if ($bundleManifest) { $bundleManifest.zipPath } else { $null }
@@ -311,6 +332,7 @@ $lines = @(
     "- Alibaba screenshot: $AlibabaScreenshotPath",
     "- Alibaba proof video: $AlibabaProofVideoPath",
     "- Live inputs intake: $(if ($liveInputsJsonFile) { $liveInputsJsonFile.FullName } else { '<missing>' })",
+    "- Devpost materials audit: $(if ($materialsAuditJsonFile) { $materialsAuditJsonFile.FullName } else { '<missing>' })",
     "- Bundle zip: $(if ($bundleManifest) { $bundleManifest.zipPath } else { '<missing>' })",
     "",
     "## Steps",
@@ -329,6 +351,7 @@ if (-not $ready) {
         "## Not Ready Yet",
         "",
         "- Packet ready: $packetReady",
+        "- Devpost materials audit ready: $materialsAuditReady",
         "- Final readiness ready: $readinessReady",
         "- Final upload bundle ready: $bundleReady"
     )
