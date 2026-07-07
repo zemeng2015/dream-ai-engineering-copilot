@@ -190,6 +190,59 @@ function Invoke-DeadlineGuard {
     }
 }
 
+function Invoke-LiveInputsIntake {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "live-inputs-intake-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-live-inputs-intake.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-live-inputs-intake-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-live-inputs-intake-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Live inputs intake generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "live-inputs-intake-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "live inputs intake JSON missing; stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForLiveInputs
+        details = if ($data.readyForLiveInputs) { "READY: $($json.FullName)" } else { "DRAFT; missing=$(@($data.missingRequiredChecks) -join ', ')" }
+    }
+}
+
 function Invoke-GitHubCiProof {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "github-ci-proof-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -589,6 +642,7 @@ function Invoke-VideoPublicationHandoff {
 }
 
 $deadlineGuard = Invoke-DeadlineGuard
+$liveInputs = Invoke-LiveInputsIntake
 $githubCiProof = Invoke-GitHubCiProof
 $videoPublicationHandoff = Invoke-VideoPublicationHandoff
 $packet = Invoke-Packet
@@ -601,6 +655,7 @@ $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ready -Details $deadlineGuard.details
+Add-ExternalRequirement -Name "live_inputs_intake_ready" -Ok $liveInputs.ready -Details $liveInputs.details
 Add-ExternalRequirement -Name "github_ci_proof_ready" -Ok $githubCiProof.ready -Details $githubCiProof.details
 Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
@@ -653,6 +708,9 @@ Add-Item -Name "final_external_handoff_script" -Path "scripts/qwencloud-final-ex
 Add-Item -Name "deadline_guard_script" -Path "scripts/qwencloud-deadline-guard.ps1" -Required $false
 Add-Item -Name "deadline_guard_markdown" -Path $deadlineGuard.markdown
 Add-Item -Name "deadline_guard_json" -Path $deadlineGuard.json
+Add-Item -Name "live_inputs_intake_script" -Path "scripts/qwencloud-live-inputs-intake.ps1" -Required $false
+Add-Item -Name "live_inputs_intake_markdown" -Path $liveInputs.markdown
+Add-Item -Name "live_inputs_intake_json" -Path $liveInputs.json
 Add-Item -Name "github_ci_proof_script" -Path "scripts/qwencloud-github-ci-proof.ps1" -Required $false
 Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
 Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json

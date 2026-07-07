@@ -228,6 +228,52 @@ function Invoke-DeadlineGuard {
     }
 }
 
+function Invoke-LiveInputsIntake {
+    if (-not (Test-Path "scripts/qwencloud-live-inputs-intake.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-live-inputs-intake.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "live-inputs-intake-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-live-inputs-intake.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+
+    $stdout = Join-Path $OutputDir "final-readiness-live-inputs-intake-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-live-inputs-intake-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "live-inputs-intake-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "live inputs intake JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $intake = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($intake.missingRequiredChecks)
+    return [pscustomobject]@{
+        ok = [bool]$intake.readyForLiveInputs
+        details = if ($intake.readyForLiveInputs) { "live inputs READY: $($newest.FullName)" } else { "live inputs DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-GitHubCiProof {
     if (-not (Test-Path "scripts/qwencloud-github-ci-proof.ps1")) {
         return [pscustomobject]@{
@@ -465,6 +511,9 @@ Add-Check -Name "latest_head_ci_success" -Ok $ci.ok -Details $ci.details
 $deadlineGuard = Invoke-DeadlineGuard
 Add-Check -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ok -Details $deadlineGuard.details
 
+$liveInputs = Invoke-LiveInputsIntake
+Add-Check -Name "live_inputs_intake_ready" -Ok $liveInputs.ok -Details $liveInputs.details
+
 $githubCiProof = Invoke-GitHubCiProof
 Add-Check -Name "github_ci_proof_ready" -Ok $githubCiProof.ok -Details $githubCiProof.details
 
@@ -522,6 +571,7 @@ foreach ($path in @(
     "scripts/qwencloud-post-submit-verification.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
     "scripts/qwencloud-deadline-guard.ps1",
+    "scripts/qwencloud-live-inputs-intake.ps1",
     "scripts/qwencloud-github-ci-proof.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",

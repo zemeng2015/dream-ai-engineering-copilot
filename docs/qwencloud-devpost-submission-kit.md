@@ -35,6 +35,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-official-source-refresh.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
   - `scripts/qwencloud-deadline-guard.ps1`
+  - `scripts/qwencloud-live-inputs-intake.ps1`
   - `scripts/qwencloud-github-ci-proof.ps1`
   - `scripts/qwencloud-frontend-build-proof.ps1`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
@@ -249,6 +250,7 @@ Run helper scripts as needed:
 - `scripts/qwencloud-render-alibaba-proof-video.ps1`
 - `scripts/qwencloud-frontend-build-proof.ps1`
 - `scripts/qwencloud-deadline-guard.ps1`
+- `scripts/qwencloud-live-inputs-intake.ps1`
 - `scripts/qwencloud-github-ci-proof.ps1`
 - `scripts/qwencloud-final-readiness.ps1`
 - `scripts/qwencloud-final-upload-bundle.ps1`

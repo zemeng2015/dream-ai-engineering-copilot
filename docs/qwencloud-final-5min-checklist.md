@@ -53,6 +53,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `scripts/qwencloud-final-external-handoff.ps1`
   - `scripts/qwencloud-official-source-refresh.ps1`
   - `scripts/qwencloud-deadline-guard.ps1`
+  - `scripts/qwencloud-live-inputs-intake.ps1`
   - `scripts/qwencloud-github-ci-proof.ps1`
 
 - Open the judge-facing Angular route:
@@ -169,6 +170,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 ```powershell
 scripts/qwencloud-official-source-refresh.ps1
 scripts/qwencloud-deadline-guard.ps1
+scripts/qwencloud-live-inputs-intake.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-github-ci-proof.ps1
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
