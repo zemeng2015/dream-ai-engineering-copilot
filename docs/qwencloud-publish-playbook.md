@@ -103,7 +103,8 @@ Alibaba proof integrity, artifact readiness, and final Devpost packet readiness.
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission
 files are all in one place. It also includes the latest deploy preflight report,
-Docker build/run logs, and final action board when available.
+Docker build/run logs, final action board when available, and SHA256 hashes for
+bundled upload files so the final Devpost assets can be checked before submit.
 
 `qwencloud-final-action-board.ps1` runs video URL, cloud credential, GitHub
 secret, and final readiness checks, then emits one Markdown board with the next

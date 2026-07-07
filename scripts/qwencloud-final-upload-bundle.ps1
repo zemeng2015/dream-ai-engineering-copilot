@@ -43,16 +43,30 @@ $zipPath = Join-Path $OutputDir "final-upload-bundle-$timestamp.zip"
 $items = @()
 $missing = @()
 
+function Get-FileSha256([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return ""
+    }
+
+    return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
+}
+
 function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
     $exists = Test-Path $Path
     $dest = $null
     $details = ""
+    $sourceSha256 = ""
+    $bundledSha256 = ""
+    $size = 0
 
     if ($exists) {
         $source = Get-Item -LiteralPath $Path
+        $size = $source.Length
+        $sourceSha256 = Get-FileSha256 -Path $source.FullName
         $dest = Join-Path $script:uploadsDir $source.Name
         Copy-Item -LiteralPath $source.FullName -Destination $dest -Force
-        $details = "copied=$dest; size=$($source.Length)"
+        $bundledSha256 = Get-FileSha256 -Path $dest
+        $details = "copied=$dest; size=$size; sha256=$sourceSha256"
     }
     else {
         $details = "missing=$Path"
@@ -67,6 +81,10 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
         required = $Required
         exists = $exists
         bundledPath = $dest
+        sizeBytes = $size
+        sourceSha256 = $sourceSha256
+        bundledSha256 = $bundledSha256
+        hashMatches = ($exists -and $sourceSha256 -eq $bundledSha256)
         details = $details
     }
 }
@@ -413,13 +431,30 @@ $lines = @(
     "",
     "## Items",
     "",
-    "| Item | Required | Exists | Details |",
-    "|---|---:|---:|---|"
+    "| Item | Required | Exists | SHA256 | Details |",
+    "|---|---:|---:|---|---|"
 )
 foreach ($item in $items) {
     $required = if ($item.required) { "yes" } else { "no" }
     $exists = if ($item.exists) { "yes" } else { "no" }
-    $lines += "| $($item.name) | $required | $exists | $($item.details -replace '\|', '/') |"
+    $sha256 = if ($item.sourceSha256) { $item.sourceSha256 } else { "" }
+    $lines += "| $($item.name) | $required | $exists | $sha256 | $($item.details -replace '\|', '/') |"
+}
+
+$hashedUploadItems = @($items | Where-Object { $_.exists -and $_.bundledPath -and $_.sourceSha256 })
+if ($hashedUploadItems.Count -gt 0) {
+    $lines += @(
+        "",
+        "## Upload Integrity",
+        "",
+        "Use these hashes to confirm the files selected in Devpost match this final bundle before submitting.",
+        "",
+        "| Upload Item | Size Bytes | SHA256 |",
+        "|---|---:|---|"
+    )
+    foreach ($item in $hashedUploadItems) {
+        $lines += "| $($item.name) | $($item.sizeBytes) | $($item.sourceSha256) |"
+    }
 }
 
 if (-not $ready) {
