@@ -83,6 +83,12 @@ class MemoryClaimRetriever:
                     f"  - method: {claim.extraction.method}",
                 ]
             )
+            if claim.evidence.intake_proofs:
+                proof = claim.evidence.intake_proofs[0]
+                lines.append(
+                    "  - intake proof: "
+                    f"{proof.document_id} / {len(proof.section_proofs)} sections"
+                )
         return "\n".join(lines).rstrip() + "\n"
 
     @classmethod

@@ -70,11 +70,14 @@ export class DashboardComponent {
   readonly approvedSourceItems = computed(() =>
     this.intakeDocuments().filter((document) => this.sourceApproved(document)),
   );
+  readonly latestRequirementCases = computed(() =>
+    latestRequirementCasesByIdentity(this.requirementCases()),
+  );
   readonly jiraDraftsNeedReview = computed(() =>
-    this.requirementCases().filter((requirementCase) => !this.requirementApproved(requirementCase)),
+    this.latestRequirementCases().filter((requirementCase) => !this.requirementApproved(requirementCase)),
   );
   readonly approvedJiraDrafts = computed(() =>
-    this.requirementCases().filter((requirementCase) => this.requirementApproved(requirementCase)),
+    this.latestRequirementCases().filter((requirementCase) => this.requirementApproved(requirementCase)),
   );
   readonly prReviewRuns = computed(() =>
     this.auditRuns().filter((run) => run.useCase === 'pr_review_summary'),
@@ -85,8 +88,9 @@ export class DashboardComponent {
   readonly approvedPrReviews = computed(() =>
     this.prReviewRuns().filter((run) => this.runApproved(run.status)),
   );
+  readonly latestScorecards = computed(() => latestScorecardsByTarget(this.scorecards()));
   readonly evalsNeedReview = computed(() =>
-    this.scorecards().filter((scorecard) => scorecard.passStatus !== 'pass'),
+    this.latestScorecards().filter((scorecard) => scorecard.passStatus !== 'pass'),
   );
 
   readonly summaryMetrics = computed<DashboardMetric[]>(() => [
@@ -107,7 +111,7 @@ export class DashboardComponent {
     {
       label: 'Jira Drafts',
       value: this.jiraDraftsNeedReview().length,
-      note: `${this.approvedJiraDrafts().length} ready / approved`,
+      note: `${this.requirementCases().length} raw records / ${this.approvedJiraDrafts().length} ready`,
       tone: this.jiraDraftsNeedReview().length ? 'warning' : 'success',
       variant: 'jira',
     },
@@ -254,11 +258,68 @@ export class DashboardComponent {
   }
 
   private openQuestionCount(requirementCase: RequirementCase): number {
-    return requirementCase.questions.filter((question) => question.status !== 'answered').length;
+    return requirementCase.questions.filter((question) => question.status === 'open').length;
   }
 
   private outputTitleFromRun(run: AuditRun): string {
     const filename = run.outputPath.split('/').at(-1) || run.runId;
     return filename.replace(/\.md$/i, '').replace(/[-_]/g, ' ');
   }
+}
+
+function latestRequirementCasesByIdentity(cases: RequirementCase[]): RequirementCase[] {
+  const latestByKey = new Map<string, RequirementCase>();
+  for (const requirementCase of cases) {
+    const key = requirementIdentityKey(requirementCase);
+    const existing = latestByKey.get(key);
+    if (!existing || timestamp(requirementCase.updatedAt) > timestamp(existing.updatedAt)) {
+      latestByKey.set(key, requirementCase);
+    }
+  }
+  return [...latestByKey.values()].sort(
+    (left, right) => timestamp(right.updatedAt) - timestamp(left.updatedAt),
+  );
+}
+
+function requirementIdentityKey(requirementCase: RequirementCase): string {
+  return [
+    requirementCase.createdByRole,
+    requirementCase.title,
+    requirementCase.rawRequest,
+  ]
+    .map((part) => normalizeIdentityPart(part || ''))
+    .join('|');
+}
+
+function normalizeIdentityPart(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function timestamp(value: string): number {
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function latestScorecardsByTarget(scorecards: EvaluationScorecard[]): EvaluationScorecard[] {
+  const latestByKey = new Map<string, EvaluationScorecard>();
+  for (const scorecard of scorecards) {
+    const key = scorecardTargetKey(scorecard);
+    if (!latestByKey.has(key)) {
+      latestByKey.set(key, scorecard);
+    }
+  }
+  return [...latestByKey.values()];
+}
+
+function scorecardTargetKey(scorecard: EvaluationScorecard): string {
+  const target =
+    scorecard.targetId && scorecard.targetId !== scorecard.evaluationId
+      ? scorecard.targetId
+      : scorecard.caseId || scorecard.outputPath || scorecard.evaluationId;
+  return [
+    scorecard.targetType,
+    target,
+  ]
+    .map((part) => normalizeIdentityPart(part || ''))
+    .join('|');
 }

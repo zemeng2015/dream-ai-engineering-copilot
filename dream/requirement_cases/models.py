@@ -57,6 +57,9 @@ class ClarificationQuestion(BaseModel):
     answer: str | None = None
     answered_by: str | None = None
     answered_at: str | None = None
+    waived_reason: str | None = None
+    waived_by: str | None = None
+    waived_at: str | None = None
 
 
 class JiraReadiness(BaseModel):
@@ -64,6 +67,7 @@ class JiraReadiness(BaseModel):
     ready: bool
     status: str
     answered_questions: int
+    waived_questions: int = 0
     open_questions: int
     evidence_items: int
     impact_items: int
@@ -82,6 +86,16 @@ class RoleView(BaseModel):
 class EngineeringBrief(BaseModel):
     case_id: str
     markdown: str
+    sources_used: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class JiraDraftContext(BaseModel):
+    case_id: str
+    deterministic_markdown: str
+    prompt: str
+    prompt_char_count: int
+    deterministic_char_count: int
     sources_used: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 

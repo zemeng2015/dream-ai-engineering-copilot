@@ -1,0 +1,25 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<article class="panel search-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Evidence Search</h2>
+      <p>{{ results.length }} matches from the retriever.</p>
+    </div>
+  </div>
+  <div class="result-list">
+    @for (result of results; track result.sourcePath + result.resultType + result.title) {
+      <button class="result-row" type="button" (click)="sourceSelected.emit(result.sourcePath)">
+        <span class="status-pill status-info">{{ result.resultType }}</span>
+        <strong>{{ result.title }}</strong>
+        <small [title]="result.sourcePath">{{ result.sourcePath }}</small>
+        <p>{{ result.reason }} Score {{ scoreLabel(result.score) }}</p>
+      </button>
+    } @empty {
+      <div class="empty-state">
+        <strong>No search results yet.</strong>
+        <span>Run a search or refresh the repo index.</span>
+      </div>
+    }
+  </div>
+</article>

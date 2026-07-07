@@ -76,7 +76,12 @@
   }
 
   @if (isDetailRoute() && selectedScorecard(); as card) {
-    <a class="back-link" href="/audit" (click)="openEvalList($event)">Back to eval cases</a>
+    <div class="cluster-row">
+      <a class="back-link" href="/audit" (click)="openEvalList($event)">Back to eval cases</a>
+      @if (contextCaseId(card); as caseId) {
+        <a class="back-link" [routerLink]="['/context', caseId]">Open context trail</a>
+      }
+    </div>
     <section id="eval-detail" class="detail-grid" aria-label="Selected eval detail">
       <article class="panel case-panel">
         <div class="panel-header">
@@ -274,7 +279,11 @@
                 @if (run.sourcesUsed.length) {
                   <span class="source-chip-list">
                     @for (source of run.sourcesUsed; track source) {
-                      <span [attr.title]="source">{{ sourceFileName(source) }}</span>
+                      @if (sourceDocumentRoute(source); as route) {
+                        <a [routerLink]="route" [attr.title]="source">{{ sourceFileName(source) }}</a>
+                      } @else {
+                        <span [attr.title]="source">{{ sourceFileName(source) }}</span>
+                      }
                     }
                   </span>
                 } @else {
@@ -298,7 +307,9 @@
               <textarea id="rating-comments" formControlName="comments"></textarea>
             </div>
             <div class="form-field-full">
-              <button class="primary-button" type="submit">Save Human Rating</button>
+              <button class="primary-button" type="submit" [disabled]="ratingInFlight()">
+                {{ ratingInFlight() ? 'Saving...' : 'Save Human Rating' }}
+              </button>
             </div>
           </form>
 

@@ -1,0 +1,58 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<article class="panel repo-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Repo Files</h2>
+      <p>{{ repoPath }} / {{ files.length }} indexed files</p>
+    </div>
+  </div>
+  <nav class="repo-pathbar" aria-label="Current repo path">
+    @for (crumb of breadcrumbs; track crumb.path) {
+      <button
+        type="button"
+        class="repo-crumb"
+        [class.active]="crumb.path === currentFolderPath"
+        (click)="folderSelected.emit(crumb.path)"
+      >
+        {{ crumb.label }}
+      </button>
+      @if (!$last) {
+        <span>/</span>
+      }
+    }
+  </nav>
+  <div class="repo-tree">
+    @for (folder of folders; track folder.path) {
+      <button
+        type="button"
+        class="repo-folder-row"
+        (click)="folderSelected.emit(folder.path)"
+        [title]="folder.path"
+      >
+        <app-ui-icon name="chevron-right" />
+        <span>{{ folder.name }}</span>
+        <small>{{ folder.fileCount }} files</small>
+      </button>
+    }
+    @for (file of files; track file.fileId) {
+      <button
+        type="button"
+        class="repo-file"
+        [class.active]="selectedFilePath === file.path"
+        (click)="fileSelected.emit(file)"
+        [title]="file.path"
+      >
+        <app-ui-icon name="document" />
+        <span>{{ fileName(file.path) }}</span>
+        <small class="status-pill {{ roleClass(file.role) }}">{{ file.role }}</small>
+      </button>
+    }
+    @if (!folders.length && !files.length) {
+      <div class="empty-state">
+        <strong>No files in this folder.</strong>
+        <span>Use the breadcrumb above to move to another path.</span>
+      </div>
+    }
+  </div>
+</article>

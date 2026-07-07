@@ -31,6 +31,8 @@ The first implementation adds:
 - `MemoryClaimV0`-style claim models
 - deterministic structural claims from the codebase index
 - heuristic semantic candidate claims from team knowledge-pack Markdown
+- deterministic `match_explanation` and `matched_terms` for claims derived from
+  promoted intake documents
 - source/citation/security validation summary
 - repo provenance capture for commit SHA, dirty state, scanner version, and schema version
 - redacted source previews for secret-like assignments and common token patterns
@@ -82,6 +84,14 @@ curl -X POST http://localhost:8000/memory/scan \
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
 
+curl "http://localhost:8000/memory/conflicts?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/conflicts/resolve \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","conflict_id":"<conflict_id>","winning_claim_id":"<claim_id>","reviewer":"zack","reason":"Source A is authoritative."}'
+
+curl "http://localhost:8000/memory/conflict-resolutions?team_id=demo_team"
+
 curl -X POST http://localhost:8000/memory/review \
   -H "Content-Type: application/json" \
   -d '{"team_id":"demo_team","claim_id":"<claim_id>","status":"approved","reviewer":"zack"}'
@@ -113,9 +123,18 @@ Semantic claims are never auto-promoted in this MVP. They must remain candidates
 until a reviewer approves them.
 
 Review events are appended to a durable ledger. The ledger records claim id,
-scan id, previous status, new status, reviewer, reason, and review timestamp.
-The latest ledger event for a claim overrides the scan's original governance
-status during approved-claim retrieval.
+scan id, previous status, new status, reviewer, reason, review timestamp,
+reviewer signature, field-level governance diffs, a claim snapshot, and
+raw risk/conflict signals plus reviewer-readable signal explanations. The latest
+ledger event for a claim overrides the scan's original governance status during
+approved-claim retrieval.
+
+`/memory/conflicts` reports active single-value conflict pairs. The report keeps
+both claims, effective review statuses, latest review events, evidence paths,
+intake document ids, and a conflict explanation so reviewers can compare the raw
+trace before approving durable memory. `/memory/conflicts/resolve` supports the
+initial `approve_winner_reject_other` action and writes both normal review
+events plus a dedicated conflict resolution ledger event.
 
 ## Provenance And Redaction
 
@@ -168,6 +187,6 @@ Source Registry
 ```
 
 The current implementation covers the path through candidate claims, validation,
-true diff, durable ledger, approved-claim retrieval, context-card output, and
-eval artifacts. The UI approval workflow and direct workflow integration are the
-next natural steps.
+true diff, durable ledger, compact UI approval workflow, approved-claim
+retrieval, context-card output, and eval artifacts. Richer semantic explanation
+and direct workflow integration are the next natural steps.

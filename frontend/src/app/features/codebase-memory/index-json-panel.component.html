@@ -1,0 +1,17 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<article class="panel index-json-panel">
+  <div class="panel-header">
+    <div>
+      <h2>JSON Index</h2>
+      <p [title]="repoIndexPath">{{ repoIndexPath }}</p>
+    </div>
+  </div>
+  <details class="json-card" open>
+    <summary>
+      <strong>Selected file record</strong>
+      <span>highlighted index node</span>
+    </summary>
+    <pre class="json-block selected-json-block">{{ selectedFileJson }}</pre>
+  </details>
+</article>

@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.memory.models import MemoryIntakeProof
+
 
 class RetrievalStep(BaseModel):
     step_name: str
@@ -33,6 +35,7 @@ class MemoryClaimReference(BaseModel):
     relation: str
     value: str | None = None
     evidence_paths: list[str] = Field(default_factory=list)
+    intake_proofs: list[MemoryIntakeProof] = Field(default_factory=list)
     reason: str = ""
 
 

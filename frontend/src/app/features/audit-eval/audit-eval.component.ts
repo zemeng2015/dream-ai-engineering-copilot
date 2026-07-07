@@ -4,7 +4,7 @@ import { KeyValuePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
 import {
@@ -14,7 +14,8 @@ import {
   HumanRating,
   RequirementCase,
 } from '../../core/dream-models';
-import { DreamApiService } from '../../core/dream-api.service';
+import { DreamApiService, IntakeDocument } from '../../core/dream-api.service';
+import { sourceDocumentRoute as routeForSourceDocument } from '../../core/source-provenance';
 
 interface ScoringStandard {
   label: string;
@@ -25,7 +26,7 @@ interface ScoringStandard {
 @Component({
   selector: 'app-audit-eval',
   standalone: true,
-  imports: [KeyValuePipe, ReactiveFormsModule],
+  imports: [KeyValuePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './audit-eval.component.html',
   styleUrl: './audit-eval.component.scss',
 })
@@ -37,8 +38,11 @@ export class AuditEvalComponent {
 
   readonly runs = signal<AuditRun[]>([]);
   readonly ratings = signal<HumanRating[]>([]);
+  readonly ratingsRunId = signal<string | null>(null);
+  readonly ratingInFlight = signal(false);
   readonly scorecards = signal<EvaluationScorecard[]>([]);
   readonly requirementCases = signal<RequirementCase[]>([]);
+  readonly intakeDocuments = signal<IntakeDocument[]>([]);
   readonly apiScorecard = signal<EvaluationScorecard | null>(null);
   readonly apiRun = signal<AuditRun | null>(null);
   readonly apiRequirementCase = signal<RequirementCase | null>(null);
@@ -180,6 +184,17 @@ export class AuditEvalComponent {
     effect(() => {
       this.loadApiDetail(this.targetId());
     });
+    effect(() => {
+      const runId = this.selectedRun()?.runId ?? null;
+      if (!runId) {
+        this.ratings.set([]);
+        this.ratingsRunId.set(null);
+        return;
+      }
+      if (this.ratingsRunId() !== runId) {
+        this.loadRatings(runId);
+      }
+    });
   }
 
   selectRun(run: AuditRun): void {
@@ -237,14 +252,30 @@ export class AuditEvalComponent {
       this.ratingForm.markAllAsTouched();
       return;
     }
-    this.ratings.update((ratings) => [
-      {
+    this.ratingInFlight.set(true);
+    this.apiError.set(null);
+    const value = this.ratingForm.getRawValue();
+    this.api
+      .rateAuditRun({
         runId: run.runId,
-        createdAt: new Date().toISOString(),
-        ...this.ratingForm.getRawValue(),
-      },
-      ...ratings,
-    ]);
+        usefulnessScore: value.usefulnessScore,
+        correctnessScore: value.correctnessScore,
+        comments: value.comments,
+      })
+      .subscribe({
+        next: (rating) => {
+          this.ratingsRunId.set(run.runId);
+          this.ratings.update((ratings) => [
+            rating,
+            ...ratings.filter((item) => item.createdAt !== rating.createdAt),
+          ]);
+          this.ratingInFlight.set(false);
+        },
+        error: () => {
+          this.apiError.set('Could not persist the human rating.');
+          this.ratingInFlight.set(false);
+        },
+      });
   }
 
   loadApiLists(): void {
@@ -253,11 +284,13 @@ export class AuditEvalComponent {
       runs: this.api.listAuditRuns('DREAM').pipe(catchError(() => of([]))),
       scorecards: this.api.listEvaluationRuns().pipe(catchError(() => of([]))),
       requirementCases: this.api.listRequirementCases().pipe(catchError(() => of([]))),
+      intakeDocuments: this.api.listIntakeDocuments().pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ runs, scorecards, requirementCases }) => {
+      next: ({ runs, scorecards, requirementCases, intakeDocuments }) => {
         this.runs.set(runs);
         this.scorecards.set(scorecards);
         this.requirementCases.set(requirementCases);
+        this.intakeDocuments.set(intakeDocuments);
       },
       error: () => {
         this.apiError.set('Could not load FastAPI audit and eval data.');
@@ -330,12 +363,20 @@ export class AuditEvalComponent {
   }
 
   openQuestionCount(requirementCase: RequirementCase): number {
-    return requirementCase.questions.filter((question) => question.status !== 'answered').length;
+    return requirementCase.questions.filter((question) => question.status === 'open').length;
+  }
+
+  contextCaseId(scorecard: EvaluationScorecard): string | null {
+    return scorecard.caseId || (scorecard.targetId.startsWith('case-') ? scorecard.targetId : null);
   }
 
   sourceFileName(sourcePath: string): string {
     const normalized = sourcePath.split('#')[0];
     return normalized.split('/').pop() || sourcePath;
+  }
+
+  sourceDocumentRoute(sourcePath: string): string[] | null {
+    return routeForSourceDocument(sourcePath, this.intakeDocuments());
   }
 
   private loadApiDetail(targetId: string | null): void {
@@ -393,6 +434,19 @@ export class AuditEvalComponent {
     this.api.getRequirementCase(caseId).subscribe({
       next: (requirementCase) => this.apiRequirementCase.set(requirementCase),
       error: () => this.apiRequirementCase.set(null),
+    });
+  }
+
+  private loadRatings(runId: string): void {
+    this.api.listHumanRatings(runId).subscribe({
+      next: (ratings) => {
+        this.ratingsRunId.set(runId);
+        this.ratings.set(ratings);
+      },
+      error: () => {
+        this.ratingsRunId.set(runId);
+        this.ratings.set([]);
+      },
     });
   }
 }

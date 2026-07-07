@@ -81,12 +81,18 @@
           <div class="request-actions">
             <button class="primary-button" type="submit" [disabled]="isLoading()">
               <app-ui-icon name="clipboard" />
-              {{ isLoading() ? 'Running lifecycle...' : 'Generate Jira Proposal' }}
+              {{ isLoading() ? lifecycleButtonLabel() : 'Generate Jira Proposal' }}
             </button>
             @if (apiError(); as message) {
               <div class="warning-callout">{{ message }}</div>
             }
           </div>
+          <app-requirement-lifecycle-progress
+            [steps]="lifecycleSteps"
+            [activeIndex]="lifecycleStepIndex()"
+            [durations]="lifecycleDurations()"
+            [state]="lifecycleState()"
+          />
         </form>
       </div>
     </article>
@@ -119,14 +125,23 @@
               <dd>{{ workflowModeLabel(draft) }}</dd>
             </div>
             <div>
-              <dt>Model</dt>
+              <dt>Draft</dt>
               <dd>{{ modelLabel(draft) }}</dd>
+            </div>
+            <div>
+              <dt>Rubric</dt>
+              <dd>deterministic / evaluation-agent-v1</dd>
             </div>
             <div>
               <dt>Case</dt>
               <dd>{{ draft.requirementCase.caseId }}</dd>
             </div>
           </dl>
+          <div class="judge-summary" [attr.data-state]="llmJudgeState(draft)">
+            <strong>{{ llmJudgeStatusLabel(draft) }}</strong>
+            <span>{{ llmJudgeMeta(draft) }}</span>
+            <p>{{ llmJudgeDetail(draft) }}</p>
+          </div>
           <ul>
             @for (recommendation of draft.scorecard.recommendations.slice(0, 2); track recommendation) {
               <li>{{ recommendation }}</li>
@@ -134,6 +149,10 @@
           </ul>
           <a class="secondary-button detail-link" [routerLink]="['/audit', draft.scorecard.evaluationId]">
             View eval details
+            <app-ui-icon name="chevron-right" />
+          </a>
+          <a class="secondary-button detail-link" [routerLink]="['/context', draft.requirementCase.caseId]">
+            View context trail
             <app-ui-icon name="chevron-right" />
           </a>
         </div>
@@ -190,11 +209,7 @@
           </div>
           <div>
             <strong>2. Match memory</strong>
-            <p>
-              @for (family of sourceFamilies(draft); track family.label) {
-                <span>{{ family.label }} {{ family.count }}</span>
-              }
-            </p>
+            <p>{{ memoryMatchSummary(draft) }}</p>
           </div>
           <div>
             <strong>3. Map impact</strong>
@@ -217,6 +232,24 @@
                     <strong>{{ fileName(file.path) }}</strong>
                     <small>{{ file.path }}</small>
                     <p>{{ file.reason }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Memory Sources</h3>
+              <div class="file-impact-list">
+                @for (source of draft.sourcesUsed; track source.id) {
+                  <div>
+                    <span class="status-pill status-neutral">{{ sourceTypeLabel(source.sourceType) }}</span>
+                    <strong>{{ source.title }}</strong>
+                    <small>{{ source.sourcePath }}</small>
+                    @if (sourceDocumentRoute(source.sourcePath); as route) {
+                      <a class="link-button" [routerLink]="route">
+                        Source detail
+                        <app-ui-icon name="chevron-right" />
+                      </a>
+                    }
                   </div>
                 }
               </div>
@@ -255,50 +288,21 @@
             {{ readinessLabel(draft) }}
           </span>
         </div>
-        <pre class="markdown-preview">{{ draft.markdown }}</pre>
-      </article>
-
-      <article class="panel questions-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Open Questions</h2>
-            <p>Human answers are saved into the next Jira draft.</p>
-          </div>
-          <button class="secondary-button" type="button" (click)="regenerateJiraDraft()">
-            {{ isLoading() ? 'Regenerating...' : 'Regenerate' }}
-          </button>
-        </div>
-        <div class="panel-body question-list">
-          @for (question of draft.requirementCase.questions; track question.questionId) {
-            <div class="question-row">
-              <div class="question-heading">
-                <span class="status-pill status-neutral">{{ question.targetRole }}</span>
-                <span
-                  class="status-pill"
-                  [class.status-success]="question.status === 'answered'"
-                  [class.status-warning]="question.status !== 'answered'"
-                >
-                  {{ question.status }}
-                </span>
-              </div>
-              <strong>{{ question.question }}</strong>
-              <p>{{ question.whyItMatters }}</p>
-              <textarea
-                [value]="questionAnswers()[question.questionId] || question.answer || ''"
-                (input)="updateQuestionAnswer(question.questionId, $event)"
-                placeholder="Type the human answer for this Jira draft."
-              ></textarea>
-              <button
-                class="secondary-button"
-                type="button"
-                (click)="saveQuestionAnswer(question.questionId)"
-                [disabled]="isQuestionSaving(question.questionId)"
-              >
-                {{ isQuestionSaving(question.questionId) ? 'Saving...' : 'Save answer' }}
-              </button>
-            </div>
-          }
-        </div>
+        <app-jira-proposal-view
+          [markdown]="draft.markdown"
+          [questions]="draft.requirementCase.questions"
+          [questionAnswers]="questionAnswers()"
+          [questionWaivers]="questionWaivers()"
+          [waiverReasons]="waiverReasons"
+          [savingQuestionId]="activeQuestionId()"
+          [affectedFileLinks]="proposalAffectedFileLinks(draft)"
+          [sourceLinks]="proposalSourceLinks(draft)"
+          (questionAnswerChange)="updateQuestionAnswer($event.questionId, $event.value)"
+          (questionAnswerSave)="saveQuestionAnswer($event)"
+          (questionWaiverReasonChange)="updateQuestionWaiverReason($event.questionId, $event.value)"
+          (questionWaiverNoteChange)="updateQuestionWaiverNote($event.questionId, $event.value)"
+          (questionWaive)="waiveQuestion($event)"
+        />
       </article>
     </section>
   } @else {

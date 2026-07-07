@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import json
+
 from fastapi.testclient import TestClient
 
 from dream.api.app import create_app
@@ -10,6 +12,34 @@ from dream.evals.evaluator import EvaluationAgent
 from dream.evals.evidence import EvalProfileLoader, EvidenceCoverageAnalyzer
 from dream.evals.models import EvaluationRequest
 from dream.evals.repository import EvaluationRepository
+from dream.llm import LLMResponse
+
+
+class FakeJudgeLLMProvider:
+    provider_name = "fake-judge"
+    model_name = "fake-judge-model"
+
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    def complete(self, prompt) -> LLMResponse:
+        text = prompt.prompt if hasattr(prompt, "prompt") else str(prompt)
+        self.prompts.append(text)
+        return LLMResponse(
+            text=json.dumps(
+                {
+                    "summary": "The draft is grounded but still needs human answers.",
+                    "readiness": "needs_review",
+                    "confidence": 0.82,
+                    "risks": ["Open role questions still block handoff."],
+                    "missing_evidence": ["No answered BA decision is cited."],
+                    "recommendations": ["Resolve role questions before final Jira approval."],
+                }
+            ),
+            model_name=self.model_name,
+            provider_name=self.provider_name,
+            token_usage={"prompt_tokens": 100, "completion_tokens": 40},
+        )
 
 
 def test_eval_profile_loader_reads_async_status_profile() -> None:
@@ -119,6 +149,63 @@ Add async status tracking so Analysts can see which Task is still RUNNING.
     assert repository.get(result.scorecard.evaluation_id) == result.scorecard
 
 
+def test_evaluation_agent_can_attach_llm_judge_result(tmp_path) -> None:
+    artifact_dir = ensure_artifacts_dir() / "test-eval"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    artifact = artifact_dir / "judge-brief.md"
+    artifact.write_text(
+        """
+# Engineering Brief
+
+## 1. Request Summary
+Add async status tracking for running tasks.
+
+## 4. Impact Map
+- backend: StatusTracker.java
+- frontend: execution-monitor.component.ts
+
+## 6. Role-specific Clarification Questions
+## BA
+- What labels should users see?
+
+## 8. Test Strategy
+- Add StatusTrackerTest.java.
+
+## 11. Sources Used
+- status-tracking-design.md
+- INC-103
+- DFP-101
+""",
+        encoding="utf-8",
+    )
+    provider = FakeJudgeLLMProvider()
+    repository = EvaluationRepository(tmp_path / "eval.sqlite")
+    agent = EvaluationAgent(
+        repository=repository,
+        audit_repository=AuditRepository(tmp_path / "audit.sqlite"),
+        llm_judge_provider=provider,
+    )
+
+    result = agent.evaluate(
+        EvaluationRequest(
+            target_type="engineering_brief",
+            artifact_path=display_path(artifact),
+            team_id="demo_team",
+            judge_provider="fake-judge",
+        )
+    )
+
+    assert provider.prompts
+    assert result.scorecard.llm_judge is not None
+    assert result.scorecard.llm_judge.status == "completed"
+    assert result.scorecard.llm_judge.provider == "fake-judge"
+    assert result.scorecard.llm_judge.model == "fake-judge-model"
+    assert result.scorecard.llm_judge.readiness == "needs_review"
+    assert result.scorecard.llm_judge.input_hash
+    assert "## LLM Judge" in result.markdown_report
+    assert repository.get(result.scorecard.evaluation_id) == result.scorecard
+
+
 def test_evaluation_agent_flags_weak_pr_review(tmp_path) -> None:
     artifact_dir = ensure_artifacts_dir() / "test-eval"
     artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -195,3 +282,11 @@ StatusTracker.java needs async tracking.
     assert detail_response.json()["json_path"].endswith(f"{evaluation_id}.json")
     assert detail_response.json()["markdown_path"].endswith(f"{evaluation_id}.md")
     assert "warnings" in detail_response.json()
+
+    judge_response = client.post(
+        f"/eval/runs/{evaluation_id}/judge",
+        json={"judge_provider": "mock"},
+    )
+
+    assert judge_response.status_code == 200
+    assert judge_response.json()["scorecard"]["llm_judge"]["status"] == "failed"

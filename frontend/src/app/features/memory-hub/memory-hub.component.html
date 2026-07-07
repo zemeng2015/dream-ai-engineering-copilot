@@ -67,16 +67,31 @@
                 <p>{{ item.teamId }} / {{ item.documentType }}</p>
                 <small [attr.title]="sourceFullPath(item)">{{ sourceReviewSummary(item) }}</small>
               </div>
-              @if (sourceActionLabel(item); as actionLabel) {
-                <button
-                  class="secondary-button row-action"
-                  type="button"
-                  [disabled]="sourceActionInFlight() === item.documentId"
-                  (click)="runSourceAction(item)"
-                >
-                  {{ sourceActionInFlight() === item.documentId ? 'Working...' : actionLabel }}
-                </button>
-              }
+              <div class="row-actions">
+                <a class="secondary-button row-action" [routerLink]="['/memory', item.documentId]">
+                  Details
+                </a>
+                @if (canEditMetadata(item)) {
+                  <button
+                    class="secondary-button row-action"
+                    type="button"
+                    [disabled]="metadataInFlight() && selectedMetadataDocument()?.documentId === item.documentId"
+                    (click)="openMetadataEditor(item)"
+                  >
+                    Metadata
+                  </button>
+                }
+                @if (sourceActionLabel(item); as actionLabel) {
+                  <button
+                    class="secondary-button row-action"
+                    type="button"
+                    [disabled]="sourceActionInFlight() === item.documentId"
+                    (click)="runSourceAction(item)"
+                  >
+                    {{ sourceActionInFlight() === item.documentId ? 'Working...' : actionLabel }}
+                  </button>
+                }
+              </div>
             </div>
           } @empty {
             <div class="empty-state">
@@ -85,6 +100,56 @@
             </div>
           }
         </div>
+
+        @if (selectedMetadataDocument(); as metadataItem) {
+          <section class="metadata-editor" aria-label="Draft metadata editor">
+            <div class="section-subheader">
+              <div>
+                <h3>Draft Metadata</h3>
+                <p>{{ metadataItem.title }} / {{ sourceStatusLabel(metadataItem.status) }}</p>
+              </div>
+            </div>
+            <form class="add-source-form" [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
+              <div class="form-field">
+                <label for="draft-title">Title</label>
+                <input id="draft-title" formControlName="title" />
+              </div>
+              <div class="form-field">
+                <label for="draft-type">Document type</label>
+                <select id="draft-type" formControlName="documentType">
+                  <option value="runbooks">Runbook</option>
+                  <option value="architecture">Architecture doc</option>
+                  <option value="domain">Domain doc</option>
+                  <option value="incidents">Incident note</option>
+                  <option value="testing">Testing doc</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="draft-app">App</label>
+                <input id="draft-app" formControlName="app" />
+              </div>
+              <div class="form-field">
+                <label for="draft-component">Component</label>
+                <input id="draft-component" formControlName="component" />
+              </div>
+              <div class="form-field-full">
+                <label for="draft-concepts">Concepts</label>
+                <input id="draft-concepts" formControlName="concepts" />
+              </div>
+              <div class="form-field-full cluster-row">
+                <button class="primary-button" type="submit" [disabled]="metadataInFlight()">
+                  Save Metadata
+                </button>
+                <button class="secondary-button" type="button" (click)="closeMetadataEditor()">
+                  Close
+                </button>
+                @if (selectedKnowledgeDraft(); as draft) {
+                  <span class="helper-text">{{ provenanceSummary(draft) }}</span>
+                }
+              </div>
+            </form>
+          </section>
+        }
 
         <section class="structured-docs-section" aria-label="Structured docs in memory">
           <div class="section-subheader">
@@ -109,6 +174,11 @@
                   <p>Structured {{ item.documentType }} / {{ item.teamId }}</p>
                   <small [attr.title]="sourceFullPath(item)">{{ sourceFileName(item) }}</small>
                 </div>
+                <div class="row-actions">
+                  <a class="secondary-button row-action" [routerLink]="['/memory', item.documentId]">
+                    Details
+                  </a>
+                </div>
               </div>
             } @empty {
               <div class="empty-state">
@@ -123,7 +193,7 @@
           <summary>
             <span>
               <strong>Add Source Document</strong>
-              <small>Register a local file into intake for later review and promotion.</small>
+              <small>Upload a file or register a backend-visible path.</small>
             </span>
             <app-ui-icon name="chevron-down" />
           </summary>
@@ -135,7 +205,8 @@
                 <option value="runbooks">Runbook</option>
                 <option value="architecture">Architecture doc</option>
                 <option value="domain">Domain doc</option>
-                <option value="incident">Incident note</option>
+                <option value="incidents">Incident note</option>
+                <option value="testing">Testing doc</option>
               </select>
             </div>
             <div class="form-field">
@@ -143,17 +214,370 @@
               <input id="memory-title" formControlName="title" placeholder="Optional title" />
             </div>
             <div class="form-field-full">
-              <label for="memory-path">Local file path</label>
-              <input id="memory-path" formControlName="filePath" />
+              <label for="memory-upload">File upload</label>
+              <div class="file-picker-row">
+                <input
+                  id="memory-upload"
+                  type="file"
+                  accept=".md,.txt,.docx,.html,.htm"
+                  hidden
+                  (change)="onSourceFileSelected($event)"
+                />
+                <label class="secondary-button file-picker-button" for="memory-upload">
+                  <app-ui-icon name="document" />
+                  Choose File
+                </label>
+                <span class="helper-text">{{ selectedSourceFileName() }}</span>
+              </div>
+            </div>
+            <div class="form-field-full">
+              <label for="memory-path">Backend file path</label>
+              <input id="memory-path" formControlName="filePath" placeholder="examples/intake-samples/runbook-output-reconciliation.md" />
             </div>
             <div class="form-field-full">
               <button class="primary-button" type="submit" [disabled]="uploadInFlight()">
                 <app-ui-icon name="document" />
-                {{ uploadInFlight() ? 'Registering...' : 'Register Source' }}
+                {{ uploadInFlight() ? 'Adding...' : selectedSourceFile() ? 'Upload Source' : 'Register Source' }}
               </button>
             </div>
           </form>
         </details>
+      </article>
+    } @else if (activeTab() === 'claims') {
+      <article class="tab-panel claim-review-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Claim Review</h2>
+            <p>{{ claimReviewRows().length }} claims from {{ memoryScan()?.scanId || memoryDiff()?.scanId || 'latest scan' }} / {{ reviewableClaimCount() }} candidates.</p>
+          </div>
+          <div class="row-actions">
+            <button class="secondary-button" type="button" (click)="loadMemory()">Refresh</button>
+            <button class="primary-button" type="button" [disabled]="scanInFlight()" (click)="runMemoryScan()">
+              {{ scanInFlight() ? 'Scanning...' : 'Run Scan' }}
+            </button>
+          </div>
+        </div>
+
+        @if (memoryConflicts(); as conflictReport) {
+          @if (conflictReport.pairs.length) {
+            <section class="conflict-panel" aria-label="Active claim conflicts">
+              <div class="section-subheader">
+                <div>
+                  <h3>Conflict Review</h3>
+                  <p>{{ conflictReport.conflictCount }} active pairs from {{ conflictReport.scanId }}</p>
+                </div>
+              </div>
+
+              <div class="claim-list">
+                @for (pair of conflictReport.pairs; track pair.conflictId) {
+                  <article class="review-row memory-claim-row">
+                    <span class="row-icon">
+                      <app-ui-icon name="document" />
+                    </span>
+                    <div class="row-main">
+                      <div class="row-title">
+                        <strong>{{ pair.entityName }}</strong>
+                      </div>
+                      <p>{{ pair.entityType }} / {{ pair.relationType }}</p>
+                      <small>{{ pair.signal.explanation }}</small>
+
+                      <div class="conflict-claims">
+                        <section class="conflict-side">
+                          <div class="conflict-side-title">
+                            <strong>{{ pair.left.relationValue || claimRelationValue(pair.left.claim) }}</strong>
+                            <span class="status-pill" [class]="conflictSideStatusClass(pair.left)">
+                              {{ sourceStatusLabel(pair.left.effectiveStatus) }}
+                            </span>
+                          </div>
+                          <small>{{ pair.left.claim.claimId }}</small>
+                          <small [attr.title]="conflictSideSourceSummary(pair.left)">{{ conflictSideSourceSummary(pair.left) }}</small>
+                          @if (pair.left.claim.evidence.intakeProofs.length) {
+                            <div class="raw-trace-list compact-trace-list">
+                              @for (proof of pair.left.claim.evidence.intakeProofs.slice(0, 2); track proof.documentId) {
+                                <a class="raw-trace-link" [routerLink]="['/memory', proof.documentId]">
+                                  <span>
+                                    <strong>{{ proof.documentId }}</strong>
+                                    <small>{{ proof.sectionProofs.length }} sections / {{ shortHash(proof.sourceHash) }}</small>
+                                  </span>
+                                  <app-ui-icon name="chevron-right" />
+                                </a>
+                              }
+                            </div>
+                          }
+                          <button
+                            class="secondary-button row-action"
+                            type="button"
+                            [disabled]="resolveButtonBusy(pair, pair.left.claim.claimId)"
+                            (click)="resolveConflict(pair, pair.left.claim.claimId)"
+                          >
+                            {{ resolveButtonBusy(pair, pair.left.claim.claimId) ? 'Resolving...' : 'Keep this' }}
+                          </button>
+                        </section>
+
+                        <section class="conflict-side">
+                          <div class="conflict-side-title">
+                            <strong>{{ pair.right.relationValue || claimRelationValue(pair.right.claim) }}</strong>
+                            <span class="status-pill" [class]="conflictSideStatusClass(pair.right)">
+                              {{ sourceStatusLabel(pair.right.effectiveStatus) }}
+                            </span>
+                          </div>
+                          <small>{{ pair.right.claim.claimId }}</small>
+                          <small [attr.title]="conflictSideSourceSummary(pair.right)">{{ conflictSideSourceSummary(pair.right) }}</small>
+                          @if (pair.right.claim.evidence.intakeProofs.length) {
+                            <div class="raw-trace-list compact-trace-list">
+                              @for (proof of pair.right.claim.evidence.intakeProofs.slice(0, 2); track proof.documentId) {
+                                <a class="raw-trace-link" [routerLink]="['/memory', proof.documentId]">
+                                  <span>
+                                    <strong>{{ proof.documentId }}</strong>
+                                    <small>{{ proof.sectionProofs.length }} sections / {{ shortHash(proof.sourceHash) }}</small>
+                                  </span>
+                                  <app-ui-icon name="chevron-right" />
+                                </a>
+                              }
+                            </div>
+                          }
+                          <button
+                            class="secondary-button row-action"
+                            type="button"
+                            [disabled]="resolveButtonBusy(pair, pair.right.claim.claimId)"
+                            (click)="resolveConflict(pair, pair.right.claim.claimId)"
+                          >
+                            {{ resolveButtonBusy(pair, pair.right.claim.claimId) ? 'Resolving...' : 'Keep this' }}
+                          </button>
+                        </section>
+                      </div>
+                    </div>
+                    <div class="row-actions">
+                      <span class="status-pill status-warning">Conflict</span>
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+          }
+        }
+
+        <div class="claim-list">
+          @for (row of claimReviewRows(); track row.claim.claimId) {
+            <article class="review-row memory-claim-row">
+              <span class="row-icon">
+                <app-ui-icon name="document" />
+              </span>
+              <div class="row-main">
+                <div class="row-title">
+                  <strong>{{ row.claim.entity.canonicalName }}</strong>
+                  <span
+                    class="status-pill"
+                    [class.status-warning]="row.effectiveStatus === 'candidate'"
+                    [class.status-success]="row.effectiveStatus === 'approved'"
+                    [class.status-info]="row.effectiveStatus !== 'candidate' && row.effectiveStatus !== 'approved'"
+                  >
+                    {{ sourceStatusLabel(row.effectiveStatus) }}
+                  </span>
+                </div>
+                <p>{{ row.claim.entity.entityType }} / {{ row.claim.relation.type }} / {{ claimRelationValue(row.claim) }}</p>
+                <small [attr.title]="claimEvidencePath(row.claim)">{{ claimEvidencePath(row.claim) }}</small>
+
+                @if (row.claim.evidence.intakeProofs.length) {
+                  <div class="claim-proof-list">
+                    @for (proof of row.claim.evidence.intakeProofs.slice(0, 2); track proof.documentId) {
+                      <div class="claim-proof-card">
+                        <div>
+                          <span
+                            class="status-pill"
+                            [class.status-success]="proof.sourceHashVerified === true"
+                            [class.status-info]="proof.sourceHashVerified !== true"
+                          >
+                            {{ proof.sourceHashVerified === true ? 'Hash verified' : 'Hash unchecked' }}
+                          </span>
+                          <strong>{{ proof.documentId }}</strong>
+                        </div>
+                        <small>
+                          {{ proof.sectionProofs.length }} sections /
+                          {{ proof.intakeAuditRunIds.length }} audit runs /
+                          {{ shortHash(proof.sourceHash) }}
+                        </small>
+                        @if (proof.matchExplanation) {
+                          <small>{{ proof.matchExplanation }}</small>
+                        }
+                        @if (proof.matchedTerms.length) {
+                          <small>Matched terms: {{ proof.matchedTerms.join(', ') }}</small>
+                        }
+                        <a class="link-button" [routerLink]="['/memory', proof.documentId]">
+                          Source detail
+                          <app-ui-icon name="chevron-right" />
+                        </a>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (row.latestReview; as review) {
+                  <details class="claim-review-proof" open>
+                    <summary>
+                      <span>
+                        <strong>Review proof</strong>
+                        <small>{{ review.reviewedAt }} / {{ review.scanId }}</small>
+                      </span>
+                      <span class="status-pill" [class.status-success]="review.reviewerSignature" [class.status-info]="!review.reviewerSignature">
+                        {{ review.reviewerSignature || 'unsigned' }}
+                      </span>
+                    </summary>
+
+                    <div class="review-proof-grid">
+                      <section class="proof-section">
+                        <h3>Decision</h3>
+                        <dl class="proof-facts">
+                          <div>
+                            <dt>Status</dt>
+                            <dd>{{ sourceStatusLabel(review.previousStatus) }} -> {{ sourceStatusLabel(review.newStatus) }}</dd>
+                          </div>
+                          <div>
+                            <dt>Reviewer</dt>
+                            <dd>{{ review.reviewer || 'anonymous' }}</dd>
+                          </div>
+                          <div>
+                            <dt>Reason</dt>
+                            <dd>{{ review.reason || 'No reason recorded' }}</dd>
+                          </div>
+                        </dl>
+                      </section>
+
+                      @if (review.claimSnapshot; as snapshot) {
+                        <section class="proof-section">
+                          <h3>Claim Snapshot</h3>
+                          <dl class="proof-facts">
+                            <div>
+                              <dt>Entity</dt>
+                              <dd>{{ snapshot.entityType }} / {{ snapshot.entityName }}</dd>
+                            </div>
+                            <div>
+                              <dt>Relation</dt>
+                              <dd>{{ snapshot.relationType }} / {{ snapshot.relationValue || '_' }}</dd>
+                            </div>
+                            <div>
+                              <dt>Extraction</dt>
+                              <dd>{{ snapshot.extractionMethod }} / {{ snapshot.confidence }} confidence</dd>
+                            </div>
+                            <div>
+                              <dt>Governance</dt>
+                              <dd>{{ snapshot.riskLevel }} risk / {{ snapshot.securityClassification }}</dd>
+                            </div>
+                          </dl>
+                        </section>
+                      }
+
+                      <section class="proof-section proof-section-wide">
+                        <h3>Field Diffs</h3>
+                        @if (review.fieldDiffs.length) {
+                          <div class="field-diff-list">
+                            @for (diff of review.fieldDiffs; track diff.fieldPath) {
+                              <div class="field-diff-row">
+                                <strong>{{ diff.fieldPath }}</strong>
+                                <span>{{ reviewValue(diff.before) }}</span>
+                                <app-ui-icon name="chevron-right" />
+                                <span>{{ reviewValue(diff.after) }}</span>
+                              </div>
+                            }
+                          </div>
+                        } @else {
+                          <small>No field diffs recorded for this older ledger event.</small>
+                        }
+                      </section>
+
+                      <section class="proof-section">
+                        <h3>Signals</h3>
+                        @if (review.signalExplanations.length) {
+                          <div class="signal-list">
+                            @for (signal of review.signalExplanations; track signal.signal) {
+                              <div>
+                                <span class="status-pill" [class]="reviewSignalClass(signal.signal)">
+                                  {{ reviewSignalLabel(signal.signal) }}
+                                </span>
+                                <small>{{ signal.explanation }}</small>
+                                @if (signal.evidence.length) {
+                                  <small>Evidence: {{ signal.evidence.join(' / ') }}</small>
+                                }
+                              </div>
+                            }
+                          </div>
+                        } @else if (reviewSignals(review).length) {
+                          <div class="signal-list">
+                            @for (signal of reviewSignals(review); track signal) {
+                              <span class="status-pill" [class]="reviewSignalClass(signal)">{{ reviewSignalLabel(signal) }}</span>
+                            }
+                          </div>
+                        } @else {
+                          <small>No risk or conflict signals recorded.</small>
+                        }
+                      </section>
+
+                      <section class="proof-section">
+                        <h3>Raw Trace</h3>
+                        @if (row.claim.evidence.intakeProofs.length) {
+                          <div class="raw-trace-list">
+                            @for (proof of row.claim.evidence.intakeProofs.slice(0, 2); track proof.documentId) {
+                              <a class="raw-trace-link" [routerLink]="['/memory', proof.documentId]">
+                                <span>
+                                  <strong>{{ proof.documentId }}</strong>
+                                  <small>
+                                    {{ proof.sectionProofs.length }} sections /
+                                    {{ proof.intakeAuditRunIds.length }} audit runs /
+                                    {{ shortHash(proof.sourceHash) }}
+                                  </small>
+                                  @if (proof.matchExplanation) {
+                                    <small>{{ proof.matchExplanation }}</small>
+                                  }
+                                  @if (proof.matchedTerms.length) {
+                                    <small>Matched terms: {{ proof.matchedTerms.join(', ') }}</small>
+                                  }
+                                </span>
+                                <app-ui-icon name="chevron-right" />
+                              </a>
+                            }
+                          </div>
+                        } @else {
+                          <small>No intake proof attached to this claim.</small>
+                        }
+                      </section>
+                    </div>
+                  </details>
+                }
+              </div>
+              <div class="row-actions claim-actions">
+                <span class="status-pill status-info">{{ row.changeType }}</span>
+                <button
+                  class="secondary-button row-action"
+                  type="button"
+                  [disabled]="reviewButtonBusy(row, 'approved')"
+                  (click)="reviewClaim(row, 'approved')"
+                >
+                  {{ reviewButtonBusy(row, 'approved') ? 'Saving...' : 'Approve' }}
+                </button>
+                <button
+                  class="secondary-button row-action"
+                  type="button"
+                  [disabled]="reviewButtonBusy(row, 'rejected')"
+                  (click)="reviewClaim(row, 'rejected')"
+                >
+                  Reject
+                </button>
+                <button
+                  class="secondary-button row-action"
+                  type="button"
+                  [disabled]="reviewButtonBusy(row, 'quarantined')"
+                  (click)="reviewClaim(row, 'quarantined')"
+                >
+                  Quarantine
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <strong>No memory claims yet.</strong>
+              <span>Run a scan after promoting source documents.</span>
+            </div>
+          }
+        </div>
       </article>
     } @else {
       <article class="tab-panel codebase-tab-panel">

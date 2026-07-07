@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import {
@@ -13,29 +14,34 @@ import {
   CodebaseSearchItem,
   DreamApiService,
 } from '../../core/dream-api.service';
-import { UiIconComponent } from '../../shared/ui-icon.component';
-
-interface RepoFolderEntry {
-  name: string;
-  path: string;
-  fileCount: number;
-}
-
-interface RepoBreadcrumb {
-  label: string;
-  path: string;
-}
+import { CodePreviewPanelComponent } from './code-preview-panel.component';
+import { CodebaseIndexControlsComponent } from './codebase-index-controls.component';
+import { CodebaseSummaryCardsComponent } from './codebase-summary-cards.component';
+import { RepoBreadcrumb, RepoFolderEntry } from './codebase-memory.types';
+import { EvidenceSearchPanelComponent } from './evidence-search-panel.component';
+import { ImpactMapPanelComponent } from './impact-map-panel.component';
+import { IndexJsonPanelComponent } from './index-json-panel.component';
+import { RepoBrowserPanelComponent } from './repo-browser-panel.component';
 
 @Component({
   selector: 'app-codebase-memory',
   standalone: true,
-  imports: [ReactiveFormsModule, UiIconComponent],
+  imports: [
+    CodebaseIndexControlsComponent,
+    CodebaseSummaryCardsComponent,
+    RepoBrowserPanelComponent,
+    CodePreviewPanelComponent,
+    IndexJsonPanelComponent,
+    EvidenceSearchPanelComponent,
+    ImpactMapPanelComponent,
+  ],
   templateUrl: './codebase-memory.component.html',
   styleUrl: './codebase-memory.component.scss',
 })
 export class CodebaseMemoryComponent {
   private readonly api = inject(DreamApiService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isLoading = signal(false);
   readonly isIndexing = signal(false);
@@ -169,11 +175,11 @@ export class CodebaseMemoryComponent {
         this.concepts.set(concepts);
         this.results.set(results);
 
+        const requestedPath = this.route.snapshot.queryParamMap.get('file');
         const currentPath = this.selectedFilePath();
-        const nextPath =
-          currentPath && files.some((file) => file.path === currentPath)
-            ? currentPath
-            : files[0]?.path ?? null;
+        const requestedFileExists = requestedPath && files.some((file) => file.path === requestedPath);
+        const currentFileExists = currentPath && files.some((file) => file.path === currentPath);
+        const nextPath = requestedFileExists ? requestedPath : currentFileExists ? currentPath : files[0]?.path ?? null;
         this.selectedFilePath.set(nextPath);
         if (nextPath) {
           this.currentFolderPath.set(this.folderPath(nextPath));
@@ -209,7 +215,7 @@ export class CodebaseMemoryComponent {
         this.loadIndex();
       },
       error: (error: unknown) => {
-        this.apiError.set(error instanceof Error ? error.message : 'Codebase indexing failed.');
+        this.apiError.set(apiErrorMessage(error, 'Codebase indexing failed.'));
         this.isIndexing.set(false);
       },
     });
@@ -221,7 +227,7 @@ export class CodebaseMemoryComponent {
     this.api.searchCodebaseIndex(value.teamId, value.repoName, value.query, value.topK).subscribe({
       next: (results) => this.results.set(results),
       error: (error: unknown) => {
-        this.apiError.set(error instanceof Error ? error.message : 'Codebase search failed.');
+        this.apiError.set(apiErrorMessage(error, 'Codebase search failed.'));
         this.results.set([]);
       },
     });
@@ -273,7 +279,7 @@ export class CodebaseMemoryComponent {
         if (this.selectedFilePath() === path) {
           this.selectedFileContent.set(null);
         }
-        this.apiError.set(error instanceof Error ? error.message : 'File content could not be loaded.');
+        this.apiError.set(apiErrorMessage(error, 'File content could not be loaded.'));
         this.isFileLoading.set(false);
       },
     });
@@ -292,26 +298,27 @@ export class CodebaseMemoryComponent {
     parts.pop();
     return parts.join('/');
   }
+}
 
-  roleClass(role: string): string {
-    if (role === 'test') return 'status-success';
-    if (role === 'config') return 'status-warning';
-    if (role === 'docs') return 'status-neutral';
-    return 'status-info';
+function apiErrorMessage(error: unknown, fallback: string): string {
+  if (isApiError(error)) {
+    const detail = error.error?.detail;
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail;
+    }
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message;
+    }
   }
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
 
-  conceptCountLabel(concept: CodebaseConcept): string {
-    const fileCount = concept.relatedFiles.length;
-    const testCount = concept.relatedTests.length;
-    return `${fileCount} files / ${testCount} tests`;
-  }
-
-  formatBytes(sizeBytes: number): string {
-    if (sizeBytes < 1024) return `${sizeBytes} B`;
-    return `${Number((sizeBytes / 1024).toFixed(1))} KB`;
-  }
-
-  scoreLabel(score: number): string {
-    return Number(score.toFixed(1)).toString();
-  }
+function isApiError(error: unknown): error is {
+  error?: { detail?: unknown };
+  message?: string;
+} {
+  return typeof error === 'object' && error !== null;
 }

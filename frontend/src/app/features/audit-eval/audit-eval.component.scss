@@ -271,7 +271,7 @@
   overflow: auto;
 }
 
-.source-chip-list span {
+.source-chip-list :is(a, span) {
   max-width: 190px;
   overflow: hidden;
   border: 1px solid var(--dream-border);
@@ -279,7 +279,6 @@
   background: var(--dream-surface-muted);
   color: var(--dream-navy);
   font-size: 12px;
-  font-weight: 700;
   padding: 5px 9px;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dream.llm import BaseLLMProvider
-from dream.requirement_cases.models import JiraDraft, RequirementCaseSnapshot
+from dream.requirement_cases.models import JiraDraft, JiraDraftContext, RequirementCaseSnapshot
 from dream.requirement_cases.templates import render_jira_draft, render_jira_draft_prompt
 
 
@@ -12,33 +12,45 @@ class JiraDraftGenerator:
         self.last_model_name = "jira-draft-v1"
 
     def generate(self, snapshot: RequirementCaseSnapshot) -> JiraDraft:
-        deterministic_markdown = render_jira_draft(
-            case=snapshot.case,
-            evidence=snapshot.evidence,
-            impact_items=snapshot.impact_items,
-            questions=snapshot.questions,
-        )
-        markdown = deterministic_markdown
+        context = self.prepare(snapshot)
+        markdown = context.deterministic_markdown
         if self.llm_provider is not None:
-            prompt = render_jira_draft_prompt(
-                case=snapshot.case,
-                evidence=snapshot.evidence,
-                impact_items=snapshot.impact_items,
-                questions=snapshot.questions,
-                deterministic_draft=deterministic_markdown,
-            )
-            response = self.llm_provider.complete(prompt)
+            response = self.llm_provider.complete(context.prompt)
             markdown = response.text
             self.last_model_provider = response.provider_name
             self.last_model_name = response.model_name
         else:
             self.last_model_provider = "deterministic"
             self.last_model_name = "jira-draft-v1"
-        sources = sorted({item.source_path for item in snapshot.evidence})
-        warnings = [] if snapshot.evidence else ["No evidence was available for this Jira draft."]
         return JiraDraft(
             case_id=snapshot.case.case_id,
             markdown=markdown,
+            sources_used=context.sources_used,
+            warnings=context.warnings,
+        )
+
+    def prepare(self, snapshot: RequirementCaseSnapshot) -> JiraDraftContext:
+        deterministic_markdown = render_jira_draft(
+            case=snapshot.case,
+            evidence=snapshot.evidence,
+            impact_items=snapshot.impact_items,
+            questions=snapshot.questions,
+        )
+        prompt = render_jira_draft_prompt(
+            case=snapshot.case,
+            evidence=snapshot.evidence,
+            impact_items=snapshot.impact_items,
+            questions=snapshot.questions,
+            deterministic_draft=deterministic_markdown,
+        )
+        sources = sorted({item.source_path for item in snapshot.evidence})
+        warnings = [] if snapshot.evidence else ["No evidence was available for this Jira draft."]
+        return JiraDraftContext(
+            case_id=snapshot.case.case_id,
+            deterministic_markdown=deterministic_markdown,
+            prompt=prompt,
+            prompt_char_count=len(prompt),
+            deterministic_char_count=len(deterministic_markdown),
             sources_used=sources,
             warnings=warnings,
         )

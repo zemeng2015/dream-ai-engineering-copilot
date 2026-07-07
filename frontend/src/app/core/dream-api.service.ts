@@ -2,7 +2,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, switchMap } from 'rxjs';
+import { Observable, catchError, defer, map, of, switchMap, tap } from 'rxjs';
 
 import {
   AuditRun,
@@ -12,8 +12,10 @@ import {
   EvaluationDimension,
   EvaluationScorecard,
   EvidenceSourceType,
+  HumanRating,
   ImpactItem,
   KnowledgeChunk,
+  LLMJudgeResult,
   PrReviewInput,
   PrReviewResult,
   RequirementCase,
@@ -65,6 +67,321 @@ interface ApiContextEvidence {
   reason: string;
 }
 
+interface ApiContextRetrievalStep {
+  step_name: string;
+  query: string;
+  provider: string;
+  candidates_found: number;
+  selected_count: number;
+  notes: string[];
+}
+
+interface ApiEvidenceCandidate {
+  evidence_id: string;
+  source_type: string;
+  title: string;
+  source_path: string;
+  excerpt: string;
+  score: number;
+  reason: string;
+  selected: boolean;
+  excluded_reason?: string | null;
+  concepts: string[];
+  authority_status: string;
+}
+
+interface ApiMemoryIntakeSectionProof {
+  section_id: string;
+  heading: string;
+  source_reference?: string | null;
+  start_line?: number | null;
+  end_line?: number | null;
+  section_hash?: string | null;
+}
+
+interface ApiMemoryIntakeProof {
+  document_id: string;
+  draft_id?: string | null;
+  original_path?: string | null;
+  stored_path?: string | null;
+  promoted_path: string;
+  source_hash?: string | null;
+  source_hash_verified?: boolean | null;
+  review_status?: string | null;
+  match_explanation?: string | null;
+  matched_terms?: string[];
+  intake_audit_run_ids: string[];
+  section_proofs: ApiMemoryIntakeSectionProof[];
+}
+
+interface ApiMemoryClaimReference {
+  claim_id: string;
+  status: string;
+  entity: string;
+  relation: string;
+  value?: string | null;
+  evidence_paths: string[];
+  intake_proofs?: ApiMemoryIntakeProof[];
+  reason: string;
+}
+
+interface ApiMemoryEntity {
+  entity_id: string;
+  entity_type: string;
+  canonical_name: string;
+  aliases: string[];
+}
+
+interface ApiMemoryRelation {
+  type: string;
+  object_entity_id?: string | null;
+  value?: string | null;
+  condition?: string | null;
+}
+
+interface ApiMemoryEvidenceSpan {
+  source_id: string;
+  source_type: string;
+  path: string;
+  commit_sha?: string | null;
+  start_line?: number | null;
+  end_line?: number | null;
+  excerpt_hash: string;
+  span_id: string;
+}
+
+interface ApiMemoryEvidence {
+  source_ids: string[];
+  spans: ApiMemoryEvidenceSpan[];
+  intake_proofs?: ApiMemoryIntakeProof[];
+}
+
+interface ApiExtractionInfo {
+  method: string;
+  extractor_version: string;
+  model_name?: string | null;
+  confidence: number;
+}
+
+interface ApiGovernanceInfo {
+  status: string;
+  risk_level: string;
+  reviewer?: string | null;
+  reviewed_at?: string | null;
+  rejection_reason?: string | null;
+}
+
+interface ApiClaimAuditInfo {
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiMemoryClaim {
+  claim_id: string;
+  team_id: string;
+  repo_id?: string | null;
+  scan_id: string;
+  entity: ApiMemoryEntity;
+  relation: ApiMemoryRelation;
+  evidence: ApiMemoryEvidence;
+  extraction: ApiExtractionInfo;
+  governance: ApiGovernanceInfo;
+  audit: ApiClaimAuditInfo;
+}
+
+interface ApiMemoryDiffResult {
+  team_id: string;
+  scan_id: string;
+  base_scan_id?: string | null;
+  added_claims: ApiMemoryClaim[];
+  removed_claims: ApiMemoryClaim[];
+  changed_claims: ApiMemoryClaim[];
+  unchanged_count: number;
+  markdown: string;
+}
+
+interface ApiMemoryScanResult {
+  scan_id: string;
+  team_id: string;
+  repo_name?: string | null;
+  created_at: string;
+  claims: ApiMemoryClaim[];
+  summary: string;
+  warnings: string[];
+}
+
+interface ApiMemoryReviewFieldDiff {
+  field_path: string;
+  before?: string | null;
+  after?: string | null;
+}
+
+interface ApiMemoryReviewClaimSnapshot {
+  claim_id: string;
+  entity_type: string;
+  entity_name: string;
+  relation_type: string;
+  relation_value?: string | null;
+  extraction_method: string;
+  confidence: number;
+  risk_level: string;
+  security_classification: string;
+  evidence_paths: string[];
+  intake_document_ids: string[];
+  source_hashes: string[];
+}
+
+interface ApiMemoryReviewEvent {
+  event_id: string;
+  team_id: string;
+  claim_id: string;
+  scan_id: string;
+  previous_status: string;
+  new_status: string;
+  reviewer?: string | null;
+  reason?: string | null;
+  reviewed_at: string;
+  reviewer_signature?: string | null;
+  field_diffs?: ApiMemoryReviewFieldDiff[];
+  claim_snapshot?: ApiMemoryReviewClaimSnapshot | null;
+  risk_signals?: string[];
+  conflict_signals?: string[];
+  signal_explanations?: ApiMemoryReviewSignalExplanation[];
+}
+
+interface ApiMemoryReviewSignalExplanation {
+  signal: string;
+  category: string;
+  severity: string;
+  explanation: string;
+  evidence?: string[];
+}
+
+interface ApiMemoryLedgerSnapshot {
+  team_id: string;
+  updated_at: string;
+  events: ApiMemoryReviewEvent[];
+}
+
+interface ApiMemoryConflictClaimSide {
+  claim: ApiMemoryClaim;
+  effective_status: string;
+  relation_value?: string | null;
+  evidence_paths?: string[];
+  intake_document_ids?: string[];
+  latest_review?: ApiMemoryReviewEvent | null;
+}
+
+interface ApiMemoryConflictPair {
+  conflict_id: string;
+  team_id: string;
+  scan_id: string;
+  entity_id: string;
+  entity_name: string;
+  entity_type: string;
+  relation_type: string;
+  left: ApiMemoryConflictClaimSide;
+  right: ApiMemoryConflictClaimSide;
+  signal: ApiMemoryReviewSignalExplanation;
+}
+
+interface ApiMemoryConflictReport {
+  team_id: string;
+  scan_id: string;
+  generated_at: string;
+  conflict_count: number;
+  pairs: ApiMemoryConflictPair[];
+}
+
+interface ApiMemoryConflictResolutionEvent {
+  event_id: string;
+  team_id: string;
+  scan_id: string;
+  conflict_id: string;
+  action: string;
+  winning_claim_id: string;
+  rejected_claim_id: string;
+  reviewer?: string | null;
+  reason?: string | null;
+  resolved_at: string;
+  reviewer_signature?: string | null;
+  review_event_ids: string[];
+  conflict_snapshot: ApiMemoryConflictPair;
+}
+
+interface ApiMemoryConflictResolutionLedger {
+  team_id: string;
+  updated_at: string;
+  events: ApiMemoryConflictResolutionEvent[];
+}
+
+interface ApiGraphPathReference {
+  query: string;
+  path: string;
+  source_paths: string[];
+}
+
+interface ApiContextRetrievalTrail {
+  trail_id: string;
+  run_id?: string | null;
+  case_id?: string | null;
+  review_id?: string | null;
+  team_id: string;
+  repo_name?: string | null;
+  raw_query: string;
+  detected_concepts: string[];
+  retrieval_steps: ApiContextRetrievalStep[];
+  candidate_evidence: ApiEvidenceCandidate[];
+  selected_evidence: ApiEvidenceCandidate[];
+  excluded_evidence: ApiEvidenceCandidate[];
+  ranking_reasons: string[];
+  graph_expansion_paths: ApiGraphPathReference[];
+  memory_claims_considered: ApiMemoryClaimReference[];
+  memory_claims_used: ApiMemoryClaimReference[];
+  warnings: string[];
+  final_context_summary: string;
+  json_path?: string | null;
+  markdown_path?: string | null;
+}
+
+interface ApiContextPack {
+  context_pack_id: string;
+  case_id?: string | null;
+  run_id?: string | null;
+  review_id?: string | null;
+  team_id: string;
+  repo_name?: string | null;
+  user_request: string;
+  selected_docs: ApiEvidenceCandidate[];
+  selected_code: ApiEvidenceCandidate[];
+  selected_tests: ApiEvidenceCandidate[];
+  selected_incidents: ApiEvidenceCandidate[];
+  selected_historical_jira: ApiEvidenceCandidate[];
+  selected_historical_pr: ApiEvidenceCandidate[];
+  selected_memory_claims: ApiMemoryClaimReference[];
+  candidate_memory_claims: ApiMemoryClaimReference[];
+  excluded_evidence: ApiEvidenceCandidate[];
+  graph_paths: ApiGraphPathReference[];
+  deterministic_size_budget: number;
+  selected_evidence_count: number;
+  warnings: string[];
+  json_path?: string | null;
+  markdown_path?: string | null;
+}
+
+interface ApiContextPromptPreview {
+  preview_id: string;
+  case_id?: string | null;
+  run_id?: string | null;
+  target: string;
+  provider_mode: string;
+  prompt_text: string;
+  evidence_paths: string[];
+  warnings: string[];
+  json_path?: string | null;
+  markdown_path?: string | null;
+}
+
 interface ApiImpactItem {
   impact_id: string;
   case_id: string;
@@ -87,6 +404,9 @@ interface ApiClarificationQuestion {
   answer?: string | null;
   answered_by?: string | null;
   answered_at?: string | null;
+  waived_reason?: string | null;
+  waived_by?: string | null;
+  waived_at?: string | null;
 }
 
 interface ApiMarkdownArtifact {
@@ -99,11 +419,22 @@ interface ApiJiraDraft extends ApiMarkdownArtifact {
   case_id: string;
 }
 
+interface ApiJiraDraftContext {
+  case_id: string;
+  deterministic_markdown: string;
+  prompt: string;
+  prompt_char_count: number;
+  deterministic_char_count: number;
+  sources_used: string[];
+  warnings: string[];
+}
+
 interface ApiJiraReadiness {
   case_id: string;
   ready: boolean;
   status: string;
   answered_questions: number;
+  waived_questions?: number;
   open_questions: number;
   evidence_items: number;
   impact_items: number;
@@ -137,8 +468,25 @@ interface ApiEvaluationScorecard {
   hallucination_warnings: string[];
   source_coverage: Record<string, boolean>;
   recommendations: string[];
+  llm_judge?: ApiLLMJudgeResult | null;
   evaluated_artifact_path?: string | null;
   output_path?: string | null;
+}
+
+interface ApiLLMJudgeResult {
+  status: string;
+  provider?: string | null;
+  model?: string | null;
+  prompt_version: string;
+  input_hash?: string | null;
+  duration_ms?: number | null;
+  readiness?: string | null;
+  confidence?: number | null;
+  summary?: string | null;
+  risks: string[];
+  missing_evidence: string[];
+  recommendations: string[];
+  warning?: string | null;
 }
 
 interface ApiEvaluationDimension {
@@ -167,6 +515,14 @@ interface ApiAuditRecord {
   warnings: string[];
 }
 
+interface ApiHumanRating {
+  run_id: string;
+  usefulness_score: number;
+  correctness_score: number;
+  comments: string;
+  created_at: string;
+}
+
 interface ApiIntakeDocument {
   document_id: string;
   team_id: string;
@@ -174,11 +530,132 @@ interface ApiIntakeDocument {
   document_type: string;
   original_path: string;
   stored_path: string;
+  source_hash?: string | null;
   promoted_path?: string | null;
   status: string;
   created_at: string;
   updated_at: string;
   warnings: string[];
+}
+
+interface ApiIntakeConcept {
+  concept: string;
+  source_sections: string[];
+  confidence: number;
+}
+
+interface ApiSourceSpan {
+  start_line?: number | null;
+  end_line?: number | null;
+}
+
+interface ApiParsedSection {
+  section_id: string;
+  heading: string;
+  level: number;
+  text: string;
+  concepts: string[];
+  source_reference?: string | null;
+  source_span?: ApiSourceSpan | null;
+  section_hash?: string | null;
+}
+
+interface ApiKnowledgeDraft {
+  draft_id: string;
+  document_id: string;
+  team_id: string;
+  title: string;
+  target_doc_type: string;
+  source_hash?: string | null;
+  app?: string | null;
+  component?: string | null;
+  sections: ApiParsedSection[];
+  concepts: ApiIntakeConcept[];
+  review_status: string;
+  reviewer?: string | null;
+  review_notes?: string | null;
+  promoted_path?: string | null;
+  warnings: string[];
+  json_path?: string | null;
+  markdown_path?: string | null;
+  normalized_markdown: string;
+}
+
+interface ApiDraftMetadataSnapshot {
+  title: string;
+  target_doc_type: string;
+  app?: string | null;
+  component?: string | null;
+  concepts: string[];
+  review_status: string;
+  promoted_path?: string | null;
+}
+
+interface ApiDraftMetadataDiff {
+  field: string;
+  before?: unknown | null;
+  after?: unknown | null;
+}
+
+interface ApiDraftReviewEvent {
+  event_id: string;
+  event_type: string;
+  draft_id: string;
+  document_id: string;
+  team_id: string;
+  created_at: string;
+  reviewer?: string | null;
+  notes?: string | null;
+  previous_status: string;
+  new_status: string;
+  audit_run_id: string;
+  metadata_snapshot: ApiDraftMetadataSnapshot;
+  metadata_diff: ApiDraftMetadataDiff[];
+  source_hash?: string | null;
+  section_hashes: string[];
+  warnings: string[];
+}
+
+interface ApiIntakeDocumentDetail {
+  document: ApiIntakeDocument;
+  draft?: ApiKnowledgeDraft | null;
+  raw_text: string;
+  raw_text_truncated: boolean;
+  raw_size_bytes: number;
+  raw_text_available: boolean;
+  raw_text_warning?: string | null;
+  source_hash_verified?: boolean | null;
+  audit_events: ApiAuditRecord[];
+  review_events: ApiDraftReviewEvent[];
+  downstream_events: ApiAuditRecord[];
+  downstream_usages: ApiDownstreamUsage[];
+}
+
+interface ApiDownstreamUsage {
+  audit_record: ApiAuditRecord;
+  matched_source_paths: string[];
+  match_reason: string;
+  detail_route?: string | null;
+  match_proofs: ApiSourceMatchProof[];
+}
+
+interface ApiSectionMatchProof {
+  section_id: string;
+  heading: string;
+  source_reference?: string | null;
+  source_span?: ApiSourceSpan | null;
+  section_hash?: string | null;
+}
+
+interface ApiSourceMatchProof {
+  retrieved_source_path: string;
+  matched_path: string;
+  matched_label: string;
+  document_id: string;
+  draft_id?: string | null;
+  source_hash?: string | null;
+  source_hash_verified?: boolean | null;
+  section_proofs: ApiSectionMatchProof[];
 }
 
 interface ApiCodebaseFile {
@@ -249,11 +726,431 @@ export interface IntakeDocument {
   documentType: string;
   originalPath: string;
   storedPath: string;
+  sourceHash?: string | null;
   promotedPath?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
   warnings: string[];
+}
+
+export interface IntakeConcept {
+  concept: string;
+  sourceSections: string[];
+  confidence: number;
+}
+
+export interface SourceSpan {
+  startLine?: number | null;
+  endLine?: number | null;
+}
+
+export interface ParsedSection {
+  sectionId: string;
+  heading: string;
+  level: number;
+  text: string;
+  concepts: string[];
+  sourceReference?: string | null;
+  sourceSpan?: SourceSpan | null;
+  sectionHash?: string | null;
+}
+
+export interface KnowledgeDraft {
+  draftId: string;
+  documentId: string;
+  teamId: string;
+  title: string;
+  targetDocType: string;
+  sourceHash?: string | null;
+  app?: string | null;
+  component?: string | null;
+  sections: ParsedSection[];
+  concepts: IntakeConcept[];
+  reviewStatus: string;
+  reviewer?: string | null;
+  reviewNotes?: string | null;
+  promotedPath?: string | null;
+  warnings: string[];
+  jsonPath?: string | null;
+  markdownPath?: string | null;
+  normalizedMarkdown: string;
+}
+
+export interface DraftMetadataSnapshot {
+  title: string;
+  targetDocType: string;
+  app?: string | null;
+  component?: string | null;
+  concepts: string[];
+  reviewStatus: string;
+  promotedPath?: string | null;
+}
+
+export interface DraftMetadataDiff {
+  field: string;
+  before?: unknown | null;
+  after?: unknown | null;
+}
+
+export interface DraftReviewEvent {
+  eventId: string;
+  eventType: string;
+  draftId: string;
+  documentId: string;
+  teamId: string;
+  createdAt: string;
+  reviewer?: string | null;
+  notes?: string | null;
+  previousStatus: string;
+  newStatus: string;
+  auditRunId: string;
+  metadataSnapshot: DraftMetadataSnapshot;
+  metadataDiff: DraftMetadataDiff[];
+  sourceHash?: string | null;
+  sectionHashes: string[];
+  warnings: string[];
+}
+
+export interface IntakeDocumentDetail {
+  document: IntakeDocument;
+  draft?: KnowledgeDraft | null;
+  rawText: string;
+  rawTextTruncated: boolean;
+  rawSizeBytes: number;
+  rawTextAvailable: boolean;
+  rawTextWarning?: string | null;
+  sourceHashVerified?: boolean | null;
+  auditEvents: AuditRun[];
+  reviewEvents: DraftReviewEvent[];
+  downstreamEvents: AuditRun[];
+  downstreamUsages: DownstreamUsage[];
+}
+
+export interface DownstreamUsage {
+  auditRun: AuditRun;
+  matchedSourcePaths: string[];
+  matchReason: string;
+  detailRoute?: string | null;
+  matchProofs: SourceMatchProof[];
+}
+
+export interface SectionMatchProof {
+  sectionId: string;
+  heading: string;
+  sourceReference?: string | null;
+  sourceSpan?: SourceSpan | null;
+  sectionHash?: string | null;
+}
+
+export interface SourceMatchProof {
+  retrievedSourcePath: string;
+  matchedPath: string;
+  matchedLabel: string;
+  documentId: string;
+  draftId?: string | null;
+  sourceHash?: string | null;
+  sourceHashVerified?: boolean | null;
+  sectionProofs: SectionMatchProof[];
+}
+
+export interface ContextRetrievalStep {
+  stepName: string;
+  query: string;
+  provider: string;
+  candidatesFound: number;
+  selectedCount: number;
+  notes: string[];
+}
+
+export interface ContextEvidenceCandidate {
+  evidenceId: string;
+  sourceType: string;
+  title: string;
+  sourcePath: string;
+  excerpt: string;
+  score: number;
+  reason: string;
+  selected: boolean;
+  excludedReason?: string | null;
+  concepts: string[];
+  authorityStatus: string;
+}
+
+export interface ContextMemoryIntakeSectionProof {
+  sectionId: string;
+  heading: string;
+  sourceReference?: string | null;
+  startLine?: number | null;
+  endLine?: number | null;
+  sectionHash?: string | null;
+}
+
+export interface ContextMemoryIntakeProof {
+  documentId: string;
+  draftId?: string | null;
+  originalPath?: string | null;
+  storedPath?: string | null;
+  promotedPath: string;
+  sourceHash?: string | null;
+  sourceHashVerified?: boolean | null;
+  reviewStatus?: string | null;
+  matchExplanation?: string | null;
+  matchedTerms: string[];
+  intakeAuditRunIds: string[];
+  sectionProofs: ContextMemoryIntakeSectionProof[];
+}
+
+export interface ContextMemoryClaimReference {
+  claimId: string;
+  status: string;
+  entity: string;
+  relation: string;
+  value?: string | null;
+  evidencePaths: string[];
+  intakeProofs: ContextMemoryIntakeProof[];
+  reason: string;
+}
+
+export interface MemoryEntity {
+  entityId: string;
+  entityType: string;
+  canonicalName: string;
+  aliases: string[];
+}
+
+export interface MemoryRelation {
+  type: string;
+  objectEntityId?: string | null;
+  value?: string | null;
+  condition?: string | null;
+}
+
+export interface MemoryEvidenceSpan {
+  sourceId: string;
+  sourceType: string;
+  path: string;
+  commitSha?: string | null;
+  startLine?: number | null;
+  endLine?: number | null;
+  excerptHash: string;
+  spanId: string;
+}
+
+export interface MemoryEvidence {
+  sourceIds: string[];
+  spans: MemoryEvidenceSpan[];
+  intakeProofs: ContextMemoryIntakeProof[];
+}
+
+export interface MemoryClaim {
+  claimId: string;
+  teamId: string;
+  repoId?: string | null;
+  scanId: string;
+  entity: MemoryEntity;
+  relation: MemoryRelation;
+  evidence: MemoryEvidence;
+  extractionMethod: string;
+  extractorVersion: string;
+  confidence: number;
+  governanceStatus: string;
+  riskLevel: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MemoryDiffResult {
+  teamId: string;
+  scanId: string;
+  baseScanId?: string | null;
+  addedClaims: MemoryClaim[];
+  removedClaims: MemoryClaim[];
+  changedClaims: MemoryClaim[];
+  unchangedCount: number;
+  markdown: string;
+}
+
+export interface MemoryScanResult {
+  scanId: string;
+  teamId: string;
+  repoName?: string | null;
+  createdAt: string;
+  claims: MemoryClaim[];
+  summary: string;
+  warnings: string[];
+}
+
+export interface MemoryReviewEvent {
+  eventId: string;
+  teamId: string;
+  claimId: string;
+  scanId: string;
+  previousStatus: string;
+  newStatus: string;
+  reviewer?: string | null;
+  reason?: string | null;
+  reviewedAt: string;
+  reviewerSignature?: string | null;
+  fieldDiffs: MemoryReviewFieldDiff[];
+  claimSnapshot?: MemoryReviewClaimSnapshot | null;
+  riskSignals: string[];
+  conflictSignals: string[];
+  signalExplanations: MemoryReviewSignalExplanation[];
+}
+
+export interface MemoryReviewFieldDiff {
+  fieldPath: string;
+  before?: string | null;
+  after?: string | null;
+}
+
+export interface MemoryReviewClaimSnapshot {
+  claimId: string;
+  entityType: string;
+  entityName: string;
+  relationType: string;
+  relationValue?: string | null;
+  extractionMethod: string;
+  confidence: number;
+  riskLevel: string;
+  securityClassification: string;
+  evidencePaths: string[];
+  intakeDocumentIds: string[];
+  sourceHashes: string[];
+}
+
+export interface MemoryReviewSignalExplanation {
+  signal: string;
+  category: string;
+  severity: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface MemoryLedgerSnapshot {
+  teamId: string;
+  updatedAt: string;
+  events: MemoryReviewEvent[];
+}
+
+export interface MemoryConflictClaimSide {
+  claim: MemoryClaim;
+  effectiveStatus: string;
+  relationValue?: string | null;
+  evidencePaths: string[];
+  intakeDocumentIds: string[];
+  latestReview?: MemoryReviewEvent | null;
+}
+
+export interface MemoryConflictPair {
+  conflictId: string;
+  teamId: string;
+  scanId: string;
+  entityId: string;
+  entityName: string;
+  entityType: string;
+  relationType: string;
+  left: MemoryConflictClaimSide;
+  right: MemoryConflictClaimSide;
+  signal: MemoryReviewSignalExplanation;
+}
+
+export interface MemoryConflictReport {
+  teamId: string;
+  scanId: string;
+  generatedAt: string;
+  conflictCount: number;
+  pairs: MemoryConflictPair[];
+}
+
+export interface MemoryConflictResolutionEvent {
+  eventId: string;
+  teamId: string;
+  scanId: string;
+  conflictId: string;
+  action: string;
+  winningClaimId: string;
+  rejectedClaimId: string;
+  reviewer?: string | null;
+  reason?: string | null;
+  resolvedAt: string;
+  reviewerSignature?: string | null;
+  reviewEventIds: string[];
+  conflictSnapshot: MemoryConflictPair;
+}
+
+export interface MemoryConflictResolutionLedger {
+  teamId: string;
+  updatedAt: string;
+  events: MemoryConflictResolutionEvent[];
+}
+
+export interface ContextGraphPathReference {
+  query: string;
+  path: string;
+  sourcePaths: string[];
+}
+
+export interface ContextRetrievalTrail {
+  trailId: string;
+  runId?: string | null;
+  caseId?: string | null;
+  reviewId?: string | null;
+  teamId: string;
+  repoName?: string | null;
+  rawQuery: string;
+  detectedConcepts: string[];
+  retrievalSteps: ContextRetrievalStep[];
+  candidateEvidence: ContextEvidenceCandidate[];
+  selectedEvidence: ContextEvidenceCandidate[];
+  excludedEvidence: ContextEvidenceCandidate[];
+  rankingReasons: string[];
+  graphExpansionPaths: ContextGraphPathReference[];
+  memoryClaimsConsidered: ContextMemoryClaimReference[];
+  memoryClaimsUsed: ContextMemoryClaimReference[];
+  warnings: string[];
+  finalContextSummary: string;
+  jsonPath?: string | null;
+  markdownPath?: string | null;
+}
+
+export interface ContextPack {
+  contextPackId: string;
+  caseId?: string | null;
+  runId?: string | null;
+  reviewId?: string | null;
+  teamId: string;
+  repoName?: string | null;
+  userRequest: string;
+  selectedDocs: ContextEvidenceCandidate[];
+  selectedCode: ContextEvidenceCandidate[];
+  selectedTests: ContextEvidenceCandidate[];
+  selectedIncidents: ContextEvidenceCandidate[];
+  selectedHistoricalJira: ContextEvidenceCandidate[];
+  selectedHistoricalPr: ContextEvidenceCandidate[];
+  selectedMemoryClaims: ContextMemoryClaimReference[];
+  candidateMemoryClaims: ContextMemoryClaimReference[];
+  excludedEvidence: ContextEvidenceCandidate[];
+  graphPaths: ContextGraphPathReference[];
+  deterministicSizeBudget: number;
+  selectedEvidenceCount: number;
+  warnings: string[];
+  jsonPath?: string | null;
+  markdownPath?: string | null;
+}
+
+export interface ContextPromptPreview {
+  previewId: string;
+  caseId?: string | null;
+  runId?: string | null;
+  target: string;
+  providerMode: string;
+  promptText: string;
+  evidencePaths: string[];
+  warnings: string[];
+  jsonPath?: string | null;
+  markdownPath?: string | null;
 }
 
 export interface CodebaseIndexFile {
@@ -317,29 +1214,55 @@ export interface CodebaseFileContent {
   content: string;
 }
 
+export type RequirementDraftLifecycleStepId =
+  | 'create_case'
+  | 'analyze_evidence'
+  | 'prepare_jira_context'
+  | 'draft_jira'
+  | 'readiness_check'
+  | 'eval_score'
+  | 'llm_judge'
+  | 'load_result';
+
+export interface RequirementDraftLifecycleProgress {
+  stepId: RequirementDraftLifecycleStepId;
+  state: 'start' | 'complete';
+  durationMs?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://127.0.0.1:8000';
 
-  draftRequirementWithOpenAI(input: RequirementDraftInput): Observable<RequirementDraftResult> {
-    return this.http
-      .post<ApiRequirementCaseSnapshot>(`${this.baseUrl}/requirement-cases`, {
-        team_id: input.teamId,
-        raw_request: input.roughBusinessRequest,
-        created_by_role: input.role || 'BA',
-        target_app: input.app,
-        target_component: input.component,
-      })
+  draftRequirementWithOpenAI(
+    input: RequirementDraftInput,
+    onProgress?: (progress: RequirementDraftLifecycleProgress) => void,
+  ): Observable<RequirementDraftResult> {
+    return this.trackRequirementStep(
+      'create_case',
+      this.http.post<ApiRequirementCaseSnapshot>(`${this.baseUrl}/requirement-cases`, {
+          team_id: input.teamId,
+          raw_request: input.roughBusinessRequest,
+          created_by_role: input.role || 'BA',
+          target_app: input.app,
+          target_component: input.component,
+        }),
+      onProgress,
+    )
       .pipe(
         switchMap((snapshot) =>
-          this.http.post<ApiRequirementCaseSnapshot>(
-            `${this.baseUrl}/requirement-cases/${snapshot.case.case_id}/analyze`,
-            {},
+          this.trackRequirementStep(
+            'analyze_evidence',
+            this.http.post<ApiRequirementCaseSnapshot>(
+              `${this.baseUrl}/requirement-cases/${snapshot.case.case_id}/analyze`,
+              {},
+            ),
+            onProgress,
           ),
         ),
         switchMap((snapshot) =>
-          this.generateAndEvaluateRequirementCase(input, snapshot.case.case_id),
+          this.generateAndEvaluateRequirementCase(input, snapshot.case.case_id, onProgress),
         ),
       );
   }
@@ -347,8 +1270,9 @@ export class DreamApiService {
   regenerateRequirementCaseWithOpenAI(
     input: RequirementDraftInput,
     caseId: string,
+    onProgress?: (progress: RequirementDraftLifecycleProgress) => void,
   ): Observable<RequirementDraftResult> {
-    return this.generateAndEvaluateRequirementCase(input, caseId);
+    return this.generateAndEvaluateRequirementCase(input, caseId, onProgress);
   }
 
   answerRequirementQuestion(
@@ -367,6 +1291,22 @@ export class DreamApiService {
       .pipe(map((question) => mapQuestion(question)));
   }
 
+  waiveRequirementQuestion(
+    caseId: string,
+    questionId: string,
+    reason: string,
+  ): Observable<ClarificationQuestion> {
+    return this.http
+      .post<ApiClarificationQuestion>(
+        `${this.baseUrl}/requirement-cases/${caseId}/questions/${questionId}/waive`,
+        {
+          reason,
+          waived_by: 'Demo Reviewer',
+        },
+      )
+      .pipe(map((question) => mapQuestion(question)));
+  }
+
   getEvaluationRun(evaluationId: string): Observable<EvaluationScorecard> {
     return this.http
       .get<ApiEvaluationScorecard>(`${this.baseUrl}/eval/runs/${evaluationId}`)
@@ -379,10 +1319,155 @@ export class DreamApiService {
       .pipe(map((snapshot) => mapRequirementCase(snapshot)));
   }
 
+  getContextTrail(caseId: string): Observable<ContextRetrievalTrail> {
+    return this.http
+      .get<ApiContextRetrievalTrail>(`${this.baseUrl}/context/trails/${caseId}`)
+      .pipe(map(mapContextRetrievalTrail));
+  }
+
+  getContextPack(caseId: string): Observable<ContextPack> {
+    return this.http
+      .get<ApiContextPack>(`${this.baseUrl}/context/packs/${caseId}`)
+      .pipe(map(mapContextPack));
+  }
+
+  getContextPromptPreview(caseId: string, target = 'jira_draft'): Observable<ContextPromptPreview> {
+    return this.http
+      .get<ApiContextPromptPreview>(`${this.baseUrl}/context/prompt-preview/${caseId}`, {
+        params: { target },
+      })
+      .pipe(map(mapContextPromptPreview));
+  }
+
+  scanMemory(input: {
+    teamId: string;
+    repoPath: string;
+    repoName?: string;
+  }): Observable<MemoryScanResult> {
+    return this.http
+      .post<ApiMemoryScanResult>(`${this.baseUrl}/memory/scan`, {
+        team_id: input.teamId,
+        repo_path: input.repoPath,
+        repo_name: input.repoName || null,
+      })
+      .pipe(map(mapMemoryScanResult));
+  }
+
+  getLatestMemoryScan(teamId: string): Observable<MemoryScanResult> {
+    return this.http
+      .get<ApiMemoryScanResult>(`${this.baseUrl}/memory/scans/latest`, {
+        params: { team_id: teamId },
+      })
+      .pipe(map(mapMemoryScanResult));
+  }
+
+  getMemoryDiff(
+    teamId: string,
+    scanId = 'latest',
+    baseScanId?: string,
+  ): Observable<MemoryDiffResult> {
+    return this.http
+      .get<ApiMemoryDiffResult>(`${this.baseUrl}/memory/diff`, {
+        params: {
+          team_id: teamId,
+          scan_id: scanId,
+          ...(baseScanId ? { base_scan_id: baseScanId } : {}),
+        },
+      })
+      .pipe(map(mapMemoryDiffResult));
+  }
+
+  getMemoryConflicts(teamId: string, scanId = 'latest'): Observable<MemoryConflictReport> {
+    return this.http
+      .get<ApiMemoryConflictReport>(`${this.baseUrl}/memory/conflicts`, {
+        params: { team_id: teamId, scan_id: scanId },
+      })
+      .pipe(map(mapMemoryConflictReport));
+  }
+
+  getMemoryConflictResolutions(teamId: string): Observable<MemoryConflictResolutionLedger> {
+    return this.http
+      .get<ApiMemoryConflictResolutionLedger>(`${this.baseUrl}/memory/conflict-resolutions`, {
+        params: { team_id: teamId },
+      })
+      .pipe(map(mapMemoryConflictResolutionLedger));
+  }
+
+  resolveMemoryConflict(input: {
+    teamId: string;
+    conflictId: string;
+    winningClaimId: string;
+    action?: string;
+    reviewer?: string;
+    reason?: string;
+    scanId?: string;
+  }): Observable<MemoryConflictResolutionEvent> {
+    return this.http
+      .post<ApiMemoryConflictResolutionEvent>(`${this.baseUrl}/memory/conflicts/resolve`, {
+        team_id: input.teamId,
+        conflict_id: input.conflictId,
+        winning_claim_id: input.winningClaimId,
+        action: input.action || 'approve_winner_reject_other',
+        reviewer: input.reviewer || null,
+        reason: input.reason || null,
+        scan_id: input.scanId || 'latest',
+      })
+      .pipe(map(mapMemoryConflictResolutionEvent));
+  }
+
+  getMemoryLedger(teamId: string): Observable<MemoryLedgerSnapshot> {
+    return this.http
+      .get<ApiMemoryLedgerSnapshot>(`${this.baseUrl}/memory/ledger`, {
+        params: { team_id: teamId },
+      })
+      .pipe(map(mapMemoryLedgerSnapshot));
+  }
+
+  reviewMemoryClaim(input: {
+    teamId: string;
+    claimId: string;
+    status: string;
+    reviewer?: string;
+    reason?: string;
+    scanId?: string;
+  }): Observable<MemoryReviewEvent> {
+    return this.http
+      .post<ApiMemoryReviewEvent>(`${this.baseUrl}/memory/review`, {
+        team_id: input.teamId,
+        claim_id: input.claimId,
+        status: input.status,
+        reviewer: input.reviewer || null,
+        reason: input.reason || null,
+        scan_id: input.scanId || 'latest',
+      })
+      .pipe(map(mapMemoryReviewEvent));
+  }
+
   listAuditRuns(defaultApp = 'Demo'): Observable<AuditRun[]> {
     return this.http
       .get<ApiAuditRecord[]>(`${this.baseUrl}/audit/runs`)
       .pipe(map((records) => records.map((record) => mapAuditRun(record, defaultApp))));
+  }
+
+  listHumanRatings(runId: string): Observable<HumanRating[]> {
+    return this.http
+      .get<ApiHumanRating[]>(`${this.baseUrl}/audit/runs/${runId}/ratings`)
+      .pipe(map((ratings) => ratings.map(mapHumanRating)));
+  }
+
+  rateAuditRun(input: {
+    runId: string;
+    usefulnessScore: number;
+    correctnessScore: number;
+    comments: string;
+  }): Observable<HumanRating> {
+    return this.http
+      .post<ApiHumanRating>(`${this.baseUrl}/audit/runs/${input.runId}/ratings`, {
+        usefulness_score: input.usefulnessScore,
+        correctness_score: input.correctnessScore,
+        comments: input.comments,
+      })
+      .pipe(map(mapHumanRating));
   }
 
   listEvaluationRuns(): Observable<EvaluationScorecard[]> {
@@ -419,6 +1504,24 @@ export class DreamApiService {
       .pipe(map(mapIntakeDocument));
   }
 
+  uploadIntakeFile(input: {
+    teamId: string;
+    file: File;
+    documentType: string;
+    title?: string;
+  }): Observable<IntakeDocument> {
+    const formData = new FormData();
+    formData.append('team_id', input.teamId);
+    formData.append('document_type', input.documentType);
+    if (input.title?.trim()) {
+      formData.append('title', input.title.trim());
+    }
+    formData.append('file', input.file, input.file.name);
+    return this.http
+      .post<ApiIntakeDocument>(`${this.baseUrl}/intake/documents/upload`, formData)
+      .pipe(map(mapIntakeDocument));
+  }
+
   parseIntakeDocument(documentId: string): Observable<unknown> {
     return this.http.post(`${this.baseUrl}/intake/documents/${documentId}/parse`, {});
   }
@@ -433,6 +1536,43 @@ export class DreamApiService {
 
   promoteIntakeDocument(documentId: string): Observable<unknown> {
     return this.http.post(`${this.baseUrl}/intake/drafts/draft-${documentId}/promote`, {});
+  }
+
+  getIntakeDraft(documentId: string): Observable<KnowledgeDraft> {
+    return this.http
+      .get<ApiKnowledgeDraft>(`${this.baseUrl}/intake/drafts/draft-${documentId}`)
+      .pipe(map(mapKnowledgeDraft));
+  }
+
+  getIntakeDocumentDetail(documentId: string): Observable<IntakeDocumentDetail> {
+    return this.http
+      .get<ApiIntakeDocumentDetail>(`${this.baseUrl}/intake/documents/${documentId}/detail`)
+      .pipe(map(mapIntakeDocumentDetail));
+  }
+
+  updateIntakeDraftMetadata(
+    documentId: string,
+    input: {
+      title: string;
+      targetDocType: string;
+      app?: string;
+      component?: string;
+      concepts: string[];
+      reviewer?: string;
+      notes?: string;
+    },
+  ): Observable<KnowledgeDraft> {
+    return this.http
+      .patch<ApiKnowledgeDraft>(`${this.baseUrl}/intake/drafts/draft-${documentId}/metadata`, {
+        title: input.title,
+        target_doc_type: input.targetDocType,
+        app: input.app || null,
+        component: input.component || null,
+        concepts: input.concepts,
+        reviewer: input.reviewer || null,
+        notes: input.notes || null,
+      })
+      .pipe(map(mapKnowledgeDraft));
   }
 
   listCodebaseFiles(teamId: string, repoName: string): Observable<CodebaseIndexFile[]> {
@@ -591,45 +1731,104 @@ export class DreamApiService {
   private generateAndEvaluateRequirementCase(
     input: RequirementDraftInput,
     caseId: string,
+    onProgress?: (progress: RequirementDraftLifecycleProgress) => void,
   ): Observable<RequirementDraftResult> {
-    return this.http
-      .get<ApiJiraDraft>(
-        `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=openai-compatible`,
-      )
+    return this.trackRequirementStep(
+      'prepare_jira_context',
+      this.http.get<ApiJiraDraftContext>(
+        `${this.baseUrl}/requirement-cases/${caseId}/jira-draft-context`,
+      ),
+      onProgress,
+    )
       .pipe(
         switchMap(() =>
-          this.http.get<ApiJiraReadiness>(
-            `${this.baseUrl}/requirement-cases/${caseId}/jira-readiness`,
+          this.trackRequirementStep(
+            'draft_jira',
+            this.http.get<ApiJiraDraft>(
+              `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=openai-compatible`,
+            ),
+            onProgress,
           ),
         ),
         switchMap(() =>
-          this.http.post<ApiEvaluationResult>(`${this.baseUrl}/eval/run`, {
-            target_type: 'jira_draft',
-            case_id: caseId,
-            team_id: input.teamId,
-            strict: true,
-          }),
+          this.trackRequirementStep(
+            'readiness_check',
+            this.http.get<ApiJiraReadiness>(
+              `${this.baseUrl}/requirement-cases/${caseId}/jira-readiness`,
+            ),
+            onProgress,
+          ),
+        ),
+        switchMap(() =>
+          this.trackRequirementStep(
+            'eval_score',
+            this.http.post<ApiEvaluationResult>(`${this.baseUrl}/eval/run`, {
+              target_type: 'jira_draft',
+              case_id: caseId,
+              team_id: input.teamId,
+              strict: true,
+              judge_provider: 'none',
+            }),
+            onProgress,
+          ),
         ),
         switchMap((evaluation) =>
-          this.http
-            .get<ApiRequirementCaseSnapshot>(`${this.baseUrl}/requirement-cases/${caseId}`)
-            .pipe(map((snapshot) => ({ evaluation, snapshot }))),
+          this.trackRequirementStep(
+            'llm_judge',
+            this.http
+              .post<ApiEvaluationResult>(
+                `${this.baseUrl}/eval/runs/${evaluation.scorecard.evaluation_id}/judge`,
+                { judge_provider: 'openai-compatible' },
+              )
+              .pipe(catchError(() => of(evaluation))),
+            onProgress,
+          ),
         ),
-        switchMap(({ evaluation, snapshot }) =>
-          this.listAuditRuns(input.app).pipe(
-            map((runs) =>
-              this.toRequirementDraftResult(
-                input,
-                snapshot,
-                mapScorecard(evaluation.scorecard),
-                runs.find(
-                  (run) => run.caseId === caseId && run.useCase === 'jira_draft',
+        switchMap((evaluation) =>
+          this.trackRequirementStep(
+            'load_result',
+            this.http.get<ApiRequirementCaseSnapshot>(`${this.baseUrl}/requirement-cases/${caseId}`).pipe(
+              switchMap((snapshot) =>
+                this.listAuditRuns(input.app).pipe(
+                  map((runs) => ({ evaluation, snapshot, runs })),
                 ),
               ),
+            ),
+            onProgress,
+          ),
+        ),
+        map(({ evaluation, snapshot, runs }) =>
+          this.toRequirementDraftResult(
+            input,
+            snapshot,
+            mapScorecard(evaluation.scorecard),
+            runs.find(
+              (run) => run.caseId === caseId && run.useCase === 'jira_draft',
             ),
           ),
         ),
       );
+  }
+
+  private trackRequirementStep<T>(
+    stepId: RequirementDraftLifecycleStepId,
+    source: Observable<T>,
+    onProgress?: (progress: RequirementDraftLifecycleProgress) => void,
+  ): Observable<T> {
+    return defer(() => {
+      const startedAt = Date.now();
+      onProgress?.({ stepId, state: 'start' });
+      return source.pipe(
+        tap({
+          next: () =>
+            onProgress?.({
+              stepId,
+              state: 'complete',
+              durationMs: Date.now() - startedAt,
+            }),
+        }),
+      );
+    });
   }
 
   private toRequirementDraftResult(
@@ -726,6 +1925,350 @@ function mapQuestion(question: ApiClarificationQuestion): ClarificationQuestion 
     answer: question.answer ?? undefined,
     answeredBy: question.answered_by ?? undefined,
     answeredAt: question.answered_at ?? undefined,
+    waivedReason: question.waived_reason ?? undefined,
+    waivedBy: question.waived_by ?? undefined,
+    waivedAt: question.waived_at ?? undefined,
+  };
+}
+
+function mapContextRetrievalStep(step: ApiContextRetrievalStep): ContextRetrievalStep {
+  return {
+    stepName: step.step_name,
+    query: step.query,
+    provider: step.provider,
+    candidatesFound: step.candidates_found,
+    selectedCount: step.selected_count,
+    notes: step.notes,
+  };
+}
+
+function mapContextEvidenceCandidate(candidate: ApiEvidenceCandidate): ContextEvidenceCandidate {
+  return {
+    evidenceId: candidate.evidence_id,
+    sourceType: candidate.source_type,
+    title: candidate.title,
+    sourcePath: candidate.source_path,
+    excerpt: candidate.excerpt,
+    score: Number(candidate.score.toFixed(2)),
+    reason: candidate.reason,
+    selected: candidate.selected,
+    excludedReason: candidate.excluded_reason,
+    concepts: candidate.concepts,
+    authorityStatus: candidate.authority_status,
+  };
+}
+
+function mapContextMemoryIntakeSectionProof(
+  proof: ApiMemoryIntakeSectionProof,
+): ContextMemoryIntakeSectionProof {
+  return {
+    sectionId: proof.section_id,
+    heading: proof.heading,
+    sourceReference: proof.source_reference,
+    startLine: proof.start_line,
+    endLine: proof.end_line,
+    sectionHash: proof.section_hash,
+  };
+}
+
+function mapContextMemoryIntakeProof(proof: ApiMemoryIntakeProof): ContextMemoryIntakeProof {
+  return {
+    documentId: proof.document_id,
+    draftId: proof.draft_id,
+    originalPath: proof.original_path,
+    storedPath: proof.stored_path,
+    promotedPath: proof.promoted_path,
+    sourceHash: proof.source_hash,
+    sourceHashVerified: proof.source_hash_verified,
+    reviewStatus: proof.review_status,
+    matchExplanation: proof.match_explanation,
+    matchedTerms: proof.matched_terms ?? [],
+    intakeAuditRunIds: proof.intake_audit_run_ids,
+    sectionProofs: proof.section_proofs.map(mapContextMemoryIntakeSectionProof),
+  };
+}
+
+function mapMemoryReviewEvent(event: ApiMemoryReviewEvent): MemoryReviewEvent {
+  return {
+    eventId: event.event_id,
+    teamId: event.team_id,
+    claimId: event.claim_id,
+    scanId: event.scan_id,
+    previousStatus: event.previous_status,
+    newStatus: event.new_status,
+    reviewer: event.reviewer,
+    reason: event.reason,
+    reviewedAt: event.reviewed_at,
+    reviewerSignature: event.reviewer_signature,
+    fieldDiffs: (event.field_diffs ?? []).map((diff) => ({
+      fieldPath: diff.field_path,
+      before: diff.before,
+      after: diff.after,
+    })),
+    claimSnapshot: event.claim_snapshot
+      ? {
+          claimId: event.claim_snapshot.claim_id,
+          entityType: event.claim_snapshot.entity_type,
+          entityName: event.claim_snapshot.entity_name,
+          relationType: event.claim_snapshot.relation_type,
+          relationValue: event.claim_snapshot.relation_value,
+          extractionMethod: event.claim_snapshot.extraction_method,
+          confidence: Number(event.claim_snapshot.confidence.toFixed(2)),
+          riskLevel: event.claim_snapshot.risk_level,
+          securityClassification: event.claim_snapshot.security_classification,
+          evidencePaths: event.claim_snapshot.evidence_paths,
+          intakeDocumentIds: event.claim_snapshot.intake_document_ids,
+          sourceHashes: event.claim_snapshot.source_hashes,
+        }
+      : null,
+    riskSignals: event.risk_signals ?? [],
+    conflictSignals: event.conflict_signals ?? [],
+    signalExplanations: (event.signal_explanations ?? []).map((item) => ({
+      signal: item.signal,
+      category: item.category,
+      severity: item.severity,
+      explanation: item.explanation,
+      evidence: item.evidence ?? [],
+    })),
+  };
+}
+
+function mapMemoryLedgerSnapshot(ledger: ApiMemoryLedgerSnapshot): MemoryLedgerSnapshot {
+  return {
+    teamId: ledger.team_id,
+    updatedAt: ledger.updated_at,
+    events: ledger.events.map(mapMemoryReviewEvent),
+  };
+}
+
+function mapMemoryConflictClaimSide(
+  side: ApiMemoryConflictClaimSide,
+): MemoryConflictClaimSide {
+  return {
+    claim: mapMemoryClaim(side.claim),
+    effectiveStatus: side.effective_status,
+    relationValue: side.relation_value,
+    evidencePaths: side.evidence_paths ?? [],
+    intakeDocumentIds: side.intake_document_ids ?? [],
+    latestReview: side.latest_review ? mapMemoryReviewEvent(side.latest_review) : null,
+  };
+}
+
+function mapMemoryConflictPair(pair: ApiMemoryConflictPair): MemoryConflictPair {
+  return {
+    conflictId: pair.conflict_id,
+    teamId: pair.team_id,
+    scanId: pair.scan_id,
+    entityId: pair.entity_id,
+    entityName: pair.entity_name,
+    entityType: pair.entity_type,
+    relationType: pair.relation_type,
+    left: mapMemoryConflictClaimSide(pair.left),
+    right: mapMemoryConflictClaimSide(pair.right),
+    signal: {
+      signal: pair.signal.signal,
+      category: pair.signal.category,
+      severity: pair.signal.severity,
+      explanation: pair.signal.explanation,
+      evidence: pair.signal.evidence ?? [],
+    },
+  };
+}
+
+function mapMemoryConflictReport(report: ApiMemoryConflictReport): MemoryConflictReport {
+  return {
+    teamId: report.team_id,
+    scanId: report.scan_id,
+    generatedAt: report.generated_at,
+    conflictCount: report.conflict_count,
+    pairs: report.pairs.map(mapMemoryConflictPair),
+  };
+}
+
+function mapMemoryConflictResolutionEvent(
+  event: ApiMemoryConflictResolutionEvent,
+): MemoryConflictResolutionEvent {
+  return {
+    eventId: event.event_id,
+    teamId: event.team_id,
+    scanId: event.scan_id,
+    conflictId: event.conflict_id,
+    action: event.action,
+    winningClaimId: event.winning_claim_id,
+    rejectedClaimId: event.rejected_claim_id,
+    reviewer: event.reviewer,
+    reason: event.reason,
+    resolvedAt: event.resolved_at,
+    reviewerSignature: event.reviewer_signature,
+    reviewEventIds: event.review_event_ids,
+    conflictSnapshot: mapMemoryConflictPair(event.conflict_snapshot),
+  };
+}
+
+function mapMemoryConflictResolutionLedger(
+  ledger: ApiMemoryConflictResolutionLedger,
+): MemoryConflictResolutionLedger {
+  return {
+    teamId: ledger.team_id,
+    updatedAt: ledger.updated_at,
+    events: ledger.events.map(mapMemoryConflictResolutionEvent),
+  };
+}
+
+function mapMemoryClaim(claim: ApiMemoryClaim): MemoryClaim {
+  return {
+    claimId: claim.claim_id,
+    teamId: claim.team_id,
+    repoId: claim.repo_id,
+    scanId: claim.scan_id,
+    entity: {
+      entityId: claim.entity.entity_id,
+      entityType: claim.entity.entity_type,
+      canonicalName: claim.entity.canonical_name,
+      aliases: claim.entity.aliases,
+    },
+    relation: {
+      type: claim.relation.type,
+      objectEntityId: claim.relation.object_entity_id,
+      value: claim.relation.value,
+      condition: claim.relation.condition,
+    },
+    evidence: {
+      sourceIds: claim.evidence.source_ids,
+      spans: claim.evidence.spans.map((span) => ({
+        sourceId: span.source_id,
+        sourceType: span.source_type,
+        path: span.path,
+        commitSha: span.commit_sha,
+        startLine: span.start_line,
+        endLine: span.end_line,
+        excerptHash: span.excerpt_hash,
+        spanId: span.span_id,
+      })),
+      intakeProofs: (claim.evidence.intake_proofs ?? []).map(mapContextMemoryIntakeProof),
+    },
+    extractionMethod: claim.extraction.method,
+    extractorVersion: claim.extraction.extractor_version,
+    confidence: Number(claim.extraction.confidence.toFixed(2)),
+    governanceStatus: claim.governance.status,
+    riskLevel: claim.governance.risk_level,
+    createdAt: claim.audit.created_at,
+    updatedAt: claim.audit.updated_at,
+  };
+}
+
+function mapMemoryDiffResult(diff: ApiMemoryDiffResult): MemoryDiffResult {
+  return {
+    teamId: diff.team_id,
+    scanId: diff.scan_id,
+    baseScanId: diff.base_scan_id,
+    addedClaims: diff.added_claims.map(mapMemoryClaim),
+    removedClaims: diff.removed_claims.map(mapMemoryClaim),
+    changedClaims: diff.changed_claims.map(mapMemoryClaim),
+    unchangedCount: diff.unchanged_count,
+    markdown: diff.markdown,
+  };
+}
+
+function mapMemoryScanResult(scan: ApiMemoryScanResult): MemoryScanResult {
+  return {
+    scanId: scan.scan_id,
+    teamId: scan.team_id,
+    repoName: scan.repo_name,
+    createdAt: scan.created_at,
+    claims: scan.claims.map(mapMemoryClaim),
+    summary: scan.summary,
+    warnings: scan.warnings,
+  };
+}
+
+function mapContextMemoryClaim(
+  claim: ApiMemoryClaimReference,
+): ContextMemoryClaimReference {
+  return {
+    claimId: claim.claim_id,
+    status: claim.status,
+    entity: claim.entity,
+    relation: claim.relation,
+    value: claim.value,
+    evidencePaths: claim.evidence_paths,
+    intakeProofs: (claim.intake_proofs ?? []).map(mapContextMemoryIntakeProof),
+    reason: claim.reason,
+  };
+}
+
+function mapContextGraphPath(path: ApiGraphPathReference): ContextGraphPathReference {
+  return {
+    query: path.query,
+    path: path.path,
+    sourcePaths: path.source_paths,
+  };
+}
+
+function mapContextRetrievalTrail(trail: ApiContextRetrievalTrail): ContextRetrievalTrail {
+  return {
+    trailId: trail.trail_id,
+    runId: trail.run_id,
+    caseId: trail.case_id,
+    reviewId: trail.review_id,
+    teamId: trail.team_id,
+    repoName: trail.repo_name,
+    rawQuery: trail.raw_query,
+    detectedConcepts: trail.detected_concepts,
+    retrievalSteps: trail.retrieval_steps.map(mapContextRetrievalStep),
+    candidateEvidence: trail.candidate_evidence.map(mapContextEvidenceCandidate),
+    selectedEvidence: trail.selected_evidence.map(mapContextEvidenceCandidate),
+    excludedEvidence: trail.excluded_evidence.map(mapContextEvidenceCandidate),
+    rankingReasons: trail.ranking_reasons,
+    graphExpansionPaths: trail.graph_expansion_paths.map(mapContextGraphPath),
+    memoryClaimsConsidered: trail.memory_claims_considered.map(mapContextMemoryClaim),
+    memoryClaimsUsed: trail.memory_claims_used.map(mapContextMemoryClaim),
+    warnings: trail.warnings,
+    finalContextSummary: trail.final_context_summary,
+    jsonPath: trail.json_path,
+    markdownPath: trail.markdown_path,
+  };
+}
+
+function mapContextPack(pack: ApiContextPack): ContextPack {
+  return {
+    contextPackId: pack.context_pack_id,
+    caseId: pack.case_id,
+    runId: pack.run_id,
+    reviewId: pack.review_id,
+    teamId: pack.team_id,
+    repoName: pack.repo_name,
+    userRequest: pack.user_request,
+    selectedDocs: pack.selected_docs.map(mapContextEvidenceCandidate),
+    selectedCode: pack.selected_code.map(mapContextEvidenceCandidate),
+    selectedTests: pack.selected_tests.map(mapContextEvidenceCandidate),
+    selectedIncidents: pack.selected_incidents.map(mapContextEvidenceCandidate),
+    selectedHistoricalJira: pack.selected_historical_jira.map(mapContextEvidenceCandidate),
+    selectedHistoricalPr: pack.selected_historical_pr.map(mapContextEvidenceCandidate),
+    selectedMemoryClaims: pack.selected_memory_claims.map(mapContextMemoryClaim),
+    candidateMemoryClaims: pack.candidate_memory_claims.map(mapContextMemoryClaim),
+    excludedEvidence: pack.excluded_evidence.map(mapContextEvidenceCandidate),
+    graphPaths: pack.graph_paths.map(mapContextGraphPath),
+    deterministicSizeBudget: pack.deterministic_size_budget,
+    selectedEvidenceCount: pack.selected_evidence_count,
+    warnings: pack.warnings,
+    jsonPath: pack.json_path,
+    markdownPath: pack.markdown_path,
+  };
+}
+
+function mapContextPromptPreview(preview: ApiContextPromptPreview): ContextPromptPreview {
+  return {
+    previewId: preview.preview_id,
+    caseId: preview.case_id,
+    runId: preview.run_id,
+    target: preview.target,
+    providerMode: preview.provider_mode,
+    promptText: preview.prompt_text,
+    evidencePaths: preview.evidence_paths,
+    warnings: preview.warnings,
+    jsonPath: preview.json_path,
+    markdownPath: preview.markdown_path,
   };
 }
 
@@ -747,6 +2290,25 @@ function mapScorecard(scorecard: ApiEvaluationScorecard): EvaluationScorecard {
     missingCriticalItems: scorecard.missing_critical_items,
     hallucinationWarnings: scorecard.hallucination_warnings,
     recommendations: scorecard.recommendations,
+    llmJudge: scorecard.llm_judge ? mapLLMJudge(scorecard.llm_judge) : undefined,
+  };
+}
+
+function mapLLMJudge(judge: ApiLLMJudgeResult): LLMJudgeResult {
+  return {
+    status: judge.status === 'completed' ? 'completed' : 'failed',
+    provider: judge.provider ?? undefined,
+    model: judge.model ?? undefined,
+    promptVersion: judge.prompt_version,
+    inputHash: judge.input_hash ?? undefined,
+    durationMs: judge.duration_ms ?? undefined,
+    readiness: judge.readiness ?? undefined,
+    confidence: judge.confidence ?? undefined,
+    summary: judge.summary ?? undefined,
+    risks: judge.risks,
+    missingEvidence: judge.missing_evidence,
+    recommendations: judge.recommendations,
+    warning: judge.warning ?? undefined,
   };
 }
 
@@ -781,6 +2343,16 @@ function mapAuditRun(record: ApiAuditRecord, defaultApp: string): AuditRun {
   };
 }
 
+function mapHumanRating(rating: ApiHumanRating): HumanRating {
+  return {
+    runId: rating.run_id,
+    usefulnessScore: rating.usefulness_score,
+    correctnessScore: rating.correctness_score,
+    comments: rating.comments,
+    createdAt: rating.created_at,
+  };
+}
+
 function mapIntakeDocument(document: ApiIntakeDocument): IntakeDocument {
   return {
     documentId: document.document_id,
@@ -789,11 +2361,146 @@ function mapIntakeDocument(document: ApiIntakeDocument): IntakeDocument {
     documentType: document.document_type,
     originalPath: document.original_path,
     storedPath: document.stored_path,
+    sourceHash: document.source_hash,
     promotedPath: document.promoted_path,
     status: document.status,
     createdAt: document.created_at,
     updatedAt: document.updated_at,
     warnings: document.warnings,
+  };
+}
+
+function mapKnowledgeDraft(draft: ApiKnowledgeDraft): KnowledgeDraft {
+  return {
+    draftId: draft.draft_id,
+    documentId: draft.document_id,
+    teamId: draft.team_id,
+    title: draft.title,
+    targetDocType: draft.target_doc_type,
+    sourceHash: draft.source_hash,
+    app: draft.app,
+    component: draft.component,
+    sections: draft.sections.map((section) => ({
+      sectionId: section.section_id,
+      heading: section.heading,
+      level: section.level,
+      text: section.text,
+      concepts: section.concepts,
+      sourceReference: section.source_reference,
+      sourceSpan: section.source_span
+        ? {
+            startLine: section.source_span.start_line,
+            endLine: section.source_span.end_line,
+          }
+        : null,
+      sectionHash: section.section_hash,
+    })),
+    concepts: draft.concepts.map((concept) => ({
+      concept: concept.concept,
+      sourceSections: concept.source_sections,
+      confidence: concept.confidence,
+    })),
+    reviewStatus: draft.review_status,
+    reviewer: draft.reviewer,
+    reviewNotes: draft.review_notes,
+    promotedPath: draft.promoted_path,
+    warnings: draft.warnings,
+    jsonPath: draft.json_path,
+    markdownPath: draft.markdown_path,
+    normalizedMarkdown: draft.normalized_markdown,
+  };
+}
+
+function mapIntakeDocumentDetail(detail: ApiIntakeDocumentDetail): IntakeDocumentDetail {
+  const document = mapIntakeDocument(detail.document);
+  return {
+    document,
+    draft: detail.draft ? mapKnowledgeDraft(detail.draft) : null,
+    rawText: detail.raw_text,
+    rawTextTruncated: detail.raw_text_truncated,
+    rawSizeBytes: detail.raw_size_bytes,
+    rawTextAvailable: detail.raw_text_available,
+    rawTextWarning: detail.raw_text_warning,
+    sourceHashVerified: detail.source_hash_verified,
+    auditEvents: detail.audit_events.map((record) => mapAuditRun(record, document.title)),
+    reviewEvents: (detail.review_events ?? []).map(mapDraftReviewEvent),
+    downstreamEvents: detail.downstream_events.map((record) =>
+      mapAuditRun(record, document.title),
+    ),
+    downstreamUsages: detail.downstream_usages.map((usage) =>
+      mapDownstreamUsage(usage, document.title),
+    ),
+  };
+}
+
+function mapDraftReviewEvent(event: ApiDraftReviewEvent): DraftReviewEvent {
+  return {
+    eventId: event.event_id,
+    eventType: event.event_type,
+    draftId: event.draft_id,
+    documentId: event.document_id,
+    teamId: event.team_id,
+    createdAt: event.created_at,
+    reviewer: event.reviewer,
+    notes: event.notes,
+    previousStatus: event.previous_status,
+    newStatus: event.new_status,
+    auditRunId: event.audit_run_id,
+    metadataSnapshot: {
+      title: event.metadata_snapshot.title,
+      targetDocType: event.metadata_snapshot.target_doc_type,
+      app: event.metadata_snapshot.app,
+      component: event.metadata_snapshot.component,
+      concepts: event.metadata_snapshot.concepts,
+      reviewStatus: event.metadata_snapshot.review_status,
+      promotedPath: event.metadata_snapshot.promoted_path,
+    },
+    metadataDiff: event.metadata_diff.map((diff) => ({
+      field: diff.field,
+      before: diff.before,
+      after: diff.after,
+    })),
+    sourceHash: event.source_hash,
+    sectionHashes: event.section_hashes,
+    warnings: event.warnings,
+  };
+}
+
+function mapDownstreamUsage(usage: ApiDownstreamUsage, defaultApp: string): DownstreamUsage {
+  return {
+    auditRun: mapAuditRun(usage.audit_record, defaultApp),
+    matchedSourcePaths: usage.matched_source_paths,
+    matchReason: usage.match_reason,
+    detailRoute: usage.detail_route,
+    matchProofs: (usage.match_proofs ?? []).map(mapSourceMatchProof),
+  };
+}
+
+function mapSectionMatchProof(proof: ApiSectionMatchProof): SectionMatchProof {
+  return {
+    sectionId: proof.section_id,
+    heading: proof.heading,
+    sourceReference: proof.source_reference,
+    sourceSpan: proof.source_span
+      ? {
+          startLine: proof.source_span.start_line,
+          endLine: proof.source_span.end_line,
+        }
+      : null,
+    sectionHash: proof.section_hash,
+  };
+}
+
+function mapSourceMatchProof(proof: ApiSourceMatchProof): SourceMatchProof {
+  return {
+    retrievedSourcePath: proof.retrieved_source_path,
+    matchedPath: proof.matched_path,
+    matchedLabel: proof.matched_label,
+    documentId: proof.document_id,
+    draftId: proof.draft_id,
+    sourceHash: proof.source_hash,
+    sourceHashVerified: proof.source_hash_verified,
+    sectionProofs: proof.section_proofs.map(mapSectionMatchProof),
   };
 }
 
@@ -1119,7 +2826,9 @@ function workflowTypeFromValue(value: string): WorkflowType {
     'requirement_case_create',
     'requirement_case_analysis',
     'requirement_question_answer',
+    'requirement_question_waive',
     'engineering_brief',
+    'jira_draft_context',
     'jira_draft',
     'jira_readiness_check',
     'pr_review_summary',
@@ -1127,15 +2836,18 @@ function workflowTypeFromValue(value: string): WorkflowType {
     'knowledge_intake',
     'knowledge_intake_upload',
     'knowledge_intake_parse',
+    'knowledge_intake_metadata_update',
     'knowledge_intake_review',
     'knowledge_intake_promote',
     'context_intelligence',
+    'retrieval_context_eval',
     'codebase_index',
     'evidence_graph',
     'testgen_stub',
     'audit_eval',
     'evaluation_scorecard',
     'eval_scorecard',
+    'llm_judge_eval',
   ];
   return allowed.includes(value as WorkflowType) ? (value as WorkflowType) : 'audit_eval';
 }
@@ -1146,7 +2858,13 @@ function runStatusFromValue(value: string): RunStatus {
     'completed',
     'created',
     'answered',
+    'waived',
+    'uploaded',
+    'parsed',
+    'approved',
+    'promoted',
     'needs_review',
+    'pending_review',
     'warning',
     'failed',
     'fail',

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -22,6 +24,24 @@ class EvaluationDimension(BaseModel):
     recommendations: list[str] = Field(default_factory=list)
 
 
+class LLMJudgeResult(BaseModel):
+    status: Literal["completed", "failed"]
+    provider: str | None = None
+    model: str | None = None
+    prompt_version: str = "llm-judge-v1"
+    input_hash: str | None = None
+    duration_ms: int | None = None
+    readiness: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    summary: str | None = None
+    risks: list[str] = Field(default_factory=list)
+    missing_evidence: list[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
+    raw_response: str | None = None
+    token_usage: dict[str, int] | None = None
+    warning: str | None = None
+
+
 class EvaluationScorecard(BaseModel):
     evaluation_id: str
     target_type: str
@@ -39,6 +59,7 @@ class EvaluationScorecard(BaseModel):
     hallucination_warnings: list[str] = Field(default_factory=list)
     source_coverage: dict[str, bool] = Field(default_factory=dict)
     recommendations: list[str] = Field(default_factory=list)
+    llm_judge: LLMJudgeResult | None = None
     evaluated_artifact_path: str | None = None
     output_path: str | None = None
     json_path: str | None = None
@@ -56,6 +77,11 @@ class EvaluationRequest(BaseModel):
     repo_name: str | None = None
     strict: bool = False
     expected_profile: str | None = None
+    judge_provider: str = "none"
+
+
+class EvaluationJudgeRequest(BaseModel):
+    judge_provider: str = "openai-compatible"
 
 
 class EvaluationResult(BaseModel):

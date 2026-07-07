@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from dream.core.paths import display_path, resolve_artifact_path
-from dream.intake.models import IntakeDocument, KnowledgeDraft
+from dream.intake.models import DraftReviewEvent, IntakeDocument, KnowledgeDraft
 
 
 class IntakeRepository:
@@ -30,6 +30,12 @@ class IntakeRepository:
             for path in sorted(base.glob("*.json"))
         ]
 
+    def find_by_source_hash(self, *, team_id: str, source_hash: str) -> IntakeDocument | None:
+        for document in self.list_documents():
+            if document.team_id == team_id and document.source_hash == source_hash:
+                return document
+        return None
+
     def save_draft(self, draft: KnowledgeDraft) -> KnowledgeDraft:
         base = resolve_artifact_path(Path("intake/drafts") / self._safe_name(draft.draft_id))
         base.mkdir(parents=True, exist_ok=True)
@@ -50,6 +56,32 @@ class IntakeRepository:
             Path("intake/drafts") / self._safe_name(draft_id) / "draft.json"
         )
         return KnowledgeDraft.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def save_review_event(self, event: DraftReviewEvent) -> DraftReviewEvent:
+        path = self.review_event_path(event.draft_id, event.event_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(event.model_dump_json(indent=2), encoding="utf-8")
+        return event
+
+    def list_review_events(self, draft_id: str) -> list[DraftReviewEvent]:
+        base = resolve_artifact_path(
+            Path("intake/drafts") / self._safe_name(draft_id) / "review-events"
+        )
+        if not base.exists():
+            return []
+        events = [
+            DraftReviewEvent.model_validate_json(path.read_text(encoding="utf-8"))
+            for path in sorted(base.glob("*.json"))
+        ]
+        return sorted(events, key=lambda event: event.created_at, reverse=True)
+
+    def review_event_path(self, draft_id: str, event_id: str) -> Path:
+        return resolve_artifact_path(
+            Path("intake/drafts")
+            / self._safe_name(draft_id)
+            / "review-events"
+            / f"{self._safe_name(event_id)}.json"
+        )
 
     def document_path(self, document_id: str) -> Path:
         return resolve_artifact_path(

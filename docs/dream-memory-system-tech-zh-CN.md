@@ -157,7 +157,10 @@ Requirement Case 和 PR Review 会使用 Evidence Graph，让输出能展示 evi
 - `SourceSpan`：来源中的具体行号区间、hash 和 preview。
 - `MemoryEntity`：被描述的实体，如 code file、symbol、endpoint、concept、incident、runbook。
 - `MemoryRelation`：实体之间的关系，如 `defined_in`、`tested_by`、`documented_by`、`risk_for`、`mitigates`。
-- `MemoryEvidence`：claim 依赖的 source id 和 span。
+- `MemoryEvidence`：claim 依赖的 source id 和 span。由 promoted intake
+  文档生成的 claim 还会携带 `intake_proofs`，包含 raw intake document id、
+  draft id、source hash verification、intake audit run ids，以及 section
+  span/hash proof、deterministic match explanation 和 matched terms。
 - `ExtractionInfo`：提取方法、版本、置信度。
 - `GovernanceInfo`：candidate/approved/quarantined、风险等级、reviewer。
 - `SecurityInfo`：安全分类和是否 redacted。
@@ -190,6 +193,12 @@ artifacts/memory-evals/{team_id}/{evaluation_id}.json
 - scanner version
 
 `SourceRecord.commit_sha` 会从 scan provenance 填充。hash 仍基于原始内容计算，但 `SourceSpan.preview` 在落盘前会先做 redaction，避免 secret-like assignment、AWS access key、JWT-like token、private key header 直接进入 artifact preview。
+
+当 source 是 Knowledge Intake 推广出来的 Markdown 时，memory scan 会反查
+`artifacts/intake/` 中的 document/draft 记录，把 claim evidence 接回 raw
+doc。这样 review memory diff 时，可以从 `MemoryClaim` 反查 promoted path、
+原始上传记录、source hash、section hash 和 intake upload/parse/review/promote
+审计 run id。
 
 ## 5. Claim 类型和晋升规则
 
@@ -258,6 +267,9 @@ API：
 POST /memory/scan
 GET  /memory/scans/latest
 GET  /memory/diff
+GET  /memory/conflicts
+POST /memory/conflicts/resolve
+GET  /memory/conflict-resolutions
 POST /memory/eval
 ```
 
@@ -269,6 +281,14 @@ curl -X POST http://localhost:8000/memory/scan \
   -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
+
+curl "http://localhost:8000/memory/conflicts?team_id=demo_team"
+
+curl -X POST http://localhost:8000/memory/conflicts/resolve \
+  -H "Content-Type: application/json" \
+  -d '{"team_id":"demo_team","conflict_id":"<conflict_id>","winning_claim_id":"<claim_id>","reviewer":"zack","reason":"Source A is authoritative."}'
+
+curl "http://localhost:8000/memory/conflict-resolutions?team_id=demo_team"
 
 curl -X POST http://localhost:8000/memory/eval \
   -H "Content-Type: application/json" \
@@ -359,6 +379,19 @@ curl -X POST http://localhost:8000/memory/eval \
 - reviewed_at
 - scan_id
 - previous_status/new_status
+- reviewer_signature
+- field_diffs：记录 governance.status、reviewer、rejection_reason 等字段变化
+- claim_snapshot：冻结被审 claim 的 entity/relation/evidence/intake source 摘要
+- risk_signals/conflict_signals：保留机器可比对的原始信号
+- signal_explanations：把 semantic human-review、hash 未验证、risk/security
+  classification、missing span、potential conflict 等信号转成 reviewer 可读说明，
+  并保留相关 evidence 值
+- `/memory/conflicts`：把 active single-value conflict 转成 claim pair report，
+  包含双方 claim、effective status、latest review、evidence path、intake document id
+  和 reviewer-readable conflict explanation，便于对照 raw source 后再做决策
+- `/memory/conflicts/resolve`：基础版支持 `approve_winner_reject_other`，
+  会把 winner 写成 approved、另一侧写成 rejected，并追加
+  `memory-conflict-resolutions` 专用审计事件
 
 ledger 存储在：
 

@@ -489,6 +489,7 @@ class ContextIntelligenceService:
                     relation=claim.relation.type,
                     value=claim.relation.value or claim.relation.object_entity_id,
                     evidence_paths=[span.path for span in claim.evidence.spans],
+                    intake_proofs=claim.evidence.intake_proofs,
                     reason="Memory claim matched request terms.",
                 )
             )

@@ -229,6 +229,12 @@
                     <span class="status-pill status-neutral">{{ sourceTypeLabel(source.sourceType) }}</span>
                     <strong>{{ source.title }}</strong>
                     <small>{{ source.sourcePath }}</small>
+                    @if (sourceDocumentRoute(source.sourcePath); as route) {
+                      <a class="link-button" [routerLink]="route">
+                        Source detail
+                        <app-ui-icon name="chevron-right" />
+                      </a>
+                    }
                   </div>
                 }
               </div>

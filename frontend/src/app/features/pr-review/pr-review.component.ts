@@ -3,9 +3,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 import { PrReviewResult } from '../../core/dream-models';
 import { DreamApiService } from '../../core/dream-api.service';
+import type { IntakeDocument } from '../../core/dream-api.service';
+import { sourceDocumentRoute as routeForSourceDocument } from '../../core/source-provenance';
 import { UiIconComponent } from '../../shared/ui-icon.component';
 
 @Component({
@@ -25,6 +28,7 @@ export class PrReviewComponent {
   readonly apiError = signal<string | null>(null);
   readonly advancedOpen = signal(false);
   readonly codeDetailsOpen = signal(false);
+  readonly intakeDocuments = signal<IntakeDocument[]>([]);
 
   readonly form = this.fb.nonNullable.group({
     executionMode: ['openai', Validators.required],
@@ -35,6 +39,10 @@ export class PrReviewComponent {
     jiraContext: [MOCK_JIRA_CONTEXT, Validators.required],
     topK: [5, [Validators.required, Validators.min(1), Validators.max(20)]],
   });
+
+  constructor() {
+    this.loadIntakeDocuments();
+  }
 
   generate(): void {
     if (this.form.invalid) {
@@ -136,9 +144,20 @@ export class PrReviewComponent {
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
+  sourceDocumentRoute(sourcePath: string): string[] | null {
+    return routeForSourceDocument(sourcePath, this.intakeDocuments());
+  }
+
   private acceptReviewResult(result: PrReviewResult): void {
     this.result.set(result);
     this.codeDetailsOpen.set(false);
+  }
+
+  private loadIntakeDocuments(): void {
+    this.api
+      .listIntakeDocuments()
+      .pipe(catchError(() => of([])))
+      .subscribe((documents) => this.intakeDocuments.set(documents));
   }
 }
 

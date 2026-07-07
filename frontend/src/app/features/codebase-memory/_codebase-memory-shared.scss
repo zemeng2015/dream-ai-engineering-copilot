@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+
+@mixin empty-state {
+  .empty-state {
+    display: grid;
+    gap: 6px;
+    border: 1px dashed var(--dream-border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .empty-state strong {
+    color: var(--dream-navy);
+  }
+
+  .empty-state span {
+    color: var(--dream-muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}

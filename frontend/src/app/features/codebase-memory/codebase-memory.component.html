@@ -18,224 +18,55 @@
     <div class="warning-callout">{{ message }}</div>
   }
 
-  <section class="panel index-controls" aria-label="Codebase index controls">
-    <form class="control-grid" [formGroup]="form" (ngSubmit)="runSearch()">
-      <div class="form-field">
-        <label for="code-team">Team</label>
-        <input id="code-team" formControlName="teamId" />
-      </div>
-      <div class="form-field">
-        <label for="code-repo">Repo name</label>
-        <input id="code-repo" formControlName="repoName" />
-      </div>
-      <div class="form-field">
-        <label for="code-path">Repo path</label>
-        <input id="code-path" formControlName="repoPath" />
-      </div>
-      <div class="form-field">
-        <label for="code-top-k">Top K</label>
-        <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
-      </div>
-      <div class="form-field-full search-line">
-        <label for="code-query">Evidence search</label>
-        <div>
-          <input id="code-query" formControlName="query" />
-          <button class="primary-button" type="submit" [disabled]="isLoading()">
-            <app-ui-icon name="search" />
-            Search
-          </button>
-          <button class="secondary-button" type="button" (click)="refreshIndex()" [disabled]="isIndexing()">
-            <app-ui-icon name="branch" />
-            {{ isIndexing() ? 'Indexing...' : 'Index Repo' }}
-          </button>
-        </div>
-      </div>
-    </form>
-  </section>
+  <app-codebase-index-controls
+    [form]="form"
+    [isLoading]="isLoading()"
+    [isIndexing]="isIndexing()"
+    (searchRequested)="runSearch()"
+    (indexRequested)="refreshIndex()"
+  />
 
-  <section class="memory-summary" aria-label="Codebase index summary">
-    <article class="summary-card tone-info">
-      <span>Indexed Files</span>
-      <strong>{{ files().length }}</strong>
-      <small>{{ sourceFileCount() }} source files</small>
-    </article>
-    <article class="summary-card tone-success">
-      <span>Tests</span>
-      <strong>{{ testFileCount() }}</strong>
-      <small>linked by the repo index</small>
-    </article>
-    <article class="summary-card tone-neutral">
-      <span>Symbols</span>
-      <strong>{{ symbolCount() }}</strong>
-      <small>classes, functions, or modules</small>
-    </article>
-    <article class="summary-card tone-warning">
-      <span>Concepts</span>
-      <strong>{{ concepts().length }}</strong>
-      <small>impact map terms</small>
-    </article>
-  </section>
+  <app-codebase-summary-cards
+    [indexedFiles]="files().length"
+    [sourceFiles]="sourceFileCount()"
+    [testFiles]="testFileCount()"
+    [symbols]="symbolCount()"
+    [concepts]="concepts().length"
+  />
 
   <section class="repo-workspace" aria-label="Repository browser and index JSON">
-    <article class="panel repo-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Repo Files</h2>
-          <p>{{ form.controls.repoPath.value }} · {{ files().length }} indexed files</p>
-        </div>
-      </div>
-      <nav class="repo-pathbar" aria-label="Current repo path">
-        @for (crumb of repoBreadcrumbs(); track crumb.path) {
-          <button
-            type="button"
-            class="repo-crumb"
-            [class.active]="crumb.path === currentFolderPath()"
-            (click)="navigateFolder(crumb.path)"
-          >
-            {{ crumb.label }}
-          </button>
-          @if (!$last) {
-            <span>/</span>
-          }
-        }
-      </nav>
-      <div class="repo-tree">
-        @for (folder of currentFolderEntries(); track folder.path) {
-          <button type="button" class="repo-folder-row" (click)="navigateFolder(folder.path)" [title]="folder.path">
-            <app-ui-icon name="chevron-right" />
-            <span>{{ folder.name }}</span>
-            <small>{{ folder.fileCount }} files</small>
-          </button>
-        }
-        @for (file of currentFolderFiles(); track file.fileId) {
-          <button
-            type="button"
-            class="repo-file"
-            [class.active]="selectedFilePath() === file.path"
-            (click)="selectFile(file)"
-            [title]="file.path"
-          >
-            <app-ui-icon name="document" />
-            <span>{{ fileName(file.path) }}</span>
-            <small class="status-pill {{ roleClass(file.role) }}">{{ file.role }}</small>
-          </button>
-        }
-        @if (!currentFolderEntries().length && !currentFolderFiles().length) {
-          <div class="empty-state">
-            <strong>No files in this folder.</strong>
-            <span>Use the breadcrumb above to move to another path.</span>
-          </div>
-        }
-      </div>
-    </article>
+    <app-repo-browser-panel
+      [repoPath]="form.controls.repoPath.value"
+      [breadcrumbs]="repoBreadcrumbs()"
+      [folders]="currentFolderEntries()"
+      [files]="currentFolderFiles()"
+      [selectedFilePath]="selectedFilePath()"
+      [currentFolderPath]="currentFolderPath()"
+      (folderSelected)="navigateFolder($event)"
+      (fileSelected)="selectFile($event)"
+    />
 
-    <article class="panel code-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Code Preview</h2>
-          @if (selectedFile(); as file) {
-            <p [title]="file.path">{{ file.path }}</p>
-          }
-        </div>
-        @if (selectedFile(); as file) {
-          <span class="status-pill {{ roleClass(file.role) }}">{{ file.language }}</span>
-        }
-      </div>
-      @if (selectedFile(); as file) {
-        <div class="file-meta-strip">
-          <span>{{ file.lineCount }} lines</span>
-          <span>{{ formatBytes(file.sizeBytes) }}</span>
-          <span>{{ file.symbols.length }} symbols</span>
-          <span>{{ file.concepts.length }} concepts</span>
-        </div>
-      }
-      @if (isFileLoading()) {
-        <div class="empty-state code-empty">
-          <strong>Loading file...</strong>
-          <span>Reading content through FastAPI.</span>
-        </div>
-      } @else if (codeLines().length) {
-        <pre class="code-block" aria-label="Selected file content">@for (line of codeLines(); track $index; let row = $index) {
-<span class="code-line"><span class="line-number">{{ row + 1 }}</span><code>{{ line || ' ' }}</code></span>
-}</pre>
-      } @else {
-        <div class="empty-state code-empty">
-          <strong>No file content loaded.</strong>
-          <span>Select a file from the repo browser.</span>
-        </div>
-      }
-    </article>
+    <app-code-preview-panel
+      [selectedFile]="selectedFile()"
+      [codeLines]="codeLines()"
+      [isFileLoading]="isFileLoading()"
+    />
 
-    <article class="panel index-json-panel">
-      <div class="panel-header">
-        <div>
-          <h2>JSON Index</h2>
-          <p [title]="repoIndexPath()">{{ repoIndexPath() }}</p>
-        </div>
-      </div>
-      <details class="json-card" open>
-        <summary>
-          <strong>Selected file record</strong>
-          <span>highlighted index node</span>
-        </summary>
-        <pre class="json-block selected-json-block">{{ selectedFileJson() }}</pre>
-      </details>
-    </article>
+    <app-index-json-panel
+      [repoIndexPath]="repoIndexPath()"
+      [selectedFileJson]="selectedFileJson()"
+    />
   </section>
 
   <section class="support-layout" aria-label="Search evidence and impact map">
-    <article class="panel search-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Evidence Search</h2>
-          <p>{{ results().length }} matches from the retriever.</p>
-        </div>
-      </div>
-      <div class="result-list">
-        @for (result of results(); track result.sourcePath + result.resultType + result.title) {
-          <button class="result-row" type="button" (click)="selectPath(result.sourcePath)">
-            <span class="status-pill status-info">{{ result.resultType }}</span>
-            <strong>{{ result.title }}</strong>
-            <small [title]="result.sourcePath">{{ result.sourcePath }}</small>
-            <p>{{ result.reason }} Score {{ scoreLabel(result.score) }}</p>
-          </button>
-        } @empty {
-          <div class="empty-state">
-            <strong>No search results yet.</strong>
-            <span>Run a search or refresh the repo index.</span>
-          </div>
-        }
-      </div>
-    </article>
+    <app-evidence-search-panel
+      [results]="results()"
+      (sourceSelected)="selectPath($event)"
+    />
 
-    <article class="panel concept-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Impact Map</h2>
-          <p>{{ selectedImpactConcepts().length || topConcepts().length }} visible concepts</p>
-        </div>
-      </div>
-      <div class="concept-list">
-        @for (concept of selectedImpactConcepts().length ? selectedImpactConcepts() : topConcepts(); track concept.concept) {
-          <details>
-            <summary>
-              <strong>{{ concept.concept }}</strong>
-              <span>{{ conceptCountLabel(concept) }}</span>
-            </summary>
-            <p>{{ concept.reason }}</p>
-            <div class="path-list">
-              @for (path of concept.relatedFiles.slice(0, 8); track path) {
-                <button type="button" (click)="selectPath(path)" [title]="path">{{ fileName(path) }}</button>
-              }
-            </div>
-          </details>
-        } @empty {
-          <div class="empty-state">
-            <strong>No concepts found.</strong>
-            <span>Refresh the repo index to derive concept mappings.</span>
-          </div>
-        }
-      </div>
-    </article>
+    <app-impact-map-panel
+      [concepts]="selectedImpactConcepts().length ? selectedImpactConcepts() : topConcepts()"
+      (sourceSelected)="selectPath($event)"
+    />
   </section>
 </section>

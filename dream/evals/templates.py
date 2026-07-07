@@ -53,4 +53,29 @@ def render_scorecard_report(scorecard: EvaluationScorecard) -> str:
             *[f"- {item}" for item in scorecard.recommendations or ["None"]],
         ]
     )
+    if scorecard.llm_judge:
+        judge = scorecard.llm_judge
+        lines.extend(
+            [
+                "",
+                "## LLM Judge",
+                f"- Status: {judge.status}",
+                f"- Provider: {judge.provider or 'n/a'}",
+                f"- Model: {judge.model or 'n/a'}",
+                f"- Prompt Version: {judge.prompt_version}",
+                f"- Input Hash: {judge.input_hash or 'n/a'}",
+                f"- Duration: {judge.duration_ms if judge.duration_ms is not None else 'n/a'} ms",
+                f"- Readiness: {judge.readiness or 'n/a'}",
+                f"- Confidence: {judge.confidence if judge.confidence is not None else 'n/a'}",
+                f"- Summary: {judge.summary or 'n/a'}",
+                "- Risks:",
+                *[f"  - {item}" for item in judge.risks or ["None"]],
+                "- Missing Evidence:",
+                *[f"  - {item}" for item in judge.missing_evidence or ["None"]],
+                "- Recommendations:",
+                *[f"  - {item}" for item in judge.recommendations or ["None"]],
+            ]
+        )
+        if judge.warning:
+            lines.extend(["- Warning:", f"  - {judge.warning}"])
     return "\n".join(lines) + "\n"

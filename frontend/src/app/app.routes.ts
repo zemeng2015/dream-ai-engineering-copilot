@@ -9,6 +9,14 @@ export const routes: Routes = [
     title: 'DREAM Mission Control',
   },
   {
+    path: 'memory/:documentId',
+    loadComponent: () =>
+      import('./features/memory-document-detail/memory-document-detail.component').then(
+        (module) => module.MemoryDocumentDetailComponent,
+      ),
+    title: 'DREAM Memory Source Detail',
+  },
+  {
     path: 'memory',
     loadComponent: () => import('./features/memory-hub/memory-hub.component').then((module) => module.MemoryHubComponent),
     title: 'DREAM Memory Hub',
@@ -38,6 +46,11 @@ export const routes: Routes = [
       ),
     title: 'DREAM PR Review',
     data: { mode: 'pr' },
+  },
+  {
+    path: 'context/:caseId',
+    loadComponent: () => import('./features/context-detail/context-detail.component').then((module) => module.ContextDetailComponent),
+    title: 'DREAM Context Trail',
   },
   {
     path: 'codebase',

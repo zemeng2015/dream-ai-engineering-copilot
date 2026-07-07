@@ -6,7 +6,9 @@ export type WorkflowType =
   | 'requirement_case_create'
   | 'requirement_case_analysis'
   | 'requirement_question_answer'
+  | 'requirement_question_waive'
   | 'engineering_brief'
+  | 'jira_draft_context'
   | 'jira_draft'
   | 'jira_readiness_check'
   | 'pr_review_summary'
@@ -14,22 +16,31 @@ export type WorkflowType =
   | 'knowledge_intake'
   | 'knowledge_intake_upload'
   | 'knowledge_intake_parse'
+  | 'knowledge_intake_metadata_update'
   | 'knowledge_intake_review'
   | 'knowledge_intake_promote'
   | 'context_intelligence'
+  | 'retrieval_context_eval'
   | 'codebase_index'
   | 'evidence_graph'
   | 'testgen_stub'
   | 'audit_eval'
   | 'evaluation_scorecard'
-  | 'eval_scorecard';
+  | 'eval_scorecard'
+  | 'llm_judge_eval';
 
 export type RunStatus =
   | 'success'
   | 'completed'
   | 'created'
   | 'answered'
+  | 'waived'
+  | 'uploaded'
+  | 'parsed'
+  | 'approved'
+  | 'promoted'
   | 'needs_review'
+  | 'pending_review'
   | 'warning'
   | 'failed'
   | 'fail'
@@ -235,6 +246,9 @@ export interface ClarificationQuestion {
   answer?: string;
   answeredBy?: string;
   answeredAt?: string;
+  waivedReason?: string;
+  waivedBy?: string;
+  waivedAt?: string;
 }
 
 export interface RequirementCase {
@@ -273,6 +287,22 @@ export interface EvaluationDimension {
   recommendations: string[];
 }
 
+export interface LLMJudgeResult {
+  status: 'completed' | 'failed';
+  provider?: string;
+  model?: string;
+  promptVersion: string;
+  inputHash?: string;
+  durationMs?: number;
+  readiness?: string;
+  confidence?: number;
+  summary?: string;
+  risks: string[];
+  missingEvidence: string[];
+  recommendations: string[];
+  warning?: string;
+}
+
 export interface EvaluationScorecard {
   evaluationId: string;
   targetType: 'requirement_case' | 'engineering_brief' | 'jira_draft' | 'pr_review' | 'testgen_report';
@@ -289,6 +319,7 @@ export interface EvaluationScorecard {
   missingCriticalItems: string[];
   hallucinationWarnings?: string[];
   recommendations: string[];
+  llmJudge?: LLMJudgeResult;
 }
 
 export interface AuditRun {

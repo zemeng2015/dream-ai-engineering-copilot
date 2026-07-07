@@ -381,6 +381,9 @@ def _question_status_line(question: ClarificationQuestion) -> str:
 
 
 def _answer_line(question: ClarificationQuestion) -> str:
+    if question.status == "waived":
+        reason = question.waived_reason or "No waiver reason supplied."
+        return f"Waived: {reason}"
     if question.answer:
         return f"Answer: {question.answer}"
     return "Answer: _pending human response_."

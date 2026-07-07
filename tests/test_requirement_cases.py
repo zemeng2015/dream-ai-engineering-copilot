@@ -192,7 +192,8 @@ def test_role_specific_questions_for_core_roles(tmp_path) -> None:
 
 
 def test_engineering_brief_and_jira_draft_include_sources(tmp_path) -> None:
-    service = _service(tmp_path)
+    audit_repository = AuditRepository(tmp_path / "audit.sqlite")
+    service = _service(tmp_path, audit_repository=audit_repository)
     snapshot = service.create_case(
         RequirementCaseCreateRequest(
             team_id="demo_team",
@@ -201,9 +202,14 @@ def test_engineering_brief_and_jira_draft_include_sources(tmp_path) -> None:
     )
     service.analyze_case(snapshot.case.case_id)
 
+    context = service.prepare_jira_draft_context(snapshot.case.case_id)
     brief = service.generate_engineering_brief(snapshot.case.case_id)
     jira = service.generate_jira_draft(snapshot.case.case_id)
+    records = audit_repository.list_audit_records()
 
+    assert "# Jira Story Draft" in context.deterministic_markdown
+    assert "Hard rules" in context.prompt
+    assert context.prompt_char_count == len(context.prompt)
     assert "# Engineering Brief" in brief.markdown
     assert "## 4. Impact Map" in brief.markdown
     assert "## 11. Sources Used" in brief.markdown
@@ -212,6 +218,7 @@ def test_engineering_brief_and_jira_draft_include_sources(tmp_path) -> None:
     assert "## Open Questions" in jira.markdown
     assert brief.sources_used
     assert jira.sources_used
+    assert any(record.use_case == "jira_draft_context" for record in records)
 
 
 def test_jira_draft_preserves_output_reconciliation_intent(tmp_path) -> None:
@@ -271,6 +278,49 @@ def test_question_answers_drive_jira_readiness_and_audit(tmp_path) -> None:
     assert all(question.status == "answered" for question in snapshot_after_answers.questions)
     assert any(record.use_case == "requirement_question_answer" for record in records)
     assert any(record.use_case == "jira_readiness_check" for record in records)
+
+
+def test_question_waiver_drives_readiness_and_audit(tmp_path) -> None:
+    audit_repository = AuditRepository(tmp_path / "audit.sqlite")
+    service = _service(tmp_path, audit_repository=audit_repository)
+    snapshot = service.create_case(
+        RequirementCaseCreateRequest(
+            team_id="demo_team",
+            raw_request="Add async status tracking for long-running job execution",
+        )
+    )
+    analyzed = service.analyze_case(snapshot.case.case_id)
+    waived_question = analyzed.questions[0]
+
+    waived = service.waive_question(
+        analyzed.case.case_id,
+        waived_question.question_id,
+        "Out of scope for this release: documented as a demo handoff risk.",
+        waived_by="api-test",
+    )
+    for question in analyzed.questions[1:]:
+        service.answer_question(
+            analyzed.case.case_id,
+            question.question_id,
+            f"Approved answer for {question.target_role}.",
+            answered_by="api-test",
+        )
+
+    jira = service.generate_jira_draft(analyzed.case.case_id)
+    readiness = service.jira_readiness(analyzed.case.case_id)
+    snapshot_after_review = service.get_case(analyzed.case.case_id)
+    records = audit_repository.list_audit_records()
+
+    assert waived.status == "waived"
+    assert waived.waived_reason == "Out of scope for this release: documented as a demo handoff risk."
+    assert readiness.ready is True
+    assert readiness.status == "jira_ready_draft"
+    assert readiness.open_questions == 0
+    assert readiness.waived_questions == 1
+    assert any(question.status == "waived" for question in snapshot_after_review.questions)
+    assert "Waived: Out of scope for this release" in jira.markdown
+    assert "_pending human response_" not in jira.markdown
+    assert any(record.use_case == "requirement_question_waive" for record in records)
 
 
 def test_requirement_case_brief_and_jira_can_use_llm_provider(tmp_path) -> None:
