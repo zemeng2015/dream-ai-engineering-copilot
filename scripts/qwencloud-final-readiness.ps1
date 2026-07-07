@@ -104,10 +104,17 @@ function Test-LatestDeployPreflight {
     $candidates = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deploy-preflight-*.json" -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 20)
+    $head = ""
+    try {
+        $head = (git rev-parse HEAD).Trim()
+    }
+    catch {
+        $head = ""
+    }
     if ($candidates.Count -eq 0) {
         return [pscustomobject]@{
             ok = $false
-            details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer"
+            details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft"
         }
     }
 
@@ -117,11 +124,13 @@ function Test-LatestDeployPreflight {
             $preflight = Get-Content -LiteralPath $candidate.FullName -Raw | ConvertFrom-Json
             $buildCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.build" } | Select-Object -First 1)
             $smokeCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_container" } | Select-Object -First 1)
-            $details = "path=$($candidate.FullName); buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
+            $preflightCommit = [string]$preflight.gitCommit
+            $commitMatchesHead = (-not [string]::IsNullOrWhiteSpace($head)) -and ($preflightCommit -eq $head)
+            $details = "path=$($candidate.FullName); gitCommit=$preflightCommit; head=$head; commitMatchesHead=$commitMatchesHead; buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
             if ([string]::IsNullOrWhiteSpace($latestDetails)) {
                 $latestDetails = $details
             }
-            if ([bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok) {
+            if ([bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok -and $commitMatchesHead) {
                 return [pscustomobject]@{
                     ok = $true
                     details = $details

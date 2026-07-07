@@ -591,7 +591,7 @@ $md = @(
     "The backend is packaged for Alibaba Cloud Function Compute as a custom container. The proof file is $deploymentProofUrl, and deploy readiness can be reproduced with:",
     "",
     '```powershell',
-    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer',
+    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
     '```',
     "",
     "## Packet Checks",

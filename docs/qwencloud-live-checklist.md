@@ -73,7 +73,7 @@ Invoke-RestMethod -Method Post `
 - Run preflight:
   ```powershell
   scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
-  scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
+  scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
   ```
 - Or run the full release script after video URL is available:
   ```powershell

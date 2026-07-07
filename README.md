@@ -183,7 +183,7 @@ Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
 ```
 
 Run the end-to-end Alibaba release flow after credentials and the container

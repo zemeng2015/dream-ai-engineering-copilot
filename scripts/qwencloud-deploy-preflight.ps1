@@ -7,13 +7,16 @@ param(
     [int]$SmokePort = 8011,
     [Parameter(Mandatory = $false)]
     [string]$EnvFile = "",
+    [Parameter(Mandatory = $false)]
+    [string]$OutputDir = "",
     [switch]$BuildImage,
-    [switch]$SmokeContainer
+    [switch]$SmokeContainer,
+    [switch]$AllowDraft
 )
 
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$artifactDir = Join-Path $ProjectRoot "artifacts/qwencloud-proof"
+$artifactDir = if ([string]::IsNullOrWhiteSpace($OutputDir)) { Join-Path $ProjectRoot "artifacts/qwencloud-proof" } else { $OutputDir }
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-env.ps1")
 $importedEnvNames = @()
@@ -53,6 +56,20 @@ function Test-ServerlessDevsDefaultAccess {
     }
     catch {
         return $false
+    }
+}
+
+function Invoke-GitText([string[]]$Arguments) {
+    try {
+        $output = & git -C $ProjectRoot @Arguments 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return ""
+        }
+
+        return (($output | Out-String).Trim())
+    }
+    catch {
+        return ""
     }
 }
 
@@ -186,12 +203,18 @@ finally {
 $result = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
     projectRoot = $ProjectRoot
+    outputDir = $artifactDir
     readyForDeploy = $ready
+    allowDraft = [bool]$AllowDraft
     buildImage = [bool]$BuildImage
     smokeContainer = [bool]$SmokeContainer
     imageTag = $ImageTag
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
+    gitCommit = Invoke-GitText -Arguments @("rev-parse", "HEAD")
+    gitBranch = Invoke-GitText -Arguments @("rev-parse", "--abbrev-ref", "HEAD")
+    gitStatus = Invoke-GitText -Arguments @("status", "--porcelain")
+    gitBranchStatus = Invoke-GitText -Arguments @("status", "-sb")
     checks = $checks
 }
 
@@ -205,6 +228,10 @@ $lines = @(
     "- Container smoke requested: $([bool]$SmokeContainer)",
     "- Image tag: $ImageTag",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
+    "- Allow draft: $([bool]$AllowDraft)",
+    "- Git commit: $($result.gitCommit)",
+    "- Git branch: $($result.gitBranch)",
+    "- Git status: $(if ([string]::IsNullOrWhiteSpace($result.gitStatus)) { 'clean' } else { 'dirty' })",
     "",
     "## Checks",
     ""
@@ -223,7 +250,7 @@ $lines += @(
     '```powershell',
     'npm install -g @serverless-devs/s',
     's config add',
-    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer',
+    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
     'docker tag dream-qwencloud-memoryagent:local $env:ALIBABA_CLOUD_CONTAINER_IMAGE',
     'docker push $env:ALIBABA_CLOUD_CONTAINER_IMAGE',
     's deploy -t deploy/alibaba/serverless-devs.yaml -y',
@@ -238,5 +265,7 @@ if ($ready) {
 }
 else {
     Write-Host "Deploy preflight found missing required inputs: $outJson" -ForegroundColor Yellow
-    exit 1
+    if (-not $AllowDraft) {
+        exit 1
+    }
 }

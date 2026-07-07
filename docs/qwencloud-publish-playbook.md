@@ -37,7 +37,7 @@ scripts/qwencloud-export-video-thumbnail.ps1
 Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
 scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
@@ -83,7 +83,9 @@ Use `-AllowDirty` only while developing local changes; omit it for the final
 pre-submit proof so the audit enforces a clean pushed worktree.
 
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
-and local container smoke before the image is pushed to Container Registry.
+and local container smoke before the image is pushed to Container Registry. Use
+`-AllowDraft` before real cloud credentials are present so the report records
+local build/smoke evidence while keeping missing cloud inputs visible.
 
 `qwencloud-alibaba-release.ps1` orchestrates the release path: preflight,
 Docker tag/push, Serverless Devs deploy, backend verification, Alibaba proof

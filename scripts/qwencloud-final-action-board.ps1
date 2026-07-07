@@ -216,7 +216,7 @@ if (-not $cloudReady) {
 
 if (-not ($deployPreflightCheck -and $deployPreflightCheck.ok)) {
     Add-Action -Name "Refresh Docker deploy preflight" -Reason "The latest Docker build plus container smoke check is not ready." -Commands @(
-        'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer',
+        'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft',
         'scripts/qwencloud-final-readiness.ps1 -AllowDraftPacket'
     )
 }
