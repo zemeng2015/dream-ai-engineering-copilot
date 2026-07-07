@@ -246,6 +246,55 @@ function Invoke-LiveInputsIntake {
     }
 }
 
+function Invoke-ReleaseConfigAudit {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "release-config-audit-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-release-config-audit.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-release-config-audit-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-release-config-audit-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Release config audit generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "release-config-audit-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            details = "release config audit JSON missing; stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForReleaseConfig
+        details = if ($data.readyForReleaseConfig) { "READY: $($json.FullName)" } else { "DRAFT; missing=$(@($data.missingRequiredChecks) -join ', ')" }
+    }
+}
+
 function Invoke-ActionBoard {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "final-action-board-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -819,6 +868,7 @@ function Invoke-ExternalHandoff {
 
 $deadlineGuard = Invoke-DeadlineGuard
 $liveInputs = Invoke-LiveInputsIntake
+$releaseConfig = Invoke-ReleaseConfigAudit
 $githubCiProof = Invoke-GitHubCiProof
 $videoPublicationHandoff = Invoke-VideoPublicationHandoff
 $packet = Invoke-Packet
@@ -835,6 +885,7 @@ $externalHandoff = Invoke-ExternalHandoff
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ready -Details $deadlineGuard.details
 Add-ExternalRequirement -Name "live_inputs_intake_ready" -Ok $liveInputs.ready -Details $liveInputs.details
+Add-ExternalRequirement -Name "release_config_audit_ready" -Ok $releaseConfig.ready -Details $releaseConfig.details
 Add-ExternalRequirement -Name "github_ci_proof_ready" -Ok $githubCiProof.ready -Details $githubCiProof.details
 Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
@@ -892,6 +943,9 @@ Add-Item -Name "deadline_guard_json" -Path $deadlineGuard.json
 Add-Item -Name "live_inputs_intake_script" -Path "scripts/qwencloud-live-inputs-intake.ps1" -Required $false
 Add-Item -Name "live_inputs_intake_markdown" -Path $liveInputs.markdown
 Add-Item -Name "live_inputs_intake_json" -Path $liveInputs.json
+Add-Item -Name "release_config_audit_script" -Path "scripts/qwencloud-release-config-audit.ps1" -Required $false
+Add-Item -Name "release_config_audit_markdown" -Path $releaseConfig.markdown
+Add-Item -Name "release_config_audit_json" -Path $releaseConfig.json
 Add-Item -Name "github_ci_proof_script" -Path "scripts/qwencloud-github-ci-proof.ps1" -Required $false
 Add-Item -Name "github_ci_proof_markdown" -Path $githubCiProof.markdown
 Add-Item -Name "github_ci_proof_json" -Path $githubCiProof.json

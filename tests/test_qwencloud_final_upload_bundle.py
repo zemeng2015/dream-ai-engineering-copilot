@@ -14,6 +14,7 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "[switch]$SkipGitHubSecrets" in final_bundle
     assert "function Invoke-ActionBoard" in final_bundle
     assert "function Invoke-ExternalHandoff" in final_bundle
+    assert "function Invoke-ReleaseConfigAudit" in final_bundle
     assert "releaseSummaryPackaging" in final_bundle
     assert "not_bundled_generate_after_zip_hash" in final_bundle
     assert '"scripts/qwencloud-final-action-board.ps1"' in final_bundle
@@ -22,6 +23,10 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert 'if ($SkipGitHubSecrets) { $args += "-SkipGitHubSecrets" }' in final_bundle
     assert "$actionBoard = Invoke-ActionBoard" in final_bundle
     assert "$externalHandoff = Invoke-ExternalHandoff" in final_bundle
+    assert "$releaseConfig = Invoke-ReleaseConfigAudit" in final_bundle
+    assert 'Add-ExternalRequirement -Name "release_config_audit_ready"' in final_bundle
+    assert 'Add-Item -Name "release_config_audit_markdown"' in final_bundle
+    assert 'Add-Item -Name "release_config_audit_json"' in final_bundle
     assert (
         'Add-Item -Name "final_action_board_markdown" -Path $actionBoard.markdown'
         in final_bundle

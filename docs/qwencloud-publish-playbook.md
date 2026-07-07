@@ -38,6 +38,7 @@ scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-export-video-thumbnail.ps1
 Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
 scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
@@ -120,7 +121,13 @@ health proof, Alibaba screenshot/video readiness, and copy/paste Devpost text.
 
 `qwencloud-final-readiness.ps1` is the final submit dashboard. It checks clean
 git state, remote sync, latest CI, local tools, cloud env, Serverless Devs,
-Alibaba proof integrity, artifact readiness, and final Devpost packet readiness.
+release config consistency, Alibaba proof integrity, artifact readiness, and
+final Devpost packet readiness.
+
+`qwencloud-release-config-audit.ps1` checks local runtime env presence, Alibaba
+region and container image format, GitHub workflow secret mappings, the GitHub
+secrets handoff script, and the checked-in env template without writing secret
+values into reports.
 
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission

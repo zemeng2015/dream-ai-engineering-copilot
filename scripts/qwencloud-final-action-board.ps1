@@ -137,6 +137,16 @@ if ($BackendUrl) { $cloudArgs += @("-BackendUrl", $BackendUrl) }
 if ($EnvFile) { $cloudArgs += @("-EnvFile", $EnvFile) }
 Invoke-BoardStep -Name "cloud-credentials-handoff" -Arguments $cloudArgs
 
+$releaseConfigArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-release-config-audit.ps1",
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($EnvFile) { $releaseConfigArgs += @("-EnvFile", $EnvFile) }
+Invoke-BoardStep -Name "release-config-audit" -Arguments $releaseConfigArgs
+
 $liveInputsArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -199,6 +209,7 @@ $videoReport = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublicationReport = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloudReport = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $liveInputsReport = Read-LatestJson -Filter "live-inputs-intake-*.json"
+$releaseConfigReport = Read-LatestJson -Filter "release-config-audit-*.json"
 $scorecardReport = Read-LatestJson -Filter "judging-scorecard-*.json"
 $secretsReport = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $officialRulesReport = Read-LatestJson -Filter "official-rules-gate-*.json"
@@ -208,6 +219,7 @@ $videoReady = [bool]($videoReport.data -and $videoReport.data.readyForDevpostVid
 $videoPublicationReady = [bool]($videoPublicationReport.data -and $videoPublicationReport.data.readyForManualUpload)
 $cloudReady = [bool]($cloudReport.data -and $cloudReport.data.readyForCloudRelease)
 $liveInputsReady = [bool]($liveInputsReport.data -and $liveInputsReport.data.readyForLiveInputs)
+$releaseConfigReady = [bool]($releaseConfigReport.data -and $releaseConfigReport.data.readyForReleaseConfig)
 $scorecardReady = [bool]($scorecardReport.data -and $scorecardReport.data.readyForJudgingNarrative)
 $scorecardStaticReady = [bool]($scorecardReport.data -and $scorecardReport.data.weightedStaticEvidenceReady -eq $scorecardReport.data.weightedTotal)
 $scorecardMissingExternalInputs = @()
@@ -253,6 +265,16 @@ if (-not $cloudReady) {
         'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
         's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
+    )
+}
+
+if (-not $releaseConfigReady) {
+    $configMissing = if ($releaseConfigReport.data) { @($releaseConfigReport.data.missingRequiredChecks) -join ', ' } else { "release config audit report missing" }
+    Add-Action -Name "Fix release config audit" -Reason "Release config audit is not READY: $configMissing." -RequiresUser $true -Commands @(
+        'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
+        "# Fill .env.qwencloud.local locally; do not commit it.",
+        'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
+        'scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv'
     )
 }
 
@@ -356,6 +378,7 @@ $result = [ordered]@{
         videoPublicationHandoff = $videoPublicationReport.file
         cloudCredentialsHandoff = $cloudReport.file
         liveInputsIntake = $liveInputsReport.file
+        releaseConfigAudit = $releaseConfigReport.file
         judgingScorecard = $scorecardReport.file
         githubSecretsHandoff = if ($SkipGitHubSecrets) { "<skipped>" } else { $secretsReport.file }
         finalReadiness = $readinessReport.file
@@ -366,6 +389,7 @@ $result = [ordered]@{
         videoPublicationHandoffReady = $videoPublicationReady
         cloudReady = $cloudReady
         liveInputsReady = $liveInputsReady
+        releaseConfigReady = $releaseConfigReady
         judgingScorecardReady = $scorecardReady
         judgingScorecardWeightedEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedEvidenceReady } else { $null }
         judgingScorecardWeightedStaticEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedStaticEvidenceReady } else { $null }
@@ -405,6 +429,7 @@ $lines = @(
     "| Video URL | $(if ($videoReady) { 'yes' } else { 'no' }) |",
     "| Video publication handoff | $(if ($videoPublicationReady) { 'yes' } else { 'no' }) |",
     "| Local cloud release env | $(if ($cloudReady) { 'yes' } else { 'no' }) |",
+    "| Release config audit | $(if ($releaseConfigReady) { 'yes' } else { 'no' }) |",
     "| Live inputs intake | $(if ($liveInputsReady) { 'yes' } else { 'no' }) |",
     "| Judging scorecard | $(if ($scorecardReady) { 'yes' } else { 'no' }) |",
     "| GitHub release secrets | $(if ($SkipGitHubSecrets) { 'skipped' } elseif ($secretsReady) { 'yes' } else { 'no' }) |",
@@ -419,6 +444,7 @@ $lines = @(
     "- Video status: $(if ($videoReport.file) { $videoReport.file } else { '<missing>' })",
     "- Video publication handoff: $(if ($videoPublicationReport.file) { $videoPublicationReport.file } else { '<missing>' })",
     "- Cloud credentials: $(if ($cloudReport.file) { $cloudReport.file } else { '<missing>' })",
+    "- Release config audit: $(if ($releaseConfigReport.file) { $releaseConfigReport.file } else { '<missing>' })",
     "- Live inputs intake: $(if ($liveInputsReport.file) { $liveInputsReport.file } else { '<missing>' })",
     "- Judging scorecard: $(if ($scorecardReport.file) { $scorecardReport.file } else { '<missing>' })",
     "- GitHub secrets: $(if ($SkipGitHubSecrets) { '<skipped>' } elseif ($secretsReport.file) { $secretsReport.file } else { '<missing>' })",

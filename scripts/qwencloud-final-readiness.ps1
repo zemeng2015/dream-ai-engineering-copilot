@@ -275,6 +275,48 @@ function Invoke-LiveInputsIntake {
     }
 }
 
+function Invoke-ReleaseConfigAudit {
+    if (-not (Test-Path "scripts/qwencloud-release-config-audit.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-release-config-audit.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "release-config-audit-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-release-config-audit.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+
+    $stdout = Join-Path $OutputDir "final-readiness-release-config-audit-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-release-config-audit-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "release-config-audit-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "release config audit JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $audit = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($audit.missingRequiredChecks)
+    return [pscustomobject]@{
+        ok = [bool]$audit.readyForReleaseConfig
+        details = if ($audit.readyForReleaseConfig) { "release config audit READY: $($newest.FullName)" } else { "release config audit DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-GitHubCiProof {
     if (-not (Test-Path "scripts/qwencloud-github-ci-proof.ps1")) {
         return [pscustomobject]@{
@@ -515,6 +557,9 @@ Add-Check -Name "submission_deadline_guard_ready" -Ok $deadlineGuard.ok -Details
 $liveInputs = Invoke-LiveInputsIntake
 Add-Check -Name "live_inputs_intake_ready" -Ok $liveInputs.ok -Details $liveInputs.details
 
+$releaseConfig = Invoke-ReleaseConfigAudit
+Add-Check -Name "release_config_audit_ready" -Ok $releaseConfig.ok -Details $releaseConfig.details
+
 $githubCiProof = Invoke-GitHubCiProof
 Add-Check -Name "github_ci_proof_ready" -Ok $githubCiProof.ok -Details $githubCiProof.details
 
@@ -576,6 +621,7 @@ foreach ($path in @(
     "scripts/qwencloud-github-ci-proof.ps1",
     "scripts/qwencloud-github-release-artifact-ingest.ps1",
     "scripts/qwencloud-release-summary.ps1",
+    "scripts/qwencloud-release-config-audit.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",
     "docs/qwencloud-testing-and-rights-notes.md",

@@ -44,6 +44,7 @@ scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetF
 Generate a local status report and placeholder template with:
 
 ```powershell
+scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
 ```
 
@@ -57,6 +58,11 @@ scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv
 The script sends values through stdin to `gh secret set`; it does not write
 secret values into its JSON or Markdown reports. `-EnvFile` imports values into
 the current PowerShell process only.
+
+`scripts/qwencloud-release-config-audit.ps1` should pass before setting secrets
+or running the workflow; it verifies local env presence, Alibaba region/image
+format, workflow secret mappings, and checked-in templates without printing
+secret values.
 
 ## Manual Run
 
