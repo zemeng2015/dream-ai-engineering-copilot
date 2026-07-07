@@ -9,6 +9,8 @@ param(
     [string]$BlogPostUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
     [switch]$AllowDraft
@@ -17,6 +19,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $reportJson = Join-Path $OutputDir "finalize-after-urls-$timestamp.json"
 $reportMd = Join-Path $OutputDir "finalize-after-urls-$timestamp.md"
@@ -98,6 +105,7 @@ $readinessArgs = @(
 if ($DemoVideoUrl) { $readinessArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $readinessArgs += @("-BackendUrl", $BackendUrl) }
 if ($BlogPostUrl) { $readinessArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $readinessArgs += @("-EnvFile", $EnvFile) }
 if ($SkipBackendDraft) { $readinessArgs += "-SkipBackendDraft" }
 if ($SkipExternalUrlChecks) { $readinessArgs += "-SkipExternalUrlChecks" }
 if ($AllowDraft) { $readinessArgs += "-AllowDraftPacket" }
@@ -114,6 +122,7 @@ $actionBoardArgs = @(
 if ($DemoVideoUrl) { $actionBoardArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $actionBoardArgs += @("-BackendUrl", $BackendUrl) }
 if ($BlogPostUrl) { $actionBoardArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $actionBoardArgs += @("-EnvFile", $EnvFile) }
 if ($SkipExternalUrlChecks) { $actionBoardArgs += "-SkipExternalUrlChecks" }
 if ($AllowDraft) { $actionBoardArgs += "-AllowDraft" }
 $allowedActionBoardExitCodes = if ($AllowDraft) { @(0, 1) } else { @(0) }
@@ -129,6 +138,7 @@ $bundleArgs = @(
 if ($DemoVideoUrl) { $bundleArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $bundleArgs += @("-BackendUrl", $BackendUrl) }
 if ($BlogPostUrl) { $bundleArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $bundleArgs += @("-EnvFile", $EnvFile) }
 if ($SkipBackendDraft) { $bundleArgs += "-SkipBackendDraft" }
 if ($SkipExternalUrlChecks) { $bundleArgs += "-SkipExternalUrlChecks" }
 if ($AllowDraft) { $bundleArgs += "-AllowDraft" }
@@ -165,6 +175,8 @@ $result = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
     bundleManifestJson = if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { $null }
@@ -181,6 +193,7 @@ $lines = @(
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Bundle zip: $(if ($bundleManifest) { $bundleManifest.zipPath } else { '<missing>' })",
     "",
     "## Steps",

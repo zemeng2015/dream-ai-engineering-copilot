@@ -97,6 +97,7 @@ scripts/qwencloud-final-readiness.ps1 `
   -BackendUrl "<deployed-url>"
 
 scripts/qwencloud-final-upload-bundle.ps1 `
+  -EnvFile .env.qwencloud.local `
   -DemoVideoUrl "<public-video-url>" `
   -BackendUrl "<deployed-url>"
 ```

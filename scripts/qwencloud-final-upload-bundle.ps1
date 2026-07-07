@@ -17,6 +17,8 @@ param(
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaProofVideoPath = "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
     [switch]$AllowDraft
@@ -25,6 +27,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $bundleRoot = Join-Path $OutputDir "final-upload-bundle-$timestamp"
 $uploadsDir = Join-Path $bundleRoot "uploads"
@@ -207,6 +214,7 @@ function Invoke-CloudCredentialsHandoff {
     )
     if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
     if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-cloud-handoff-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-cloud-handoff-$timestamp.err"
@@ -284,6 +292,8 @@ $manifest = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     bundleRoot = $bundleRoot
     zipPath = $zipPath
     missingRequiredItems = $missing
@@ -298,6 +308,7 @@ $lines = @(
     "- Repo: $RepoUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Bundle zip: $zipPath",
     "",
     "## Items",
