@@ -287,6 +287,10 @@ if ($uploadBundleManifest) {
 
 $effectiveDemoVideoUrl = if ($DemoVideoUrl) { $DemoVideoUrl } elseif ($video.data) { [string]$video.data.demoVideoUrl } else { "" }
 $effectiveBackendUrl = if ($BackendUrl) { $BackendUrl } elseif ($release.data) { [string]$release.data.backendUrl } elseif ($readiness.data) { [string]$readiness.data.backendUrl } else { "" }
+$deployPreflightCheck = $null
+if ($readiness.data) {
+    $deployPreflightCheck = @($readiness.data.checks | Where-Object { $_.name -eq "latest_deploy_preflight_build_smoke" } | Select-Object -First 1)
+}
 
 $signals = [ordered]@{
     publicDemoVideoReady = [bool]($video.data -and $video.data.readyForDevpostVideoField)
@@ -294,6 +298,7 @@ $signals = [ordered]@{
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
+    dockerDeployPreflightReady = [bool]($deployPreflightCheck -and $deployPreflightCheck.ok)
     deployedBackendUrlPresent = -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)
     officialRulesGateReady = [bool]($officialRules.data -and $officialRules.data.readyForOfficialRules)
     finalizeAfterUrlsReady = [bool]($finalize.data -and $finalize.data.readyForDevpostSubmit)
@@ -316,6 +321,14 @@ if (-not $signals.cloudReleaseReady) {
         -Reason "Deployment cannot run until the local env file and Serverless Devs default access are configured." `
         -Command 'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft' `
         -RequiresZackConfirmation $true
+}
+
+if (-not $signals.dockerDeployPreflightReady) {
+    Add-NextAction `
+        -Name "Refresh Docker deploy preflight" `
+        -Reason "The final readiness report does not have a passing Docker build plus container smoke artifact." `
+        -Command 'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer' `
+        -RequiresZackConfirmation $false
 }
 
 if ($UseGitHubReleaseWorkflow -and -not $signals.githubReleaseWorkflowReady) {

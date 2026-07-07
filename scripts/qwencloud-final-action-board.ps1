@@ -175,6 +175,7 @@ $readiness = $readinessReport.data
 $proofCheck = Get-Check -Readiness $readiness -Name "alibaba_proof_integrity_ready"
 $packetCheck = Get-Check -Readiness $readiness -Name "devpost_submission_packet_ready"
 $ciCheck = Get-Check -Readiness $readiness -Name "latest_head_ci_success"
+$deployPreflightCheck = Get-Check -Readiness $readiness -Name "latest_deploy_preflight_build_smoke"
 
 if (-not $videoReady) {
     Add-Action -Name "Publish public demo video" -Reason "Devpost requires a public demo video URL." -RequiresUser $true -Commands @(
@@ -197,6 +198,13 @@ if (-not $cloudReady) {
         'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
         's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
+    )
+}
+
+if (-not ($deployPreflightCheck -and $deployPreflightCheck.ok)) {
+    Add-Action -Name "Refresh Docker deploy preflight" -Reason "The latest Docker build plus container smoke check is not ready." -Commands @(
+        'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer',
+        'scripts/qwencloud-final-readiness.ps1 -AllowDraftPacket'
     )
 }
 
@@ -267,6 +275,7 @@ $result = [ordered]@{
         githubSecretsSkipped = [bool]$SkipGitHubSecrets
         localVideoChecksSkipped = [bool]$SkipLocalVideoChecks
         latestCiReady = [bool]($ciCheck -and $ciCheck.ok)
+        dockerDeployPreflightReady = [bool]($deployPreflightCheck -and $deployPreflightCheck.ok)
         officialRulesGateReady = $officialRulesReady
         alibabaProofIntegrityReady = [bool]($proofCheck -and $proofCheck.ok)
         devpostPacketReady = [bool]($packetCheck -and $packetCheck.ok)
@@ -295,6 +304,7 @@ $lines = @(
     "| Local cloud release env | $(if ($cloudReady) { 'yes' } else { 'no' }) |",
     "| GitHub release secrets | $(if ($SkipGitHubSecrets) { 'skipped' } elseif ($secretsReady) { 'yes' } else { 'no' }) |",
     "| Latest CI | $(if ($ciCheck -and $ciCheck.ok) { 'yes' } else { 'no' }) |",
+    "| Docker deploy preflight | $(if ($deployPreflightCheck -and $deployPreflightCheck.ok) { 'yes' } else { 'no' }) |",
     "| Official rules gate | $(if ($officialRulesReady) { 'yes' } else { 'no' }) |",
     "| Alibaba proof integrity | $(if ($proofCheck -and $proofCheck.ok) { 'yes' } else { 'no' }) |",
     "| Devpost packet | $(if ($packetCheck -and $packetCheck.ok) { 'yes' } else { 'no' }) |",
