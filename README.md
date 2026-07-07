@@ -146,6 +146,7 @@ uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 curl http://localhost:8000/health
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
+scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 ```
 
 Key submission artifacts:
