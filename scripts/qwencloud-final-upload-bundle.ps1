@@ -64,6 +64,18 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
     }
 }
 
+function Add-LatestItem([string]$Name, [string]$Filter, [bool]$Required = $false) {
+    $latest = Get-ChildItem -LiteralPath $OutputDir -Filter $Filter -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if ($latest) {
+        Add-Item -Name $Name -Path $latest.FullName -Required $Required
+    }
+    else {
+        Add-Item -Name $Name -Path (Join-Path $OutputDir $Filter) -Required $Required
+    }
+}
+
 function Add-ExternalRequirement([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
     if ($Required -and -not $Ok) {
         $script:missing += $Name
@@ -244,6 +256,12 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "cloud_credentials_handoff_markdown" -Path $cloudHandoff.markdown
 Add-Item -Name "cloud_credentials_template" -Path $cloudHandoff.template
 Add-Item -Name "cloud_credentials_handoff_json" -Path $cloudHandoff.json
+Add-LatestItem -Name "latest_deploy_preflight_markdown" -Filter "deploy-preflight-*.md"
+Add-LatestItem -Name "latest_deploy_preflight_json" -Filter "deploy-preflight-*.json"
+Add-LatestItem -Name "latest_docker_build_stdout" -Filter "docker-build-*.out"
+Add-LatestItem -Name "latest_docker_build_stderr" -Filter "docker-build-*.err"
+Add-LatestItem -Name "latest_docker_run_stdout" -Filter "docker-run-*.out"
+Add-LatestItem -Name "latest_docker_run_stderr" -Filter "docker-run-*.err"
 
 $ready = $missing.Count -eq 0
 $manifest = [ordered]@{

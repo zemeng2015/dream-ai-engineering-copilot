@@ -92,6 +92,35 @@ function Test-DockerDaemon {
     }
 }
 
+function Test-LatestDeployPreflight {
+    $latest = Get-ChildItem -LiteralPath $OutputDir -Filter "deploy-preflight-*.json" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if (-not $latest) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer"
+        }
+    }
+
+    try {
+        $preflight = Get-Content -LiteralPath $latest.FullName -Raw | ConvertFrom-Json
+        $buildCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.build" } | Select-Object -First 1)
+        $smokeCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_container" } | Select-Object -First 1)
+        $ok = [bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok
+        return [pscustomobject]@{
+            ok = $ok
+            details = "path=$($latest.FullName); buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            ok = $false
+            details = "failed to parse $($latest.FullName): $($_.Exception.Message)"
+        }
+    }
+}
+
 function Get-VideoMetadata([string]$Path) {
     if (-not (Test-Path $Path)) { return $null }
     if (-not (Has-Command "ffprobe")) { return $null }
@@ -200,6 +229,9 @@ foreach ($tool in @("python", "docker", "s", "ffmpeg", "ffprobe", "gh")) {
 
 $docker = Test-DockerDaemon
 Add-Check -Name "docker_daemon_ready" -Ok $docker.ok -Details $docker.details
+
+$deployPreflight = Test-LatestDeployPreflight
+Add-Check -Name "latest_deploy_preflight_build_smoke" -Ok $deployPreflight.ok -Details $deployPreflight.details
 
 $sAccess = Test-ServerlessDevsDefaultAccess
 Add-Check -Name "serverless_devs_default_access" -Ok $sAccess.ok -Details $sAccess.details

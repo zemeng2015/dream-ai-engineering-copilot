@@ -136,6 +136,9 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it
   as the final copy/paste dashboard while filling Devpost.
+- Confirm the bundle also includes the latest `deploy-preflight-*.md/json` so
+  the Docker build and container `/health` smoke proof is available with the
+  upload files.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 

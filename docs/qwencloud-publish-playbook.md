@@ -91,7 +91,8 @@ artifact readiness, and final Devpost packet readiness.
 
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission
-files are all in one place.
+files are all in one place. It also includes the latest deploy preflight report
+and Docker build/run logs when available.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and
