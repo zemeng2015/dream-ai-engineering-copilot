@@ -38,6 +38,10 @@ Serverless Devs access, and registry login are configured:
 scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
+Alternatively, configure the repository secrets listed in
+`docs/qwencloud-github-release-workflow.md` and run the manual GitHub Actions
+workflow named `Qwen Cloud Release`.
+
 ```powershell
 docker build -t dream-qwencloud-memoryagent:latest .
 docker tag dream-qwencloud-memoryagent:latest $env:ALIBABA_CLOUD_CONTAINER_IMAGE

@@ -42,6 +42,15 @@ function Get-Browser {
 
     $browser = $browserCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     if (-not $browser) {
+        foreach ($commandName in @("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge", "msedge")) {
+            $command = Get-Command $commandName -ErrorAction SilentlyContinue
+            if ($command) {
+                $browser = $command.Source
+                break
+            }
+        }
+    }
+    if (-not $browser) {
         throw "Chrome or Edge is required to capture the Alibaba deployment proof screenshot."
     }
     return $browser
@@ -365,6 +374,7 @@ $htmlUri = [System.Uri]::new((Resolve-Path $htmlPath).Path).AbsoluteUri
 $args = @(
     "--headless=new",
     "--disable-gpu",
+    "--no-sandbox",
     "--no-first-run",
     "--no-default-browser-check",
     "--user-data-dir=$tempProfile",

@@ -256,6 +256,8 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "cloud_credentials_handoff_markdown" -Path $cloudHandoff.markdown
 Add-Item -Name "cloud_credentials_template" -Path $cloudHandoff.template
 Add-Item -Name "cloud_credentials_handoff_json" -Path $cloudHandoff.json
+Add-Item -Name "github_release_workflow" -Path ".github/workflows/qwencloud-release.yml" -Required $false
+Add-Item -Name "github_release_workflow_handoff" -Path "docs/qwencloud-github-release-workflow.md" -Required $false
 Add-LatestItem -Name "latest_deploy_preflight_markdown" -Filter "deploy-preflight-*.md"
 Add-LatestItem -Name "latest_deploy_preflight_json" -Filter "deploy-preflight-*.json"
 Add-LatestItem -Name "latest_docker_build_stdout" -Filter "docker-build-*.out"

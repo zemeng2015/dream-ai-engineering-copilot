@@ -17,6 +17,8 @@
 - [ ] Chrome extension file upload permission enabled if using browser automation
   for YouTube/Devpost uploads.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
+- [ ] Optional GitHub release workflow present:
+  `.github/workflows/qwencloud-release.yml`.
 - [ ] One-command local proof script present: `scripts/qwencloud-run-local-proof.ps1`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 

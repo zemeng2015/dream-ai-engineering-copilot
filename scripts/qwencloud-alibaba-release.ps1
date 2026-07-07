@@ -55,6 +55,16 @@ function Require-Env([string]$Name) {
     }
 }
 
+function Get-PowerShellExe {
+    $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+    if ($pwsh) { return $pwsh.Source }
+
+    $powershell = Get-Command "powershell" -ErrorAction SilentlyContinue
+    if ($powershell) { return $powershell.Source }
+
+    throw "PowerShell executable not found."
+}
+
 function Invoke-Logged {
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
@@ -67,7 +77,7 @@ function Invoke-Logged {
     $resolvedArguments = $ArgumentList
     if ($resolvedFilePath -match "\.ps1$") {
         $resolvedArguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $resolvedFilePath) + $ArgumentList
-        $resolvedFilePath = "powershell"
+        $resolvedFilePath = Get-PowerShellExe
     }
 
     $stdout = Join-Path $OutputDir "$Name-$timestamp.out"
@@ -184,7 +194,7 @@ try {
     if (-not $SkipSmoke) {
         $preflightArgs += "-SmokeContainer"
     }
-    Invoke-Logged -FilePath "powershell" -ArgumentList $preflightArgs -Name "deploy-preflight" | Out-Null
+    Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $preflightArgs -Name "deploy-preflight" | Out-Null
 
     if ($SkipBuild) {
         Add-Step -Name "docker_build" -Status "skipped" -Details "handled by preflight skip"
@@ -223,7 +233,7 @@ try {
     }
 
     $verifyArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-verify.ps1", "-BaseUrl", $effectiveBackendUrl)
-    Invoke-Logged -FilePath "powershell" -ArgumentList $verifyArgs -Name "verify-backend" | Out-Null
+    Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $verifyArgs -Name "verify-backend" | Out-Null
 
     if ($SkipScreenshot) {
         Add-Step -Name "capture_alibaba_screenshot" -Status "skipped" -Details "SkipScreenshot set"
@@ -233,7 +243,7 @@ try {
         if (-not $SkipDraft) {
             $screenshotArgs += "-IncludeDraft"
         }
-        Invoke-Logged -FilePath "powershell" -ArgumentList $screenshotArgs -Name "capture-alibaba-proof" | Out-Null
+        Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $screenshotArgs -Name "capture-alibaba-proof" | Out-Null
     }
 
     if ($SkipProofVideo) {
@@ -247,7 +257,7 @@ try {
         if (-not $SkipDraft) {
             $proofVideoArgs += "-IncludeDraft"
         }
-        Invoke-Logged -FilePath "powershell" -ArgumentList $proofVideoArgs -Name "render-alibaba-proof-video" | Out-Null
+        Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $proofVideoArgs -Name "render-alibaba-proof-video" | Out-Null
     }
 
     $packetArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-submission-packet.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
@@ -263,7 +273,7 @@ try {
     if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
         $packetArgs += "-AllowDraft"
     }
-    Invoke-Logged -FilePath "powershell" -ArgumentList $packetArgs -Name "submission-packet" | Out-Null
+    Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $packetArgs -Name "submission-packet" | Out-Null
 
     $handoffArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-handoff.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
     if ($DemoVideoUrl) {
@@ -275,7 +285,7 @@ try {
     if ($AllowDraftPacket -or [string]::IsNullOrWhiteSpace($DemoVideoUrl)) {
         $handoffArgs += "-AllowDraft"
     }
-    Invoke-Logged -FilePath "powershell" -ArgumentList $handoffArgs -Name "devpost-handoff" | Out-Null
+    Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $handoffArgs -Name "devpost-handoff" | Out-Null
 
     Write-ReleaseReport -EffectiveBackendUrl $effectiveBackendUrl
     Write-Host "Alibaba release flow completed. Report: $releaseMd"
