@@ -36,6 +36,16 @@ scripts/qwencloud-devpost-draft-payload.ps1 -AllowDraft
 This payload is local only. Saving it into Devpost is an external write action
 and still requires Zack action-time confirmation.
 
+Generate the judging alignment scorecard with:
+
+```powershell
+scripts/qwencloud-judging-scorecard.ps1 -AllowDraft
+```
+
+This scorecard maps the submission to the official judging categories:
+Innovation & AI Creativity, Technical Depth & Engineering, Problem Value &
+Impact, and Presentation & Documentation.
+
 ## Project name
 
 DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence
@@ -77,6 +87,22 @@ retrieved evidence and can be audited later.
 
 It is a MemoryAgent: the core value is durable, reviewable memory that improves
 decision quality across requirement drafting, PR review, and engineering workflows.
+
+### Judging alignment
+
+- Innovation and AI Creativity: Qwen Cloud is used inside a governed memory
+  workflow with claim distillation, source-backed retrieval, requirement
+  drafting, audit/eval feedback, and human review loops.
+- Technical Depth and Engineering: DREAM includes provider abstraction,
+  API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment,
+  architecture assets, CI, release workflow, proof automation, and final
+  readiness gates.
+- Problem Value and Impact: the product solves a real engineering pain point:
+  lost context across Jira, code, incidents, runbooks, and PR history, turning
+  it into reusable auditable memory.
+- Presentation and Documentation: the repo includes architecture diagrams,
+  generated demo/proof videos, deployment proof, field-level Devpost payloads,
+  judging scorecard, and a final upload bundle.
 
 ## Video link
 

@@ -247,6 +247,46 @@ function Invoke-DraftPayload {
     }
 }
 
+function Invoke-JudgingScorecard {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "judging-scorecard-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-judging-scorecard.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($AllowDraft -or [string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) {
+        $args += "-AllowDraft"
+    }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-judging-scorecard-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-judging-scorecard-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Judging scorecard generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "judging-scorecard-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Judging scorecard JSON was not found."
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForJudgingNarrative
+        missing = @($data.missingRequiredCriteria)
+    }
+}
+
 function Invoke-CloudCredentialsHandoff {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "cloud-credentials-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -289,6 +329,7 @@ function Invoke-CloudCredentialsHandoff {
 $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
+$judgingScorecard = Invoke-JudgingScorecard
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
@@ -296,6 +337,7 @@ Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullO
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
 Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
 Add-ExternalRequirement -Name "devpost_draft_payload_ready" -Ok $draftPayload.ready -Details $(if ($draftPayload.ready) { "READY" } else { "DRAFT; publicTextReady=$($draftPayload.publicTextReady); missing=$($draftPayload.failures -join ', ')" })
+Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.ready -Details $(if ($judgingScorecard.ready) { "READY" } else { "DRAFT; missing=$($judgingScorecard.missing -join ', ')" })
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
@@ -319,6 +361,9 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "devpost_draft_payload_markdown" -Path $draftPayload.markdown
 Add-Item -Name "devpost_draft_payload_json" -Path $draftPayload.json
 Add-Item -Name "devpost_draft_payload_script" -Path "scripts/qwencloud-devpost-draft-payload.ps1" -Required $false
+Add-Item -Name "judging_scorecard_markdown" -Path $judgingScorecard.markdown
+Add-Item -Name "judging_scorecard_json" -Path $judgingScorecard.json
+Add-Item -Name "judging_scorecard_script" -Path "scripts/qwencloud-judging-scorecard.ps1" -Required $false
 Add-Item -Name "cloud_credentials_handoff_markdown" -Path $cloudHandoff.markdown
 Add-Item -Name "cloud_credentials_template" -Path $cloudHandoff.template
 Add-Item -Name "cloud_credentials_handoff_json" -Path $cloudHandoff.json

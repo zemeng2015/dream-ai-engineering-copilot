@@ -276,6 +276,7 @@ $deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverle
 $deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deploy-preflight.ps1"
 $qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
 $buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
+$judgingScorecardScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-judging-scorecard.ps1"
 $ciUrl = "$repoUsed/actions/workflows/ci.yml"
 
 $requiredPaths = @(
@@ -306,6 +307,7 @@ $requiredPaths = @(
     "scripts/qwencloud-final-readiness.ps1",
     "scripts/qwencloud-final-upload-bundle.ps1",
     "scripts/qwencloud-devpost-draft-payload.ps1",
+    "scripts/qwencloud-judging-scorecard.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
     "scripts/qwencloud-hackathon-proof.ps1",
     "scripts/qwencloud-run-local-proof.ps1",
@@ -467,6 +469,7 @@ $packet = [ordered]@{
         deployPreflight = $deployPreflightUrl
         qwenConfig = $qwenConfigUrl
         buildJourneyDraft = $buildJourneyDraftUrl
+        judgingScorecardScript = $judgingScorecardScriptUrl
         ci = $ciUrl
     }
     checks = $checks
@@ -502,6 +505,7 @@ $md = @(
     "- Alibaba Cloud deployment proof: $deploymentProofUrl",
     "- Deploy preflight script: $deployPreflightUrl",
     "- Qwen mode config: $qwenConfigUrl",
+    "- Judging scorecard generator: $judgingScorecardScriptUrl",
     "- Blog/social build journey draft: $buildJourneyDraftUrl",
     "- CI proof: $ciUrl",
     "",
@@ -524,6 +528,13 @@ $md = @(
     "Engineering teams lose critical context across tickets, code, incidents, runbooks, and review decisions. DREAM makes that context persistent and governed. It loads knowledge packs, indexes local codebases, distills reviewable memory claims, retrieves source-backed context, and uses Qwen Cloud through an OpenAI-compatible provider to produce traceable requirement and review outputs.",
     "",
     "The system is built as a production-minded Track 1 MemoryAgent: memory can be promoted, rejected, audited, evaluated, and reused across workflows. The public health endpoint exposes runtime proof such as Track 1, qwen-cloud provider, model, deployment target, region, and the Alibaba Cloud proof file path without exposing secrets.",
+    "",
+    "### Judging alignment",
+    "",
+    "- Innovation and AI Creativity: Qwen Cloud is used inside a governed memory workflow with claim distillation, source-backed retrieval, requirement drafting, audit/eval feedback, and human review loops.",
+    "- Technical Depth and Engineering: DREAM includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment, architecture assets, CI, release workflow, proof automation, and final readiness gates.",
+    "- Problem Value and Impact: the product solves a real engineering pain point: lost context across Jira, code, incidents, runbooks, and PR history, turning it into reusable auditable memory.",
+    "- Presentation and Documentation: the repo includes architecture diagrams, generated demo/proof videos, deployment proof, field-level Devpost payloads, judging scorecard, and a final upload bundle.",
     "",
     "### Built with",
     "",

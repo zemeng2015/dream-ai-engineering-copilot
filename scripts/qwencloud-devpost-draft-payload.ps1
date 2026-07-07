@@ -58,6 +58,13 @@ The hardest part was making the project credible as production engineering infra
 
 The project now has a public Apache-2.0 repo, Qwen Cloud provider mode, Alibaba Cloud deployment packaging, architecture assets, CI verification, local proof runners, Devpost packet generation, and a final readiness dashboard that tracks what is still missing before submission.
 
+## Judging alignment
+
+- Innovation and AI creativity: DREAM uses Qwen Cloud inside a governed memory workflow with claim distillation, source-backed retrieval, requirement drafting, audit/eval feedback, and human review loops.
+- Technical depth and engineering: the implementation includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment, architecture assets, CI, release workflow, and machine-checked final readiness gates.
+- Problem value and impact: engineering teams repeatedly lose context across Jira, code, incidents, runbooks, and PRs; DREAM turns that context into reusable, auditable memory for real requirement and review workflows.
+- Presentation and documentation: the submission includes architecture diagrams, generated demo/proof videos, deployment proof, field-level Devpost payloads, and a final upload bundle so judging artifacts stay reproducible.
+
 ## What's next
 
 Next steps are completing the live Alibaba deployment, publishing the public demo video, saving the Devpost draft fields, attaching the required proof assets, and submitting only after the final readiness gate reports READY.
