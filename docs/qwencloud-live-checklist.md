@@ -56,6 +56,12 @@ Invoke-RestMethod -Method Post `
 scripts/qwencloud-hackathon-proof.ps1 -BaseUrl <deployed-url>
 ```
 
+Optional strict gate (health + draft + field checks):
+
+```powershell
+scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl <deployed-url>
+```
+
 7. Record demo with <3 minute duration.
 
 ## Submission packet

@@ -18,6 +18,7 @@ uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 
 ```powershell
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
+scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 ```
 
 - Confirm output includes:
@@ -42,6 +43,7 @@ scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
 
 ```powershell
 scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
+scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 ```
 
 ## Step 3 — Devpost fill (about 1.5 minutes)
@@ -66,3 +68,5 @@ scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
 - Keep the video focus on `/health`, memory governance, claim review, and
   traceability.
 - Explain network/key instability and continue with governance + audit proof.
+Use `scripts/qwencloud-hackathon-submit-gate.ps1` on your local or deployed
+endpoint to produce one machine-readable proof bundle and a clear pass/fail summary.

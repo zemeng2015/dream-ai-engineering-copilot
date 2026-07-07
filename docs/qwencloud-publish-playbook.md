@@ -27,11 +27,16 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
+scripts/qwencloud-hackathon-submit-gate.ps1
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
 `artifacts/qwencloud-proof/` with both `/health` and `/requirements/draft`
 proof payloads for judge-facing evidence.
+
+`qwencloud-hackathon-submit-gate.ps1` performs the same proof collection with
+strict checks for Track 1, qwen-cloud provider, expected proof file, and
+requirement-draft success (unless `-SkipDraft` is set).
 
 ## Devpost fill order
 

@@ -97,3 +97,4 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-smoke.ps1`
 - `scripts/qwencloud-hackathon-verify.ps1`
 - `scripts/qwencloud-hackathon-proof.ps1`
+- `scripts/qwencloud-hackathon-submit-gate.ps1`
