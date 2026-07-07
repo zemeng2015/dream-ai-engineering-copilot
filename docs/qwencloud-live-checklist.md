@@ -10,6 +10,7 @@
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
+- [ ] Alibaba deployment proof recording path reserved: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
 - [ ] One-command local proof script present: `scripts/qwencloud-run-local-proof.ps1`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
@@ -67,6 +68,10 @@ Invoke-RestMethod -Method Post `
   ```powershell
   scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl <deployed-url>
   ```
+- Render the separate Alibaba backend proof recording:
+  ```powershell
+  scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl <deployed-url>
+  ```
 
 6. Save reproducible proof bundle:
 
@@ -101,8 +106,8 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 ```
 
 The packet must report `READY`; failures on the public video URL, deployed
-backend URL, Alibaba screenshot, or upload asset checks mean the Devpost
-submission is still not complete.
+backend URL, Alibaba screenshot, Alibaba proof video, or upload asset checks
+mean the Devpost submission is still not complete.
 
 ## Submission packet
 
@@ -110,6 +115,7 @@ submission is still not complete.
 - Apache 2.0 link
 - Architecture image
 - Alibaba deployment screenshot
+- Alibaba backend proof recording
 - Demo video link
 - Proof files / deployment proof
 - 1-2 sentence demo result summary from live run

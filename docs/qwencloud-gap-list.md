@@ -25,7 +25,7 @@
 
 - Run one live Qwen smoke test with the real `DASHSCOPE_API_KEY`.
 - Deploy the container or at least produce a Function Compute dry-run screenshot
-  plus `/health` output.
+  plus `/health` output and the separate Alibaba backend proof recording.
 - Upload the rendered sub-3-minute demo video to YouTube, Vimeo, or Facebook Video.
 - Generate the final submission packet with public video and deployed backend URLs.
 - Upload the architecture PNG into the Devpost submission.

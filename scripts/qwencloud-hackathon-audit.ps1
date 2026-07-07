@@ -17,6 +17,7 @@ param(
         "scripts/qwencloud-capture-alibaba-proof.ps1",
         "scripts/qwencloud-deploy-preflight.ps1",
         "scripts/qwencloud-export-architecture-png.ps1",
+        "scripts/qwencloud-render-alibaba-proof-video.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",

@@ -22,6 +22,7 @@ param(
     [switch]$SkipDeploy,
     [switch]$SkipDraft,
     [switch]$SkipScreenshot,
+    [switch]$SkipProofVideo,
     [switch]$AllowDraftPacket
 )
 
@@ -133,19 +134,23 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 }
 
 try {
-    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1")) {
+    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required release file missing: $path"
         }
     }
     Add-Step -Name "required_files" -Status "pass" -Details "release scripts and deployment template found"
 
-    foreach ($tool in @("docker", "s", "python")) {
+    $requiredTools = @("docker", "s", "python")
+    if (-not $SkipProofVideo) {
+        $requiredTools += "ffmpeg"
+    }
+    foreach ($tool in $requiredTools) {
         if (-not (Has-Command $tool)) {
             throw "Required command is missing: $tool"
         }
     }
-    Add-Step -Name "tools" -Status "pass" -Details "docker, s, and python available"
+    Add-Step -Name "tools" -Status "pass" -Details "$($requiredTools -join ', ') available"
 
     if ($SkipDeploy -and $BackendUrl) {
         Add-Step -Name "required_env" -Status "skipped" -Details "SkipDeploy with explicit BackendUrl"
@@ -166,7 +171,7 @@ try {
     }
 
     if ($PlanOnly) {
-        Add-Step -Name "plan" -Status "pass" -Details "No build, push, deploy, verification, screenshot, or packet side effects were executed."
+        Add-Step -Name "plan" -Status "pass" -Details "No build, push, deploy, verification, screenshot, proof video, or packet side effects were executed."
         Write-ReleaseReport -EffectiveBackendUrl $BackendUrl
         Write-Host "Plan-only release report: $releaseMd"
         exit 0
@@ -229,6 +234,20 @@ try {
             $screenshotArgs += "-IncludeDraft"
         }
         Invoke-Logged -FilePath "powershell" -ArgumentList $screenshotArgs -Name "capture-alibaba-proof" | Out-Null
+    }
+
+    if ($SkipProofVideo) {
+        Add-Step -Name "render_alibaba_proof_video" -Status "skipped" -Details "SkipProofVideo set"
+    }
+    else {
+        $proofVideoArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-render-alibaba-proof-video.ps1", "-BaseUrl", $effectiveBackendUrl)
+        if (-not $SkipScreenshot) {
+            $proofVideoArgs += "-SkipCapture"
+        }
+        if (-not $SkipDraft) {
+            $proofVideoArgs += "-IncludeDraft"
+        }
+        Invoke-Logged -FilePath "powershell" -ArgumentList $proofVideoArgs -Name "render-alibaba-proof-video" | Out-Null
     }
 
     $packetArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-submission-packet.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)

@@ -15,6 +15,8 @@ param(
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaProofVideoPath = "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4",
     [switch]$SkipExternalUrlChecks,
     [switch]$SkipBackendDraft,
     [switch]$AllowDraft
@@ -239,6 +241,7 @@ $requiredPaths = @(
     "examples/config/dream.qwen.yaml",
     "scripts/qwencloud-alibaba-release.ps1",
     "scripts/qwencloud-capture-alibaba-proof.ps1",
+    "scripts/qwencloud-render-alibaba-proof-video.ps1",
     "scripts/qwencloud-export-architecture-png.ps1",
     "scripts/qwencloud-deploy-preflight.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
@@ -276,6 +279,18 @@ Add-Check -Name "devpost_alibaba_deployment_screenshot" -Ok $alibabaScreenshotAs
 if (Test-Path $AlibabaScreenshotPath) {
     $alibabaScreenshotDims = Get-PngDimensions -Path $AlibabaScreenshotPath
     Add-Check -Name "alibaba_screenshot_png_dimensions" -Ok ($null -ne $alibabaScreenshotDims) -Details $(if ($alibabaScreenshotDims) { "$($alibabaScreenshotDims.width)x$($alibabaScreenshotDims.height)" } else { "not a readable PNG" }) -Required $false
+}
+
+$alibabaProofVideoAsset = Test-UploadAsset -Path $AlibabaProofVideoPath -Extensions @(".mp4", ".mov") -MaxMb 100
+Add-Check -Name "devpost_alibaba_deployment_proof_video" -Ok $alibabaProofVideoAsset.ok -Details $alibabaProofVideoAsset.details
+$alibabaProofVideoMetadata = Get-VideoMetadata -Path $AlibabaProofVideoPath
+if ($alibabaProofVideoMetadata) {
+    Add-Check -Name "alibaba_proof_video_duration" -Ok ($alibabaProofVideoMetadata.duration -gt 0 -and $alibabaProofVideoMetadata.duration -le 60) -Details "duration=$($alibabaProofVideoMetadata.duration); size=$($alibabaProofVideoMetadata.size); format=$($alibabaProofVideoMetadata.format)"
+    Add-Check -Name "alibaba_proof_video_resolution" -Ok ($alibabaProofVideoMetadata.width -ge 1280 -and $alibabaProofVideoMetadata.height -ge 720) -Details "$($alibabaProofVideoMetadata.width)x$($alibabaProofVideoMetadata.height); codec=$($alibabaProofVideoMetadata.codec)"
+}
+else {
+    Add-Check -Name "alibaba_proof_video_duration" -Ok $false -Details "ffprobe unavailable or proof video missing"
+    Add-Check -Name "alibaba_proof_video_resolution" -Ok $false -Details "ffprobe unavailable or proof video missing"
 }
 
 $videoExists = Test-Path $LocalVideoPath
@@ -364,6 +379,7 @@ $packet = [ordered]@{
     uploadAssets = [ordered]@{
         architectureDiagram = $ArchitectureUploadPath
         alibabaDeploymentScreenshot = $AlibabaScreenshotPath
+        alibabaDeploymentProofVideo = $AlibabaProofVideoPath
         localDemoVideo = $LocalVideoPath
     }
     devpostAdditionalInfo = [ordered]@{
@@ -410,6 +426,7 @@ $md = @(
     "- Optional blog/social post: $blogLine",
     "- Architecture upload file: $ArchitectureUploadPath",
     "- Alibaba deployment screenshot file: $AlibabaScreenshotPath",
+    "- Alibaba deployment proof video file: $AlibabaProofVideoPath",
     "",
     "## Required Links",
     "",
@@ -459,6 +476,7 @@ $md = @(
     "- Alibaba Cloud deployment proof code file: $deploymentProofUrl",
     "- Architecture diagram file upload: $ArchitectureUploadPath",
     "- Alibaba deployment screenshot upload: $AlibabaScreenshotPath",
+    "- Alibaba deployment proof video: $AlibabaProofVideoPath",
     "- Blog/social URL: $blogLine",
     "- AI tools leveraged: Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.",
     "- Learning level: Significant",
@@ -509,6 +527,7 @@ $md += @(
     "- Set `DASHSCOPE_API_KEY`, `ALIBABA_CLOUD_REGION`, and `ALIBABA_CLOUD_CONTAINER_IMAGE`.",
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
+    "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` to YouTube, Vimeo, or Facebook Video and paste the public URL.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."

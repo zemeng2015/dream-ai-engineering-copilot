@@ -65,3 +65,12 @@ scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-
 
 The screenshot is written to
 `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
+
+Render the separate Alibaba backend proof recording:
+
+```powershell
+scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
+```
+
+The proof recording is written to
+`artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.

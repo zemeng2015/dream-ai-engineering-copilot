@@ -191,6 +191,12 @@ After deployment, capture the Devpost-ready Alibaba proof screenshot:
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 ```
 
+Render the separate Alibaba backend proof recording:
+
+```powershell
+scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
+```
+
 Regenerate the PNG architecture upload asset:
 
 ```powershell

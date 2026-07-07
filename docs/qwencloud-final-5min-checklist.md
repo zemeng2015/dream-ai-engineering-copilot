@@ -84,6 +84,14 @@ scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-
 
 This writes `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 
+- Render the separate Alibaba backend proof recording:
+
+```powershell
+scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
+```
+
+This writes `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
+
 ## Step 4 - Demo video (about 1 minute)
 
 - Render the final upload video:
@@ -106,7 +114,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Open the generated `artifacts/qwencloud-proof/devpost-submission-packet-*.md`.
 - Confirm the packet reports `READY`, including public video URL reachability,
   backend health proof, architecture PNG dimensions, Alibaba screenshot
-  readiness, and local demo video under 3 minutes.
+  readiness, Alibaba proof video readiness, and local demo video under 3 minutes.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 
@@ -117,6 +125,8 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Add Apache-2.0 link
 - Upload `docs/assets/qwencloud-architecture.png`
 - Upload `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
+- Upload or link `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4` if
+  Devpost requests the separate Alibaba backend recording.
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
 - Fill the Additional Info fields from `docs/qwencloud-devpost-form-fields.md`

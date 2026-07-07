@@ -92,6 +92,8 @@ hackathon.
 - Architecture diagram upload: `docs/assets/qwencloud-architecture.png`
 - Alibaba deployment screenshot upload: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
   generated with `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "<deployed-backend-url>"`
+- Alibaba backend proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`
+  generated with `scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "<deployed-backend-url>"`
 - Blog/social journey URL: optional; use a published copy of `docs/qwencloud-build-journey-post.md` if available
 - AI tools leveraged: `Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.`
 - Learning level: `Significant`

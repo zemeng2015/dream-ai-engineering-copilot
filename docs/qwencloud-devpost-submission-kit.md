@@ -17,6 +17,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-alibaba-release.ps1`
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
+  - `scripts/qwencloud-render-alibaba-proof-video.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
   - `deploy/alibaba/README.md`
@@ -82,6 +83,8 @@ Required proof artifacts:
 - FC build/deploy success output or screenshot.
 - Devpost screenshot from:
   `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"`
+- Separate Alibaba backend proof recording from:
+  `scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"`
 - `curl` or browser result from `/health`.
 - One successful `POST /requirements/draft` response.
 
@@ -122,8 +125,9 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 
 1. Fill in Devpost fields (project, description, links).
 2. Attach `docs/assets/qwencloud-architecture.png`,
-   `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, and the
-   under-3-minute video.
+   `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`,
+   `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`, and the
+   under-3-minute demo video.
 3. Add public repo link and Apache-2.0 license.
 4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs
    and confirm it reports `READY`.
@@ -151,4 +155,5 @@ Run helper scripts as needed:
 - `scripts/qwencloud-alibaba-release.ps1`
 - `scripts/qwencloud-run-local-proof.ps1`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`
+- `scripts/qwencloud-render-alibaba-proof-video.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`
