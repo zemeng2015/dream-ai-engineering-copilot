@@ -490,7 +490,7 @@ if (-not $signals.dockerDeployPreflightReady) {
     Add-NextAction `
         -Name "Refresh Docker deploy preflight" `
         -Reason "The final readiness report does not have a passing Docker build plus container smoke artifact." `
-        -Command 'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft' `
+        -Command 'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft' `
         -RequiresZackConfirmation $false
 }
 

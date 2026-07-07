@@ -28,6 +28,22 @@ def test_final_sprint_can_refresh_alibaba_proof_after_urls() -> None:
     assert 'Invoke-SprintStep -Name "final-sprint-release-summary"' in final_sprint
     assert "releaseSummaryReady" in final_sprint
     assert "githubReleaseArtifactIngestReady" in final_sprint
+    preflight_command = (
+        "scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local "
+        "-BuildImage -SmokeContainer -AllowDraft"
+    )
+    assert (
+        preflight_command in final_sprint
+    )
+
+    action_board = (ROOT / "scripts" / "qwencloud-final-action-board.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    assert preflight_command in action_board
+    assert (
+        "scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -AllowDraftPacket"
+        in action_board
+    )
 
     for path in [
         "docs/qwencloud-final-5min-checklist.md",
