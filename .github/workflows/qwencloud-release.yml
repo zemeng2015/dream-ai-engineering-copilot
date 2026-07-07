@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       demoVideoUrl:
-        description: Public YouTube, Vimeo, Facebook Video, fb.watch, or Youku URL
+        description: Public YouTube, Vimeo, or Youku URL
         required: true
         type: string
       backendUrl:

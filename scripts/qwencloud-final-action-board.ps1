@@ -176,7 +176,7 @@ $ciCheck = Get-Check -Readiness $readiness -Name "latest_head_ci_success"
 if (-not $videoReady) {
     Add-Action -Name "Publish public demo video" -Reason "Devpost requires a public demo video URL." -RequiresUser $true -Commands @(
         "# Enable Chrome file access only after explicit confirmation, or upload manually.",
-        "# Upload artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4 to YouTube, Vimeo, Facebook Video, fb.watch, or Youku.",
+        "# Upload artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4 to YouTube, Vimeo, or Youku.",
         'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"'
     )
 }

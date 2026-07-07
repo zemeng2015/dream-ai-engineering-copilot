@@ -55,7 +55,7 @@ the current PowerShell process only.
 ## Manual Run
 
 1. Upload the demo MP4 using `docs/qwencloud-video-upload-handoff.md` to a
-   public YouTube, Vimeo, Facebook Video, `fb.watch`, or Youku URL.
+   public YouTube, Vimeo, or Youku URL.
 2. Open GitHub Actions, choose `Qwen Cloud Release`, and click `Run workflow`.
 3. Paste the public demo video URL.
 4. Leave `backendUrl` blank for a real deploy, or set it with `skipDeploy=true`
