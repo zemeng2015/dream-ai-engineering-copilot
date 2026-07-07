@@ -949,8 +949,6 @@ Add-Item -Name "github_release_workflow" -Path ".github/workflows/qwencloud-rele
 Add-Item -Name "github_release_workflow_handoff" -Path "docs/qwencloud-github-release-workflow.md" -Required $false
 Add-LatestItem -Name "latest_github_release_artifact_ingest_markdown" -Filter "github-release-artifact-ingest-*.md"
 Add-LatestItem -Name "latest_github_release_artifact_ingest_json" -Filter "github-release-artifact-ingest-*.json"
-Add-LatestItem -Name "latest_github_release_summary_markdown" -Filter "release-summary-*.md"
-Add-LatestItem -Name "latest_github_release_summary_json" -Filter "release-summary-*.json"
 Add-LatestItem -Name "latest_deploy_preflight_markdown" -Filter "deploy-preflight-*.md"
 Add-LatestItem -Name "latest_deploy_preflight_json" -Filter "deploy-preflight-*.json"
 Add-LatestItem -Name "latest_docker_build_stdout" -Filter "docker-build-*.out"
@@ -983,6 +981,7 @@ $manifest = [ordered]@{
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
     officialSourceFingerprints = $officialSourceRefresh.sourceFingerprints
+    releaseSummaryPackaging = "not_bundled_generate_after_zip_hash"
     bundleRoot = $bundleRoot
     zipPath = $zipPath
     missingRequiredItems = $missing
@@ -1003,6 +1002,7 @@ $lines = @(
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Bundle zip: $zipPath",
+    "- Release summary: generate after this bundle; it is intentionally not bundled because it records the bundle ZIP SHA256.",
     "",
     "## Items",
     "",

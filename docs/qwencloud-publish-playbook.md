@@ -127,7 +127,9 @@ assets, the generated Devpost packet, and a manifest so the final submission
 files are all in one place. It also includes the latest deploy preflight report,
 Docker build/run logs, final action board when available, git commit metadata,
 and SHA256 hashes for bundled upload files so the final Devpost assets can be
-checked before submit.
+checked before submit. The release summary is intentionally generated after the
+final upload bundle and kept next to the zip, not inside it, because the summary
+records the bundle zip SHA256.
 
 `qwencloud-final-action-board.ps1` runs video URL, cloud credential, live input,
 judging scorecard, GitHub secret, Docker deploy preflight, official rules gate,
@@ -150,8 +152,9 @@ it refreshes the official Devpost overview/rules source, validates the public
 video URL, captures the Alibaba proof screenshot, renders the short proof
 recording, validates proof integrity, runs the submission packet, final
 readiness dashboard, final upload bundle, release summary, and then writes a
-single final status report. Use `-SkipOfficialSourceRefresh` only for offline
-local rehearsal.
+single final status report. The release summary is generated after the final
+upload bundle so it can report the bundle hash. Use
+`-SkipOfficialSourceRefresh` only for offline local rehearsal.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and

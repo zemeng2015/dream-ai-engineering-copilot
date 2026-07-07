@@ -104,7 +104,9 @@ The workflow runs:
   run environment and should not call `gh secret list`.
 - `scripts/qwencloud-release-summary.ps1`, which writes the latest backend URL,
   showcase proof, final bundle hash, and remaining blockers to the GitHub job
-  summary and artifact folder even when the run remains DRAFT.
+  summary and artifact folder even when the run remains DRAFT. This summary is
+  generated after the final upload bundle and is kept next to the zip instead
+  of inside it, because it records the zip SHA256.
 - Artifact upload for Devpost proof files and handoff files.
 
 The GitHub runner validates the public video URL but skips the local MP4 file

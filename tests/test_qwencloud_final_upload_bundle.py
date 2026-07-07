@@ -14,6 +14,8 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "[switch]$SkipGitHubSecrets" in final_bundle
     assert "function Invoke-ActionBoard" in final_bundle
     assert "function Invoke-ExternalHandoff" in final_bundle
+    assert "releaseSummaryPackaging" in final_bundle
+    assert "not_bundled_generate_after_zip_hash" in final_bundle
     assert '"scripts/qwencloud-final-action-board.ps1"' in final_bundle
     assert '"scripts/qwencloud-final-external-handoff.ps1"' in final_bundle
     assert '"-RepoName", $RepoName' in final_bundle
@@ -45,6 +47,8 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "latest_final_external_handoff_markdown" not in final_bundle
     assert "latest_final_external_handoff_json" not in final_bundle
     assert "latest_final_external_handoff_zip" not in final_bundle
+    assert "latest_github_release_summary_markdown" not in final_bundle
+    assert "latest_github_release_summary_json" not in final_bundle
 
     assert final_bundle.index("function Invoke-ActionBoard") < final_bundle.index(
         "$actionBoard = Invoke-ActionBoard"

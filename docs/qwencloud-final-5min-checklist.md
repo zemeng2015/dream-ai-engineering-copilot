@@ -189,12 +189,20 @@ scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVid
 This command refreshes the official Devpost overview/rules source before it
 checks video status, Alibaba proof, packet readiness, the upload bundle, and
 the release summary that maps backend URL, `/qwencloud/showcase`, bundle zip,
-and SHA256.
+and SHA256. The release summary is generated after the final upload bundle and
+kept next to the zip, because it records the final bundle hash.
 
 - Create the final upload bundle:
 
 ```powershell
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
+- Generate the release summary after the bundle if you ran the bundle command
+  manually:
+
+```powershell
+scripts/qwencloud-release-summary.ps1 -OutputDir artifacts/qwencloud-proof
 ```
 
 - Generate the final action board if any signal is still DRAFT:

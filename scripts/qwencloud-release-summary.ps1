@@ -153,6 +153,27 @@ function Get-RequiredFailures {
     )
 }
 
+function Get-EmbeddedReleaseSummaryItems {
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        [object]$BundleManifestData
+    )
+
+    if (-not $BundleManifestData -or -not $BundleManifestData.items) {
+        return @()
+    }
+
+    return @(
+        $BundleManifestData.items |
+            Where-Object {
+                $name = [string]$_.name
+                $name -match "release_summary" -and $name -ne "github_release_summary_script"
+            } |
+            ForEach-Object { [string]$_.name }
+    )
+}
+
 function Format-PathOrMissing {
     param(
         [Parameter(Mandatory = $false)]
@@ -218,6 +239,8 @@ $bundleMissing = @(
         $bundleManifest.data.missingRequiredItems
     }
 )
+$embeddedReleaseSummaryItems = @(Get-EmbeddedReleaseSummaryItems -BundleManifestData $bundleManifest.data)
+$bundleSummaryPackagingOk = $embeddedReleaseSummaryItems.Count -eq 0
 $nextActionNames = @(
     if ($actionBoard.data -and $actionBoard.data.nextActions) {
         $actionBoard.data.nextActions | ForEach-Object { $_.name }
@@ -228,7 +251,7 @@ $bundleZipPath = if ($bundleZip) { $bundleZip.FullName } else { "" }
 $bundleZipSha = Get-Sha256 -Path $bundleZipPath
 $bundleReady = [bool]($bundleManifest.data -and $bundleManifest.data.readyForUpload)
 $readinessReady = [bool]($readiness.data -and $readiness.data.readyForFinalSubmit)
-$status = if ($bundleReady -and $readinessReady -and $showcaseReady -and -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)) { "READY" } else { "DRAFT" }
+$status = if ($bundleReady -and $readinessReady -and $showcaseReady -and $bundleSummaryPackagingOk -and -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)) { "READY" } else { "DRAFT" }
 
 $checks = @(
     [ordered]@{
@@ -260,6 +283,11 @@ $checks = @(
         name = "final_bundle_zip_hash_present"
         ok = -not [string]::IsNullOrWhiteSpace($bundleZipSha)
         details = $(if ($bundleZipSha) { "$bundleZipPath sha256=$bundleZipSha" } else { "missing" })
+    },
+    [ordered]@{
+        name = "final_bundle_no_embedded_release_summary"
+        ok = $bundleSummaryPackagingOk
+        details = $(if ($bundleSummaryPackagingOk) { "release summary generated after bundle, not embedded" } else { "embedded release summary items: $($embeddedReleaseSummaryItems -join ', ')" })
     }
 )
 
@@ -299,6 +327,8 @@ $result = [ordered]@{
         zip = $bundleZipPath
         zipSha256 = $bundleZipSha
         missingRequiredItems = $bundleMissing
+        releaseSummaryPackagingOk = $bundleSummaryPackagingOk
+        embeddedReleaseSummaryItems = @($embeddedReleaseSummaryItems)
     }
     deployPreflight = [ordered]@{
         path = $deployPreflight.path
@@ -325,6 +355,7 @@ $lines = @(
     "- Showcase proof: $(Format-PathOrMissing -Path $showcase.path)",
     "- Final bundle zip: $(Format-PathOrMissing -Path $bundleZipPath)",
     "- Final bundle SHA256: $(if ($bundleZipSha) { $bundleZipSha } else { '<missing>' })",
+    "- Release summary packaging: $(if ($bundleSummaryPackagingOk) { 'generated after bundle; not embedded in zip' } else { 'stale embedded summary found: ' + ($embeddedReleaseSummaryItems -join ', ') })",
     "",
     "## Artifact Map",
     "",
@@ -337,6 +368,7 @@ $lines = @(
     "| Final action board | $(Format-PathOrMissing -Path $actionBoard.path) | nextActions=$($nextActionNames.Count) |",
     "| Final bundle manifest | $(Format-PathOrMissing -Path $bundleManifest.path) | ready=$bundleReady; missing=$($bundleMissing -join ', ') |",
     "| Final bundle zip | $(Format-PathOrMissing -Path $bundleZipPath) | sha256=$(if ($bundleZipSha) { $bundleZipSha } else { '<missing>' }) |",
+    "| Release summary packaging | $(Format-PathOrMissing -Path $summaryJson) | embedded=$($embeddedReleaseSummaryItems.Count); generated after bundle |",
     "",
     "## External Blockers",
     ""
