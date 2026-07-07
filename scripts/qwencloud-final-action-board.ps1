@@ -53,11 +53,14 @@ function Add-Step([string]$Name, [int]$ExitCode, [string]$Details) {
 }
 
 function Add-Action([string]$Name, [string]$Reason, [string[]]$Commands, [bool]$RequiresUser = $false) {
+    $requiresConfirmation = [bool]$RequiresUser
     $script:actions += [ordered]@{
         name = $Name
         reason = $Reason
         commands = $Commands
-        requiresUser = $RequiresUser
+        requiresUser = $requiresConfirmation
+        requiresZackConfirmation = $requiresConfirmation
+        requiresActionTimeConfirmation = $requiresConfirmation
     }
 }
 

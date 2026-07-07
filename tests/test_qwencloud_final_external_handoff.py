@@ -107,3 +107,14 @@ def test_final_action_board_uses_env_driven_serverless_devs_access() -> None:
     assert '"--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID' in action_board
     assert '"--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET' in action_board
     assert "& s @sConfigArgs" in action_board
+
+
+def test_final_action_board_exposes_action_confirmation_fields() -> None:
+    action_board = (ROOT / "scripts" / "qwencloud-final-action-board.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "$requiresConfirmation = [bool]$RequiresUser" in action_board
+    assert "requiresUser = $requiresConfirmation" in action_board
+    assert "requiresZackConfirmation = $requiresConfirmation" in action_board
+    assert "requiresActionTimeConfirmation = $requiresConfirmation" in action_board
