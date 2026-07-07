@@ -21,7 +21,7 @@ from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.intake import KnowledgeIntakeService, ReviewDecision
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
-from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
 from dream.memory import (
     MemoryClaimRetriever,
     MemoryDistillationEvaluator,
@@ -711,6 +711,8 @@ def llm_smoke(
         llm_provider = MockLLMProvider()
     elif provider == "openai-compatible":
         llm_provider = OpenAICompatibleProvider()
+    elif provider == "qwen-cloud":
+        llm_provider = QwenCloudProvider()
     else:
         raise typer.BadParameter(f"Unsupported LLM provider: {provider}")
 
@@ -894,6 +896,8 @@ def _llm_provider(provider: str) -> LLMProvider:
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider == "qwen-cloud":
+        return QwenCloudProvider()
     if provider in {"config", "plugin"}:
         return build_llm_provider()
     raise typer.BadParameter(f"Unsupported LLM provider: {provider}")

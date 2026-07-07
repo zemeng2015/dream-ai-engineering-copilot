@@ -11,7 +11,7 @@ Mode = Literal["public-demo", "private-extension"]
 class LLMConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    provider: Literal["mock", "openai-compatible", "plugin"] = "mock"
+    provider: Literal["mock", "openai-compatible", "qwen-cloud", "plugin"] = "mock"
     model: str | None = None
     base_url: str | None = None
     base_url_env: str | None = None

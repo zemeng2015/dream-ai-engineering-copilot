@@ -14,6 +14,11 @@ class DreamConfig(BaseModel):
     openai_compatible_base_url: str = Field(default="https://api.openai.com/v1")
     openai_compatible_model: str = Field(default="gpt-4o-mini")
     openai_compatible_api_key: str | None = Field(default=None)
+    qwen_base_url: str = Field(
+        default="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    )
+    qwen_model: str = Field(default="qwen3.7-plus")
+    qwen_api_key: str | None = Field(default=None)
 
 
 def load_config() -> DreamConfig:
@@ -25,4 +30,10 @@ def load_config() -> DreamConfig:
         ),
         openai_compatible_model=os.getenv("OPENAI_COMPATIBLE_MODEL", "gpt-4o-mini"),
         openai_compatible_api_key=os.getenv("OPENAI_COMPATIBLE_API_KEY") or None,
+        qwen_base_url=os.getenv(
+            "QWEN_BASE_URL",
+            os.getenv("DASHSCOPE_BASE_URL", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"),
+        ),
+        qwen_model=os.getenv("QWEN_MODEL", "qwen3.7-plus"),
+        qwen_api_key=os.getenv("DASHSCOPE_API_KEY") or os.getenv("QWEN_API_KEY") or None,
     )

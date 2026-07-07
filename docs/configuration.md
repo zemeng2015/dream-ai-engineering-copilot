@@ -12,6 +12,22 @@ llm:
   provider: mock
 ```
 
+Qwen Cloud hackathon config:
+
+```yaml
+mode: public-demo
+llm:
+  provider: qwen-cloud
+  model: qwen3.7-plus
+  base_url_env: QWEN_BASE_URL
+  api_key_env: DASHSCOPE_API_KEY
+```
+
+The default Qwen Cloud base URL is
+`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, matching the hackathon
+resource page. Production deployments can override `QWEN_BASE_URL` with a
+workspace-specific Alibaba Cloud Model Studio endpoint.
+
 Private extension config:
 
 ```yaml

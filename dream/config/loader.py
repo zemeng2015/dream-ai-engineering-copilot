@@ -20,6 +20,7 @@ from dream.core.paths import (
     DEFAULT_KNOWLEDGE_PACKS_DIR,
     PROJECT_ROOT,
 )
+from dream.llm.qwen_cloud import QWEN_CLOUD_BASE_URL, QWEN_CLOUD_DEFAULT_MODEL
 
 DEFAULT_CONFIG_FILE = PROJECT_ROOT / "dream.yaml"
 
@@ -68,12 +69,22 @@ def resolve_config(
         default_source="default",
         hard_override_env="DREAM_AUDIT_DB_PATH",
     )
+    if loaded.llm.provider == "qwen-cloud":
+        default_base_url = (
+            os.getenv("QWEN_BASE_URL")
+            or os.getenv("DASHSCOPE_BASE_URL")
+            or QWEN_CLOUD_BASE_URL
+        )
+        default_model = os.getenv("QWEN_MODEL") or QWEN_CLOUD_DEFAULT_MODEL
+    else:
+        default_base_url = os.getenv("OPENAI_COMPATIBLE_BASE_URL") or "https://api.openai.com/v1"
+        default_model = os.getenv("OPENAI_COMPATIBLE_MODEL")
     base_url, base_url_source = _value_from_config_or_env(
         value=loaded.llm.base_url,
         env_name=loaded.llm.base_url_env,
-        default=os.getenv("OPENAI_COMPATIBLE_BASE_URL") or "https://api.openai.com/v1",
+        default=default_base_url,
     )
-    api_key_env = _choose_api_key_env(loaded.llm.api_key_env)
+    api_key_env = _choose_api_key_env(loaded.llm.api_key_env, provider=loaded.llm.provider)
     resolved_base_url_env = (
         loaded.llm.base_url_env
         if loaded.llm.base_url_env
@@ -86,7 +97,7 @@ def resolve_config(
         source_file=source_file,
         llm=ResolvedLLMConfig(
             provider=loaded.llm.provider,
-            model=loaded.llm.model or os.getenv("OPENAI_COMPATIBLE_MODEL"),
+            model=loaded.llm.model or default_model,
             base_url=base_url,
             base_url_env=resolved_base_url_env,
             api_key_env=api_key_env,
@@ -146,9 +157,19 @@ def _value_from_config_or_env(
     return default, "default"
 
 
-def _choose_api_key_env(configured: str | None) -> str | None:
+def _choose_api_key_env(
+    configured: str | None,
+    *,
+    provider: str = "openai-compatible",
+) -> str | None:
     if configured:
         return configured
+    if provider == "qwen-cloud":
+        if os.getenv("DASHSCOPE_API_KEY"):
+            return "DASHSCOPE_API_KEY"
+        if os.getenv("QWEN_API_KEY"):
+            return "QWEN_API_KEY"
+        return "DASHSCOPE_API_KEY"
     if os.getenv("OPENAI_COMPATIBLE_API_KEY"):
         return "OPENAI_COMPATIBLE_API_KEY"
     if os.getenv("OPENAI_API_KEY"):

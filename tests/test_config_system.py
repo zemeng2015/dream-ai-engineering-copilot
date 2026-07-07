@@ -66,6 +66,47 @@ def test_env_var_resolution_does_not_print_secret_values(tmp_path, monkeypatch) 
     assert sanitized["llm"]["api_key_value"] == "[not displayed]"
 
 
+def test_qwen_cloud_config_uses_dashscope_env(monkeypatch) -> None:
+    monkeypatch.delenv("DREAM_CONFIG_FILE", raising=False)
+    monkeypatch.delenv("QWEN_BASE_URL", raising=False)
+    monkeypatch.delenv("DASHSCOPE_BASE_URL", raising=False)
+    monkeypatch.delenv("QWEN_MODEL", raising=False)
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-secret")
+    config = load_config()
+    config.llm.provider = "qwen-cloud"
+
+    resolved = resolve_config(config)
+
+    assert resolved.llm.provider == "qwen-cloud"
+    assert resolved.llm.api_key_env == "DASHSCOPE_API_KEY"
+    assert resolved.llm.api_key_configured is True
+    assert resolved.llm.base_url == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    assert resolved.llm.model == "qwen3.7-plus"
+
+
+def test_qwen_cloud_validation_reports_base_url_env_warning(monkeypatch, tmp_path) -> None:
+    config_path = _config_file(
+        tmp_path,
+        {
+            "llm": {
+                "provider": "qwen-cloud",
+                "base_url_env": "MISSING_QWEN_BASE_URL",
+                "api_key_env": "DASHSCOPE_API_KEY",
+            },
+        },
+    )
+    monkeypatch.setenv("DREAM_CONFIG_FILE", str(config_path))
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-key")
+
+    report = validate_config()
+
+    assert report.ok
+    assert any(
+        item.severity == "warning" and "llm.base_url_env" in item.message
+        for item in report.diagnostics
+    )
+
+
 def test_plugin_class_loading_from_config(tmp_path, monkeypatch) -> None:
     plugin_file = tmp_path / "sample_plugin.py"
     plugin_file.write_text("class SampleProvider:\n    pass\n", encoding="utf-8")

@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+
+edition: 3.0.0
+name: dream-qwencloud-memoryagent
+access: default
+
+vars:
+  region: ${env(ALIBABA_CLOUD_REGION, "ap-southeast-1")}
+  serviceName: dream-qwencloud-memoryagent
+  functionName: dream-api
+
+resources:
+  dreamApi:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      description: DREAM Track 1 MemoryAgent API backed by Qwen Cloud.
+      runtime: custom-container
+      timeout: 120
+      memorySize: 2048
+      cpu: 1
+      diskSize: 1024
+      internetAccess: true
+      customContainerConfig:
+        image: ${env(ALIBABA_CLOUD_CONTAINER_IMAGE)}
+        port: 8000
+      environmentVariables:
+        DREAM_CONFIG_FILE: /app/examples/config/dream.qwen.yaml
+        DASHSCOPE_API_KEY: ${env(DASHSCOPE_API_KEY)}
+        QWEN_BASE_URL: ${env(QWEN_BASE_URL, "https://dashscope-intl.aliyuncs.com/compatible-mode/v1")}
+        QWEN_MODEL: ${env(QWEN_MODEL, "qwen3.7-plus")}
+        ALIBABA_CLOUD_REGION: ${vars.region}
+        ALIBABA_CLOUD_SERVICE: Function Compute custom container
+      triggers:
+        - triggerName: dream-http
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - OPTIONS

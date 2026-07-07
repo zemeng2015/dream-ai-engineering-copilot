@@ -15,7 +15,7 @@ from dream.config.models import DreamConfig, ResolvedDreamConfig
 from dream.core.errors import PathTraversalError
 from dream.extensions.loader import load_instance
 from dream.knowledge.pack_loader import KnowledgePackLoader
-from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
 
 
 class LocalArtifactStore:
@@ -217,6 +217,13 @@ def build_llm_provider(config: DreamConfig | ResolvedDreamConfig | None = None):
     if resolved.llm.provider == "openai-compatible":
         api_key = os.getenv(resolved.llm.api_key_env) if resolved.llm.api_key_env else None
         return OpenAICompatibleProvider(
+            api_key=api_key,
+            base_url=resolved.llm.base_url,
+            model_name=resolved.llm.model,
+        )
+    if resolved.llm.provider == "qwen-cloud":
+        api_key = os.getenv(resolved.llm.api_key_env) if resolved.llm.api_key_env else None
+        return QwenCloudProvider(
             api_key=api_key,
             base_url=resolved.llm.base_url,
             model_name=resolved.llm.model,

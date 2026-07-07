@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.config import resolve_config
 from dream.context import ContextEvaluationService, ContextIntelligenceService
 from dream.core.errors import DreamError, NotFoundError, PathTraversalError
 from dream.core.paths import resolve_project_path
@@ -18,7 +20,7 @@ from dream.extensions import build_llm_provider
 from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.intake import DraftMetadataUpdate, KnowledgeIntakeService, ReviewDecision
-from dream.llm import MockLLMProvider, OpenAICompatibleProvider
+from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
 from dream.memory import (
     MemoryClaimRetriever,
     MemoryDistillationEvaluator,
@@ -39,6 +41,16 @@ router = APIRouter()
 
 class HealthResponse(BaseModel):
     status: str
+    service: str = "dream-memoryagent-api"
+    track: str = "Track 1: MemoryAgent"
+    deployment_target: str = "local"
+    alibaba_cloud_region: str | None = None
+    alibaba_cloud_service: str | None = None
+    llm_provider: str
+    llm_model: str | None = None
+    llm_base_url: str | None = None
+    llm_api_key_configured: bool = False
+    proof_file: str = "deploy/alibaba/serverless-devs.yaml"
 
 
 class TestGenRunRequest(TestGenRequest):
@@ -136,7 +148,23 @@ class RequirementQuestionWaiveRequest(BaseModel):
 
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(status="ok")
+    config = resolve_config()
+    deployment_target = "local"
+    if (
+        config.llm.provider == "qwen-cloud"
+        and (os.getenv("ALIBABA_CLOUD_SERVICE") or os.getenv("ALIBABA_CLOUD_REGION"))
+    ):
+        deployment_target = "Alibaba Cloud Function Compute custom container"
+    return HealthResponse(
+        status="ok",
+        deployment_target=deployment_target,
+        alibaba_cloud_region=os.getenv("ALIBABA_CLOUD_REGION"),
+        alibaba_cloud_service=os.getenv("ALIBABA_CLOUD_SERVICE"),
+        llm_provider=config.llm.provider,
+        llm_model=config.llm.model,
+        llm_base_url=config.llm.base_url,
+        llm_api_key_configured=config.llm.api_key_configured,
+    )
 
 
 @router.post("/requirements/draft", response_model=RequirementDraftResponse)
@@ -845,6 +873,8 @@ def _llm_provider(provider: str) -> LLMProvider:
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider == "qwen-cloud":
+        return QwenCloudProvider()
     if provider in {"config", "plugin"}:
         return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
@@ -859,6 +889,8 @@ def _optional_llm_provider(
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider == "qwen-cloud":
+        return QwenCloudProvider()
     if provider in {"config", "plugin"}:
         return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">DREAM Qwen Cloud MemoryAgent architecture</title>
+  <desc id="desc">Architecture diagram showing Angular and API clients, DREAM FastAPI, memory systems, Qwen Cloud, and Alibaba Cloud Function Compute deployment.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fafc; }
+      .band { fill: #ffffff; stroke: #d8e1ea; stroke-width: 2; }
+      .box { fill: #ffffff; stroke: #36546d; stroke-width: 2; rx: 8; }
+      .accent { fill: #e6f6f3; stroke: #0f766e; }
+      .cloud { fill: #fff4e6; stroke: #c76a00; }
+      .store { fill: #eef4ff; stroke: #2854a3; }
+      .title { font: 700 30px Arial, sans-serif; fill: #13293d; }
+      .label { font: 700 18px Arial, sans-serif; fill: #172a3a; }
+      .small { font: 14px Arial, sans-serif; fill: #31465a; }
+      .arrow { stroke: #36546d; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#36546d" />
+    </marker>
+  </defs>
+  <rect class="bg" width="1280" height="720" />
+  <text x="64" y="62" class="title">DREAM on Qwen Cloud: Track 1 MemoryAgent</text>
+  <text x="64" y="92" class="small">Source-backed engineering memory with Qwen Cloud generation, audit, evaluation, and Alibaba Cloud deployment proof.</text>
+
+  <rect x="48" y="124" width="252" height="500" class="band" rx="10" />
+  <text x="76" y="164" class="label">User Surfaces</text>
+  <rect x="76" y="194" width="196" height="92" class="box" />
+  <text x="100" y="230" class="label">Angular Workbench</text>
+  <text x="100" y="255" class="small">Memory Hub, Context Trail</text>
+  <rect x="76" y="326" width="196" height="92" class="box" />
+  <text x="100" y="362" class="label">CLI / API Client</text>
+  <text x="100" y="387" class="small">Demo scripts and curl</text>
+
+  <rect x="372" y="124" width="300" height="500" class="band" rx="10" />
+  <text x="400" y="164" class="label">DREAM API</text>
+  <rect x="400" y="194" width="244" height="92" class="accent" rx="8" />
+  <text x="424" y="230" class="label">FastAPI MemoryAgent</text>
+  <text x="424" y="255" class="small">Requirements, PR review, eval</text>
+  <rect x="400" y="326" width="244" height="92" class="accent" rx="8" />
+  <text x="424" y="362" class="label">Context Assembler</text>
+  <text x="424" y="387" class="small">Compact cited prompt packs</text>
+  <rect x="400" y="458" width="244" height="92" class="accent" rx="8" />
+  <text x="424" y="494" class="label">QwenCloudProvider</text>
+  <text x="424" y="519" class="small">OpenAI-compatible adapter</text>
+
+  <rect x="736" y="124" width="248" height="500" class="band" rx="10" />
+  <text x="764" y="164" class="label">Persistent Memory</text>
+  <rect x="764" y="194" width="192" height="76" class="store" rx="8" />
+  <text x="786" y="228" class="label">Knowledge Packs</text>
+  <text x="786" y="250" class="small">Docs, runbooks, rules</text>
+  <rect x="764" y="300" width="192" height="76" class="store" rx="8" />
+  <text x="786" y="334" class="label">Codebase Index</text>
+  <text x="786" y="356" class="small">Files, tests, concepts</text>
+  <rect x="764" y="406" width="192" height="76" class="store" rx="8" />
+  <text x="786" y="440" class="label">Memory Ledger</text>
+  <text x="786" y="462" class="small">Claims and conflicts</text>
+  <rect x="764" y="512" width="192" height="76" class="store" rx="8" />
+  <text x="786" y="546" class="label">Audit / Eval</text>
+  <text x="786" y="568" class="small">Ratings and scorecards</text>
+
+  <rect x="1048" y="124" width="184" height="500" class="band" rx="10" />
+  <text x="1070" y="164" class="label">Alibaba Cloud</text>
+  <rect x="1070" y="194" width="140" height="92" class="cloud" rx="8" />
+  <text x="1090" y="230" class="label">Qwen Cloud</text>
+  <text x="1090" y="255" class="small">qwen3.7-plus</text>
+  <rect x="1070" y="366" width="140" height="112" class="cloud" rx="8" />
+  <text x="1090" y="402" class="label">Function</text>
+  <text x="1090" y="426" class="label">Compute</text>
+  <text x="1090" y="452" class="small">Custom container</text>
+
+  <path class="arrow" d="M272 240 H400" />
+  <path class="arrow" d="M272 372 H400" />
+  <path class="arrow" d="M644 372 H764" />
+  <path class="arrow" d="M764 550 H644 V504" />
+  <path class="arrow" d="M644 504 H1070 V286" />
+  <path class="arrow" d="M1070 240 H644 V240" />
+  <path class="arrow" d="M522 194 V130 H1140 V194" />
+  <text x="644" y="684" class="small" text-anchor="middle">Secrets stay in environment variables. Health reports provider, model, region, and proof file only.</text>
+</svg>

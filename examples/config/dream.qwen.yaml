@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mode: public-demo
+
+llm:
+  provider: qwen-cloud
+  model: qwen3.7-plus
+  base_url_env: QWEN_BASE_URL
+  api_key_env: DASHSCOPE_API_KEY
+
+knowledge:
+  pack_root: knowledge_packs
+
+artifacts:
+  root: artifacts
+
+audit:
+  sqlite_path: dream.sqlite
+
+redaction:
+  provider: default
+
+prompt_policy:
+  provider: default

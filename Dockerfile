@@ -9,6 +9,7 @@ COPY dream ./dream
 COPY knowledge_packs ./knowledge_packs
 COPY examples ./examples
 COPY docs ./docs
+COPY deploy ./deploy
 
 RUN pip install --no-cache-dir -e .
 

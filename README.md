@@ -119,6 +119,49 @@ pytest
 ruff check .
 ```
 
+## Qwen Cloud Hackathon Mode
+
+DREAM is now packaged for the Global AI Hackathon Series with Qwen Cloud as a
+Track 1 MemoryAgent submission. The hackathon build keeps DREAM's source-backed
+memory core, governed memory distillation, audit ledger, context trail, and
+human review flow, then swaps live generation to Qwen Cloud through the
+OpenAI-compatible API.
+
+Run a live Qwen Cloud smoke test:
+
+```powershell
+$env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
+$env:DASHSCOPE_API_KEY="<your-qwen-cloud-api-key>"
+$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+dream llm smoke --provider qwen-cloud --prompt "Return DREAM_QWEN_OK and one sentence about persistent engineering memory."
+```
+
+Run the API in Qwen mode:
+
+```powershell
+$env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
+$env:DASHSCOPE_API_KEY="<your-qwen-cloud-api-key>"
+$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
+curl http://localhost:8000/health
+scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
+scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
+```
+
+Key submission artifacts:
+
+- [Qwen Cloud submission brief](docs/qwencloud-submission.md)
+- [Qwen Cloud architecture](docs/qwencloud-architecture.md)
+- [Qwen Cloud demo video script](docs/qwencloud-demo-video-script.md)
+- [Qwen Cloud submission kit](docs/qwencloud-devpost-submission-kit.md)
+- [Qwen Cloud contest launch checklist](docs/qwencloud-live-checklist.md)
+- [Qwen Cloud final 5-minute checklist](docs/qwencloud-final-5min-checklist.md)
+- [Qwen Cloud Devpost form fields](docs/qwencloud-devpost-form-fields.md)
+- [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
+- [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
+- [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
+- [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,

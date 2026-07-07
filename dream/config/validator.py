@@ -79,10 +79,27 @@ def _check_declared_env_vars(config, diagnostics: list[ConfigDiagnostic]) -> Non
         ("audit.sqlite_path_env", config.audit.sqlite_path_env),
         ("llm.base_url_env", config.llm.base_url_env),
     ]
-    if config.llm.provider == "openai-compatible" and config.llm.api_key_env:
+    if config.llm.provider in {"openai-compatible", "qwen-cloud"} and config.llm.api_key_env:
         env_fields.append(("llm.api_key_env", config.llm.api_key_env))
     for label, env_name in env_fields:
         if env_name and not os.getenv(env_name):
+            if label == "llm.base_url_env" and config.llm.provider in {
+                "openai-compatible",
+                "qwen-cloud",
+            }:
+                diagnostics.append(
+                    ConfigDiagnostic(
+                        severity="warning",
+                        message=(
+                            f"{label} points to missing environment variable: {env_name}. "
+                            "A default base URL will be used if available."
+                        ),
+                        recommended_fix=(
+                            f"Set {env_name}, or hardcode llm.base_url in dream.yaml to avoid this warning."
+                        ),
+                    )
+                )
+                continue
             diagnostics.append(
                 ConfigDiagnostic(
                     severity="error",
@@ -106,6 +123,21 @@ def _check_llm_provider(config, diagnostics: list[ConfigDiagnostic]) -> None:
                     recommended_fix=(
                         "Set llm.api_key_env in dream.yaml and export that env var, "
                         "or set OPENAI_COMPATIBLE_API_KEY."
+                    ),
+                )
+            )
+    if config.llm.provider == "qwen-cloud":
+        env_names = [config.llm.api_key_env] if config.llm.api_key_env else [
+            "DASHSCOPE_API_KEY",
+            "QWEN_API_KEY",
+        ]
+        if not any(env_name and os.getenv(env_name) for env_name in env_names):
+            diagnostics.append(
+                ConfigDiagnostic(
+                    severity="error",
+                    message="Qwen Cloud provider is selected but no API key env var is set.",
+                    recommended_fix=(
+                        "Set DASHSCOPE_API_KEY, QWEN_API_KEY, or llm.api_key_env in dream.yaml."
                     ),
                 )
             )

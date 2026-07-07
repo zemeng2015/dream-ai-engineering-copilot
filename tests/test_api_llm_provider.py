@@ -44,3 +44,26 @@ def test_requirement_draft_endpoint_accepts_openai_provider(monkeypatch) -> None
 
     assert response.status_code == 200
     assert response.json()["markdown"].startswith("# OpenAI API Draft")
+
+
+def test_requirement_draft_endpoint_accepts_qwen_cloud_provider(monkeypatch) -> None:
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "test-qwen-key")
+    monkeypatch.setattr(
+        "dream.llm.openai_compatible.urlopen",
+        lambda request, timeout: FakeOpenAIResponse(),  # noqa: ARG005
+    )
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/requirements/draft",
+        json={
+            "team_id": "demo_team",
+            "rough_business_request": "Add async status tracking",
+            "app": "ForecastDemo",
+            "component": "job-execution",
+            "llm_provider": "qwen-cloud",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["markdown"].startswith("# OpenAI API Draft")
