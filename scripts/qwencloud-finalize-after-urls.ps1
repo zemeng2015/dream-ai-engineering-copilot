@@ -20,6 +20,7 @@ param(
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
     [switch]$RefreshAlibabaProof,
+    [switch]$SkipOfficialSourceRefresh,
     [switch]$AllowLocalBackend,
     [switch]$AllowDraft
 )
@@ -86,6 +87,20 @@ function Read-JsonFile($File) {
 
 if (([string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) -and -not $AllowDraft) {
     throw "DemoVideoUrl and BackendUrl are required unless -AllowDraft is set."
+}
+
+if ($SkipOfficialSourceRefresh) {
+    Add-Step -Name "official-source-refresh" -Ok $true -Details "skipped by -SkipOfficialSourceRefresh"
+}
+else {
+    $officialSourceArgs = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-official-source-refresh.ps1",
+        "-OutputDir", $OutputDir
+    )
+    if ($AllowDraft) { $officialSourceArgs += "-AllowDraft" }
+    Invoke-Step -Name "official-source-refresh" -ArgumentList $officialSourceArgs
 }
 
 $videoStatusArgs = @(
@@ -206,6 +221,7 @@ Invoke-Step -Name "final-upload-bundle" -ArgumentList $bundleArgs
 
 $packetJsonFile = Get-NewestFile -Filter "devpost-submission-packet-*.json"
 $readinessJsonFile = Get-NewestFile -Filter "final-readiness-*.json"
+$officialSourceJsonFile = Get-NewestFile -Filter "official-source-refresh-*.json"
 $bundleManifestJsonFile = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
     Sort-Object LastWriteTime -Descending |
     ForEach-Object {
@@ -238,8 +254,10 @@ $result = [ordered]@{
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
     refreshAlibabaProof = [bool]$RefreshAlibabaProof
+    skipOfficialSourceRefresh = [bool]$SkipOfficialSourceRefresh
     alibabaScreenshotPath = $AlibabaScreenshotPath
     alibabaProofVideoPath = $AlibabaProofVideoPath
+    officialSourceJson = if ($officialSourceJsonFile) { $officialSourceJsonFile.FullName } else { $null }
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
     bundleManifestJson = if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { $null }
@@ -257,6 +275,7 @@ $lines = @(
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
+    "- Official source refresh: $(if ($SkipOfficialSourceRefresh) { 'skipped' } elseif ($officialSourceJsonFile) { $officialSourceJsonFile.FullName } else { '<missing>' })",
     "- Refresh Alibaba proof: $([bool]$RefreshAlibabaProof)",
     "- Alibaba screenshot: $AlibabaScreenshotPath",
     "- Alibaba proof video: $AlibabaProofVideoPath",

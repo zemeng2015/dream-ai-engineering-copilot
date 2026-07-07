@@ -142,10 +142,11 @@ one pass. By default it only writes local status reports; use
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the
 public video and deployed backend URLs are known. With `-RefreshAlibabaProof`,
-it validates the public video URL, captures the Alibaba proof screenshot,
-renders the short proof recording, validates proof integrity, runs the
-submission packet, final readiness dashboard, final upload bundle, and then
-writes a single final status report.
+it refreshes the official Devpost overview/rules source, validates the public
+video URL, captures the Alibaba proof screenshot, renders the short proof
+recording, validates proof integrity, runs the submission packet, final
+readiness dashboard, final upload bundle, and then writes a single final status
+report. Use `-SkipOfficialSourceRefresh` only for offline local rehearsal.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and

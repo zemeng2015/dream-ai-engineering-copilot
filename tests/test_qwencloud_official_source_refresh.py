@@ -116,7 +116,23 @@ def test_official_source_refresh_registered_in_submission_flow() -> None:
         "docs/qwencloud-final-5min-checklist.md",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
+        "scripts/qwencloud-finalize-after-urls.ps1",
         "scripts/qwencloud-judging-scorecard.ps1",
         "scripts/qwencloud-hackathon-submission-packet.ps1",
     ]:
         assert script_path in (ROOT / path).read_text(encoding="utf-8-sig")
+
+
+def test_finalize_after_urls_refreshes_official_sources_before_final_gates() -> None:
+    finalizer = (ROOT / "scripts" / "qwencloud-finalize-after-urls.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "[switch]$SkipOfficialSourceRefresh" in finalizer
+    assert '"scripts/qwencloud-official-source-refresh.ps1"' in finalizer
+    assert '"official-source-refresh"' in finalizer
+    assert '"video-upload-status"' in finalizer
+    assert finalizer.index('"official-source-refresh"') < finalizer.index(
+        '"video-upload-status"'
+    )
+    assert "officialSourceJson" in finalizer

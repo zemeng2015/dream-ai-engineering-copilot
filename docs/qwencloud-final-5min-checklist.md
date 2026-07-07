@@ -175,6 +175,9 @@ scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUr
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof
 ```
 
+This command refreshes the official Devpost overview/rules source before it
+checks video status, Alibaba proof, packet readiness, and the upload bundle.
+
 - Create the final upload bundle:
 
 ```powershell

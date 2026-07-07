@@ -316,7 +316,9 @@ scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUr
 ```
 
 After the public video and deployed backend URLs are known, run the final
-one-command gate:
+one-command gate. It refreshes the official Devpost overview/rules source,
+validates the video URL, refreshes Alibaba proof when requested, and rebuilds
+the final packet/readiness/upload bundle:
 
 ```powershell
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof
