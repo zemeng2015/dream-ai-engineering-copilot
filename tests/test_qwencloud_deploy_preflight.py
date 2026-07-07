@@ -49,4 +49,6 @@ def test_deploy_preflight_allow_draft_writes_report_without_cloud_env(tmp_path: 
     assert data["gitCommit"]
     assert checks["file.Dockerfile"]["ok"] is True
     assert checks["docker.build"]["required"] is False
+    assert checks["docker.smoke_port_available"]["required"] is False
     assert checks["docker.smoke_container"]["required"] is False
+    assert checks["docker.smoke_showcase"]["required"] is False

@@ -117,6 +117,7 @@ else {
 
 if ($capture) {
     $health = $capture.health
+    $showcase = $capture.showcase
     Add-Check -Name "capture_base_url_matches_backend_url" -Ok ((Normalize-Url -Url $capture.baseUrl) -eq $normalizedBackendUrl) -Details "capture=$($capture.baseUrl); backend=$normalizedBackendUrl"
     Add-Check -Name "capture_output_png_matches" -Ok ($capture.outputPng -eq $ScreenshotPath) -Details "capture=$($capture.outputPng); expected=$ScreenshotPath" -Required $false
     Add-Check -Name "health_status_ok" -Ok ($health.status -eq "ok") -Details "status=$($health.status)"
@@ -127,6 +128,11 @@ if ($capture) {
     Add-Check -Name "health_alibaba_region_present" -Ok (-not [string]::IsNullOrWhiteSpace([string]$health.alibaba_cloud_region)) -Details "region=$($health.alibaba_cloud_region)"
     Add-Check -Name "health_alibaba_service_present" -Ok (-not [string]::IsNullOrWhiteSpace([string]$health.alibaba_cloud_service)) -Details "service=$($health.alibaba_cloud_service)" -Required $false
     Add-Check -Name "health_api_key_configured" -Ok (Test-TrueBoolean $health.llm_api_key_configured) -Details "llm_api_key_configured=$($health.llm_api_key_configured)"
+    Add-Check -Name "showcase_present" -Ok ($null -ne $showcase) -Details $(if ($showcase) { "/qwencloud/showcase captured" } else { "missing showcase in capture JSON" })
+    Add-Check -Name "showcase_track_memoryagent" -Ok ($showcase -and $showcase.track -eq "Track 1: MemoryAgent") -Details "track=$(if ($showcase) { $showcase.track } else { '<missing>' })"
+    Add-Check -Name "showcase_runtime_provider_qwen_cloud" -Ok ($showcase -and $showcase.runtime.llm_provider -eq "qwen-cloud") -Details "llm_provider=$(if ($showcase) { $showcase.runtime.llm_provider } else { '<missing>' })"
+    Add-Check -Name "showcase_static_evidence_ready" -Ok ($showcase -and [int]$showcase.scorecard.weighted_static_evidence_ready -eq 100) -Details "$(if ($showcase) { "$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)" } else { '<missing>' })"
+    Add-Check -Name "showcase_live_backend_ready" -Ok ($showcase -and (Test-TrueBoolean $showcase.runtime.live_backend_ready)) -Details "live_backend_ready=$(if ($showcase) { $showcase.runtime.live_backend_ready } else { '<missing>' })"
 
     $failedCaptureChecks = @($capture.checks | Where-Object { -not $_.pass } | ForEach-Object { $_.name })
     Add-Check -Name "capture_checks_all_passed" -Ok ($failedCaptureChecks.Count -eq 0) -Details $(if ($failedCaptureChecks.Count -eq 0) { "all pass" } else { $failedCaptureChecks -join ", " })
@@ -141,6 +147,11 @@ else {
         "health_deployment_target_alibaba",
         "health_alibaba_region_present",
         "health_api_key_configured",
+        "showcase_present",
+        "showcase_track_memoryagent",
+        "showcase_runtime_provider_qwen_cloud",
+        "showcase_static_evidence_ready",
+        "showcase_live_backend_ready",
         "capture_checks_all_passed"
     )) {
         Add-Check -Name $name -Ok $false -Details "capture JSON unavailable"

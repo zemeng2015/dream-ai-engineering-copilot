@@ -81,6 +81,7 @@ New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
 
 $checks = @()
 $health = $null
+$showcase = $null
 $draft = $null
 
 try {
@@ -122,6 +123,35 @@ else {
     Add-Row -Name "alibaba_region_present" -Pass $true -Details $health.alibaba_cloud_region
 }
 
+try {
+    $showcase = Invoke-RestMethod -Method Get -Uri "$base/qwencloud/showcase" -TimeoutSec 20 -ErrorAction Stop
+    Add-Row -Name "showcase_reachable" -Pass $true -Details "$base/qwencloud/showcase"
+}
+catch {
+    Add-Row -Name "showcase_reachable" -Pass $false -Details $_.Exception.Message
+    throw "Unable to read deployment showcase from $base/qwencloud/showcase"
+}
+
+Assert-Equals -Actual $showcase.track -Expected "Track 1: MemoryAgent" -Field "showcase.track"
+Add-Row -Name "showcase_track_memoryagent" -Pass $true -Details $showcase.track
+
+Assert-Equals -Actual $showcase.runtime.status -Expected "ok" -Field "showcase.runtime.status"
+Add-Row -Name "showcase_runtime_status_ok" -Pass $true -Details $showcase.runtime.status
+
+Assert-Equals -Actual $showcase.runtime.llm_provider -Expected "qwen-cloud" -Field "showcase.runtime.llm_provider"
+Add-Row -Name "showcase_runtime_provider_qwen_cloud" -Pass $true -Details $showcase.runtime.llm_provider
+
+Assert-Equals -Actual ([string]$showcase.scorecard.weighted_static_evidence_ready) -Expected "100" -Field "showcase.scorecard.weighted_static_evidence_ready"
+Add-Row -Name "showcase_static_evidence_ready" -Pass $true -Details "$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)"
+
+if ($AllowLocal) {
+    Add-Row -Name "showcase_live_backend_ready" -Pass $true -Details "$($showcase.runtime.live_backend_ready) (AllowLocal)"
+}
+else {
+    Assert-Equals -Actual ([string]$showcase.runtime.live_backend_ready).ToLowerInvariant() -Expected "true" -Field "showcase.runtime.live_backend_ready"
+    Add-Row -Name "showcase_live_backend_ready" -Pass $true -Details $showcase.runtime.live_backend_ready
+}
+
 if ($IncludeDraft) {
     $body = @{
         team_id = "demo_team"
@@ -145,12 +175,14 @@ $proof = [ordered]@{
     allowLocal = [bool]$AllowLocal
     includeDraft = [bool]$IncludeDraft
     health = $health
+    showcase = $showcase
     draft = $draft
     checks = $checks
 }
 Set-Content -Path $jsonPath -Value ($proof | ConvertTo-Json -Depth 20) -Encoding UTF8
 
 $healthJson = Html-Escape (($health | ConvertTo-Json -Depth 20) -join "`n")
+$showcaseJson = Html-Escape (($showcase | ConvertTo-Json -Depth 20) -join "`n")
 $draftStatus = if ($IncludeDraft) { "Captured" } else { "Skipped" }
 $rows = foreach ($check in $checks) {
     $class = if ($check.pass) { "pass" } else { "fail" }
@@ -333,6 +365,9 @@ $html = @"
           <dt>Qwen Base URL</dt><dd>$(Html-Escape $health.llm_base_url)</dd>
           <dt>API Key Configured</dt><dd>$(Html-Escape $health.llm_api_key_configured)</dd>
           <dt>Proof File</dt><dd class="strong">$(Html-Escape $health.proof_file)</dd>
+          <dt>Showcase Endpoint</dt><dd class="strong">/qwencloud/showcase</dd>
+          <dt>Showcase Static Evidence</dt><dd class="strong">$(Html-Escape "$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)")</dd>
+          <dt>Showcase Live Backend</dt><dd>$(Html-Escape $showcase.runtime.live_backend_ready)</dd>
           <dt>Draft Proof</dt><dd>$(Html-Escape $draftStatus)</dd>
         </dl>
       </div>
@@ -351,6 +386,11 @@ $html = @"
     <section class="panel" style="margin-top: 24px;">
       <h2>/health Response</h2>
       <pre>$healthJson</pre>
+    </section>
+
+    <section class="panel" style="margin-top: 18px;">
+      <h2>/qwencloud/showcase Response</h2>
+      <pre>$showcaseJson</pre>
     </section>
 
     <footer>

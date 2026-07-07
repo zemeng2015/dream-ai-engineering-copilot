@@ -59,6 +59,57 @@ function Test-ServerlessDevsDefaultAccess {
     }
 }
 
+function Test-LocalPortAvailable([int]$Port) {
+    $listener = $null
+    try {
+        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+        $listener.Start()
+        return $true
+    }
+    catch {
+        return $false
+    }
+    finally {
+        if ($listener) {
+            $listener.Stop()
+        }
+    }
+}
+
+function Resolve-SmokePort([int]$RequestedPort, [bool]$ExplicitPort) {
+    if (Test-LocalPortAvailable -Port $RequestedPort) {
+        return [pscustomobject]@{
+            port = $RequestedPort
+            ok = $true
+            details = "using requested port $RequestedPort"
+        }
+    }
+
+    if ($ExplicitPort) {
+        return [pscustomobject]@{
+            port = $RequestedPort
+            ok = $false
+            details = "requested port $RequestedPort is already in use"
+        }
+    }
+
+    foreach ($candidate in 8012..8050) {
+        if (Test-LocalPortAvailable -Port $candidate) {
+            return [pscustomobject]@{
+                port = $candidate
+                ok = $true
+                details = "requested port $RequestedPort was occupied; using available port $candidate"
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        port = $RequestedPort
+        ok = $false
+        details = "requested port $RequestedPort is occupied and no fallback port in 8012..8050 is available"
+    }
+}
+
 function Invoke-GitText([string[]]$Arguments) {
     try {
         $output = & git -C $ProjectRoot @Arguments 2>$null
@@ -136,10 +187,16 @@ try {
     }
 
     if ($SmokeContainer) {
+        $resolvedSmokePort = Resolve-SmokePort -RequestedPort $SmokePort -ExplicitPort $PSBoundParameters.ContainsKey("SmokePort")
+        $SmokePort = [int]$resolvedSmokePort.port
+        Add-Check -Name "docker.smoke_port_available" -Ok $resolvedSmokePort.ok -Details $resolvedSmokePort.details
+
         $containerName = "dream-qwencloud-memoryagent-smoke"
         $smokeOk = $false
+        $showcaseOk = $false
         $smokeDetails = "GET http://127.0.0.1:$SmokePort/health from $ImageTag"
-        if ($hasDocker -and $dockerDaemonOk) {
+        $showcaseDetails = "GET http://127.0.0.1:$SmokePort/qwencloud/showcase from $ImageTag"
+        if ($hasDocker -and $dockerDaemonOk -and $resolvedSmokePort.ok) {
             try {
                 try {
                     & docker rm -f $containerName 2>$null | Out-Null
@@ -172,10 +229,24 @@ try {
                                 $health.proof_file -eq "deploy/alibaba/serverless-devs.yaml"
                             ) {
                                 $smokeOk = $true
-                                break
+                            }
+
+                            if ($smokeOk) {
+                                $showcase = Invoke-RestMethod -Uri "http://127.0.0.1:$SmokePort/qwencloud/showcase" -TimeoutSec 5
+                                $showcaseOk = (
+                                    $showcase.track -eq "Track 1: MemoryAgent" -and
+                                    $showcase.runtime.status -eq "ok" -and
+                                    $showcase.runtime.llm_provider -eq "qwen-cloud" -and
+                                    [int]$showcase.scorecard.weighted_static_evidence_ready -eq 100
+                                )
+                                $showcaseDetails = "track=$($showcase.track); runtimeProvider=$($showcase.runtime.llm_provider); weightedStaticEvidence=$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)"
+                                if ($showcaseOk) {
+                                    break
+                                }
                             }
                         }
                         catch {
+                            $showcaseDetails = $_.Exception.Message
                             Start-Sleep -Seconds 2
                         }
                     } while ((Get-Date) -lt $deadline)
@@ -191,9 +262,12 @@ try {
             }
         }
         Add-Check -Name "docker.smoke_container" -Ok $smokeOk -Details $smokeDetails
+        Add-Check -Name "docker.smoke_showcase" -Ok $showcaseOk -Details $showcaseDetails
     }
     else {
+        Add-Check -Name "docker.smoke_port_available" -Ok $true -Details "Skipped. Re-run with -SmokeContainer." -Required $false
         Add-Check -Name "docker.smoke_container" -Ok $true -Details "Skipped. Re-run with -SmokeContainer." -Required $false
+        Add-Check -Name "docker.smoke_showcase" -Ok $true -Details "Skipped. Re-run with -SmokeContainer." -Required $false
     }
 }
 finally {
@@ -208,6 +282,7 @@ $result = [ordered]@{
     allowDraft = [bool]$AllowDraft
     buildImage = [bool]$BuildImage
     smokeContainer = [bool]$SmokeContainer
+    smokePort = $SmokePort
     imageTag = $ImageTag
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
