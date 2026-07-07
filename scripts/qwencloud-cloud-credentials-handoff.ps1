@@ -122,6 +122,8 @@ $videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<public-video-url>" }
 $backendValue = if ($BackendUrl) { $BackendUrl } else { "<deployed-url>" }
 
 $setupCommands = @(
+    "# Process-env template mode: fill these values, then run this file in the same PowerShell session.",
+    "# It intentionally omits -EnvFile below so placeholder .env values cannot override the filled values.",
     '$env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"',
     "`$env:ALIBABA_CLOUD_REGION=`"$Region`"",
     "`$env:ALIBABA_CLOUD_CONTAINER_IMAGE=`"$ContainerImage`"",
@@ -130,10 +132,10 @@ $setupCommands = @(
     's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
     's config get -a default',
     "docker login $registryHost",
-    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
-    "scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl `"$videoValue`"",
-    "scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`"",
-    "scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`""
+    'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft',
+    "scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl `"$videoValue`"",
+    "scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`"",
+    "scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`""
 )
 
 $templateLines = @(
@@ -179,6 +181,7 @@ $md = @(
     "",
     "- This handoff never stores real `DASHSCOPE_API_KEY`, Alibaba AccessKeyID, or AccessKeySecret values.",
     "- Fill the generated PowerShell template locally and keep it out of git.",
+    "- The generated PowerShell template uses process environment values and intentionally omits `-EnvFile` so placeholder `.env.qwencloud.local` values cannot override filled values.",
     "- Or create a local `.env.qwencloud.local` file and pass `-EnvFile .env.qwencloud.local`.",
     "- The public repo should only contain placeholders and deployment code.",
     "",
