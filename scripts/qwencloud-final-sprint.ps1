@@ -323,7 +323,7 @@ $signals = [ordered]@{
 if (-not $signals.publicDemoVideoReady) {
     Add-NextAction `
         -Name "Publish public demo video" `
-        -Reason "Devpost video field needs a public YouTube, Vimeo, or Facebook Video URL." `
+        -Reason "Devpost video field needs a public YouTube, Vimeo, Facebook Video, or Youku URL." `
         -Command 'scripts/qwencloud-video-publication-handoff.ps1; scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"' `
         -RequiresZackConfirmation $true
 }

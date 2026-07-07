@@ -16,6 +16,7 @@ def test_official_requirements_snapshot_captures_current_devpost_requirements() 
     assert "July 9, 2026 at 2:00pm PDT" in text
     assert "Track 1: MemoryAgent" in text
     assert "YouTube, Vimeo, or Facebook Video" in text
+    assert "YouTube, Vimeo, or Youku" in text
     assert "short recording separate from" in text
     assert "deploy/alibaba/serverless-devs.yaml" in text
     assert "Technical Depth & Engineering: 30%" in text

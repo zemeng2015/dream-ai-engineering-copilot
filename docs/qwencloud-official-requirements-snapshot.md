@@ -27,7 +27,10 @@ readiness gates. Re-check the source URL before final submit.
 - Proof of Alibaba Cloud deployment, including a short recording separate from
   the demo video and a repository file showing Alibaba Cloud service/API usage.
 - Architecture diagram showing the system and Qwen Cloud/backend connections.
-- Public demo video uploaded to YouTube, Vimeo, or Facebook Video.
+- Public demo video uploaded to an accepted public video platform. The public
+  overview names YouTube, Vimeo, or Facebook Video; the Official Rules page
+  names YouTube, Vimeo, or Youku. Local gates accept the union and recommend
+  YouTube or Vimeo as the least ambiguous final choice.
 - Text description explaining project features and functionality.
 - Track identification.
 

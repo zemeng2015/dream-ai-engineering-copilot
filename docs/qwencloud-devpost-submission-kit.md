@@ -32,6 +32,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `scripts/qwencloud-final-external-handoff.ps1`
+  - `scripts/qwencloud-official-source-refresh.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
   - `scripts/qwencloud-frontend-build-proof.ps1`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
@@ -207,6 +208,8 @@ produce traceable requirement and review outputs instead of one-shot chat answer
    and confirm it reports `READY`.
 5. Run `scripts/qwencloud-official-rules-gate.ps1` with real URLs and confirm
    it reports `READY`.
+   Run `scripts/qwencloud-official-source-refresh.ps1` first if you want a
+   fresh Devpost overview/rules source report in the final bundle.
 6. Run `scripts/qwencloud-final-readiness.ps1` with real URLs and confirm it
    reports `READY`.
 7. Run `scripts/qwencloud-final-upload-bundle.ps1` with real URLs and keep the

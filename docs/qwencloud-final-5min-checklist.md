@@ -51,6 +51,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `scripts/qwencloud_seed_demo_artifact.py`
   - `scripts/qwencloud-judge-rehearsal.ps1`
   - `scripts/qwencloud-final-external-handoff.ps1`
+  - `scripts/qwencloud-official-source-refresh.ps1`
 
 - Open the judge-facing Angular route:
   `http://localhost:4300/hackathon-demo`
@@ -164,6 +165,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Run the final readiness dashboard and confirm it reports `READY`:
 
 ```powershell
+scripts/qwencloud-official-source-refresh.ps1
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 

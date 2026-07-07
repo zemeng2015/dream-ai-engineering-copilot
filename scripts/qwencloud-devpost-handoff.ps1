@@ -141,7 +141,7 @@ if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
 
 $ready = $blockers.Count -eq 0
 $status = if ($ready) { "READY" } else { "DRAFT" }
-$videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Facebook Video URL>" }
+$videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Facebook Video/Youku URL>" }
 $backendValue = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function Compute backend URL>" }
 $blogValue = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
@@ -234,7 +234,7 @@ $md = @(
     "- Public open-source code repository with visible license: $RepoUrl",
     "- Alibaba Cloud backend deployment proof code file: $deploymentProofUrl",
     "- Architecture diagram upload: $ArchitectureUploadPath",
-    "- Public demo video on YouTube, Vimeo, or Facebook Video: $videoValue",
+    "- Public demo video on YouTube, Vimeo, Facebook Video, or Youku: $videoValue",
     "- Text description and feature/functionality explanation: included below",
     "- Track: $track",
     "- Optional blog/social journey URL: $blogValue",

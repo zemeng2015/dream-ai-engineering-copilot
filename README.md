@@ -298,6 +298,7 @@ scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "https://www.youtube.com
 Run the official rules gate before final submit:
 
 ```powershell
+scripts/qwencloud-official-source-refresh.ps1
 scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 

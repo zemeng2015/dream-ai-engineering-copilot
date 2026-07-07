@@ -73,14 +73,13 @@ def test_video_status_accepts_devpost_facebook_video_url(tmp_path: Path) -> None
     assert _check(report, "public_demo_video_url_platform")["ok"] is True
 
 
-def test_video_status_rejects_youku_after_devpost_rule_refresh(tmp_path: Path) -> None:
+def test_video_status_accepts_youku_after_official_rules_refresh(tmp_path: Path) -> None:
     result = _run_video_status(
         tmp_path,
         "https://v.youku.com/v_show/id_XNzk0ODI1.html",
-        allow_draft=True,
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
     report = _latest_status_json(tmp_path)
-    assert report["readyForDevpostVideoField"] is False
-    assert _check(report, "public_demo_video_url_platform")["ok"] is False
+    assert report["readyForDevpostVideoField"] is True
+    assert _check(report, "public_demo_video_url_platform")["ok"] is True

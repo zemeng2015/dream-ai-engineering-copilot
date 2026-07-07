@@ -36,6 +36,10 @@
   that packages the action-time order, safety boundaries, generated reports,
   and copy/paste commands for real video upload, Alibaba secrets/deploy,
   Devpost field save, legal submit, and post-submit verification.
+- Official source refresh report, `scripts/qwencloud-official-source-refresh.ps1`,
+  that re-checks the public Devpost overview/rules pages and records current
+  deadline, Track 1, submission evidence, judging weights, and accepted video
+  platform wording before final submit.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -43,7 +47,8 @@
 - Run one live Qwen smoke test with the real `DASHSCOPE_API_KEY`.
 - Deploy the container or at least produce a Function Compute dry-run screenshot
   plus `/health` output and the separate Alibaba backend proof recording.
-- Upload the rendered sub-3-minute demo video to YouTube, Vimeo, or Facebook Video.
+- Upload the rendered sub-3-minute demo video to YouTube, Vimeo, Facebook
+  Video, or Youku. Prefer YouTube or Vimeo for the final Devpost URL.
 - Generate the final submission packet with public video and deployed backend URLs.
 - Upload the architecture PNG into the Devpost submission.
 - Publish the optional build journey post if pursuing the blog/social bonus.

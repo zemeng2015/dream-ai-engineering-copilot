@@ -214,7 +214,7 @@ $runtimeTrackOk = if ($null -ne $health) { $health.track -eq "Track 1: MemoryAge
 Add-Requirement `
     -Id "official_requirements_snapshot" `
     -OfficialRequirement "Keep a local snapshot of the current public Devpost requirements used by readiness gates." `
-    -Ok ($requirementsSnapshot.ok -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "July 9, 2026") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Facebook Video")) `
+    -Ok ($requirementsSnapshot.ok -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "July 9, 2026") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Facebook Video") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Youku")) `
     -Evidence $requirementsSnapshot.details
 
 Add-Requirement `
@@ -270,7 +270,7 @@ Add-Requirement `
 
 Add-Requirement `
     -Id "demo_video_public_url" `
-    -OfficialRequirement "Include a public demo video URL on YouTube, Vimeo, or Facebook Video." `
+    -OfficialRequirement "Include a public demo video URL on an accepted official platform. Overview names YouTube, Vimeo, or Facebook Video; Official Rules name YouTube, Vimeo, or Youku." `
     -Ok (Is-DevpostRulesVideoUrl $DemoVideoUrl) `
     -Evidence $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 

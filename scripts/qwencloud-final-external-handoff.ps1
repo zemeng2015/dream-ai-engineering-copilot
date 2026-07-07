@@ -18,6 +18,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$LocalVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [switch]$SkipVideoPublication,
+    [switch]$SkipOfficialSourceRefresh,
     [switch]$SkipCloudCredentials,
     [switch]$SkipGitHubSecrets,
     [switch]$SkipDevpostDraftPayload,
@@ -151,6 +152,24 @@ function Invoke-HandoffStep {
     }
 }
 
+$officialSourceReport = $null
+if ($SkipOfficialSourceRefresh) {
+    Add-Step -Name "official-source-refresh" -Status "skipped" -Details "skipped by -SkipOfficialSourceRefresh" -Required $false
+}
+else {
+    $sourceArgs = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-official-source-refresh.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    $officialSourceReport = Invoke-HandoffStep `
+        -Name "official-source-refresh" `
+        -Arguments $sourceArgs `
+        -JsonFilter "official-source-refresh-*.json"
+}
+
 $videoReport = $null
 if ($SkipVideoPublication) {
     Add-Step -Name "video-publication-handoff" -Status "skipped" -Details "skipped by -SkipVideoPublication" -Required $false
@@ -261,7 +280,7 @@ else {
         -AllowedExitCodes @(0, 1)
 }
 
-foreach ($report in @($videoReport, $cloudReport, $githubReport, $draftPayloadReport, $actionBoardReport)) {
+foreach ($report in @($officialSourceReport, $videoReport, $cloudReport, $githubReport, $draftPayloadReport, $actionBoardReport)) {
     if ($report -and $report.json) {
         $reports += [ordered]@{
             json = $report.json
@@ -289,7 +308,7 @@ $actionTimeConfirmations = @(
         name = "Upload public demo video"
         required = $true
         owner = "Zack"
-        boundary = "Uploads MP4, thumbnail, and captions to YouTube/Vimeo/Facebook Video."
+        boundary = "Uploads MP4, thumbnail, and captions to YouTube/Vimeo/Facebook Video/Youku."
     },
     [ordered]@{
         name = "Configure Alibaba and Qwen secrets"
@@ -322,6 +341,7 @@ $commandLines = @(
     "# Generated final external handoff commands. Fill placeholders locally.",
     "# Do not commit real secrets.",
     "",
+    'scripts/qwencloud-official-source-refresh.ps1',
     'scripts/qwencloud-video-publication-handoff.ps1',
     'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"',
     'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
@@ -389,15 +409,16 @@ $lines += @(
     "",
     "## Ordered External Runbook",
     "",
-    '1. Publish the demo video with the latest `video-publication-handoff-*.md` title, description, thumbnail, captions, and MP4 hash.',
-    '2. Paste the public video URL into `qwencloud-video-upload-status.ps1` and confirm the platform is accepted by Devpost rules.',
-    '3. Fill `.env.qwencloud.local` locally with Alibaba, registry, and Qwen values; never commit it.',
-    '4. Configure Serverless Devs default access with `s config add` and run deploy preflight build+smoke.',
-    '5. Either set GitHub release secrets and run the release workflow, or run `qwencloud-alibaba-release.ps1` locally.',
-    '6. Capture Alibaba `/health` screenshot and render the separate backend proof recording.',
-    '7. Run `qwencloud-finalize-after-urls.ps1`, then regenerate the final upload bundle with real URLs.',
-    '8. Save non-legal Devpost text/link fields, upload required assets, then let Zack personally confirm legal boxes and submit.',
-    '9. Run post-submit verification and keep the resulting proof report.',
+    '1. Refresh the public Devpost overview/rules source report with `qwencloud-official-source-refresh.ps1`.',
+    '2. Publish the demo video with the latest `video-publication-handoff-*.md` title, description, thumbnail, captions, and MP4 hash.',
+    '3. Paste the public video URL into `qwencloud-video-upload-status.ps1` and confirm the platform is accepted by Devpost rules.',
+    '4. Fill `.env.qwencloud.local` locally with Alibaba, registry, and Qwen values; never commit it.',
+    '5. Configure Serverless Devs default access with `s config add` and run deploy preflight build+smoke.',
+    '6. Either set GitHub release secrets and run the release workflow, or run `qwencloud-alibaba-release.ps1` locally.',
+    '7. Capture Alibaba `/health` screenshot and render the separate backend proof recording.',
+    '8. Run `qwencloud-finalize-after-urls.ps1`, then regenerate the final upload bundle with real URLs.',
+    '9. Save non-legal Devpost text/link fields, upload required assets, then let Zack personally confirm legal boxes and submit.',
+    '10. Run post-submit verification and keep the resulting proof report.',
     "",
     "## Step Reports",
     "",

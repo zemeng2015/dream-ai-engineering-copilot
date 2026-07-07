@@ -230,7 +230,7 @@ $lines = @(
     "",
     "## Confirmation Boundary",
     "",
-    "- Selecting the MP4 in YouTube/Vimeo/Facebook Video transmits the local file to that service.",
+    "- Selecting the MP4 in YouTube/Vimeo/Facebook Video/Youku transmits the local file to that service.",
     "- Selecting the custom thumbnail transmits the thumbnail image to that service.",
     "- Selecting the caption/subtitle file transmits the caption text to that service.",
     "- Confirm the destination account/channel and visibility at action time before selecting the file.",

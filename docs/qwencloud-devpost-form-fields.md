@@ -201,7 +201,9 @@ change them after a form refresh.
   Devpost draft and saved. Saving the draft is an external write action and
   should only be done after Zack confirms it at action time.
 - `software_video_url` is empty until the demo MP4 is uploaded to YouTube,
-  Vimeo, or Facebook Video.
+  Vimeo, Facebook Video, or Youku. YouTube or Vimeo are the least ambiguous
+  final choices because the public overview and Official Rules list slightly
+  different accepted platform sets.
 - `software_urls_attributes_0_url` should be the deployed Alibaba Function
   Compute backend URL, not the source repository. The repository URL belongs in
   the required additional-info repository field.

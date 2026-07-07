@@ -132,7 +132,7 @@ Add-Criterion `
     -Name "Presentation and Documentation" `
     -Weight 15 `
     -OfficialFocus "Technical demo clarity, key logic visualized effectively, and clear documentation including architecture docs." `
-    -DREAMClaim "The repo includes architecture SVG/PNG, a rendered demo-video pipeline, video upload handoff, Devpost field payloads, final action board, and upload bundle manifests." `
+    -DREAMClaim "The repo includes architecture SVG/PNG, a rendered demo-video pipeline, official-source refresh, video upload handoff, Devpost field payloads, final action board, and upload bundle manifests." `
     -EvidencePaths @(
         "docs/assets/qwencloud-architecture.svg",
         "docs/assets/qwencloud-architecture.png",
@@ -157,7 +157,8 @@ Add-Criterion `
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts",
         "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-official-requirements-snapshot.md",
-        "docs/qwencloud-devpost-submission-kit.md"
+        "docs/qwencloud-devpost-submission-kit.md",
+        "scripts/qwencloud-official-source-refresh.ps1"
     ) `
     -RequiresDemoVideo $true
 

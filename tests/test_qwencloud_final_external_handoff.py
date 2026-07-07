@@ -30,6 +30,7 @@ def test_qwencloud_final_external_handoff_builds_safe_pack(tmp_path) -> None:
         str(SCRIPT),
         "-OutputDir",
         str(output_dir),
+        "-SkipOfficialSourceRefresh",
         "-SkipVideoPublication",
         "-SkipGitHubSecrets",
         "-SkipActionBoard",
@@ -61,6 +62,7 @@ def test_qwencloud_final_external_handoff_builds_safe_pack(tmp_path) -> None:
     assert Path(report["commandsPath"]).exists()
     assert Path(report["zipPath"]).exists()
     assert steps["video-publication-handoff"]["status"] == "skipped"
+    assert steps["official-source-refresh"]["status"] == "skipped"
     assert steps["cloud-credentials-handoff"]["status"] == "draft"
     assert steps["devpost-draft-payload"]["status"] == "draft"
     assert steps["github-secrets-handoff"]["status"] == "skipped"
