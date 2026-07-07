@@ -345,6 +345,9 @@ Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-uploa
 Add-LatestItem -Name "latest_video_upload_status_markdown" -Filter "video-upload-status-*.md"
 Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-status-*.json"
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
+Add-Item -Name "final_sprint_script" -Path "scripts/qwencloud-final-sprint.ps1" -Required $false
+Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
+Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
 Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"
 Add-LatestItem -Name "latest_final_action_board_json" -Filter "final-action-board-*.json"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))

@@ -21,6 +21,7 @@
 - [ ] Chrome extension file upload permission enabled if using browser automation
   for YouTube/Devpost uploads.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
+- [ ] Final sprint dashboard present: `scripts/qwencloud-final-sprint.ps1`.
 - [ ] Optional GitHub release workflow present:
   `.github/workflows/qwencloud-release.yml`.
 - [ ] GitHub release secrets handoff present:
@@ -142,6 +143,12 @@ One-command final gate alternative:
 
 ```powershell
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
+
+Last-day dashboard alternative:
+
+```powershell
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>" -AllowDraft
 ```
 
 10. Create final upload bundle:

@@ -355,6 +355,7 @@ foreach ($path in @(
     "scripts/qwencloud-devpost-handoff.ps1",
     "scripts/qwencloud-alibaba-release.ps1",
     "scripts/qwencloud-finalize-after-urls.ps1",
+    "scripts/qwencloud-final-sprint.ps1",
     "scripts/qwencloud-final-action-board.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",

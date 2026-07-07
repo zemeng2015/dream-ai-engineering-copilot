@@ -50,6 +50,7 @@ scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUr
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
@@ -106,6 +107,12 @@ Docker build/run logs, and final action board when available.
 `qwencloud-final-action-board.ps1` runs video URL, cloud credential, GitHub
 secret, and final readiness checks, then emits one Markdown board with the next
 remaining action and whether Zack/action-time confirmation is required.
+
+`qwencloud-final-sprint.ps1` is the last-day cockpit. It refreshes video status,
+cloud credentials, GitHub secrets, release plan, final packet, upload bundle,
+readiness, and action board in one pass. By default it only writes local status
+reports; use `-SetGitHubSecrets` or `-RunLocalRelease` only after action-time
+confirmation.
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the
 public video and deployed backend URLs are known. It runs the submission packet,

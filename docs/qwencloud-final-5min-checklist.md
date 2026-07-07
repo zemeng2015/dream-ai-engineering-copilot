@@ -79,6 +79,12 @@ Optional one-command release after credentials and video URL are available:
 scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
+One-command final sprint dashboard before doing any external action:
+
+```powershell
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+```
+
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
   model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
 - Capture the required Devpost screenshot from the deployed `/health` proof:
@@ -153,6 +159,14 @@ scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVid
 
 ```powershell
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+```
+
+- Or run the final sprint dashboard, which refreshes video status, cloud
+  credentials, GitHub secrets, release plan, final packet, upload bundle, and
+  final action board in one pass:
+
+```powershell
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it
