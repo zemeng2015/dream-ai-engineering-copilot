@@ -26,6 +26,7 @@ $reportMd = Join-Path $OutputDir "github-release-artifact-ingest-$timestamp.md"
 $downloadRoot = Join-Path $OutputDir "github-release-artifact-$timestamp"
 $steps = @()
 $copiedFiles = @()
+$releaseRunSelection = ""
 
 function Add-Step([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
     $script:steps += [ordered]@{
@@ -118,8 +119,70 @@ function Copy-ArtifactTree([string]$SourceDir, [string]$DestinationDir) {
     }
 }
 
+function Select-ReleaseRun([object[]]$Runs) {
+    $flatRuns = @()
+    foreach ($item in $Runs) {
+        if ($item -is [System.Array]) {
+            foreach ($nestedItem in $item) {
+                $flatRuns += $nestedItem
+            }
+        }
+        else {
+            $flatRuns += $item
+        }
+    }
+
+    $workflowRuns = @(
+        $flatRuns |
+            Where-Object { $_.workflowName -eq $WorkflowName } |
+            Sort-Object -Property @(
+                @{ Expression = {
+                        $runDate = if ($_.createdAt) { $_.createdAt } elseif ($_.updatedAt) { $_.updatedAt } else { "" }
+                        try { [DateTimeOffset]::Parse([string]$runDate).UtcDateTime } catch { [datetime]::MinValue }
+                    }; Descending = $true
+                },
+                @{ Expression = {
+                        try { [int64]$_.databaseId } catch { 0 }
+                    }; Descending = $true
+                }
+            )
+    )
+    if ($workflowRuns.Count -eq 0) {
+        $script:releaseRunSelection = "no runs found for workflow '$WorkflowName'"
+        return $null
+    }
+
+    $completedRuns = @($workflowRuns | Where-Object { $_.status -eq "completed" })
+    $activeRunCount = @($workflowRuns | Where-Object { $_.status -ne "completed" }).Count
+
+    if ([bool]$AllowDraft) {
+        if ($completedRuns.Count -gt 0) {
+            $script:releaseRunSelection = "selected latest completed run because -AllowDraft is set; matching=$($workflowRuns.Count); activeSkipped=$activeRunCount"
+            return $completedRuns[0]
+        }
+
+        $script:releaseRunSelection = "no completed runs available with -AllowDraft; reporting latest workflow run; matching=$($workflowRuns.Count); activeSkipped=0"
+        return $workflowRuns[0]
+    }
+
+    $successfulRuns = @($completedRuns | Where-Object { $_.conclusion -eq "success" })
+    if ($successfulRuns.Count -gt 0) {
+        $script:releaseRunSelection = "selected latest completed successful run; matching=$($workflowRuns.Count); activeSkipped=$activeRunCount"
+        return $successfulRuns[0]
+    }
+
+    if ($completedRuns.Count -gt 0) {
+        $script:releaseRunSelection = "no completed successful runs available; reporting latest completed non-success run; matching=$($workflowRuns.Count); activeSkipped=$activeRunCount"
+        return $completedRuns[0]
+    }
+
+    $script:releaseRunSelection = "no completed runs available; reporting latest workflow run; matching=$($workflowRuns.Count); activeSkipped=$activeRunCount"
+    return $workflowRuns[0]
+}
+
 function Get-ReleaseRun {
     if (-not [string]::IsNullOrWhiteSpace($ArtifactSourceDir)) {
+        $script:releaseRunSelection = "using fixture artifact source"
         return [pscustomobject]@{
             databaseId = if ($RunId) { $RunId } else { "fixture" }
             headSha = ""
@@ -136,13 +199,14 @@ function Get-ReleaseRun {
     }
 
     if (-not [string]::IsNullOrWhiteSpace($RunId)) {
+        $script:releaseRunSelection = "using explicit run id: $RunId"
         $json = gh run view $RunId --repo $Repo --json databaseId,headSha,status,conclusion,displayTitle,workflowName,url,createdAt,updatedAt
         return $json | ConvertFrom-Json
     }
 
     $runsJson = gh run list --repo $Repo --branch $Branch --limit 50 --json databaseId,headSha,status,conclusion,displayTitle,workflowName,url,createdAt,updatedAt
     $runs = @($runsJson | ConvertFrom-Json)
-    return @($runs | Where-Object { $_.workflowName -eq $WorkflowName } | Select-Object -First 1)
+    return Select-ReleaseRun -Runs $runs
 }
 
 function Invoke-ReleaseSummary {
@@ -166,6 +230,7 @@ $artifactSource = ""
 
 try {
     $run = Get-ReleaseRun
+    Add-Step -Name "release_run_selection" -Ok ($null -ne $run) -Details $(if ($releaseRunSelection) { $releaseRunSelection } else { "no selection details" }) -Required $false
     Add-Step -Name "release_run_found" -Ok ($null -ne $run) -Details $(if ($run) { "$($run.workflowName); $($run.status); $($run.conclusion); $($run.url)" } else { "missing $WorkflowName run" })
     if ($run) {
         $releaseRunSuccess = $run.status -eq "completed" -and $run.conclusion -eq "success"
@@ -250,6 +315,7 @@ $result = [ordered]@{
     workflowName = $WorkflowName
     artifactName = $ArtifactName
     runId = if ($run) { [string]$run.databaseId } else { $RunId }
+    releaseRunSelection = $releaseRunSelection
     run = $run
     usingFixture = $usingFixture
     artifactSourceDir = $artifactSource
@@ -273,6 +339,7 @@ $lines = @(
     "- Repo: $Repo",
     "- Workflow: $WorkflowName",
     "- Run: $(if ($run) { $run.databaseId } else { '<missing>' })",
+    "- Run selection: $(if ($releaseRunSelection) { $releaseRunSelection } else { '<missing>' })",
     "- Allow draft/non-success run artifacts: $([bool]$AllowDraft)",
     "- Artifact: $ArtifactName",
     "- Source: $(if ($artifactSource) { $artifactSource } else { '<missing>' })",

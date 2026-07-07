@@ -72,9 +72,12 @@ the current PowerShell process only.
    scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot
    ```
 
+   Without `-RunId`, the ingest script selects the latest completed successful
+   `Qwen Cloud Release` run and skips newer queued or in-progress runs.
+
    If the workflow run is marked failed because a final DRAFT gate tripped but
-   the artifact upload step still completed, recover the uploaded proof bundle
-   with:
+   the artifact upload step still completed, `-AllowDraft` selects the latest
+   completed run. Add `-RunId` only when you need to force a specific failed run:
 
    ```powershell
    scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<run-id>" -AllowDraft
