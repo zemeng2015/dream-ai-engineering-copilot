@@ -35,9 +35,9 @@ function Html-Escape([string]$Text) {
 function Get-Browser {
     $browserCandidates = @(
         "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
-        "$env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe",
+        "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
         "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
-        "$env:ProgramFiles(x86)\Microsoft\Edge\Application\msedge.exe"
+        "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
     )
 
     $browser = $browserCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1

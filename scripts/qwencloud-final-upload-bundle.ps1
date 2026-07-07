@@ -507,6 +507,9 @@ Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandof
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
 Add-Item -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
+Add-Item -Name "video_thumbnail_png" -Path "docs/assets/qwencloud-video-thumbnail.png" -Required $false
+Add-Item -Name "video_thumbnail_svg" -Path "docs/assets/qwencloud-video-thumbnail.svg" -Required $false
+Add-Item -Name "video_thumbnail_export_script" -Path "scripts/qwencloud-export-video-thumbnail.ps1" -Required $false
 Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false
 Add-Item -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
 Add-Item -Name "video_publication_handoff_markdown" -Path $videoPublicationHandoff.markdown

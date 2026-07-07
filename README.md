@@ -174,6 +174,7 @@ Key submission artifacts:
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
 - [Architecture PNG upload asset](docs/assets/qwencloud-architecture.png)
+- [Demo video thumbnail asset](docs/assets/qwencloud-video-thumbnail.png)
 
 Run deployment preflight before pushing to Alibaba Cloud:
 
@@ -217,14 +218,20 @@ Regenerate the PNG architecture upload asset:
 scripts/qwencloud-export-architecture-png.ps1
 ```
 
+Regenerate the optional demo video thumbnail:
+
+```powershell
+scripts/qwencloud-export-video-thumbnail.ps1
+```
+
 Render the final under-3-minute Devpost upload video:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
 ```
 
-Generate the upload publication handoff with the final MP4 hash, title,
-description, tags, and action-time confirmation boundary:
+Generate the upload publication handoff with the final MP4 hash, thumbnail
+hash, title, description, tags, and action-time confirmation boundary:
 
 ```powershell
 scripts/qwencloud-video-publication-handoff.ps1

@@ -7,6 +7,7 @@
 - Video file name: `DREAM-Qwen-Cloud-MemoryAgent-Demo.mp4`
 - Video length target: `2:45` to `3:00`
 - Video upload handoff: `docs/qwencloud-video-upload-handoff.md`
+- Video thumbnail: `docs/assets/qwencloud-video-thumbnail.png`
 - Architecture file: `docs/assets/qwencloud-architecture.png` for Devpost upload
 - Alibaba proof screenshot: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Alibaba proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`
@@ -32,6 +33,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-run-local-proof.ps1
 scripts/qwencloud-export-architecture-png.ps1
+scripts/qwencloud-export-video-thumbnail.ps1
 Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
@@ -99,6 +101,9 @@ Alibaba Cloud Function Compute evidence chain.
 
 `qwencloud-export-architecture-png.ps1` regenerates the Devpost-friendly PNG
 architecture upload asset from the source SVG.
+
+`qwencloud-export-video-thumbnail.ps1` regenerates the optional 1280x720
+custom thumbnail for the public demo video upload.
 
 `qwencloud-hackathon-submission-packet.ps1` validates final public URLs,
 architecture PNG dimensions, local demo video duration/resolution, backend

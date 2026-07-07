@@ -1,8 +1,8 @@
 param(
     [Parameter(Mandatory = $false)]
-    [string]$InputSvg = "docs/assets/qwencloud-architecture.svg",
+    [string]$InputSvg = "docs/assets/qwencloud-video-thumbnail.svg",
     [Parameter(Mandatory = $false)]
-    [string]$OutputPng = "docs/assets/qwencloud-architecture.png",
+    [string]$OutputPng = "docs/assets/qwencloud-video-thumbnail.png",
     [Parameter(Mandatory = $false)]
     [int]$Width = 1280,
     [Parameter(Mandatory = $false)]
@@ -24,7 +24,7 @@ $browserCandidates = @(
 
 $browser = $browserCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 if (-not $browser) {
-    throw "Chrome or Edge is required to export the architecture PNG."
+    throw "Chrome or Edge is required to export the video thumbnail PNG."
 }
 
 $resolvedSvg = (Resolve-Path $InputSvg).Path
@@ -36,8 +36,11 @@ if (Test-Path $resolvedOutput) {
     Remove-Item -LiteralPath $resolvedOutput -Force
 }
 
-$tempOutput = Join-Path ([System.IO.Path]::GetTempPath()) "dream-qwencloud-architecture-$([System.Guid]::NewGuid().ToString('N')).png"
-$tempProfile = Join-Path ([System.IO.Path]::GetTempPath()) "dream-qwencloud-chrome-$([System.Guid]::NewGuid().ToString('N'))"
+$artifactDir = "artifacts/qwencloud-proof"
+New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+
+$tempOutput = Join-Path ([System.IO.Path]::GetTempPath()) "dream-qwencloud-video-thumbnail-$([System.Guid]::NewGuid().ToString('N')).png"
+$tempProfile = Join-Path ([System.IO.Path]::GetTempPath()) "dream-qwencloud-thumbnail-chrome-$([System.Guid]::NewGuid().ToString('N'))"
 $svgUri = [System.Uri]::new($resolvedSvg).AbsoluteUri
 $args = @(
     "--headless=new",
@@ -51,16 +54,15 @@ $args = @(
     $svgUri
 )
 
-$stdout = Join-Path "artifacts/qwencloud-proof" "architecture-png-export.out"
-$stderr = Join-Path "artifacts/qwencloud-proof" "architecture-png-export.err"
-New-Item -ItemType Directory -Path (Split-Path -Parent $stdout) -Force | Out-Null
+$stdout = Join-Path $artifactDir "video-thumbnail-export.out"
+$stderr = Join-Path $artifactDir "video-thumbnail-export.err"
 $proc = Start-Process -FilePath $browser -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 if ($proc.ExitCode -ne 0) {
-    throw "Architecture PNG export failed. See $stderr"
+    throw "Video thumbnail PNG export failed. See $stderr"
 }
 
 if (-not (Test-Path $tempOutput)) {
-    throw "Architecture PNG was not created: $tempOutput"
+    throw "Video thumbnail PNG was not created: $tempOutput"
 }
 
 Move-Item -LiteralPath $tempOutput -Destination $resolvedOutput -Force
@@ -70,7 +72,7 @@ if (Test-Path $tempProfile) {
 
 $file = Get-Item -LiteralPath $resolvedOutput
 if ($file.Length -le 0) {
-    throw "Architecture PNG is empty: $resolvedOutput"
+    throw "Video thumbnail PNG is empty: $resolvedOutput"
 }
 
-Write-Host "Architecture PNG exported: $OutputPng ($($file.Length) bytes)"
+Write-Host "Video thumbnail PNG exported: $OutputPng ($($file.Length) bytes)"

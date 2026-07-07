@@ -34,6 +34,22 @@ Expected metadata:
 - Resolution: at least 1280x720.
 - Format: MP4/H.264.
 
+## Custom Thumbnail
+
+Use this optional 1280x720 thumbnail when the upload platform asks for a
+custom cover image:
+
+`docs/assets/qwencloud-video-thumbnail.png`
+
+Refresh it from the source SVG with:
+
+```powershell
+scripts/qwencloud-export-video-thumbnail.ps1
+```
+
+The publication handoff includes the thumbnail path and SHA256 next to the MP4
+hash, so the selected upload assets can be checked against the final bundle.
+
 ## Upload Target
 
 Preferred platform: YouTube.
@@ -48,6 +64,10 @@ Acceptable Devpost public URL platforms:
 
 Set visibility to public or another Devpost-accessible mode that does not
 require a private login, password, or invitation.
+
+Selecting the MP4 or custom thumbnail in the upload UI transmits that local
+file to the chosen third-party video platform. Confirm the account/channel and
+visibility at action time before selecting either file.
 
 ## Copy Fields
 
