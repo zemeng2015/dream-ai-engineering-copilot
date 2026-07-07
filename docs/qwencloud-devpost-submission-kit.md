@@ -30,6 +30,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-cloud-credentials-handoff.ps1`
   - `scripts/qwencloud-devpost-handoff.ps1`
   - `scripts/qwencloud-devpost-autofill-snippet.ps1`
+  - `scripts/qwencloud-devpost-materials-audit.ps1`
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `scripts/qwencloud-final-external-handoff.ps1`
@@ -184,6 +185,15 @@ fields:
 scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
 ```
 
+Audit the packet, draft payload, handoff, and autofill snippet together before
+saving Devpost draft fields:
+
+```powershell
+scripts/qwencloud-devpost-materials-audit.ps1 `
+  -DemoVideoUrl "https://www.youtube.com/..." `
+  -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ### Project Title
 
 `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -217,22 +227,25 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 3. Add public repo link and Apache-2.0 license.
 4. Generate `scripts/qwencloud-hackathon-submission-packet.ps1` with real URLs
    and confirm it reports `READY`.
-5. Run `scripts/qwencloud-official-rules-gate.ps1` with real URLs and confirm
+5. Run `scripts/qwencloud-devpost-materials-audit.ps1` with real URLs and
+   confirm public copy, upload paths, and legal/external-write boundaries are
+   `READY`.
+6. Run `scripts/qwencloud-official-rules-gate.ps1` with real URLs and confirm
    it reports `READY`.
    Run `scripts/qwencloud-official-source-refresh.ps1` first if you want a
    fresh Devpost overview/rules source report in the final bundle.
-6. Run `scripts/qwencloud-final-readiness.ps1` with real URLs and confirm it
+7. Run `scripts/qwencloud-final-readiness.ps1` with real URLs and confirm it
    reports `READY`.
-7. Run `scripts/qwencloud-final-upload-bundle.ps1` with real URLs and keep the
+8. Run `scripts/qwencloud-final-upload-bundle.ps1` with real URLs and keep the
    generated zip nearby for upload fields, the Devpost handoff HTML, and manual
    review. Use the bundled `devpost-autofill-snippet-*.js` only for non-legal
    public text/link fields after action-time confirmation.
-8. Run `scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft`
+9. Run `scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft`
    and keep the generated `external-handoff-*.zip` as the final action-time
    handoff for accounts, secrets, uploads, deployment, and legal submit.
-9. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
-10. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
-11. Submit only after the external Devpost form shows accepted URLs.
+10. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
+11. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
+12. Submit only after the external Devpost form shows accepted URLs.
 
 ## 7) Reproducibility Commands
 

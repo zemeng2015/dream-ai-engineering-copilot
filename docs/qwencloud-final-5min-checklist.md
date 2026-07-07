@@ -51,6 +51,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
   - `scripts/qwencloud_seed_demo_artifact.py`
   - `scripts/qwencloud-judge-rehearsal.ps1`
+  - `scripts/qwencloud-devpost-materials-audit.ps1`
   - `scripts/qwencloud-final-external-handoff.ps1`
   - `scripts/qwencloud-official-source-refresh.ps1`
   - `scripts/qwencloud-deadline-guard.ps1`
@@ -171,6 +172,15 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Confirm the packet reports `READY`, including public video URL reachability,
   backend health proof, architecture PNG dimensions, Alibaba screenshot
   readiness, Alibaba proof video readiness, and local demo video under 3 minutes.
+- Run the Devpost materials audit before saving draft fields:
+
+```powershell
+scripts/qwencloud-devpost-materials-audit.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
+- Confirm `devpost-materials-audit-*.md` reports `READY`, especially placeholder
+  checks, secret-looking value checks, upload asset paths, and legal/external
+  write boundaries.
 - Run the final readiness dashboard and confirm it reports `READY`:
 
 ```powershell

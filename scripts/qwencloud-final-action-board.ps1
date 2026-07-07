@@ -173,6 +173,21 @@ if ($DemoVideoUrl) { $scorecardArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $scorecardArgs += @("-BackendUrl", $BackendUrl) }
 Invoke-BoardStep -Name "judging-scorecard" -Arguments $scorecardArgs
 
+$materialsAuditArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
+    "-RepoUrl", $RepoUrl,
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $materialsAuditArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $materialsAuditArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $materialsAuditArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $materialsAuditArgs += @("-EnvFile", $EnvFile) }
+if ($SkipExternalUrlChecks) { $materialsAuditArgs += "-SkipExternalUrlChecks" }
+Invoke-BoardStep -Name "devpost-materials-audit" -Arguments $materialsAuditArgs
+
 if ($SkipGitHubSecrets) {
     Add-Step -Name "github-secrets-handoff" -ExitCode 0 -Details "skipped by -SkipGitHubSecrets"
 }
@@ -211,6 +226,7 @@ $cloudReport = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $liveInputsReport = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $releaseConfigReport = Read-LatestJson -Filter "release-config-audit-*.json"
 $scorecardReport = Read-LatestJson -Filter "judging-scorecard-*.json"
+$materialsAuditReport = Read-LatestJson -Filter "devpost-materials-audit-*.json"
 $secretsReport = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $officialRulesReport = Read-LatestJson -Filter "official-rules-gate-*.json"
 $readinessReport = Read-LatestJson -Filter "final-readiness-*.json"
@@ -221,6 +237,7 @@ $cloudReady = [bool]($cloudReport.data -and $cloudReport.data.readyForCloudRelea
 $liveInputsReady = [bool]($liveInputsReport.data -and $liveInputsReport.data.readyForLiveInputs)
 $releaseConfigReady = [bool]($releaseConfigReport.data -and $releaseConfigReport.data.readyForReleaseConfig)
 $scorecardReady = [bool]($scorecardReport.data -and $scorecardReport.data.readyForJudgingNarrative)
+$materialsAuditReady = [bool]($materialsAuditReport.data -and $materialsAuditReport.data.readyForDevpostMaterials)
 $scorecardStaticReady = [bool]($scorecardReport.data -and $scorecardReport.data.weightedStaticEvidenceReady -eq $scorecardReport.data.weightedTotal)
 $scorecardMissingExternalInputs = @()
 $scorecardMissingEvidencePaths = @()
@@ -235,6 +252,7 @@ $finalReady = [bool]($readinessReport.data -and $readinessReport.data.readyForFi
 $readiness = $readinessReport.data
 $proofCheck = Get-Check -Readiness $readiness -Name "alibaba_proof_integrity_ready"
 $packetCheck = Get-Check -Readiness $readiness -Name "devpost_submission_packet_ready"
+$materialsAuditCheck = Get-Check -Readiness $readiness -Name "devpost_materials_audit_ready"
 $ciCheck = Get-Check -Readiness $readiness -Name "latest_head_ci_success"
 $deployPreflightCheck = Get-Check -Readiness $readiness -Name "latest_deploy_preflight_build_smoke"
 
@@ -340,6 +358,16 @@ if (-not ($packetCheck -and $packetCheck.ok)) {
     )
 }
 
+if (-not $materialsAuditReady) {
+    $materialsMissing = if ($materialsAuditReport.data) { @($materialsAuditReport.data.requiredFailures) -join ', ' } else { "Devpost materials audit report missing" }
+    Add-Action -Name "Clear Devpost materials audit" -Reason "Packet, draft payload, handoff, and autofill materials are not mutually READY: $materialsMissing." -RequiresUser $true -Commands @(
+        'scripts/qwencloud-devpost-materials-audit.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+        'scripts/qwencloud-devpost-draft-payload.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+        'scripts/qwencloud-devpost-autofill-snippet.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+        "# Review devpost-materials-audit-*.md before saving Devpost draft fields."
+    )
+}
+
 if (-not $officialRulesReady) {
     $officialMissing = if ($officialRulesReport.data) { @($officialRulesReport.data.missingRequired) -join ', ' } else { "official rules gate report missing" }
     Add-Action -Name "Clear official rules gate" -Reason "Official rules gate is not READY: $officialMissing." -Commands @(
@@ -380,6 +408,7 @@ $result = [ordered]@{
         liveInputsIntake = $liveInputsReport.file
         releaseConfigAudit = $releaseConfigReport.file
         judgingScorecard = $scorecardReport.file
+        devpostMaterialsAudit = $materialsAuditReport.file
         githubSecretsHandoff = if ($SkipGitHubSecrets) { "<skipped>" } else { $secretsReport.file }
         finalReadiness = $readinessReport.file
         officialRulesGate = $officialRulesReport.file
@@ -391,6 +420,7 @@ $result = [ordered]@{
         liveInputsReady = $liveInputsReady
         releaseConfigReady = $releaseConfigReady
         judgingScorecardReady = $scorecardReady
+        devpostMaterialsAuditReady = $materialsAuditReady
         judgingScorecardWeightedEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedEvidenceReady } else { $null }
         judgingScorecardWeightedStaticEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedStaticEvidenceReady } else { $null }
         judgingScorecardWeightedTotal = if ($scorecardReport.data) { $scorecardReport.data.weightedTotal } else { $null }
@@ -405,6 +435,7 @@ $result = [ordered]@{
         officialRulesGateReady = $officialRulesReady
         alibabaProofIntegrityReady = [bool]($proofCheck -and $proofCheck.ok)
         devpostPacketReady = [bool]($packetCheck -and $packetCheck.ok)
+        devpostMaterialsReadinessCheckReady = [bool]($materialsAuditCheck -and $materialsAuditCheck.ok)
     }
     steps = $steps
     nextActions = $actions
@@ -432,6 +463,7 @@ $lines = @(
     "| Release config audit | $(if ($releaseConfigReady) { 'yes' } else { 'no' }) |",
     "| Live inputs intake | $(if ($liveInputsReady) { 'yes' } else { 'no' }) |",
     "| Judging scorecard | $(if ($scorecardReady) { 'yes' } else { 'no' }) |",
+    "| Devpost materials audit | $(if ($materialsAuditReady) { 'yes' } else { 'no' }) |",
     "| GitHub release secrets | $(if ($SkipGitHubSecrets) { 'skipped' } elseif ($secretsReady) { 'yes' } else { 'no' }) |",
     "| Latest CI | $(if ($ciCheck -and $ciCheck.ok) { 'yes' } else { 'no' }) |",
     "| Docker deploy preflight | $(if ($deployPreflightCheck -and $deployPreflightCheck.ok) { 'yes' } else { 'no' }) |",
@@ -447,6 +479,7 @@ $lines = @(
     "- Release config audit: $(if ($releaseConfigReport.file) { $releaseConfigReport.file } else { '<missing>' })",
     "- Live inputs intake: $(if ($liveInputsReport.file) { $liveInputsReport.file } else { '<missing>' })",
     "- Judging scorecard: $(if ($scorecardReport.file) { $scorecardReport.file } else { '<missing>' })",
+    "- Devpost materials audit: $(if ($materialsAuditReport.file) { $materialsAuditReport.file } else { '<missing>' })",
     "- GitHub secrets: $(if ($SkipGitHubSecrets) { '<skipped>' } elseif ($secretsReport.file) { $secretsReport.file } else { '<missing>' })",
     "- Official rules gate: $(if ($officialRulesReport.file) { $officialRulesReport.file } else { '<missing>' })",
     "- Final readiness: $(if ($readinessReport.file) { $readinessReport.file } else { '<missing>' })",

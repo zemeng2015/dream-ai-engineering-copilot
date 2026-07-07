@@ -436,7 +436,66 @@ function Invoke-SubmissionPacket {
     return [pscustomobject]@{
         ok = [bool]$packet.readyForDevpost
         details = if ($packet.readyForDevpost) { "packet READY: $($newest.FullName)" } else { "packet DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+        json = $newest.FullName
         packet = $packet
+    }
+}
+
+function Invoke-DevpostMaterialsAudit([string]$PacketJson) {
+    if (-not (Test-Path "scripts/qwencloud-devpost-materials-audit.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-devpost-materials-audit.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-materials-audit-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($PacketJson) {
+        $packetJsonArg = $PacketJson
+        try {
+            $packetJsonArg = Resolve-Path -LiteralPath $PacketJson -Relative
+        }
+        catch {
+            $packetJsonArg = $PacketJson
+        }
+        $args += @("-PacketJson", $packetJsonArg)
+    }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+
+    $stdout = Join-Path $OutputDir "final-readiness-devpost-materials-audit-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-devpost-materials-audit-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-materials-audit-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "Devpost materials audit JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $audit = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($audit.requiredFailures)
+    return [pscustomobject]@{
+        ok = [bool]$audit.readyForDevpostMaterials
+        details = if ($audit.readyForDevpostMaterials) { "Devpost materials audit READY: $($newest.FullName)" } else { "Devpost materials audit DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
     }
 }
 
@@ -637,7 +696,8 @@ foreach ($path in @(
     "scripts/qwencloud_seed_demo_artifact.py",
     "scripts/qwencloud-judge-rehearsal.ps1",
     "scripts/qwencloud-final-external-handoff.ps1",
-    "scripts/qwencloud-official-source-refresh.ps1"
+    "scripts/qwencloud-official-source-refresh.ps1",
+    "scripts/qwencloud-devpost-materials-audit.ps1"
 )) {
     $fileCheck = Test-File -Path $path
     Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
@@ -681,6 +741,9 @@ if (-not $SkipPacket) {
 else {
     Add-Check -Name "devpost_submission_packet_ready" -Ok $true -Details "skipped by -SkipPacket" -Required $false
 }
+
+$materialsAudit = Invoke-DevpostMaterialsAudit -PacketJson $(if ($packetCheck) { $packetCheck.json } else { "" })
+Add-Check -Name "devpost_materials_audit_ready" -Ok $materialsAudit.ok -Details $materialsAudit.details
 
 $requiredFailures = @($checks | Where-Object { $_.required -and -not $_.ok })
 $ready = $requiredFailures.Count -eq 0

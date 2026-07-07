@@ -53,6 +53,7 @@ scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "https://www.youtube.com
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-devpost-materials-audit.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
@@ -172,6 +173,12 @@ JavaScript snippet from the draft payload. It fills only non-legal public
 text/link fields and does not upload files, check legal attestations, save the
 draft, or submit.
 
+`qwencloud-devpost-materials-audit.ps1` checks the generated submission packet,
+draft payload, Devpost handoff, and autofill snippet together. It blocks final
+readiness if public copy still contains placeholders, secret-looking values,
+missing public video/backend URLs, missing Alibaba proof uploads, or unsafe
+legal/external-write boundaries.
+
 `qwencloud-post-submit-verification.ps1` is the final proof script after
 Devpost submit. It verifies the public Devpost project page, public demo video,
 public repo, deployed Alibaba backend `/health` and `/qwencloud/showcase`, and
@@ -198,13 +205,14 @@ troubleshooting.
 7. Upload or link Alibaba backend proof recording if Devpost requests it
 8. Upload demo video link after verifying the public video page plays
 9. Generate the final submission packet and copy testing instructions
-10. Run final readiness and confirm `READY`
-11. Create the final upload bundle and open the generated `devpost-handoff-*.html`
-12. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
-13. Add optional build journey link if published
-14. Submit and immediately open public project page to confirm links are visible
-15. Run `scripts/qwencloud-post-submit-verification.ps1` with the public Devpost
+10. Run the Devpost materials audit and confirm `READY`
+11. Run final readiness and confirm `READY`
+12. Create the final upload bundle and open the generated `devpost-handoff-*.html`
+13. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
+14. Add optional build journey link if published
+15. Submit and immediately open public project page to confirm links are visible
+16. Run `scripts/qwencloud-post-submit-verification.ps1` with the public Devpost
     URL and keep the generated `devpost-post-submit-verification-*.md/json`
     report as final completion evidence
-16. Run `scripts/qwencloud-final-completion-evidence.ps1` to package the final
+17. Run `scripts/qwencloud-final-completion-evidence.ps1` to package the final
     completion archive only after post-submit verification reports `READY`

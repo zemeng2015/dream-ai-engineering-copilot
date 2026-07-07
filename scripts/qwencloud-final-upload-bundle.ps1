@@ -644,6 +644,83 @@ function Invoke-AutofillSnippet([string]$PayloadJson) {
     }
 }
 
+function Invoke-DevpostMaterialsAudit([string]$PacketJson, [string]$PayloadJson, [string]$HandoffJson, [string]$AutofillJson) {
+    function Get-ArgumentPath([string]$Path) {
+        if ([string]::IsNullOrWhiteSpace($Path)) { return $Path }
+        try {
+            return Resolve-Path -LiteralPath $Path -Relative
+        }
+        catch {
+            return $Path
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-materials-audit-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-ArchitectureUploadPath", $ArchitectureUploadPath,
+        "-LocalDemoVideoPath", $LocalDemoVideoPath,
+        "-AlibabaScreenshotPath", $AlibabaScreenshotPath,
+        "-AlibabaProofVideoPath", $AlibabaProofVideoPath,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
+    if ($PacketJson) { $args += @("-PacketJson", (Get-ArgumentPath -Path $PacketJson)) }
+    if ($PayloadJson) { $args += @("-PayloadJson", (Get-ArgumentPath -Path $PayloadJson)) }
+    if ($HandoffJson) { $args += @("-HandoffJson", (Get-ArgumentPath -Path $HandoffJson)) }
+    if ($AutofillJson) { $args += @("-AutofillJson", (Get-ArgumentPath -Path $AutofillJson)) }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-devpost-materials-audit-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-devpost-materials-audit-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        if (-not $AllowDraft) {
+            throw "Devpost materials audit generation failed. See $stderr"
+        }
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            failures = @("devpost_materials_audit_generation_failed")
+            details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-materials-audit-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        return [pscustomobject]@{
+            json = ""
+            markdown = ""
+            ready = $false
+            failures = @("devpost_materials_audit_json_missing")
+            details = "stdout=$stdout; stderr=$stderr"
+        }
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($data.requiredFailures)
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForDevpostMaterials
+        failures = $failedRequired
+        details = if ($data.readyForDevpostMaterials) { "READY: $($json.FullName)" } else { "DRAFT; missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-JudgingScorecard {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "judging-scorecard-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -875,6 +952,7 @@ $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
 $autofillSnippet = Invoke-AutofillSnippet -PayloadJson $draftPayload.json
+$devpostMaterialsAudit = Invoke-DevpostMaterialsAudit -PacketJson $packet.json -PayloadJson $draftPayload.json -HandoffJson $handoff.json -AutofillJson $autofillSnippet.json
 $judgingScorecard = Invoke-JudgingScorecard
 $officialSourceRefresh = Invoke-OfficialSourceRefresh
 $officialRulesGate = Invoke-OfficialRulesGate
@@ -893,6 +971,7 @@ Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details 
 Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
 Add-ExternalRequirement -Name "devpost_draft_payload_ready" -Ok $draftPayload.ready -Details $(if ($draftPayload.ready) { "READY" } else { "DRAFT; publicTextReady=$($draftPayload.publicTextReady); missing=$($draftPayload.failures -join ', ')" })
 Add-ExternalRequirement -Name "devpost_autofill_snippet_ready" -Ok $autofillSnippet.ready -Details $(if ($autofillSnippet.ready) { "READY" } else { "DRAFT" }) -Required $false
+Add-ExternalRequirement -Name "devpost_materials_audit_ready" -Ok $devpostMaterialsAudit.ready -Details $devpostMaterialsAudit.details
 Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.ready -Details $(if ($judgingScorecard.ready) { "READY" } else { "DRAFT; missing=$($judgingScorecard.missing -join ', ')" })
 Add-ExternalRequirement -Name "official_source_refresh_ready" -Ok $officialSourceRefresh.ready -Details $officialSourceRefresh.details
 Add-ExternalRequirement -Name "official_rules_gate_ready" -Ok $officialRulesGate.ready -Details $(if ($officialRulesGate.ready) { "READY" } else { "DRAFT; missing=$($officialRulesGate.missing -join ', ')" })
@@ -974,6 +1053,9 @@ Add-Item -Name "devpost_autofill_snippet_markdown" -Path $autofillSnippet.markdo
 Add-Item -Name "devpost_autofill_snippet_json" -Path $autofillSnippet.json
 Add-Item -Name "devpost_autofill_snippet_javascript" -Path $autofillSnippet.javascript
 Add-Item -Name "devpost_autofill_snippet_script" -Path "scripts/qwencloud-devpost-autofill-snippet.ps1" -Required $false
+Add-Item -Name "devpost_materials_audit_markdown" -Path $devpostMaterialsAudit.markdown
+Add-Item -Name "devpost_materials_audit_json" -Path $devpostMaterialsAudit.json
+Add-Item -Name "devpost_materials_audit_script" -Path "scripts/qwencloud-devpost-materials-audit.ps1" -Required $false
 Add-Item -Name "official_rules_gate_markdown" -Path $officialRulesGate.markdown
 Add-Item -Name "official_rules_gate_json" -Path $officialRulesGate.json
 Add-Item -Name "official_rules_gate_script" -Path "scripts/qwencloud-official-rules-gate.ps1" -Required $false
