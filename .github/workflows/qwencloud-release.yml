@@ -192,6 +192,22 @@ jobs:
             throw "Final readiness/action board/upload bundle remained DRAFT. readiness=$readinessCode actionBoard=$actionBoardCode bundle=$bundleCode"
           }
 
+      - name: Summarize release proof
+        if: always()
+        shell: pwsh
+        run: |
+          $args = @(
+            "-OutputDir", "artifacts/qwencloud-proof",
+            "-DemoVideoUrl", "${{ inputs.demoVideoUrl }}"
+          )
+          if (-not [string]::IsNullOrWhiteSpace("${{ inputs.backendUrl }}")) {
+            $args += @("-BackendUrl", "${{ inputs.backendUrl }}")
+          }
+          if (-not [string]::IsNullOrWhiteSpace("${{ inputs.blogPostUrl }}")) {
+            $args += @("-BlogPostUrl", "${{ inputs.blogPostUrl }}")
+          }
+          ./scripts/qwencloud-release-summary.ps1 @args
+
       - name: Upload release artifacts
         if: always()
         uses: actions/upload-artifact@v4

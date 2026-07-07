@@ -61,6 +61,9 @@ the current PowerShell process only.
 4. Leave `backendUrl` blank for a real deploy, or set it with `skipDeploy=true`
    if a Function Compute backend already exists.
 5. Download the `qwencloud-release-proof` artifact after the workflow finishes.
+6. Open the workflow run summary and copy the Backend URL, `/qwencloud/showcase`
+   proof path, final bundle zip path, and SHA256 from the `Qwen Cloud Release
+   Summary` section.
 
 The workflow runs:
 
@@ -72,6 +75,9 @@ The workflow runs:
 - `scripts/qwencloud-alibaba-release.ps1`.
 - Final readiness and final upload bundle generation.
 - Final action board generation when local diagnostics are needed.
+- `scripts/qwencloud-release-summary.ps1`, which writes the latest backend URL,
+  showcase proof, final bundle hash, and remaining blockers to the GitHub job
+  summary and artifact folder even when the run remains DRAFT.
 - Artifact upload for Devpost proof files and handoff files.
 
 The GitHub runner validates the public video URL but skips the local MP4 file
