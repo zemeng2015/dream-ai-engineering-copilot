@@ -150,10 +150,10 @@ $shortPitch = "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering i
 
 $nextCommands = @(
     'scripts/qwencloud-render-demo-video.ps1',
-    'scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"',
+    'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
     'scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
-    'scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
-    'scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"'
+    'scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
+    'scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"'
 )
 
 $handoff = [ordered]@{

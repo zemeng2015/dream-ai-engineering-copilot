@@ -170,7 +170,7 @@ $lines += @(
     "",
     '```powershell',
     'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"',
-    'scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
+    'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
     '```'
 )
 Set-Content -Path $reportMd -Value ($lines -join "`r`n") -Encoding UTF8

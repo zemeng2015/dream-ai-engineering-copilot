@@ -106,7 +106,7 @@ function Test-LatestDeployPreflight {
     if ($candidates.Count -eq 0) {
         return [pscustomobject]@{
             ok = $false
-            details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer"
+            details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer"
         }
     }
 
