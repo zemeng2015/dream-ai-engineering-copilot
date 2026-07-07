@@ -32,6 +32,10 @@ $projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Int
 $track = "Track 1: MemoryAgent"
 $deadline = "July 9, 2026 at 2:00pm PDT / 5:00pm EDT"
 $devpostUrl = "https://qwencloud-hackathon.devpost.com/"
+$devpostPreviewUrl = "https://devpost.com/software/dream-qwen-cloud-memoryagent"
+$devpostProjectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit"
+$devpostAdditionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
+$devpostFinalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
 $deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs.yaml"
 $licenseUrl = "$RepoUrl/blob/main/LICENSE"
 
@@ -158,6 +162,15 @@ $handoff = [ordered]@{
     readyForDevpostFinalSubmit = $ready
     deadline = $deadline
     officialDevpostUrl = $devpostUrl
+    liveDevpostDraft = [ordered]@{
+        projectName = "DREAM Qwen Cloud MemoryAgent"
+        observedStatus = "DRAFT"
+        observedStepsDone = "2/5"
+        previewUrl = $devpostPreviewUrl
+        projectDetailsUrl = $devpostProjectDetailsUrl
+        additionalInfoUrl = $devpostAdditionalInfoUrl
+        finalizationUrl = $devpostFinalizationUrl
+    }
     repoUrl = $RepoUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
@@ -181,6 +194,13 @@ $handoff = [ordered]@{
         backendUrl = $backendValue
         blogPostUrl = $blogValue
     }
+    actionTimeConfirmations = @(
+        "Confirm age of majority eligibility checkbox.",
+        "Confirm eligible jurisdiction checkbox.",
+        "Confirm not sponsor/affiliate/government-entity employee checkbox.",
+        "Confirm final Official Rules and Devpost Terms of Service checkbox.",
+        "Confirm final Devpost Submit only after final readiness is READY."
+    )
     nextCommands = $nextCommands
     markdown = $handoffMd
     html = $handoffHtml
@@ -195,6 +215,9 @@ $md = @(
     "- Ready for final Devpost submit: $ready",
     "- Deadline: $deadline",
     "- Official page: $devpostUrl",
+    "- Live draft project details: $devpostProjectDetailsUrl",
+    "- Live draft additional info: $devpostAdditionalInfoUrl",
+    "- Live draft finalization: $devpostFinalizationUrl",
     "- Repo: $RepoUrl",
     "- Demo video URL: $videoValue",
     "- Backend URL: $backendValue",
@@ -209,6 +232,7 @@ $md = @(
     "- Text description and feature/functionality explanation: included below",
     "- Track: $track",
     "- Optional blog/social journey URL: $blogValue",
+    "- Legal eligibility checkboxes: Zack confirmation required at final submit",
     "",
     "## Blockers",
     ""
@@ -275,6 +299,23 @@ $md += @(
     "- AI tools leveraged: Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.",
     "- Learning level: Significant",
     "",
+    "## Live Devpost Draft",
+    "",
+    "- Project: DREAM Qwen Cloud MemoryAgent",
+    "- Observed status: DRAFT, 2/5 steps done",
+    "- Preview: $devpostPreviewUrl",
+    "- Project details: $devpostProjectDetailsUrl",
+    "- Additional info: $devpostAdditionalInfoUrl",
+    "- Finalization: $devpostFinalizationUrl",
+    "",
+    "## Action-Time Confirmations",
+    "",
+    "- Zack must confirm the age of majority eligibility checkbox.",
+    "- Zack must confirm the eligible jurisdiction checkbox.",
+    "- Zack must confirm the not sponsor/affiliate/government-entity employee checkbox.",
+    "- Zack must confirm the final Official Rules and Devpost Terms of Service checkbox.",
+    "- Final Devpost Submit only after final readiness reports READY.",
+    "",
     "## Chrome Video Upload Fix",
     "",
     'If Codex-controlled Chrome cannot upload the MP4 and reports `Not allowed`, open `chrome://extensions`, click Details under the Codex extension, and enable `Allow access to file URLs`.',
@@ -337,6 +378,9 @@ $html = @"
   <p><span class="status $(if ($ready) { 'ready' } else { 'draft' })">$(Html $status)</span></p>
   <p><strong>Deadline:</strong> $(Html $deadline)</p>
   <p><strong>Official page:</strong> <a href="$(Html $devpostUrl)">$(Html $devpostUrl)</a></p>
+  <p><strong>Live draft:</strong> <a href="$(Html $devpostProjectDetailsUrl)">Project details</a> |
+    <a href="$(Html $devpostAdditionalInfoUrl)">Additional info</a> |
+    <a href="$(Html $devpostFinalizationUrl)">Finalization</a></p>
   <p><strong>Repo:</strong> <a href="$(Html $RepoUrl)">$(Html $RepoUrl)</a></p>
 
   <h2>Blockers</h2>
@@ -383,6 +427,10 @@ Project start date: 06-21-26
 Track: $(Html $track)
 AI tools leveraged: Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.
 Learning level: Significant</code></pre>
+
+  <h2>Action-Time Confirmations</h2>
+  <pre><code>Zack must confirm age of majority, eligible jurisdiction, not sponsor/affiliate/government-entity employee, and final Official Rules / Devpost Terms of Service before final Submit.
+Only click final Submit after final readiness reports READY.</code></pre>
 
   <h2>Chrome Video Upload Fix</h2>
   <pre><code>Open chrome://extensions, click Details under the Codex extension, and enable "Allow access to file URLs".</code></pre>

@@ -12,6 +12,10 @@
 - [ ] Demo video upload handoff ready: `docs/qwencloud-video-upload-handoff.md`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] Alibaba deployment proof recording path reserved: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
+- [ ] Devpost live draft open and editable:
+  `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit`.
+- [ ] Chrome extension file upload permission enabled if using browser automation
+  for YouTube/Devpost uploads.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
 - [ ] One-command local proof script present: `scripts/qwencloud-run-local-proof.ps1`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
@@ -137,6 +141,10 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "<public-video-url>" -Ba
 The bundle includes `devpost-handoff-*.html`; open it locally while filling the
 Devpost form so the copy fields, file paths, blockers, and URLs are in one
 place.
+
+Do not click final Submit until Zack confirms the legal eligibility checkboxes,
+the final Official Rules / Devpost Terms of Service checkbox, and the final
+readiness dashboard reports `READY`.
 
 ## Submission packet
 

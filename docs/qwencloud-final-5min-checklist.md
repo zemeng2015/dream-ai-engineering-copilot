@@ -148,6 +148,8 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 
+- Use the existing live draft:
+  `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit`
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
 - Track: `Track 1: MemoryAgent`
 - Description: paste from `docs/qwencloud-devpost-form-fields.md`
@@ -161,6 +163,12 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 - Add deployment proof line and `/health` proof summary text
 - Fill the Additional Info fields from `docs/qwencloud-devpost-form-fields.md`
 - Add optional blog/social link if published
+- Before uploading files through Codex-controlled Chrome, ensure the Codex
+  Chrome extension has `Allow access to file URLs` enabled.
+- Zack must personally confirm the age, jurisdiction, and sponsor/government
+  employment eligibility checkboxes before final submit.
+- Zack must personally confirm the final Official Rules / Devpost Terms of
+  Service checkbox on the finalization page before pressing `Submit project`.
 
 ## Step 7 - Submit
 

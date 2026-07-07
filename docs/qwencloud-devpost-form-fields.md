@@ -4,6 +4,21 @@
 
 This is a copy-ready draft you can paste into Devpost fields.
 
+## Live Devpost draft state
+
+Checked in the signed-in Devpost session on 2026-07-07.
+
+- Draft project: `DREAM Qwen Cloud MemoryAgent`
+- Public preview URL: `https://devpost.com/software/dream-qwen-cloud-memoryagent`
+- Project details URL: `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit`
+- Additional info URL: `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit`
+- Finalization URL: `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization`
+- Current status observed: `DRAFT`, `2/5 steps done`
+
+Do not click final Submit until the final readiness dashboard reports `READY`.
+The eligibility checkboxes are legal attestations and should be confirmed by
+Zack at final submission time.
+
 ## Project name
 
 DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence
@@ -97,6 +112,54 @@ hackathon.
 - Blog/social journey URL: optional; use a published copy of `docs/qwencloud-build-journey-post.md` if available
 - AI tools leveraged: `Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.`
 - Learning level: `Significant`
+
+### Live field IDs
+
+Use these IDs only as a sanity check when filling the live form; Devpost may
+change them after a form refresh.
+
+| Devpost field | Observed element ID |
+|---|---|
+| Project story | `software_description` |
+| Built with | `software_tag_list` |
+| Project link 1 | `software_urls_attributes_0_url` |
+| Video demo link | `software_video_url` |
+| Submitter type | `participants_submission_requirements_submission_field_values_attributes_0_value` |
+| Country of residence | `participants_submission_requirements_submission_field_values_attributes_2_values` |
+| New/existing project | `participants_submission_requirements_submission_field_values_attributes_3_value` |
+| Project start date | `participants_submission_requirements_submission_field_values_attributes_4_value` |
+| Pre-existing project explanation | `participants_submission_requirements_submission_field_values_attributes_5_value` |
+| Track | `participants_submission_requirements_submission_field_values_attributes_6_value` |
+| Code repository URL | `participants_submission_requirements_submission_field_values_attributes_7_value` |
+| Alibaba deployment proof code URL | `participants_submission_requirements_submission_field_values_attributes_8_value` |
+| Architecture diagram upload | `submission_field_file_27544_add_files` |
+| Alibaba deployment screenshot upload | `submission_field_file_27832_add_files` |
+| Optional blog/social URL | `participants_submission_requirements_submission_field_values_attributes_11_value` |
+| AI tools leveraged | `participants_submission_requirements_submission_field_values_attributes_12_value` |
+| Learning level | `participants_submission_requirements_submission_field_values_attributes_13_value` |
+| Age of majority attestation | `participants_submission_requirements_submission_field_values_attributes_14_value` |
+| Eligible jurisdiction attestation | `participants_submission_requirements_submission_field_values_attributes_15_value` |
+| Not sponsor/government employee attestation | `participants_submission_requirements_submission_field_values_attributes_16_value` |
+| Final Official Rules / Terms of Service attestation | finalization page checkbox |
+
+### Current live blockers
+
+- `software_video_url` is empty until the demo MP4 is uploaded to YouTube,
+  Vimeo, Facebook Video, or `fb.watch`.
+- `submission_field_file_27544_add_files` needs
+  `docs/assets/qwencloud-architecture.png`.
+- `submission_field_file_27832_add_files` needs
+  `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, generated
+  from the real Alibaba Cloud backend.
+- The separate Alibaba backend recording must also exist at
+  `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4` and be available
+  for the proof bundle.
+- Browser file upload automation requires Chrome extension file access. If a
+  file chooser reports `Not allowed`, open `chrome://extensions`, click Details
+  under the Codex extension, and enable `Allow access to file URLs`.
+- Legal eligibility checkboxes must be confirmed by Zack before final submit.
+- Finalization also requires Zack to confirm the Official Rules and Devpost
+  Terms of Service checkbox before pressing `Submit project`.
 
 ## Notes
 
