@@ -32,6 +32,20 @@ interface ApiGenerationResponse {
   warnings: string[];
 }
 
+interface ApiHealthResponse {
+  status: string;
+  service: string;
+  track: string;
+  deployment_target: string;
+  alibaba_cloud_region?: string | null;
+  alibaba_cloud_service?: string | null;
+  llm_provider: string;
+  llm_model?: string | null;
+  llm_base_url?: string | null;
+  llm_api_key_configured: boolean;
+  proof_file: string;
+}
+
 interface ApiRequirementCaseSnapshot {
   case: ApiRequirementCase;
   evidence: ApiContextEvidence[];
@@ -1230,10 +1244,28 @@ export interface RequirementDraftLifecycleProgress {
   durationMs?: number;
 }
 
+export interface DreamHealth {
+  status: string;
+  service: string;
+  track: string;
+  deploymentTarget: string;
+  alibabaCloudRegion: string | null;
+  alibabaCloudService: string | null;
+  llmProvider: string;
+  llmModel: string | null;
+  llmBaseUrl: string | null;
+  llmApiKeyConfigured: boolean;
+  proofFile: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://127.0.0.1:8000';
+
+  getHealth(): Observable<DreamHealth> {
+    return this.http.get<ApiHealthResponse>(`${this.baseUrl}/health`).pipe(map(mapHealth));
+  }
 
   draftRequirementWithOpenAI(
     input: RequirementDraftInput,
@@ -1868,6 +1900,22 @@ export class DreamApiService {
       scorecard,
     };
   }
+}
+
+function mapHealth(response: ApiHealthResponse): DreamHealth {
+  return {
+    status: response.status,
+    service: response.service,
+    track: response.track,
+    deploymentTarget: response.deployment_target,
+    alibabaCloudRegion: response.alibaba_cloud_region ?? null,
+    alibabaCloudService: response.alibaba_cloud_service ?? null,
+    llmProvider: response.llm_provider,
+    llmModel: response.llm_model ?? null,
+    llmBaseUrl: response.llm_base_url ?? null,
+    llmApiKeyConfigured: response.llm_api_key_configured,
+    proofFile: response.proof_file,
+  };
 }
 
 function mapRequirementCase(snapshot: ApiRequirementCaseSnapshot): RequirementCase {

@@ -30,6 +30,28 @@
     }
   </section>
 
+  <section
+    class="panel live-health-panel"
+    [attr.data-state]="liveHealthState()"
+    aria-label="Live Qwen Cloud health proof"
+  >
+    <div class="panel-header">
+      <div>
+        <span class="eyebrow">Live /health</span>
+        <h2>{{ liveHealthTitle() }}</h2>
+        <p>{{ liveHealthDescription() }}</p>
+      </div>
+    </div>
+    <div class="submit-grid health-fact-grid">
+      @for (fact of liveHealthFacts(); track fact.label) {
+        <div>
+          <span>{{ fact.label }}</span>
+          <strong>{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+  </section>
+
   <section class="demo-layout" aria-label="Guided hackathon demo">
     <article class="panel flow-panel">
       <div class="panel-header">

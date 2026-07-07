@@ -162,6 +162,12 @@ On Linux/macOS or a Bash runner:
 bash scripts/qwencloud-run-local-proof.sh --skip-draft
 ```
 
+The judge-facing Angular route at `/hackathon-demo` reads
+`http://127.0.0.1:8000/health` and shows a live Qwen Cloud proof panel with the
+track, provider, model, deployment target, region, API-key status, and proof
+file. If the API is offline, the route stays usable and labels the backend as
+waiting rather than hiding the rest of the demo flow.
+
 Key submission artifacts:
 
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)
@@ -351,7 +357,9 @@ context trail, codebase evidence, audit/eval, and the remaining external proof
 gates.
 
 If local development ports are already occupied, build and serve the static
-bundle from `frontend/dist/frontend/browser` on any free local port.
+bundle from `frontend/dist/frontend/browser` on any free local port. FastAPI
+allows local Angular origins on 4200, 4201, 4300, 4310, and 5000 by default;
+set `DREAM_CORS_ORIGINS` for additional deployed frontend origins.
 
 Current live workflows included:
 

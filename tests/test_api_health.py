@@ -48,3 +48,36 @@ def test_api_health_reflects_alibaba_deployment_when_env_set(
     assert payload["alibaba_cloud_region"] == "ap-southeast-1"
     assert payload["alibaba_cloud_service"] == "Function Compute custom container"
 
+
+def test_api_health_cors_allows_hackathon_demo_fallback_port(monkeypatch) -> None:
+    monkeypatch.delenv("DREAM_CORS_ORIGINS", raising=False)
+
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://127.0.0.1:4310",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:4310"
+
+
+def test_api_cors_allows_configured_frontend_origin(monkeypatch) -> None:
+    monkeypatch.setenv("DREAM_CORS_ORIGINS", "https://demo.example.com")
+
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "https://demo.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://demo.example.com"

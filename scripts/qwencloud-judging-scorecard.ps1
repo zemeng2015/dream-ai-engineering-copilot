@@ -68,6 +68,7 @@ Add-Criterion `
     -DREAMClaim "DREAM is submitted as Track 1 MemoryAgent and uses Qwen Cloud through the qwen-cloud provider, Qwen config, and Alibaba Function Compute deployment proof." `
     -EvidencePaths @(
         "examples/config/dream.qwen.yaml",
+        "dream/api/routes.py",
         "dream/llm/qwen_cloud.py",
         "tests/test_qwen_cloud_provider.py",
         "deploy/alibaba/serverless-devs.yaml",
@@ -147,7 +148,10 @@ Add-Criterion `
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-devpost-draft-payload.ps1",
+        "frontend/src/app/core/dream-api.service.ts",
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts",
+        "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html",
+        "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts",
         "docs/qwencloud-video-upload-handoff.md",
         "docs/qwencloud-official-requirements-snapshot.md",
         "docs/qwencloud-devpost-submission-kit.md"

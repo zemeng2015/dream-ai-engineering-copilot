@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { Component } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
+import { DreamApiService, DreamHealth } from '../../core/dream-api.service';
 import { UiIconComponent, UiIconName } from '../../shared/ui-icon.component';
 
 interface DemoSignal {
@@ -29,6 +31,13 @@ interface EvidenceItem {
   tone: 'ready' | 'watch' | 'blocked';
 }
 
+interface HealthFact {
+  label: string;
+  value: string;
+}
+
+type LiveHealthState = 'checking' | 'ready' | 'watch' | 'offline';
+
 @Component({
   selector: 'app-hackathon-demo',
   standalone: true,
@@ -36,7 +45,55 @@ interface EvidenceItem {
   templateUrl: './hackathon-demo.component.html',
   styleUrl: './hackathon-demo.component.scss',
 })
-export class HackathonDemoComponent {
+export class HackathonDemoComponent implements OnInit {
+  private readonly dream = inject(DreamApiService);
+  private readonly health = signal<DreamHealth | null>(null);
+
+  readonly liveHealthState = signal<LiveHealthState>('checking');
+  readonly liveHealthTitle = computed(() => {
+    switch (this.liveHealthState()) {
+      case 'ready':
+        return 'Live Qwen proof ready';
+      case 'watch':
+        return 'Backend online; Qwen proof needs attention';
+      case 'offline':
+        return 'Backend offline';
+      default:
+        return 'Checking backend';
+    }
+  });
+  readonly liveHealthDescription = computed(() => {
+    const health = this.health();
+    if (health) {
+      return `${health.service} returned ${health.status}; no secrets are exposed in this payload.`;
+    }
+    if (this.liveHealthState() === 'offline') {
+      return 'Start the DREAM API on port 8000 in Qwen mode to turn this into live proof.';
+    }
+    return 'Reading http://127.0.0.1:8000/health for provider, model, deployment target, and proof file.';
+  });
+  readonly liveHealthFacts = computed<HealthFact[]>(() => {
+    const health = this.health();
+    if (!health) {
+      return [
+        { label: 'Endpoint', value: 'http://127.0.0.1:8000/health' },
+        {
+          label: 'State',
+          value: this.liveHealthState() === 'offline' ? 'waiting for backend' : 'checking',
+        },
+      ];
+    }
+    return [
+      { label: 'Track', value: health.track },
+      { label: 'Provider', value: health.llmProvider },
+      { label: 'Model', value: health.llmModel ?? 'not reported' },
+      { label: 'Deployment', value: health.deploymentTarget },
+      { label: 'Alibaba region', value: health.alibabaCloudRegion ?? 'not set' },
+      { label: 'API key configured', value: health.llmApiKeyConfigured ? 'yes' : 'no' },
+      { label: 'Proof file', value: health.proofFile },
+    ];
+  });
+
   readonly runtimeSignals: DemoSignal[] = [
     {
       label: 'Track',
@@ -150,4 +207,33 @@ export class HackathonDemoComponent {
     'scripts/qwencloud-run-local-proof.ps1 -SkipDraft',
     'scripts/qwencloud-final-readiness.ps1 -AllowDraftPacket',
   ];
+
+  ngOnInit(): void {
+    this.dream
+      .getHealth()
+      .pipe(
+        catchError(() => {
+          this.health.set(null);
+          this.liveHealthState.set('offline');
+          return of(null);
+        }),
+      )
+      .subscribe((health) => {
+        if (!health) {
+          return;
+        }
+        this.health.set(health);
+        this.liveHealthState.set(this.isReadyHealth(health) ? 'ready' : 'watch');
+      });
+  }
+
+  private isReadyHealth(health: DreamHealth): boolean {
+    return (
+      health.status === 'ok' &&
+      health.track === 'Track 1: MemoryAgent' &&
+      health.llmProvider === 'qwen-cloud' &&
+      health.llmApiKeyConfigured &&
+      health.proofFile === 'deploy/alibaba/serverless-devs.yaml'
+    );
+  }
 }

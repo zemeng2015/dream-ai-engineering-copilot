@@ -522,7 +522,11 @@ Add-LatestItem -Name "latest_demo_video_render_json" -Filter "demo-video-render-
 Add-LatestItem -Name "latest_video_upload_status_markdown" -Filter "video-upload-status-*.md"
 Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-status-*.json"
 Add-Item -Name "frontend_build_proof_script" -Path "scripts/qwencloud-frontend-build-proof.ps1" -Required $false
+Add-Item -Name "frontend_api_health_mapping" -Path "frontend/src/app/core/dream-api.service.ts" -Required $false
 Add-Item -Name "hackathon_demo_route_source" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts" -Required $false
+Add-Item -Name "hackathon_demo_route_template" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html" -Required $false
+Add-Item -Name "hackathon_demo_route_styles" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.scss" -Required $false
+Add-Item -Name "hackathon_demo_route_tests" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts" -Required $false
 Add-LatestItem -Name "latest_frontend_build_proof_markdown" -Filter "frontend-build-proof-*.md"
 Add-LatestItem -Name "latest_frontend_build_proof_json" -Filter "frontend-build-proof-*.json"
 Add-LatestItem -Name "latest_frontend_install_stdout" -Filter "frontend-npm-ci-*.out"

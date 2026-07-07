@@ -70,7 +70,7 @@ caption SHA256, and Chrome file upload troubleshooting.
 
 Recommended 4-shot order:
 
-1. `/hackathon-demo` guided route and `/health` proof (Track, provider, model, region, proof file).
+1. `/hackathon-demo` guided route and live `/health` proof panel (Track, provider, model, deployment target, region, API-key status, proof file).
 2. Memory Hub intake and claim review.
 3. Requirement case flow (prompt -> impact map -> brief -> Jira draft).
 4. Audit/eval and manual scoring.
@@ -90,6 +90,10 @@ Open the judge-facing Angular route for the first screen of the demo:
 ```text
 http://localhost:4300/hackathon-demo
 ```
+
+When the API is running on `http://127.0.0.1:8000`, this page shows the live
+`/health` proof panel. When the API is not running, the same route remains
+usable and marks the backend as waiting for live proof.
 
 Run preflight before a real deployment:
 

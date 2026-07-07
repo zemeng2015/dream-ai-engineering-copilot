@@ -43,8 +43,9 @@ npm install
 npm start -- --host 127.0.0.1 --port 4300
 ```
 
-The FastAPI app allows `http://localhost:4300` and `http://127.0.0.1:4300` for
-local CORS.
+The FastAPI app allows local Angular origins on ports 4200, 4201, 4300, 4310,
+and 5000 for local CORS. Add comma-separated production frontend origins with
+`DREAM_CORS_ORIGINS` when serving the UI from a different host.
 
 ## Live Workflows
 
