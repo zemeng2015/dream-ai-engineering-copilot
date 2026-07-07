@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .env
+.env*.local
 .venv/
 __pycache__/
 *.py[cod]

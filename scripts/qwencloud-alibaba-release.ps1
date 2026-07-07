@@ -15,6 +15,8 @@ param(
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
     [int]$SmokePort = 8011,
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$PlanOnly,
     [switch]$SkipBuild,
     [switch]$SkipSmoke,
@@ -29,6 +31,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 $releaseJson = Join-Path $OutputDir "alibaba-release-$timestamp.json"
 $releaseMd = Join-Path $OutputDir "alibaba-release-$timestamp.md"
 $steps = @()
@@ -46,7 +53,7 @@ function Has-Command([string]$Name) {
 }
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Require-Env([string]$Name) {
@@ -117,6 +124,8 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
         imageTag = $ImageTag
         containerImage = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_CONTAINER_IMAGE")
         region = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION")
+        envFile = $EnvFile
+        importedEnvNames = $importedEnvNames
         steps = $steps
     }
     Set-Content -Path $releaseJson -Value ($result | ConvertTo-Json -Depth 12) -Encoding UTF8
@@ -131,6 +140,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
         "- Blog/social: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
         "- Container image: $([Environment]::GetEnvironmentVariable('ALIBABA_CLOUD_CONTAINER_IMAGE'))",
         "- Region: $([Environment]::GetEnvironmentVariable('ALIBABA_CLOUD_REGION'))",
+        "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
         "",
         "## Steps",
         "",
@@ -188,6 +198,9 @@ try {
     }
 
     $preflightArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-deploy-preflight.ps1", "-ImageTag", $ImageTag, "-SmokePort", "$SmokePort")
+    if ($EnvFile) {
+        $preflightArgs += @("-EnvFile", $EnvFile)
+    }
     if (-not $SkipBuild) {
         $preflightArgs += "-BuildImage"
     }

@@ -11,6 +11,8 @@ param(
     [string]$BlogPostUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$SkipExternalUrlChecks,
     [switch]$SkipGitHubSecrets,
     [switch]$SkipLocalVideoChecks,
@@ -20,6 +22,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $reportJson = Join-Path $OutputDir "final-action-board-$timestamp.json"
 $reportMd = Join-Path $OutputDir "final-action-board-$timestamp.md"
@@ -117,6 +124,7 @@ $cloudArgs = @(
 )
 if ($DemoVideoUrl) { $cloudArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $cloudArgs += @("-BackendUrl", $BackendUrl) }
+if ($EnvFile) { $cloudArgs += @("-EnvFile", $EnvFile) }
 Invoke-BoardStep -Name "cloud-credentials-handoff" -Arguments $cloudArgs
 
 if ($SkipGitHubSecrets) {
@@ -131,6 +139,7 @@ else {
         "-OutputDir", $OutputDir,
         "-AllowDraft"
     )
+    if ($EnvFile) { $secretsArgs += @("-EnvFile", $EnvFile) }
     Invoke-BoardStep -Name "github-secrets-handoff" -Arguments $secretsArgs
 }
 
@@ -145,6 +154,7 @@ $readinessArgs = @(
 if ($DemoVideoUrl) { $readinessArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($BackendUrl) { $readinessArgs += @("-BackendUrl", $BackendUrl) }
 if ($BlogPostUrl) { $readinessArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $readinessArgs += @("-EnvFile", $EnvFile) }
 if ($SkipExternalUrlChecks) { $readinessArgs += "-SkipExternalUrlChecks" }
 Invoke-BoardStep -Name "final-readiness" -Arguments $readinessArgs -AllowedExitCodes @(0, 1)
 
@@ -174,22 +184,22 @@ if (-not $videoReady) {
 if (-not $secretsReady) {
     Add-Action -Name "Set GitHub release secrets" -Reason "The GitHub release workflow cannot deploy without required Alibaba/Qwen secrets." -RequiresUser $true -Commands @(
         "# Set same-named local env vars for Alibaba/Qwen/registry credentials.",
-        "scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv",
+        "scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv",
         'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"'
     )
 }
 
 if (-not $cloudReady) {
     Add-Action -Name "Configure local Alibaba release environment" -Reason "Local release needs Serverless Devs default access and required env vars." -RequiresUser $true -Commands @(
-        'scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft',
+        'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
         's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
-        'scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"'
+        'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
     )
 }
 
 if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
     Add-Action -Name "Produce deployed Alibaba backend URL" -Reason "Final packet and proof capture need the live Function Compute endpoint." -RequiresUser $true -Commands @(
-        'scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"',
+        'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
         'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"'
     )
 }
@@ -223,6 +233,8 @@ $result = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     deadline = "2026-07-09 14:00 PDT / 17:00 EDT"
     reports = [ordered]@{
         videoUploadStatus = $videoReport.file
@@ -254,6 +266,7 @@ $lines = @(
     "- Repo: $RepoUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "",
     "## Status Summary",
     "",

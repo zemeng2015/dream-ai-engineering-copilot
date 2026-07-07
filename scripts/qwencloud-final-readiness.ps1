@@ -9,6 +9,8 @@ param(
     [string]$BlogPostUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$SkipPacket,
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
@@ -18,6 +20,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 $reportJson = Join-Path $OutputDir "final-readiness-$timestamp.json"
 $reportMd = Join-Path $OutputDir "final-readiness-$timestamp.md"
 $checks = @()
@@ -36,7 +43,7 @@ function Has-Command([string]$Name) {
 }
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Get-PowerShellExe {
@@ -93,31 +100,43 @@ function Test-DockerDaemon {
 }
 
 function Test-LatestDeployPreflight {
-    $latest = Get-ChildItem -LiteralPath $OutputDir -Filter "deploy-preflight-*.json" -ErrorAction SilentlyContinue |
+    $candidates = @(Get-ChildItem -LiteralPath $OutputDir -Filter "deploy-preflight-*.json" -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
-    if (-not $latest) {
+        Select-Object -First 20)
+    if ($candidates.Count -eq 0) {
         return [pscustomobject]@{
             ok = $false
             details = "missing deploy-preflight-*.json; run scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer"
         }
     }
 
-    try {
-        $preflight = Get-Content -LiteralPath $latest.FullName -Raw | ConvertFrom-Json
-        $buildCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.build" } | Select-Object -First 1)
-        $smokeCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_container" } | Select-Object -First 1)
-        $ok = [bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok
-        return [pscustomobject]@{
-            ok = $ok
-            details = "path=$($latest.FullName); buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
+    $latestDetails = ""
+    foreach ($candidate in $candidates) {
+        try {
+            $preflight = Get-Content -LiteralPath $candidate.FullName -Raw | ConvertFrom-Json
+            $buildCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.build" } | Select-Object -First 1)
+            $smokeCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_container" } | Select-Object -First 1)
+            $details = "path=$($candidate.FullName); buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
+            if ([string]::IsNullOrWhiteSpace($latestDetails)) {
+                $latestDetails = $details
+            }
+            if ([bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok) {
+                return [pscustomobject]@{
+                    ok = $true
+                    details = $details
+                }
+            }
+        }
+        catch {
+            if ([string]::IsNullOrWhiteSpace($latestDetails)) {
+                $latestDetails = "failed to parse $($candidate.FullName): $($_.Exception.Message)"
+            }
         }
     }
-    catch {
-        return [pscustomobject]@{
-            ok = $false
-            details = "failed to parse $($latest.FullName): $($_.Exception.Message)"
-        }
+
+    return [pscustomobject]@{
+        ok = $false
+        details = "no recent complete build+smoke preflight found; latest=$latestDetails"
     }
 }
 
@@ -343,6 +362,8 @@ $result = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     reportJson = $reportJson
     reportMarkdown = $reportMd
     checks = $checks
@@ -357,6 +378,7 @@ $lines = @(
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "",
     "## Checks",
     "",
@@ -375,7 +397,7 @@ $lines += @(
     "## Next Command",
     "",
     '```powershell',
-    'scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"',
+    'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
     '```'
 )
 

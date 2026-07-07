@@ -177,16 +177,18 @@ Key submission artifacts:
 Run deployment preflight before pushing to Alibaba Cloud:
 
 ```powershell
-scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
 ```
 
 Run the end-to-end Alibaba release flow after credentials and the container
 registry image are configured:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 After deployment, capture the Devpost-ready Alibaba proof screenshot:
@@ -254,7 +256,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 Run the final readiness dashboard before submitting:
 
 ```powershell
-scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 After the public video and deployed backend URLs are known, run the final
@@ -273,7 +275,7 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 If any signal is still DRAFT, generate the final action board:
 
 ```powershell
-scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 ## Angular Frontend

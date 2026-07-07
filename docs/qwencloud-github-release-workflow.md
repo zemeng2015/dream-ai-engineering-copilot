@@ -27,6 +27,14 @@ Optional:
 The workflow validates secret presence by name only and never writes secret
 values into repo files.
 
+You can keep values in an ignored local dotenv file:
+
+```powershell
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally.
+scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv
+```
+
 Generate a local status report and placeholder template with:
 
 ```powershell
@@ -41,7 +49,8 @@ scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv
 ```
 
 The script sends values through stdin to `gh secret set`; it does not write
-secret values into its JSON or Markdown reports.
+secret values into its JSON or Markdown reports. `-EnvFile` imports values into
+the current PowerShell process only.
 
 ## Manual Run
 

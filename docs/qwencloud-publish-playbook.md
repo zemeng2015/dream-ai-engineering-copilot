@@ -32,9 +32,11 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-run-local-proof.ps1
 scripts/qwencloud-export-architecture-png.ps1
-scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
-scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
+scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
@@ -44,10 +46,10 @@ scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
-scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
-scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in

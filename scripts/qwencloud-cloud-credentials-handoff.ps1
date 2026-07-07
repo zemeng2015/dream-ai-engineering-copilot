@@ -9,19 +9,26 @@ param(
     [string]$Region = "",
     [Parameter(Mandatory = $false)]
     [string]$ContainerImage = "",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$AllowDraft
 )
 
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $handoffJson = Join-Path $OutputDir "cloud-credentials-handoff-$timestamp.json"
 $handoffMd = Join-Path $OutputDir "cloud-credentials-handoff-$timestamp.md"
 $handoffPs1 = Join-Path $OutputDir "cloud-credentials-template-$timestamp.ps1"
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Env-State([string]$Name, [bool]$Required = $true) {
@@ -133,6 +140,8 @@ $handoff = [ordered]@{
     region = $Region
     containerImage = $ContainerImage
     registryHost = $registryHost
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     template = $handoffPs1
     markdown = $handoffMd
     nextCommands = $setupCommands
@@ -147,12 +156,14 @@ $md = @(
     "- Region: $Region",
     "- Container image: $ContainerImage",
     "- Registry host: $registryHost",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Template: $handoffPs1",
     "",
     "## Safety",
     "",
     "- This handoff never stores real `DASHSCOPE_API_KEY`, Alibaba AccessKeyID, or AccessKeySecret values.",
     "- Fill the generated PowerShell template locally and keep it out of git.",
+    "- Or create a local `.env.qwencloud.local` file and pass `-EnvFile .env.qwencloud.local`.",
     "- The public repo should only contain placeholders and deployment code.",
     "",
     "## Current Checks",

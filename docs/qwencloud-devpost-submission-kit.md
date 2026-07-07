@@ -71,8 +71,10 @@ Use `deploy/alibaba/README.md`.
 Run preflight before a real deployment:
 
 ```powershell
-scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
 ```
 
 Run local proof without manually opening a second shell:
@@ -85,7 +87,7 @@ Or use the full release orchestrator after credentials, registry login, and
 video URL are ready:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 Required proof artifacts:

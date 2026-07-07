@@ -5,6 +5,8 @@ param(
     [string]$ImageTag = "dream-qwencloud-memoryagent:local",
     [Parameter(Mandatory = $false)]
     [int]$SmokePort = 8011,
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$BuildImage,
     [switch]$SmokeContainer
 )
@@ -13,6 +15,11 @@ $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $artifactDir = Join-Path $ProjectRoot "artifacts/qwencloud-proof"
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 $outJson = Join-Path $artifactDir "deploy-preflight-$timestamp.json"
 $outMd = Join-Path $artifactDir "deploy-preflight-$timestamp.md"
 $checks = @()
@@ -36,7 +43,7 @@ function Has-Command([string]$Name) {
 }
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Test-ServerlessDevsDefaultAccess {
@@ -183,6 +190,8 @@ $result = [ordered]@{
     buildImage = [bool]$BuildImage
     smokeContainer = [bool]$SmokeContainer
     imageTag = $ImageTag
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     checks = $checks
 }
 
@@ -195,6 +204,7 @@ $lines = @(
     "- Docker build requested: $([bool]$BuildImage)",
     "- Container smoke requested: $([bool]$SmokeContainer)",
     "- Image tag: $ImageTag",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "",
     "## Checks",
     ""
@@ -213,12 +223,7 @@ $lines += @(
     '```powershell',
     'npm install -g @serverless-devs/s',
     's config add',
-    '$env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"',
-    '$env:ALIBABA_CLOUD_REGION="ap-southeast-1"',
-    '$env:ALIBABA_CLOUD_CONTAINER_IMAGE="<registry>/<namespace>/dream-qwencloud-memoryagent:latest"',
-    '$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"',
-    '$env:QWEN_MODEL="qwen3.7-plus"',
-    'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer',
+    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer',
     'docker tag dream-qwencloud-memoryagent:local $env:ALIBABA_CLOUD_CONTAINER_IMAGE',
     'docker push $env:ALIBABA_CLOUD_CONTAINER_IMAGE',
     's deploy -t deploy/alibaba/serverless-devs.yaml -y',

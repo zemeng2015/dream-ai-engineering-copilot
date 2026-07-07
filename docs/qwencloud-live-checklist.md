@@ -69,12 +69,12 @@ Invoke-RestMethod -Method Post `
 5. Deploy proof:
 - Run preflight:
   ```powershell
-  scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-  scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+  scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+  scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
   ```
 - Or run the full release script after video URL is available:
   ```powershell
-  scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"
+  scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"
   ```
 - Build and push image to `$env:ALIBABA_CLOUD_CONTAINER_IMAGE`.
 - Run Serverless Devs deployment using `deploy/alibaba/serverless-devs.yaml`.
@@ -133,7 +133,7 @@ mean the Devpost submission is still not complete.
 9. Run final readiness:
 
 ```powershell
-scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
 ```
 
 This must report `READY` before the Devpost form is submitted.

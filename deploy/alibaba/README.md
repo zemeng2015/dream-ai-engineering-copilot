@@ -7,6 +7,17 @@ MemoryAgent on Alibaba Cloud Function Compute using a custom container.
 
 ## Required Environment
 
+Preferred local handoff:
+
+```powershell
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
+```
+
+Equivalent explicit environment variables:
+
 ```powershell
 $env:ALIBABA_CLOUD_REGION="ap-southeast-1"
 $env:ALIBABA_CLOUD_CONTAINER_IMAGE="<registry>/<namespace>/dream-qwencloud-memoryagent:latest"
@@ -22,8 +33,8 @@ required environment variables, and optionally builds and smokes the container
 locally.
 
 ```powershell
-scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
 ```
 
 The credentials handoff writes a local placeholder template under
@@ -35,7 +46,7 @@ To run the complete release path in one command after environment variables,
 Serverless Devs access, and registry login are configured:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 Alternatively, configure the repository secrets listed in

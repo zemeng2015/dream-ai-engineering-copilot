@@ -66,15 +66,17 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 - Run deploy preflight:
 
 ```powershell
-scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
-scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft
-scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+Copy-Item .env.qwencloud.local.example .env.qwencloud.local
+# Fill .env.qwencloud.local locally. It is ignored by git.
+scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer
 ```
 
 Optional one-command release after credentials and video URL are available:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
@@ -132,7 +134,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 - Run the final readiness dashboard and confirm it reports `READY`:
 
 ```powershell
-scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 - Or run the final one-command gate:
@@ -150,7 +152,7 @@ scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com
 - Generate the final action board if any signal is still DRAFT:
 
 ```powershell
-scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it
@@ -159,7 +161,7 @@ scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/
   the Docker build and container `/health` smoke proof is available with the
   upload files.
 - If deploying through GitHub Actions, confirm
-  `scripts/qwencloud-github-secrets-handoff.ps1 -AllowDraft` reports all
+  `scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft` reports all
   required secrets present before running `Qwen Cloud Release`.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)

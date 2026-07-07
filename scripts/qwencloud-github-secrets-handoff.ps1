@@ -3,6 +3,8 @@ param(
     [string]$Repo = "zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$EnvFile = "",
     [switch]$SetFromEnv,
     [switch]$AllowDraft
 )
@@ -10,6 +12,11 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+$importedEnvNames = @()
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
+}
 
 $reportJson = Join-Path $OutputDir "github-secrets-handoff-$timestamp.json"
 $reportMd = Join-Path $OutputDir "github-secrets-handoff-$timestamp.md"
@@ -36,7 +43,7 @@ function Has-Command([string]$Name) {
 }
 
 function Has-Env([string]$Name) {
-    return -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name))
+    return Test-QwenCloudEnvValuePresent -Name $Name
 }
 
 function Get-SecretNames([string]$RepoName) {
@@ -80,6 +87,7 @@ $templateLines = @(
     "# SPDX-License-Identifier: Apache-2.0",
     "# Fill locally, then either source values into your shell or run:",
     "# scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv",
+    "# scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv",
     "# Do not commit real secrets.",
     "ALIBABA_CLOUD_ACCESS_KEY_ID=<alibaba-access-key-id>",
     "ALIBABA_CLOUD_ACCESS_KEY_SECRET=<alibaba-access-key-secret>",
@@ -134,6 +142,8 @@ $result = [ordered]@{
     status = $status
     readyForGitHubReleaseWorkflow = $ready
     setFromEnv = [bool]$SetFromEnv
+    envFile = $EnvFile
+    importedEnvNames = $importedEnvNames
     requiredSecrets = $requiredSecrets
     optionalSecrets = $optionalSecrets
     missingRequiredSecrets = $missingRequired
@@ -152,11 +162,13 @@ $lines = @(
     "- Ready for `Qwen Cloud Release` workflow: $ready",
     "- Repo: $Repo",
     "- Set from env: $([bool]$SetFromEnv)",
+    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
     "- Template: $templateEnv",
     "",
     "## Safety",
     "",
     "- This report never writes secret values.",
+    "- `-EnvFile` imports local dotenv-style values into this PowerShell process only.",
     "- `-SetFromEnv` sends same-named local environment variables to GitHub secrets through stdin.",
     "- GitHub CLI encrypts secret values before storing them on GitHub.",
     "",
@@ -201,7 +213,7 @@ $lines += @(
     "## Next Commands",
     "",
     '```powershell',
-    'scripts/qwencloud-github-secrets-handoff.ps1 -SetFromEnv',
+    'scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv',
     'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
     '```'
 )
