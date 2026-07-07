@@ -97,6 +97,7 @@ $uploadItems = @(
     Get-UploadItem -Name "architecture_diagram" -Path $ArchitectureUploadPath
     Get-UploadItem -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
     Get-UploadItem -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
+    Get-UploadItem -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
     Get-UploadItem -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
     Get-UploadItem -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
     Get-UploadItem -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
@@ -137,7 +138,7 @@ if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
 
 $ready = $blockers.Count -eq 0
 $status = if ($ready) { "READY" } else { "DRAFT" }
-$videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Youku URL>" }
+$videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Facebook Video URL>" }
 $backendValue = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function Compute backend URL>" }
 $blogValue = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
@@ -230,7 +231,7 @@ $md = @(
     "- Public open-source code repository with visible license: $RepoUrl",
     "- Alibaba Cloud backend deployment proof code file: $deploymentProofUrl",
     "- Architecture diagram upload: $ArchitectureUploadPath",
-    "- Public demo video on YouTube, Vimeo, or Youku: $videoValue",
+    "- Public demo video on YouTube, Vimeo, or Facebook Video: $videoValue",
     "- Text description and feature/functionality explanation: included below",
     "- Track: $track",
     "- Optional blog/social journey URL: $blogValue",

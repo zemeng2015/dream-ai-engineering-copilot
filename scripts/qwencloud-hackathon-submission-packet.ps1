@@ -25,6 +25,7 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
 $packetJson = Join-Path $OutputDir "devpost-submission-packet-$timestamp.json"
 $packetMd = Join-Path $OutputDir "devpost-submission-packet-$timestamp.md"
 $checks = @()
@@ -96,13 +97,7 @@ function Test-PublicGitHubRepo([string]$Url) {
 }
 
 function Is-PublicVideoUrl([string]$Url) {
-    if ([string]::IsNullOrWhiteSpace($Url)) {
-        return $false
-    }
-    if ($Url -match "[<>]|\.\.\.") {
-        return $false
-    }
-    return [bool]($Url -match "^https?://((www|m|v)\.)?(youtube\.com|youtu\.be|vimeo\.com|youku\.com)/")
+    return Test-QwenCloudDevpostVideoUrl -Url $Url
 }
 
 function Is-HttpUrl([string]$Url) {
@@ -489,7 +484,7 @@ $packet = [ordered]@{
 Set-Content -Path $packetJson -Value ($packet | ConvertTo-Json -Depth 12) -Encoding UTF8
 
 $statusWord = if ($ready) { "READY" } else { "DRAFT - missing required external URLs or backend proof" }
-$videoLine = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Youku URL>" }
+$videoLine = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube/Vimeo/Facebook Video URL>" }
 $backendLine = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function Compute backend URL>" }
 $blogLine = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
@@ -619,7 +614,7 @@ $md += @(
     "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
     "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
-    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, or Youku URL.",
+    "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, or Facebook Video URL.",
     "- Generate `scripts/qwencloud-devpost-handoff.ps1 -AllowDraft` for one local HTML page with final copy fields and upload paths.",
     "- Run `scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl <url> -BackendUrl <url>` as the final one-command gate before submitting Devpost.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",

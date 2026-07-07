@@ -28,6 +28,7 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
 
 $reportJson = Join-Path $OutputDir "devpost-post-submit-verification-$timestamp.json"
 $reportMd = Join-Path $OutputDir "devpost-post-submit-verification-$timestamp.md"
@@ -69,7 +70,7 @@ function Is-DevpostProjectUrl([string]$Url) {
 }
 
 function Is-DevpostVideoUrl([string]$Url) {
-    return (Is-HttpUrl $Url) -and $Url -match "^https?://((www|m|v)\.)?(youtube\.com/watch\?v=|youtu\.be/|vimeo\.com/|youku\.com/)"
+    return Test-QwenCloudDevpostVideoUrl -Url $Url
 }
 
 function Test-Url {
@@ -267,7 +268,7 @@ if (Is-DevpostVideoUrl $DemoVideoUrl) {
     Add-Check -Name "demo_video_url_reachable" -Ok $video.ok -Details $video.details
 }
 else {
-    Add-Check -Name "demo_video_url_reachable" -Ok $false -Details "DemoVideoUrl missing or not YouTube/Vimeo/Youku"
+    Add-Check -Name "demo_video_url_reachable" -Ok $false -Details "DemoVideoUrl missing or not $script:QwenCloudDevpostVideoPlatformLabel"
 }
 
 Add-Check -Name "backend_url_present" -Ok (Is-HttpUrl $BackendUrl) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })

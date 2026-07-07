@@ -193,7 +193,7 @@ if (-not $videoReady) {
     Add-Action -Name "Publish public demo video" -Reason "Devpost requires a public demo video URL." -RequiresUser $true -Commands @(
         'scripts/qwencloud-video-publication-handoff.ps1',
         "# Enable Chrome file access only after explicit confirmation, or upload manually.",
-        "# Upload artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4 to YouTube, Vimeo, or Youku.",
+        "# Upload artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4 to YouTube, Vimeo, or Facebook Video.",
         'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"'
     )
 }

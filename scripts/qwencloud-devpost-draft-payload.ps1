@@ -19,6 +19,7 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
 
 $payloadJson = Join-Path $OutputDir "devpost-draft-payload-$timestamp.json"
 $payloadMd = Join-Path $OutputDir "devpost-draft-payload-$timestamp.md"
@@ -114,8 +115,7 @@ function Is-HttpUrl([string]$Url) {
 }
 
 function Is-DevpostRulesVideoUrl([string]$Url) {
-    if (-not (Is-HttpUrl $Url)) { return $false }
-    return [bool]($Url -match "^https?://((www|m|v)\.)?(youtube\.com/watch\?v=|youtu\.be/|vimeo\.com/|youku\.com/)")
+    return Test-QwenCloudDevpostVideoUrl -Url $Url
 }
 
 function Get-AssetState([string]$Path) {
@@ -140,7 +140,7 @@ function Get-AssetState([string]$Path) {
 Add-Field -Page "project_details" -ElementId "software_description" -Label "About the project" -Value $projectStory.Trim() -InputKind "textarea"
 Add-Field -Page "project_details" -ElementId "software_tag_list" -Label "Built with" -Value $builtWith -InputKind "tag_list"
 Add-Field -Page "project_details" -ElementId "software_urls_attributes_0_url" -Label "Try it out" -Value $tryItOutUrl -InputKind "url" -Notes "Use the deployed Alibaba Function Compute backend URL. The source repo is supplied in the required repository field."
-Add-Field -Page "project_details" -ElementId "software_video_url" -Label "Video demo link" -Value $DemoVideoUrl -InputKind "url" -SafeForNonLegalDraftSave (Is-DevpostRulesVideoUrl $DemoVideoUrl) -Notes "Required by Devpost; must be public YouTube, Vimeo, or Youku."
+Add-Field -Page "project_details" -ElementId "software_video_url" -Label "Video demo link" -Value $DemoVideoUrl -InputKind "url" -SafeForNonLegalDraftSave (Is-DevpostRulesVideoUrl $DemoVideoUrl) -Notes "Required by Devpost; must be public YouTube, Vimeo, or Facebook Video."
 
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_0_value" -Label "Submitter type" -Value "Individual" -InputKind "select"
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_2_values" -Label "Country of residence" -Value "United States" -InputKind "multi_select"
@@ -216,7 +216,7 @@ $payload = [ordered]@{
     warnings = @(
         "Do not save these fields to Devpost without Zack action-time confirmation.",
         "Do not upload files, check legal attestations, or click final Submit from this payload.",
-        "The demo video URL must be a public YouTube, Vimeo, or Youku URL."
+        "The demo video URL must be a public YouTube, Vimeo, or Facebook Video URL."
     )
 }
 Set-Content -Path $payloadJson -Value ($payload | ConvertTo-Json -Depth 12) -Encoding UTF8

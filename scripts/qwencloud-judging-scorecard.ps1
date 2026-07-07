@@ -137,6 +137,7 @@ Add-Criterion `
         "docs/qwencloud-demo-video-script.md",
         "scripts/qwencloud-frontend-build-proof.ps1",
         "scripts/qwencloud-render-demo-video.ps1",
+        "scripts/qwencloud-devpost-video-url.ps1",
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-devpost-draft-payload.ps1",

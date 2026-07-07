@@ -3,7 +3,7 @@
 # Qwen Cloud Demo Video Upload Handoff
 
 Use this handoff when publishing the Devpost demo video to YouTube, Vimeo,
-or Youku. Devpost requires a public video URL; a local MP4
+or Facebook Video. Devpost requires a public video URL; a local MP4
 alone is not enough for final submission.
 
 ## Local Video File
@@ -43,7 +43,8 @@ Acceptable Devpost public URL platforms:
 - YouTube: `https://www.youtube.com/watch?v=...`
 - YouTube short URL: `https://youtu.be/...`
 - Vimeo: `https://vimeo.com/...`
-- Youku: `https://v.youku.com/...`
+- Facebook Video: `https://www.facebook.com/watch/?v=...`
+- Facebook short link: `https://fb.watch/...`
 
 Set visibility to public or another Devpost-accessible mode that does not
 require a private login, password, or invitation.

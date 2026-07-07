@@ -28,6 +28,7 @@ param(
         "scripts/qwencloud-official-rules-gate.ps1",
         "scripts/qwencloud-render-alibaba-proof-video.ps1",
         "scripts/qwencloud-validate-alibaba-proof.ps1",
+        "scripts/qwencloud-devpost-video-url.ps1",
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",

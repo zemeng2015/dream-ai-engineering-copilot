@@ -26,6 +26,7 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
 
 $reportJson = Join-Path $OutputDir "official-rules-gate-$timestamp.json"
 $reportMd = Join-Path $OutputDir "official-rules-gate-$timestamp.md"
@@ -58,8 +59,7 @@ function Is-HttpUrl([string]$Url) {
 }
 
 function Is-DevpostRulesVideoUrl([string]$Url) {
-    if (-not (Is-HttpUrl $Url)) { return $false }
-    return [bool]($Url -match "^https?://((www|m|v)\.)?(youtube\.com/watch\?v=|youtube\.com/shorts/|youtu\.be/|vimeo\.com/|youku\.com/)")
+    return Test-QwenCloudDevpostVideoUrl -Url $Url
 }
 
 function Normalize-RepoUrl([string]$Url) {
@@ -261,7 +261,7 @@ Add-Requirement `
 
 Add-Requirement `
     -Id "demo_video_public_url" `
-    -OfficialRequirement "Include a public demo video URL on YouTube, Vimeo, or Youku." `
+    -OfficialRequirement "Include a public demo video URL on YouTube, Vimeo, or Facebook Video." `
     -Ok (Is-DevpostRulesVideoUrl $DemoVideoUrl) `
     -Evidence $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 

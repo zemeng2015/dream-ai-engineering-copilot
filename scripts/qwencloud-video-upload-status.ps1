@@ -13,6 +13,7 @@ param(
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+. (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
 
 $reportJson = Join-Path $OutputDir "video-upload-status-$timestamp.json"
 $reportMd = Join-Path $OutputDir "video-upload-status-$timestamp.md"
@@ -53,10 +54,9 @@ function Test-AcceptedVideoUrl([string]$Url) {
         return [pscustomobject]@{ ok = $false; details = "missing" }
     }
 
-    $pattern = "^https?://((www|m|v)\.)?(youtube\.com/watch\?v=|youtu\.be/|vimeo\.com/|youku\.com/)"
     return [pscustomobject]@{
-        ok = ($Url -match $pattern)
-        details = if ($Url -match $pattern) { "accepted Devpost Rules video URL" } else { "must be a public YouTube, Vimeo, or Youku URL" }
+        ok = (Test-QwenCloudDevpostVideoUrl -Url $Url)
+        details = if (Test-QwenCloudDevpostVideoUrl -Url $Url) { "accepted Devpost Rules video URL" } else { Get-QwenCloudDevpostVideoPlatformMessage }
     }
 }
 
