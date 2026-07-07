@@ -574,6 +574,7 @@ foreach ($path in @(
     "scripts/qwencloud-deadline-guard.ps1",
     "scripts/qwencloud-live-inputs-intake.ps1",
     "scripts/qwencloud-github-ci-proof.ps1",
+    "scripts/qwencloud-github-release-artifact-ingest.ps1",
     "scripts/qwencloud-release-summary.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",

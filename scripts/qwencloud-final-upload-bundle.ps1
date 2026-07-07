@@ -816,9 +816,12 @@ Add-Item -Name "cloud_credentials_handoff_markdown" -Path $cloudHandoff.markdown
 Add-Item -Name "cloud_credentials_template" -Path $cloudHandoff.template
 Add-Item -Name "cloud_credentials_handoff_json" -Path $cloudHandoff.json
 Add-Item -Name "github_secrets_handoff_script" -Path "scripts/qwencloud-github-secrets-handoff.ps1" -Required $false
+Add-Item -Name "github_release_artifact_ingest_script" -Path "scripts/qwencloud-github-release-artifact-ingest.ps1" -Required $false
 Add-Item -Name "github_release_summary_script" -Path "scripts/qwencloud-release-summary.ps1" -Required $false
 Add-Item -Name "github_release_workflow" -Path ".github/workflows/qwencloud-release.yml" -Required $false
 Add-Item -Name "github_release_workflow_handoff" -Path "docs/qwencloud-github-release-workflow.md" -Required $false
+Add-LatestItem -Name "latest_github_release_artifact_ingest_markdown" -Filter "github-release-artifact-ingest-*.md"
+Add-LatestItem -Name "latest_github_release_artifact_ingest_json" -Filter "github-release-artifact-ingest-*.json"
 Add-LatestItem -Name "latest_github_release_summary_markdown" -Filter "release-summary-*.md"
 Add-LatestItem -Name "latest_github_release_summary_json" -Filter "release-summary-*.json"
 Add-LatestItem -Name "latest_deploy_preflight_markdown" -Filter "deploy-preflight-*.md"

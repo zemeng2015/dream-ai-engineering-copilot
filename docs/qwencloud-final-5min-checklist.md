@@ -227,6 +227,10 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
 - If deploying through GitHub Actions, confirm
   `scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft` reports all
   required secrets present before running `Qwen Cloud Release`.
+- After a GitHub Actions release completes, run
+  `scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot`
+  to download the `qwencloud-release-proof` artifact back into the local proof
+  folder before finalizing Devpost files.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 

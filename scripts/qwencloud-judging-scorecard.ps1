@@ -118,6 +118,7 @@ Add-Criterion `
         "scripts/qwencloud-final-upload-bundle.ps1",
         "scripts/qwencloud-live-inputs-intake.ps1",
         "scripts/qwencloud-official-rules-gate.ps1",
+        "scripts/qwencloud-github-release-artifact-ingest.ps1",
         "scripts/qwencloud-release-summary.ps1",
         "docs/qwencloud-architecture.md",
         "docs/assets/qwencloud-architecture.png",

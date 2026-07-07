@@ -239,7 +239,9 @@ if (-not $secretsReady) {
     Add-Action -Name "Set GitHub release secrets" -Reason "The GitHub release workflow cannot deploy without required Alibaba/Qwen secrets." -RequiresUser $true -Commands @(
         "# Set same-named local env vars for Alibaba/Qwen/registry credentials.",
         "scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv",
-        'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"'
+        'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
+        "# After the workflow completes:",
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot'
     )
 }
 
@@ -290,7 +292,9 @@ if (-not ($deployPreflightCheck -and $deployPreflightCheck.ok)) {
 if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
     Add-Action -Name "Produce deployed Alibaba backend URL" -Reason "Final packet and proof capture need the live Function Compute endpoint." -RequiresUser $true -Commands @(
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
-        'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"'
+        'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
+        "# If using GitHub Actions, after the workflow completes:",
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot'
     )
 }
 

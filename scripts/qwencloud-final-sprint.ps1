@@ -361,6 +361,7 @@ $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
+$releaseArtifactIngest = Read-LatestJson -Filter "github-release-artifact-ingest-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
 $releaseSummary = Read-LatestJson -Filter "release-summary-*.json"
 $finalize = if ($finalizeSkippedForDraft) {
@@ -419,6 +420,7 @@ $signals = [ordered]@{
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
+    githubReleaseArtifactIngestReady = [bool]($releaseArtifactIngest.data -and $releaseArtifactIngest.data.readyForGitHubReleaseArtifactIngest)
     dockerDeployPreflightReady = [bool]($deployPreflightCheck -and $deployPreflightCheck.ok)
     deployedBackendUrlPresent = -not [string]::IsNullOrWhiteSpace($effectiveBackendUrl)
     officialRulesGateReady = [bool]($officialRules.data -and $officialRules.data.readyForOfficialRules)
@@ -489,6 +491,14 @@ if ($UseGitHubReleaseWorkflow -and -not $signals.githubReleaseWorkflowReady) {
         -RequiresZackConfirmation $true
 }
 
+if ($UseGitHubReleaseWorkflow -and $signals.githubReleaseWorkflowReady -and -not $signals.deployedBackendUrlPresent -and -not $signals.githubReleaseArtifactIngestReady) {
+    Add-NextAction `
+        -Name "Run GitHub release and ingest artifact" `
+        -Reason "After the Qwen Cloud Release workflow finishes, the uploaded proof artifact must be downloaded locally so backend URL, showcase proof, and bundle hash can feed the final packet." `
+        -Command 'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"; # after the run completes: scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot; scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -UseGitHubReleaseWorkflow -AllowDraft' `
+        -RequiresZackConfirmation $true
+}
+
 if ($signals.cloudReleaseReady -and -not $signals.deployedBackendUrlPresent) {
     Add-NextAction `
         -Name "Deploy Alibaba backend" `
@@ -551,6 +561,7 @@ $result = [ordered]@{
         liveInputsIntakeJson = $liveInputs.file
         judgingScorecardJson = $scorecard.file
         githubSecretsHandoffJson = $github.file
+        githubReleaseArtifactIngestJson = $releaseArtifactIngest.file
         alibabaReleaseJson = $release.file
         releaseSummaryJson = $releaseSummary.file
         finalizeAfterUrlsJson = $finalize.file
@@ -611,6 +622,7 @@ $lines += @(
     "- Live inputs intake: $(if ($liveInputs.file) { $liveInputs.file } else { '<missing>' })",
     "- Judging scorecard: $(if ($scorecard.file) { $scorecard.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
+    "- GitHub release artifact ingest: $(if ($releaseArtifactIngest.file) { $releaseArtifactIngest.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",
     "- Release summary: $(if ($releaseSummary.file) { $releaseSummary.file } else { '<missing>' })",
     "- Finalize after URLs: $(if ($finalize.file) { $finalize.file } else { '<missing>' })",

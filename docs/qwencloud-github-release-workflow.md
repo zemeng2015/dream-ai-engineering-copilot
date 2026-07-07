@@ -60,7 +60,12 @@ the current PowerShell process only.
 3. Paste the public demo video URL.
 4. Leave `backendUrl` blank for a real deploy, or set it with `skipDeploy=true`
    if a Function Compute backend already exists.
-5. Download the `qwencloud-release-proof` artifact after the workflow finishes.
+5. Ingest the `qwencloud-release-proof` artifact after the workflow finishes:
+
+   ```powershell
+   scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot
+   ```
+
 6. Open the workflow run summary and copy the Backend URL, `/qwencloud/showcase`
    proof path, final bundle zip path, and SHA256 from the `Qwen Cloud Release
    Summary` section.
