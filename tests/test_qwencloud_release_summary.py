@@ -147,6 +147,7 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "Summarize release proof" in workflow
     assert "scripts/qwencloud-release-summary.ps1" in workflow
     assert "$GITHUB_STEP_SUMMARY" not in workflow
+    assert "GH_TOKEN: ${{ github.token }}" in workflow
     assert "Install proof capture tooling" in workflow
     assert "sudo apt-get install -y ffmpeg" in workflow
     assert "ffprobe -version" in workflow
@@ -170,3 +171,4 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "showcase proof" in docs
     assert "Proof capture tooling setup" in docs
     assert "skips the GitHub secrets audit inside Actions" in docs
+    assert "sets `GH_TOKEN` from the GitHub-provided `github.token`" in docs

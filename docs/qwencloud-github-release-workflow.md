@@ -27,6 +27,10 @@ Optional:
 The workflow validates secret presence by name only and never writes secret
 values into repo files.
 
+The workflow sets `GH_TOKEN` from the GitHub-provided `github.token` so the
+final CI proof, release summary, and artifact handoff checks can query the
+current repository with `gh` without requiring a personal access token.
+
 You can keep values in an ignored local dotenv file:
 
 ```powershell
