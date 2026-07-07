@@ -21,6 +21,7 @@ param(
     [string]$EnvFile = "",
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
+    [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraft
 )
 
@@ -319,6 +320,48 @@ function Invoke-JudgingScorecard {
     }
 }
 
+function Invoke-OfficialRulesGate {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-rules-gate-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-official-rules-gate.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipLocalVideoChecks) { $args += "-SkipLocalVideoChecks" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-official-rules-gate-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-official-rules-gate-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Official rules gate generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-rules-gate-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Official rules gate JSON was not found."
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+        ready = [bool]$data.readyForOfficialRules
+        missing = @($data.missingRequired)
+    }
+}
+
 function Invoke-CloudCredentialsHandoff {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "cloud-credentials-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -362,6 +405,7 @@ $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
 $judgingScorecard = Invoke-JudgingScorecard
+$officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
@@ -370,6 +414,7 @@ Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details 
 Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
 Add-ExternalRequirement -Name "devpost_draft_payload_ready" -Ok $draftPayload.ready -Details $(if ($draftPayload.ready) { "READY" } else { "DRAFT; publicTextReady=$($draftPayload.publicTextReady); missing=$($draftPayload.failures -join ', ')" })
 Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.ready -Details $(if ($judgingScorecard.ready) { "READY" } else { "DRAFT; missing=$($judgingScorecard.missing -join ', ')" })
+Add-ExternalRequirement -Name "official_rules_gate_ready" -Ok $officialRulesGate.ready -Details $(if ($officialRulesGate.ready) { "READY" } else { "DRAFT; missing=$($officialRulesGate.missing -join ', ')" })
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
@@ -396,6 +441,10 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "devpost_draft_payload_markdown" -Path $draftPayload.markdown
 Add-Item -Name "devpost_draft_payload_json" -Path $draftPayload.json
 Add-Item -Name "devpost_draft_payload_script" -Path "scripts/qwencloud-devpost-draft-payload.ps1" -Required $false
+Add-Item -Name "official_rules_gate_markdown" -Path $officialRulesGate.markdown
+Add-Item -Name "official_rules_gate_json" -Path $officialRulesGate.json
+Add-Item -Name "official_rules_gate_script" -Path "scripts/qwencloud-official-rules-gate.ps1" -Required $false
+Add-Item -Name "testing_and_rights_notes" -Path "docs/qwencloud-testing-and-rights-notes.md" -Required $false
 Add-Item -Name "post_submit_verification_script" -Path "scripts/qwencloud-post-submit-verification.ps1" -Required $false
 Add-LatestItem -Name "latest_post_submit_verification_markdown" -Filter "devpost-post-submit-verification-*.md"
 Add-LatestItem -Name "latest_post_submit_verification_json" -Filter "devpost-post-submit-verification-*.json"

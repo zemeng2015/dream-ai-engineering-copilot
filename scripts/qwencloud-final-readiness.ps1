@@ -300,6 +300,54 @@ function Invoke-AlibabaProofIntegrity {
     }
 }
 
+function Invoke-OfficialRulesGate {
+    if (-not (Test-Path "scripts/qwencloud-official-rules-gate.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-official-rules-gate.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-rules-gate-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-official-rules-gate.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipLocalVideoChecks) { $args += "-SkipLocalVideoChecks" }
+
+    $stdout = Join-Path $OutputDir "final-readiness-official-rules-gate-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-official-rules-gate-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "official-rules-gate-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "official rules gate JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $gate = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $missingRequired = @($gate.missingRequired | ForEach-Object { $_ })
+    return [pscustomobject]@{
+        ok = [bool]$gate.readyForOfficialRules
+        details = if ($gate.readyForOfficialRules) { "official rules READY: $($newest.FullName)" } else { "official rules DRAFT: $($newest.FullName); missing=$($missingRequired -join ', ')" }
+    }
+}
+
 try {
     $gitStatus = @(git status --porcelain)
     Add-Check -Name "git_worktree_clean" -Ok ($gitStatus.Count -eq 0) -Details $(if ($gitStatus.Count -eq 0) { "clean" } else { "dirty" })
@@ -358,8 +406,10 @@ foreach ($path in @(
     "scripts/qwencloud-final-sprint.ps1",
     "scripts/qwencloud-final-action-board.ps1",
     "scripts/qwencloud-post-submit-verification.ps1",
+    "scripts/qwencloud-official-rules-gate.ps1",
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",
+    "docs/qwencloud-testing-and-rights-notes.md",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
     "scripts/qwencloud-validate-alibaba-proof.ps1",
     "scripts/qwencloud-hackathon-submission-packet.ps1",
@@ -397,6 +447,9 @@ foreach ($path in @(
 
 $proofIntegrity = Invoke-AlibabaProofIntegrity
 Add-Check -Name "alibaba_proof_integrity_ready" -Ok $proofIntegrity.ok -Details $proofIntegrity.details
+
+$officialRulesGate = Invoke-OfficialRulesGate
+Add-Check -Name "official_rules_gate_ready" -Ok $officialRulesGate.ok -Details $officialRulesGate.details
 
 if (-not $SkipPacket) {
     $packetCheck = Invoke-SubmissionPacket

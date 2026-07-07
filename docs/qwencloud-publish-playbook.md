@@ -44,6 +44,7 @@ scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
+scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
@@ -64,6 +65,12 @@ requirement-draft success (unless `-SkipDraft` is set).
 
 `qwencloud-hackathon-audit.ps1` adds a one-command pre-submit checklist:
 repo/docs presence, public repo license visibility checks, and endpoint checks.
+
+`qwencloud-official-rules-gate.ps1` maps the current submission evidence to
+the official Devpost hard requirements: submission period, public repo and
+license, Qwen Cloud usage, Track 1 fit, Alibaba deployment proof, architecture
+diagram, public demo video, working project access, and English testing/rights
+notes.
 
 `qwencloud-run-local-proof.ps1` starts an isolated local Qwen-mode API,
 waits for hackathon `/health` proof, runs verify/proof/submit gate/audit, and

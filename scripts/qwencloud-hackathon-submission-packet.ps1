@@ -276,7 +276,9 @@ $deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverle
 $deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deploy-preflight.ps1"
 $qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
 $buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
+$testingAndRightsNotesUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-testing-and-rights-notes.md"
 $judgingScorecardScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-judging-scorecard.ps1"
+$officialRulesGateScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-official-rules-gate.ps1"
 $ciUrl = "$repoUsed/actions/workflows/ci.yml"
 
 $requiredPaths = @(
@@ -288,6 +290,7 @@ $requiredPaths = @(
     "docs/qwencloud-devpost-submission-kit.md",
     "docs/qwencloud-final-5min-checklist.md",
     "docs/qwencloud-video-upload-handoff.md",
+    "docs/qwencloud-testing-and-rights-notes.md",
     "docs/qwencloud-architecture.md",
     "docs/assets/qwencloud-architecture.svg",
     "docs/assets/qwencloud-architecture.png",
@@ -308,6 +311,7 @@ $requiredPaths = @(
     "scripts/qwencloud-final-upload-bundle.ps1",
     "scripts/qwencloud-devpost-draft-payload.ps1",
     "scripts/qwencloud-judging-scorecard.ps1",
+    "scripts/qwencloud-official-rules-gate.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
     "scripts/qwencloud-hackathon-proof.ps1",
     "scripts/qwencloud-run-local-proof.ps1",
@@ -469,7 +473,9 @@ $packet = [ordered]@{
         deployPreflight = $deployPreflightUrl
         qwenConfig = $qwenConfigUrl
         buildJourneyDraft = $buildJourneyDraftUrl
+        testingAndRightsNotes = $testingAndRightsNotesUrl
         judgingScorecardScript = $judgingScorecardScriptUrl
+        officialRulesGateScript = $officialRulesGateScriptUrl
         ci = $ciUrl
     }
     checks = $checks
@@ -505,7 +511,9 @@ $md = @(
     "- Alibaba Cloud deployment proof: $deploymentProofUrl",
     "- Deploy preflight script: $deployPreflightUrl",
     "- Qwen mode config: $qwenConfigUrl",
+    "- Testing and rights notes: $testingAndRightsNotesUrl",
     "- Judging scorecard generator: $judgingScorecardScriptUrl",
+    "- Official rules gate: $officialRulesGateScriptUrl",
     "- Blog/social build journey draft: $buildJourneyDraftUrl",
     "- CI proof: $ciUrl",
     "",

@@ -31,6 +31,7 @@ $projectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-se
 $additionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
 $finalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
 $deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs.yaml"
+$tryItOutUrl = if (-not [string]::IsNullOrWhiteSpace($BackendUrl)) { $BackendUrl } else { "" }
 $builtWith = "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript"
 $aiTools = "Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation."
 $preExistingExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
@@ -138,7 +139,7 @@ function Get-AssetState([string]$Path) {
 
 Add-Field -Page "project_details" -ElementId "software_description" -Label "About the project" -Value $projectStory.Trim() -InputKind "textarea"
 Add-Field -Page "project_details" -ElementId "software_tag_list" -Label "Built with" -Value $builtWith -InputKind "tag_list"
-Add-Field -Page "project_details" -ElementId "software_urls_attributes_0_url" -Label "Try it out / source link" -Value $RepoUrl -InputKind "url"
+Add-Field -Page "project_details" -ElementId "software_urls_attributes_0_url" -Label "Try it out" -Value $tryItOutUrl -InputKind "url" -Notes "Use the deployed Alibaba Function Compute backend URL. The source repo is supplied in the required repository field."
 Add-Field -Page "project_details" -ElementId "software_video_url" -Label "Video demo link" -Value $DemoVideoUrl -InputKind "url" -SafeForNonLegalDraftSave (Is-DevpostRulesVideoUrl $DemoVideoUrl) -Notes "Required by Devpost; must be public YouTube, Vimeo, or Youku."
 
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_0_value" -Label "Submitter type" -Value "Individual" -InputKind "select"
@@ -165,6 +166,7 @@ $alibabaScreenshotAsset = Get-AssetState -Path $AlibabaScreenshotPath
 Add-Check -Name "project_story_present" -Ok (-not [string]::IsNullOrWhiteSpace($projectStory)) -Details "software_description"
 Add-Check -Name "built_with_present" -Ok (-not [string]::IsNullOrWhiteSpace($builtWith)) -Details "software_tag_list"
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
+Add-Check -Name "working_project_url_present" -Ok (Is-HttpUrl $tryItOutUrl) -Details $(if ($tryItOutUrl) { $tryItOutUrl } else { "missing deployed Alibaba backend URL" })
 Add-Check -Name "demo_video_url_present" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-Check -Name "demo_video_url_devpost_rules_platform" -Ok (Is-DevpostRulesVideoUrl $DemoVideoUrl) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 Add-Check -Name "deployment_proof_code_url_present" -Ok (Is-HttpUrl $deploymentProofUrl) -Details $deploymentProofUrl

@@ -170,6 +170,7 @@ Key submission artifacts:
 - [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
 - [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
 - [Qwen Cloud build journey post draft](docs/qwencloud-build-journey-post.md)
+- [Qwen Cloud testing and rights notes](docs/qwencloud-testing-and-rights-notes.md)
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
 - [Architecture PNG upload asset](docs/assets/qwencloud-architecture.png)
@@ -244,6 +245,12 @@ For CI/release runners that only validate the public video URL:
 
 ```powershell
 scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "https://www.youtube.com/..." -SkipLocalVideoChecks
+```
+
+Run the official rules gate before final submit:
+
+```powershell
+scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 Generate the final copy/paste Devpost packet after the public video and deployed

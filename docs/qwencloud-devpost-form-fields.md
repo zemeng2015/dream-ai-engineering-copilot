@@ -192,6 +192,9 @@ change them after a form refresh.
   should only be done after Zack confirms it at action time.
 - `software_video_url` is empty until the demo MP4 is uploaded to YouTube,
   Vimeo, or Youku.
+- `software_urls_attributes_0_url` should be the deployed Alibaba Function
+  Compute backend URL, not the source repository. The repository URL belongs in
+  the required additional-info repository field.
 - `submission_field_file_27544_add_files` needs
   `docs/assets/qwencloud-architecture.png`.
 - `submission_field_file_27832_add_files` needs

@@ -186,7 +186,7 @@ jobs:
           $readinessCode = $LASTEXITCODE
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-action-board.ps1 @common -SkipGitHubSecrets -SkipLocalVideoChecks -AllowDraft
           $actionBoardCode = $LASTEXITCODE
-          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-upload-bundle.ps1 @common -AllowDraft
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-upload-bundle.ps1 @common -SkipLocalVideoChecks -AllowDraft
           $bundleCode = $LASTEXITCODE
           if ($readinessCode -ne 0 -or $actionBoardCode -ne 0 -or $bundleCode -ne 0) {
             throw "Final readiness/action board/upload bundle remained DRAFT. readiness=$readinessCode actionBoard=$actionBoardCode bundle=$bundleCode"
