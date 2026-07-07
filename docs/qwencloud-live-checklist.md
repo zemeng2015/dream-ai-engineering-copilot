@@ -10,6 +10,8 @@
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
 - [ ] Demo video upload handoff ready: `docs/qwencloud-video-upload-handoff.md`.
+- [ ] Demo video upload status script ready:
+  `scripts/qwencloud-video-upload-status.ps1`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] Alibaba deployment proof recording path reserved: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
 - [ ] Devpost live draft open and editable:

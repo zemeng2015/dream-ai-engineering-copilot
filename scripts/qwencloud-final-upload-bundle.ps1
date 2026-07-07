@@ -245,6 +245,9 @@ Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Detail
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
+Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false
+Add-LatestItem -Name "latest_video_upload_status_markdown" -Filter "video-upload-status-*.md"
+Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-status-*.json"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath

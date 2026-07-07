@@ -14,6 +14,7 @@ Render or refresh it with:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
+scripts/qwencloud-video-upload-status.ps1 -AllowDraft
 ```
 
 Expected metadata:
@@ -80,6 +81,8 @@ browser session and confirm it plays.
 Then pass the public URL into the release and final readiness commands:
 
 ```powershell
+scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"
+
 scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"
 
 scripts/qwencloud-hackathon-submission-packet.ps1 `

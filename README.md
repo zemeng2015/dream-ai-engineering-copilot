@@ -225,6 +225,12 @@ Upload the rendered MP4 using the video handoff:
 docs/qwencloud-video-upload-handoff.md
 ```
 
+Check local video readiness and the public video URL after upload:
+
+```powershell
+scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+```
+
 Generate the final copy/paste Devpost packet after the public video and deployed
 backend URLs are ready:
 

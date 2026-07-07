@@ -247,6 +247,7 @@ foreach ($path in @(
     "docs/assets/qwencloud-architecture.png",
     "docs/qwencloud-video-upload-handoff.md",
     "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
+    "scripts/qwencloud-video-upload-status.ps1",
     "deploy/alibaba/serverless-devs.yaml",
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
     "scripts/qwencloud-github-secrets-handoff.ps1",
