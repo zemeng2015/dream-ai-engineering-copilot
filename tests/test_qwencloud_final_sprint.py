@@ -19,6 +19,12 @@ def test_final_sprint_can_refresh_alibaba_proof_after_urls() -> None:
         in final_sprint
     )
     assert "finalizeAfterUrlsSkippedForDraft = [bool]$finalizeSkippedForDraft" in final_sprint
+    assert "[int]$StepTimeoutSeconds = 900" in final_sprint
+    assert "$completed = $proc.WaitForExit($StepTimeoutSeconds * 1000)" in final_sprint
+    assert "Stop-ProcessTree -ProcessId $proc.Id" in final_sprint
+    assert "timeout after ${StepTimeoutSeconds}s; process tree stopped" in final_sprint
+    assert "stepTimeoutSeconds = $StepTimeoutSeconds" in final_sprint
+    assert '"- Step timeout seconds: $StepTimeoutSeconds"' in final_sprint
 
     for path in [
         "docs/qwencloud-final-5min-checklist.md",

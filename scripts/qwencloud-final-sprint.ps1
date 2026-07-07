@@ -17,6 +17,9 @@ param(
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
     [string]$LocalVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(1, 86400)]
+    [int]$StepTimeoutSeconds = 900,
     [switch]$UseGitHubReleaseWorkflow,
     [switch]$SetGitHubSecrets,
     [switch]$RunLocalRelease,
@@ -84,6 +87,19 @@ function Add-NextAction {
     }
 }
 
+function Stop-ProcessTree {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId
+    )
+
+    $children = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.ParentProcessId -eq $ProcessId })
+    foreach ($child in $children) {
+        Stop-ProcessTree -ProcessId ([int]$child.ProcessId)
+    }
+
+    Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+}
+
 function Invoke-SprintStep {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
@@ -94,12 +110,27 @@ function Invoke-SprintStep {
     $stdout = Join-Path $OutputDir "$Name-$timestamp.out"
     $stderr = Join-Path $OutputDir "$Name-$timestamp.err"
     try {
-        $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $Arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $Arguments -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        $completed = $proc.WaitForExit($StepTimeoutSeconds * 1000)
+        if (-not $completed) {
+            Stop-ProcessTree -ProcessId $proc.Id
+            Add-Step -Name $Name -Ok $false -Details "timeout after ${StepTimeoutSeconds}s; process tree stopped" -Stdout $stdout -Stderr $stderr
+            return [pscustomobject]@{
+                ok = $false
+                exitCode = -2
+                timedOut = $true
+                stdout = $stdout
+                stderr = $stderr
+            }
+        }
+
+        $proc.Refresh()
         $ok = $AllowedExitCodes -contains $proc.ExitCode
         Add-Step -Name $Name -Ok $ok -Details "exit=$($proc.ExitCode)" -Stdout $stdout -Stderr $stderr
         return [pscustomobject]@{
             ok = $ok
             exitCode = $proc.ExitCode
+            timedOut = $false
             stdout = $stdout
             stderr = $stderr
         }
@@ -109,6 +140,7 @@ function Invoke-SprintStep {
         return [pscustomobject]@{
             ok = $false
             exitCode = -1
+            timedOut = $false
             stdout = $stdout
             stderr = $stderr
         }
@@ -471,6 +503,7 @@ $result = [ordered]@{
     blogPostUrl = $BlogPostUrl
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
+    stepTimeoutSeconds = $StepTimeoutSeconds
     sideEffectSwitches = [ordered]@{
         useGitHubReleaseWorkflow = [bool]$UseGitHubReleaseWorkflow
         setGitHubSecrets = [bool]$SetGitHubSecrets
@@ -508,6 +541,7 @@ $lines = @(
     "- Demo video URL: $(if ($effectiveDemoVideoUrl) { $effectiveDemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($effectiveBackendUrl) { $effectiveBackendUrl } else { '<missing>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
+    "- Step timeout seconds: $StepTimeoutSeconds",
     "- Use GitHub release workflow: $([bool]$UseGitHubReleaseWorkflow)",
     "- Set GitHub secrets requested: $([bool]$SetGitHubSecrets)",
     "- Run local release requested: $([bool]$RunLocalRelease)",
