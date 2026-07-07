@@ -177,6 +177,42 @@ function Test-HeadCiSuccess {
     }
 }
 
+function Test-RepoPublication([string]$Url) {
+    if (-not (Has-Command "gh")) {
+        return [pscustomobject]@{
+            publicOk = $false
+            licenseOk = $false
+            details = "gh command missing"
+        }
+    }
+    if ($Url -notmatch "^https://github.com/(?<owner>[^/]+)/(?<repo>[^/]+?)(\.git)?$") {
+        return [pscustomobject]@{
+            publicOk = $false
+            licenseOk = $false
+            details = "not a normalized GitHub HTTPS repo URL: $Url"
+        }
+    }
+
+    $repoName = "$($matches.owner)/$($matches.repo)"
+    try {
+        $json = gh repo view $repoName --json nameWithOwner,visibility,isPrivate,url,licenseInfo
+        $repo = $json | ConvertFrom-Json
+        $licenseKey = if ($repo.licenseInfo) { [string]$repo.licenseInfo.key } else { "" }
+        return [pscustomobject]@{
+            publicOk = ($repo.visibility -eq "PUBLIC" -and -not [bool]$repo.isPrivate)
+            licenseOk = ($licenseKey -eq "apache-2.0")
+            details = "repo=$($repo.nameWithOwner); visibility=$($repo.visibility); isPrivate=$($repo.isPrivate); license=$licenseKey; url=$($repo.url)"
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            publicOk = $false
+            licenseOk = $false
+            details = $_.Exception.Message
+        }
+    }
+}
+
 function Invoke-SubmissionPacket {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
 
@@ -283,6 +319,10 @@ catch {
 
 $ci = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $ci.ok -Details $ci.details
+
+$repoPublication = Test-RepoPublication -Url $RepoUrl
+Add-Check -Name "repo_public" -Ok $repoPublication.publicOk -Details $repoPublication.details
+Add-Check -Name "repo_license_apache_2_0" -Ok $repoPublication.licenseOk -Details $repoPublication.details
 
 foreach ($tool in @("python", "docker", "s", "ffmpeg", "ffprobe", "gh")) {
     Add-Check -Name "tool.$tool" -Ok (Has-Command $tool) -Details $(if (Has-Command $tool) { (Get-Command $tool).Source } else { "missing" })
