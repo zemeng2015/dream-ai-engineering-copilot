@@ -117,7 +117,7 @@
 .demo-layout,
 .proof-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.38fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.8fr) minmax(320px, 0.8fr);
   gap: 18px;
   align-items: start;
 }
@@ -230,7 +230,6 @@
 
 .submit-grid div {
   display: grid;
-  gap: 6px;
   border: 1px solid var(--dream-border);
   border-radius: 8px;
   background: var(--dream-surface-muted);

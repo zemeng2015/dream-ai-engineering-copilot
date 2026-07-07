@@ -31,6 +31,21 @@ interface EvidenceItem {
   tone: 'ready' | 'watch' | 'blocked';
 }
 
+interface ScorecardItem {
+  criterion: string;
+  weight: string;
+  state: string;
+  proof: string;
+  tone: 'ready' | 'watch' | 'blocked';
+}
+
+interface SubmitGate {
+  label: string;
+  value: string;
+  detail: string;
+  tone: 'ready' | 'watch' | 'blocked';
+}
+
 interface HealthFact {
   label: string;
   value: string;
@@ -198,6 +213,64 @@ export class HackathonDemoComponent implements OnInit {
       name: 'Alibaba deployment proof',
       state: 'Action required',
       proof: 'Needs deployed backend URL, screenshot, and separate proof recording from the live FC endpoint.',
+      tone: 'blocked',
+    },
+  ];
+
+  readonly scorecardItems: ScorecardItem[] = [
+    {
+      criterion: 'Innovation and AI Creativity',
+      weight: '30%',
+      state: 'Evidence ready',
+      proof: 'Memory distillation, retrieval trails, source-backed generation, and Qwen Cloud provider are in repo and CI.',
+      tone: 'ready',
+    },
+    {
+      criterion: 'Problem Value and Impact',
+      weight: '25%',
+      state: 'Evidence ready',
+      proof: 'DREAM targets engineering context loss across tickets, incidents, code, and review history.',
+      tone: 'ready',
+    },
+    {
+      criterion: 'Technical Depth and Engineering',
+      weight: '30%',
+      state: 'Needs live proof',
+      proof: 'Docker, CI, API, and Alibaba template are ready; live Function Compute URL closes the final evidence gap.',
+      tone: 'watch',
+    },
+    {
+      criterion: 'Presentation and Documentation',
+      weight: '15%',
+      state: 'Needs public video',
+      proof: 'Script, captions, thumbnail, and local MP4 are ready; public video URL closes Devpost presentation proof.',
+      tone: 'blocked',
+    },
+  ];
+
+  readonly submitGates: SubmitGate[] = [
+    {
+      label: 'Local CI proof',
+      value: 'green',
+      detail: 'Python tests, lint, PowerShell proof runner, and Bash proof runner pass in GitHub Actions.',
+      tone: 'ready',
+    },
+    {
+      label: 'Judge scorecard',
+      value: '55/100',
+      detail: 'Local evidence is ready for 55 weighted points; live URL and public video close the rest.',
+      tone: 'watch',
+    },
+    {
+      label: 'Live inputs',
+      value: 'pending',
+      detail: 'Needs env file, public demo URL, Alibaba backend URL, screenshot, and proof recording.',
+      tone: 'blocked',
+    },
+    {
+      label: 'Upload bundle',
+      value: 'draft',
+      detail: 'Bundle exists with hashes; final state waits for external proof assets.',
       tone: 'blocked',
     },
   ];

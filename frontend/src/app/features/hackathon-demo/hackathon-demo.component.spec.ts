@@ -57,6 +57,12 @@ describe('HackathonDemoComponent', () => {
     expect(text).toContain('deploy/alibaba/serverless-devs.yaml');
     expect(text).toContain('Public video URL');
     expect(text).toContain('Alibaba deployment proof');
+    expect(text).toContain('Judging Scorecard Alignment');
+    expect(text).toContain('55/100');
+    expect(text).toContain('Innovation and AI Creativity');
+    expect(text).toContain('Technical Depth and Engineering');
+    expect(text).toContain('Presentation and Documentation');
+    expect(text).toContain('Live inputs');
   });
 
   it('keeps the judge route usable when the backend is offline', () => {

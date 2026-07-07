@@ -102,6 +102,39 @@
   </section>
 
   <section class="proof-layout" aria-label="Local proof commands and Devpost status">
+    <article class="panel scorecard-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Judging Scorecard Alignment</h2>
+          <p>Weighted evidence split used by the final bundle and judge rehearsal.</p>
+        </div>
+      </div>
+      <div class="submit-grid scorecard-summary" aria-label="Current judging evidence score">
+        <div data-tone="watch">
+          <span>Current evidence</span>
+          <strong>55/100</strong>
+          <small>ready before external URLs</small>
+        </div>
+        <div data-tone="blocked">
+          <span>External gap</span>
+          <strong>45 pts</strong>
+          <small>public video and Alibaba proof</small>
+        </div>
+      </div>
+      <div class="evidence-list">
+        @for (item of scorecardItems; track item.criterion) {
+          <article class="evidence-row scorecard-row" [attr.data-tone]="item.tone">
+            <div>
+              <span>{{ item.weight }}</span>
+              <strong>{{ item.criterion }}</strong>
+              <small>{{ item.proof }}</small>
+            </div>
+            <em>{{ item.state }}</em>
+          </article>
+        }
+      </div>
+    </article>
+
     <article class="panel proof-panel">
       <div class="panel-header">
         <div>
@@ -124,22 +157,13 @@
         </div>
       </div>
       <div class="submit-grid">
-        <div>
-          <span>Green local CI</span>
-          <strong>yes</strong>
-        </div>
-        <div>
-          <span>Video file rendered</span>
-          <strong>151s</strong>
-        </div>
-        <div>
-          <span>Backend URL</span>
-          <strong>pending</strong>
-        </div>
-        <div>
-          <span>Devpost packet</span>
-          <strong>draft</strong>
-        </div>
+        @for (gate of submitGates; track gate.label) {
+          <div [attr.data-tone]="gate.tone">
+            <span>{{ gate.label }}</span>
+            <strong>{{ gate.value }}</strong>
+            <small>{{ gate.detail }}</small>
+          </div>
+        }
       </div>
     </article>
   </section>
