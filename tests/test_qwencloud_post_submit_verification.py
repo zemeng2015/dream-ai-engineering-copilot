@@ -107,8 +107,6 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
             str(manifest),
             "-RunsJsonPath",
             str(runs_json),
-            "-GitHead",
-            head,
             "-DevpostProjectUrl",
             "https://devpost.com/software/dream-qwen-cloud-memoryagent",
             "-DemoVideoUrl",
@@ -116,7 +114,7 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
             "-SkipExternalUrlChecks",
             "-AllowDraft",
         ],
-        cwd=ROOT,
+        cwd=tmp_path,
         capture_output=True,
         text=True,
         check=False,
@@ -134,6 +132,8 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
     assert "run=9002" in latest_ci["details"]
     assert "Latest passing CI" in latest_ci["details"]
     assert bundle_commit["ok"] is True
+    assert report["repoName"] == "zemeng2015/dream-ai-engineering-copilot"
+    assert _check(report, "repo_url_github")["ok"] is True
 
 
 def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
@@ -141,5 +141,8 @@ def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
 
     assert "[string]$RunsJsonPath" in text
     assert "[string]$GitHead" in text
+    assert "function Get-RepoName" in text
     assert "ConvertTo-FlatArray" in text
     assert "matchingRuns" in text
+    assert "gh run list --repo $repoName" in text
+    assert "$manifest.gitCommit" in text

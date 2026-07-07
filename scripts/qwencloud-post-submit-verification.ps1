@@ -85,12 +85,37 @@ function ConvertTo-FlatArray([AllowNull()][object]$Value) {
     return $items
 }
 
+function Get-RepoName([string]$Url) {
+    if ($Url -match "^https://github.com/(?<owner>[^/]+)/(?<repo>[^/]+?)(\.git)?$") {
+        return "$($matches.owner)/$($matches.repo)"
+    }
+    return ""
+}
+
 function Get-LocalHead {
     if (-not [string]::IsNullOrWhiteSpace($GitHead)) {
         return $GitHead
     }
 
-    return Invoke-GitText -Arguments @("rev-parse", "HEAD")
+    $gitHead = Invoke-GitText -Arguments @("rev-parse", "HEAD")
+    if (-not [string]::IsNullOrWhiteSpace($gitHead)) {
+        return $gitHead
+    }
+
+    try {
+        $manifestPath = Get-LatestFinalBundleManifest -ExplicitPath $FinalBundleManifest
+        if (-not [string]::IsNullOrWhiteSpace($manifestPath) -and (Test-Path -LiteralPath $manifestPath)) {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+            if (-not [string]::IsNullOrWhiteSpace([string]$manifest.gitCommit)) {
+                return [string]$manifest.gitCommit
+            }
+        }
+    }
+    catch {
+        return ""
+    }
+
+    return ""
 }
 
 function Is-HttpUrl([string]$Url) {
@@ -169,6 +194,11 @@ function Test-HeadCiSuccess {
     }
 
     try {
+        $repoName = Get-RepoName -Url $RepoUrl
+        if ([string]::IsNullOrWhiteSpace($repoName) -and [string]::IsNullOrWhiteSpace($RunsJsonPath)) {
+            return [pscustomobject]@{ ok = $false; details = "RepoUrl is not a normalized GitHub HTTPS URL: $RepoUrl" }
+        }
+
         $head = Get-LocalHead
         if ([string]::IsNullOrWhiteSpace($head)) {
             return [pscustomobject]@{ ok = $false; details = "git HEAD unavailable" }
@@ -178,7 +208,7 @@ function Test-HeadCiSuccess {
             ConvertTo-FlatArray -Value (Read-JsonPath -Path $RunsJsonPath)
         }
         else {
-            $runsJson = gh run list --branch main --limit 10 --json databaseId,headSha,status,conclusion,url,displayTitle,createdAt,updatedAt
+            $runsJson = gh run list --repo $repoName --branch main --limit 10 --json databaseId,headSha,status,conclusion,url,displayTitle,createdAt,updatedAt
             ConvertTo-FlatArray -Value ($runsJson | ConvertFrom-Json)
         }
         $matchingRuns = @(
@@ -246,6 +276,7 @@ function Get-VideoMetadata([string]$Path) {
 }
 
 $headCommit = Get-LocalHead
+$repoName = Get-RepoName -Url $RepoUrl
 $headCi = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $headCi.ok -Details $headCi.details
 
@@ -315,6 +346,7 @@ else {
 }
 
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
+Add-Check -Name "repo_url_github" -Ok (-not [string]::IsNullOrWhiteSpace($repoName)) -Details $(if ($repoName) { $repoName } else { "not a normalized GitHub HTTPS repo URL: $RepoUrl" })
 $repo = Test-Url -Url $RepoUrl -Method "Get"
 Add-Check -Name "repo_public_page_reachable" -Ok $repo.ok -Details $repo.details
 
@@ -423,6 +455,7 @@ $result = [ordered]@{
     readyForGoalCompletionEvidence = $ready
     devpostProjectUrl = $DevpostProjectUrl
     repoUrl = $RepoUrl
+    repoName = $repoName
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     finalBundleManifest = $bundleManifestPath
