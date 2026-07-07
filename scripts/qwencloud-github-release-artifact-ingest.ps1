@@ -168,15 +168,23 @@ try {
     $run = Get-ReleaseRun
     Add-Step -Name "release_run_found" -Ok ($null -ne $run) -Details $(if ($run) { "$($run.workflowName); $($run.status); $($run.conclusion); $($run.url)" } else { "missing $WorkflowName run" })
     if ($run) {
-        Add-Step -Name "release_run_success" -Ok ($run.status -eq "completed" -and $run.conclusion -eq "success") -Details "status=$($run.status); conclusion=$($run.conclusion); run=$($run.databaseId)"
+        $releaseRunSuccess = $run.status -eq "completed" -and $run.conclusion -eq "success"
+        $downloadAllowed = $run.status -eq "completed" -and ($releaseRunSuccess -or [bool]$AllowDraft)
+        Add-Step -Name "release_run_success" -Ok $releaseRunSuccess -Details "status=$($run.status); conclusion=$($run.conclusion); run=$($run.databaseId)" -Required (-not [bool]$AllowDraft)
+        Add-Step -Name "release_run_artifact_downloadable" -Ok $downloadAllowed -Details "status=$($run.status); conclusion=$($run.conclusion); run=$($run.databaseId); allowDraft=$([bool]$AllowDraft)"
+        if ($downloadAllowed -and -not $releaseRunSuccess) {
+            Add-Step -Name "release_run_draft_artifacts_allowed" -Ok $true -Details "downloading artifacts from non-success run because -AllowDraft is set" -Required $false
+        }
     }
     else {
         Add-Step -Name "release_run_success" -Ok $false -Details "no run"
+        Add-Step -Name "release_run_artifact_downloadable" -Ok $false -Details "no run"
     }
 }
 catch {
     Add-Step -Name "release_run_found" -Ok $false -Details $_.Exception.Message
     Add-Step -Name "release_run_success" -Ok $false -Details $_.Exception.Message
+    Add-Step -Name "release_run_artifact_downloadable" -Ok $false -Details $_.Exception.Message
 }
 
 try {
@@ -184,7 +192,7 @@ try {
         $artifactSource = (Resolve-Path -LiteralPath $ArtifactSourceDir).Path
         Add-Step -Name "artifact_source" -Ok $true -Details "fixture=$artifactSource"
     }
-    elseif ($run -and $run.status -eq "completed" -and $run.conclusion -eq "success") {
+    elseif ($run -and $run.status -eq "completed" -and ($run.conclusion -eq "success" -or [bool]$AllowDraft)) {
         New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
         $downloadOutput = (& gh run download $run.databaseId --repo $Repo --name $ArtifactName --dir $downloadRoot 2>&1) -join "`n"
         if ($LASTEXITCODE -ne 0) {
@@ -194,7 +202,7 @@ try {
         Add-Step -Name "artifact_download" -Ok $true -Details "run=$($run.databaseId); artifact=$ArtifactName; dir=$artifactSource"
     }
     else {
-        Add-Step -Name "artifact_download" -Ok $false -Details "release run is not successful"
+        Add-Step -Name "artifact_download" -Ok $false -Details "release run is not downloadable; status=$(if ($run) { $run.status } else { '<missing>' }); conclusion=$(if ($run) { $run.conclusion } else { '<missing>' }); allowDraft=$([bool]$AllowDraft)"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($artifactSource)) {
@@ -236,6 +244,7 @@ $result = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
     status = $status
     readyForGitHubReleaseArtifactIngest = $ready
+    allowDraft = [bool]$AllowDraft
     repo = $Repo
     branch = $Branch
     workflowName = $WorkflowName
@@ -264,6 +273,7 @@ $lines = @(
     "- Repo: $Repo",
     "- Workflow: $WorkflowName",
     "- Run: $(if ($run) { $run.databaseId } else { '<missing>' })",
+    "- Allow draft/non-success run artifacts: $([bool]$AllowDraft)",
     "- Artifact: $ArtifactName",
     "- Source: $(if ($artifactSource) { $artifactSource } else { '<missing>' })",
     "- Copied files: $($copiedFiles.Count)",

@@ -126,8 +126,34 @@ def test_github_release_artifact_ingest_registered_in_final_flow() -> None:
     final_bundle = (ROOT / "scripts/qwencloud-final-upload-bundle.ps1").read_text(
         encoding="utf-8-sig"
     )
+    ingest = (ROOT / script_path).read_text(encoding="utf-8-sig")
+    docs = (ROOT / "docs/qwencloud-github-release-workflow.md").read_text(
+        encoding="utf-8-sig"
+    )
 
     assert "githubReleaseArtifactIngestReady" in final_sprint
     assert "githubReleaseArtifactIngestJson" in final_sprint
     assert "latest_github_release_artifact_ingest_markdown" in final_bundle
     assert "latest_github_release_artifact_ingest_json" in final_bundle
+    assert (
+        '$releaseRunSuccess = $run.status -eq "completed" '
+        '-and $run.conclusion -eq "success"'
+    ) in ingest
+    assert (
+        '$downloadAllowed = $run.status -eq "completed" -and '
+        '($run.conclusion -eq "success" -or [bool]$AllowDraft)'
+    ) not in ingest
+    assert (
+        '$downloadAllowed = $run.status -eq "completed" -and '
+        '($releaseRunSuccess -or [bool]$AllowDraft)'
+    ) in ingest
+    assert (
+        'Add-Step -Name "release_run_success" -Ok $releaseRunSuccess'
+        in ingest
+    )
+    assert "release_run_artifact_downloadable" in ingest
+    assert "-Required (-not [bool]$AllowDraft)" in ingest
+    assert "release_run_draft_artifacts_allowed" in ingest
+    assert "release run is not downloadable" in ingest
+    assert "allowDraft = [bool]$AllowDraft" in ingest
+    assert "-RunId \"<run-id>\" -AllowDraft" in docs

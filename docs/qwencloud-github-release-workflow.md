@@ -66,6 +66,14 @@ the current PowerShell process only.
    scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot
    ```
 
+   If the workflow run is marked failed because a final DRAFT gate tripped but
+   the artifact upload step still completed, recover the uploaded proof bundle
+   with:
+
+   ```powershell
+   scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<run-id>" -AllowDraft
+   ```
+
 6. Open the workflow run summary and copy the Backend URL, `/qwencloud/showcase`
    proof path, final bundle zip path, and SHA256 from the `Qwen Cloud Release
    Summary` section.
