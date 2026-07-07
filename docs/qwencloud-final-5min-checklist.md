@@ -48,9 +48,17 @@ scripts/qwencloud-run-local-proof.ps1
   - `deploy/alibaba/README.md`
   - `docs/qwencloud-devpost-form-fields.md`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
+  - `scripts/qwencloud_seed_demo_artifact.py`
 
 - Open the judge-facing Angular route:
   `http://localhost:4300/hackathon-demo`
+
+- Generate the seeded judge demo artifact if you want approved memory available
+  immediately during the live walkthrough:
+
+```powershell
+python scripts/qwencloud_seed_demo_artifact.py --promote-count 6
+```
 
 - Capture one screenshot of `/health` response and one screenshot of
   `POST /requirements/draft` success.

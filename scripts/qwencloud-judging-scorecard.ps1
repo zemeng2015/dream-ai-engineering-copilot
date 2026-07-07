@@ -148,6 +148,7 @@ Add-Criterion `
         "scripts/qwencloud-video-publication-handoff.ps1",
         "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-devpost-draft-payload.ps1",
+        "scripts/qwencloud_seed_demo_artifact.py",
         "frontend/src/app/core/dream-api.service.ts",
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts",
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html",

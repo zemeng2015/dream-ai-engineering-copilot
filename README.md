@@ -162,6 +162,12 @@ On Linux/macOS or a Bash runner:
 bash scripts/qwencloud-run-local-proof.sh --skip-draft
 ```
 
+Build a seeded judge demo state with approved source-backed memory claims:
+
+```powershell
+python scripts/qwencloud_seed_demo_artifact.py --promote-count 6
+```
+
 The judge-facing Angular route at `/hackathon-demo` reads
 `http://127.0.0.1:8000/health` and shows a live Qwen Cloud proof panel with the
 track, provider, model, deployment target, region, API-key status, and proof

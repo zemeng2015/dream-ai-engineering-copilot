@@ -205,6 +205,7 @@ export class HackathonDemoComponent implements OnInit {
   readonly quickProofCommands = [
     'bash scripts/qwencloud-run-local-proof.sh --skip-draft',
     'scripts/qwencloud-run-local-proof.ps1 -SkipDraft',
+    'python scripts/qwencloud_seed_demo_artifact.py --promote-count 6',
     'scripts/qwencloud-final-readiness.ps1 -AllowDraftPacket',
   ];
 

@@ -22,6 +22,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-alibaba-release.ps1`
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-run-local-proof.sh`
+  - `scripts/qwencloud_seed_demo_artifact.py`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
   - `scripts/qwencloud-cloud-credentials-handoff.ps1`
@@ -71,7 +72,7 @@ caption SHA256, and Chrome file upload troubleshooting.
 Recommended 4-shot order:
 
 1. `/hackathon-demo` guided route and live `/health` proof panel (Track, provider, model, deployment target, region, API-key status, proof file).
-2. Memory Hub intake and claim review.
+2. Seeded Memory Hub claim review using `scripts/qwencloud_seed_demo_artifact.py`.
 3. Requirement case flow (prompt -> impact map -> brief -> Jira draft).
 4. Audit/eval and manual scoring.
 
@@ -114,6 +115,13 @@ Linux/macOS or Bash runner:
 
 ```bash
 bash scripts/qwencloud-run-local-proof.sh --skip-draft
+```
+
+Generate an optional seeded judge demo package so approved memory search/context
+is available before a manual claim-review walkthrough:
+
+```powershell
+python scripts/qwencloud_seed_demo_artifact.py --promote-count 6
 ```
 
 Or use the full release orchestrator after credentials, registry login, and

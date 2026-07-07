@@ -527,6 +527,8 @@ Add-Item -Name "hackathon_demo_route_source" -Path "frontend/src/app/features/ha
 Add-Item -Name "hackathon_demo_route_template" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html" -Required $false
 Add-Item -Name "hackathon_demo_route_styles" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.scss" -Required $false
 Add-Item -Name "hackathon_demo_route_tests" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts" -Required $false
+Add-Item -Name "seeded_demo_artifact_script" -Path "scripts/qwencloud_seed_demo_artifact.py" -Required $false
+Add-LatestItem -Name "latest_seeded_demo_artifact_zip" -Filter "seeded-demo-artifact-*.zip"
 Add-LatestItem -Name "latest_frontend_build_proof_markdown" -Filter "frontend-build-proof-*.md"
 Add-LatestItem -Name "latest_frontend_build_proof_json" -Filter "frontend-build-proof-*.json"
 Add-LatestItem -Name "latest_frontend_install_stdout" -Filter "frontend-npm-ci-*.out"

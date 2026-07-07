@@ -26,6 +26,9 @@
 - Live Angular `/health` proof panel on `/hackathon-demo` that reads provider,
   model, deployment target, region, API-key status, and proof file from the
   running backend with an offline-safe fallback.
+- Seeded judge demo artifact generator,
+  `scripts/qwencloud_seed_demo_artifact.py`, that creates a portable artifact
+  root with latest memory scan, approved review ledger, context card, and ZIP.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost
@@ -41,7 +44,5 @@
 
 ## High-Leverage Stretch Work
 
-- Add a tiny seeded demo artifact so judges can run the Track 1 flow without
-  manually approving claims first.
 - Replace placeholders in `docs/qwencloud-build-journey-post.md` with deployed
   backend and video links after publishing.
