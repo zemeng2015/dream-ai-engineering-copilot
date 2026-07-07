@@ -130,6 +130,18 @@ def test_github_release_artifact_ingest_registered_in_final_flow() -> None:
     docs = (ROOT / "docs/qwencloud-github-release-workflow.md").read_text(
         encoding="utf-8-sig"
     )
+    action_board = (ROOT / "scripts/qwencloud-final-action-board.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    final_sprint = (ROOT / "scripts/qwencloud-final-sprint.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    external_handoff = (
+        ROOT / "scripts/qwencloud-final-external-handoff.ps1"
+    ).read_text(encoding="utf-8-sig")
+    final_checklist = (ROOT / "docs/qwencloud-final-5min-checklist.md").read_text(
+        encoding="utf-8-sig"
+    )
 
     assert "githubReleaseArtifactIngestReady" in final_sprint
     assert "githubReleaseArtifactIngestJson" in final_sprint
@@ -157,3 +169,9 @@ def test_github_release_artifact_ingest_registered_in_final_flow() -> None:
     assert "release run is not downloadable" in ingest
     assert "allowDraft = [bool]$AllowDraft" in ingest
     assert "-RunId \"<run-id>\" -AllowDraft" in docs
+    assert "-RunId \"<workflow-run-id>\" -AllowDraft" in action_board
+    assert "-RunId \"<workflow-run-id>\" -AllowDraft" in final_sprint
+    assert "-RunId \"<workflow-run-id>\" -AllowDraft" in external_handoff
+    assert "-RunId \"<workflow-run-id>\" -AllowDraft" in final_checklist
+    assert "qwencloud-release-proof" in action_board
+    assert "qwencloud-release-proof" in final_sprint

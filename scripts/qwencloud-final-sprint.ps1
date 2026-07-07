@@ -495,7 +495,7 @@ if ($UseGitHubReleaseWorkflow -and $signals.githubReleaseWorkflowReady -and -not
     Add-NextAction `
         -Name "Run GitHub release and ingest artifact" `
         -Reason "After the Qwen Cloud Release workflow finishes, the uploaded proof artifact must be downloaded locally so backend URL, showcase proof, and bundle hash can feed the final packet." `
-        -Command 'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"; # after the run completes: scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot; scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -UseGitHubReleaseWorkflow -AllowDraft' `
+        -Command 'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"; # after a successful run: scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot; # if it fails after uploading qwencloud-release-proof: scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<workflow-run-id>" -AllowDraft; scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -UseGitHubReleaseWorkflow -AllowDraft' `
         -RequiresZackConfirmation $true
 }
 

@@ -231,6 +231,9 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
   `scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot`
   to download the `qwencloud-release-proof` artifact back into the local proof
   folder before finalizing Devpost files.
+- If that release run is marked failed but the artifact upload step completed,
+  recover the uploaded proof bundle with
+  `scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<workflow-run-id>" -AllowDraft`.
 
 ## Step 6 - Devpost fill (about 1.5 minutes)
 

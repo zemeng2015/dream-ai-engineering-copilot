@@ -241,7 +241,9 @@ if (-not $secretsReady) {
         "scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv",
         'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
         "# After the workflow completes:",
-        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot'
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot',
+        "# If the run fails after uploading qwencloud-release-proof, recover the artifact with:",
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<workflow-run-id>" -AllowDraft'
     )
 }
 
@@ -294,7 +296,9 @@ if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
         'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
         "# If using GitHub Actions, after the workflow completes:",
-        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot'
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot',
+        "# If the run fails after uploading qwencloud-release-proof, recover the artifact with:",
+        'scripts/qwencloud-github-release-artifact-ingest.ps1 -Repo zemeng2015/dream-ai-engineering-copilot -RunId "<workflow-run-id>" -AllowDraft'
     )
 }
 
