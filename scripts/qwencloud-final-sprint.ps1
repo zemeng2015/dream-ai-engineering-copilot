@@ -20,6 +20,7 @@ param(
     [switch]$UseGitHubReleaseWorkflow,
     [switch]$SetGitHubSecrets,
     [switch]$RunLocalRelease,
+    [switch]$RefreshAlibabaProof,
     [switch]$SkipExternalUrlChecks,
     [switch]$AllowDraft
 )
@@ -281,6 +282,7 @@ if ($DemoVideoUrl) { $finalizeArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($backendForFinalize) { $finalizeArgs += @("-BackendUrl", $backendForFinalize) }
 if ($BlogPostUrl) { $finalizeArgs += @("-BlogPostUrl", $BlogPostUrl) }
 if ($EnvFile) { $finalizeArgs += @("-EnvFile", $EnvFile) }
+if ($RefreshAlibabaProof) { $finalizeArgs += "-RefreshAlibabaProof" }
 if ($SkipExternalUrlChecks) { $finalizeArgs += "-SkipExternalUrlChecks" }
 Invoke-SprintStep -Name "final-sprint-finalize-after-urls" -Arguments $finalizeArgs | Out-Null
 
@@ -450,6 +452,7 @@ $result = [ordered]@{
         useGitHubReleaseWorkflow = [bool]$UseGitHubReleaseWorkflow
         setGitHubSecrets = [bool]$SetGitHubSecrets
         runLocalRelease = [bool]$RunLocalRelease
+        refreshAlibabaProof = [bool]$RefreshAlibabaProof
     }
     signals = $signals
     reports = [ordered]@{
@@ -484,6 +487,7 @@ $lines = @(
     "- Use GitHub release workflow: $([bool]$UseGitHubReleaseWorkflow)",
     "- Set GitHub secrets requested: $([bool]$SetGitHubSecrets)",
     "- Run local release requested: $([bool]$RunLocalRelease)",
+    "- Refresh Alibaba proof requested: $([bool]$RefreshAlibabaProof)",
     "",
     "## Signals",
     "",

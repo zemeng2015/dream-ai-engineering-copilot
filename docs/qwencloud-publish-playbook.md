@@ -56,7 +56,7 @@ scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUr
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
-scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof -AllowDraft
 scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
@@ -137,8 +137,10 @@ remaining action and whether Zack/action-time confirmation is required.
 `qwencloud-final-sprint.ps1` is the last-day cockpit. It refreshes video status,
 cloud credentials, live inputs, judging scorecard, GitHub secrets, release plan,
 Docker deploy preflight, official rules gate, final packet, upload bundle,
-readiness, and action board in one pass. By default it only writes local status
-reports; use
+readiness, and action board in one pass. After the public video and backend URL
+exist, pass `-RefreshAlibabaProof` so the same cockpit also captures the
+Alibaba screenshot and short proof recording. By default it only writes local
+status reports; use
 `-SetGitHubSecrets` or `-RunLocalRelease` only after action-time confirmation.
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the

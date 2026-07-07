@@ -201,7 +201,7 @@ scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVide
   final packet, upload bundle, and final action board in one pass:
 
 ```powershell
-scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof -AllowDraft
 ```
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it

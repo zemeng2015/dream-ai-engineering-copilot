@@ -157,7 +157,7 @@ scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVid
 Last-day dashboard alternative:
 
 ```powershell
-scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>" -AllowDraft
+scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>" -RefreshAlibabaProof -AllowDraft
 ```
 
 10. Create final upload bundle:
