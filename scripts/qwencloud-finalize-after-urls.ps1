@@ -104,6 +104,21 @@ if ($AllowDraft) { $readinessArgs += "-AllowDraftPacket" }
 $allowedReadinessExitCodes = if ($AllowDraft) { @(0, 1) } else { @(0) }
 Invoke-Step -Name "final-readiness" -ArgumentList $readinessArgs -AllowedExitCodes $allowedReadinessExitCodes
 
+$actionBoardArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-final-action-board.ps1",
+    "-RepoUrl", $RepoUrl,
+    "-OutputDir", $OutputDir
+)
+if ($DemoVideoUrl) { $actionBoardArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $actionBoardArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $actionBoardArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($SkipExternalUrlChecks) { $actionBoardArgs += "-SkipExternalUrlChecks" }
+if ($AllowDraft) { $actionBoardArgs += "-AllowDraft" }
+$allowedActionBoardExitCodes = if ($AllowDraft) { @(0, 1) } else { @(0) }
+Invoke-Step -Name "final-action-board" -ArgumentList $actionBoardArgs -AllowedExitCodes $allowedActionBoardExitCodes
+
 $bundleArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",

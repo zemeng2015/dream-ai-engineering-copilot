@@ -95,6 +95,12 @@ scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-com
 
 This writes `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
 
+- Validate the Alibaba proof evidence chain:
+
+```powershell
+scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ## Step 4 - Demo video (about 1 minute)
 
 - Render the final upload video:
@@ -139,6 +145,12 @@ scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com
 
 ```powershell
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
+- Generate the final action board if any signal is still DRAFT:
+
+```powershell
+scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it

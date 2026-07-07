@@ -248,6 +248,9 @@ Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff
 Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false
 Add-LatestItem -Name "latest_video_upload_status_markdown" -Filter "video-upload-status-*.md"
 Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-status-*.json"
+Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
+Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"
+Add-LatestItem -Name "latest_final_action_board_json" -Filter "final-action-board-*.json"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath

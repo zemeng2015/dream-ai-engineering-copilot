@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       demoVideoUrl:
-        description: Public YouTube, Vimeo, Facebook Video, or fb.watch URL
+        description: Public YouTube, Vimeo, Facebook Video, fb.watch, or Youku URL
         required: true
         type: string
       backendUrl:
@@ -180,10 +180,12 @@ jobs:
           }
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-readiness.ps1 @common -AllowDraftPacket
           $readinessCode = $LASTEXITCODE
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-action-board.ps1 @common -SkipGitHubSecrets -AllowDraft
+          $actionBoardCode = $LASTEXITCODE
           & pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/qwencloud-final-upload-bundle.ps1 @common -AllowDraft
           $bundleCode = $LASTEXITCODE
-          if ($readinessCode -ne 0 -or $bundleCode -ne 0) {
-            throw "Final readiness or upload bundle remained DRAFT. readiness=$readinessCode bundle=$bundleCode"
+          if ($readinessCode -ne 0 -or $actionBoardCode -ne 0 -or $bundleCode -ne 0) {
+            throw "Final readiness/action board/upload bundle remained DRAFT. readiness=$readinessCode actionBoard=$actionBoardCode bundle=$bundleCode"
           }
 
       - name: Upload release artifacts

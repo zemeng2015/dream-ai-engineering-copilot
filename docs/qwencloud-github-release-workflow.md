@@ -45,7 +45,8 @@ secret values into its JSON or Markdown reports.
 
 ## Manual Run
 
-1. Upload the demo MP4 using `docs/qwencloud-video-upload-handoff.md`.
+1. Upload the demo MP4 using `docs/qwencloud-video-upload-handoff.md` to a
+   public YouTube, Vimeo, Facebook Video, `fb.watch`, or Youku URL.
 2. Open GitHub Actions, choose `Qwen Cloud Release`, and click `Run workflow`.
 3. Paste the public demo video URL.
 4. Leave `backendUrl` blank for a real deploy, or set it with `skipDeploy=true`
@@ -59,6 +60,7 @@ The workflow runs:
 - Docker login to Alibaba Container Registry.
 - `scripts/qwencloud-alibaba-release.ps1`.
 - Final readiness and final upload bundle generation.
+- Final action board generation when local diagnostics are needed.
 - Artifact upload for Devpost proof files and handoff files.
 
 The Alibaba proof screenshot step uses headless Chrome/Chromium. GitHub-hosted

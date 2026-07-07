@@ -47,6 +47,7 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-final-action-board.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
@@ -97,8 +98,12 @@ Alibaba proof integrity, artifact readiness, and final Devpost packet readiness.
 
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission
-files are all in one place. It also includes the latest deploy preflight report
-and Docker build/run logs when available.
+files are all in one place. It also includes the latest deploy preflight report,
+Docker build/run logs, and final action board when available.
+
+`qwencloud-final-action-board.ps1` runs video URL, cloud credential, GitHub
+secret, and final readiness checks, then emits one Markdown board with the next
+remaining action and whether Zack/action-time confirmation is required.
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the
 public video and deployed backend URLs are known. It runs the submission packet,
