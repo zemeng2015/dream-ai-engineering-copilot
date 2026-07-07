@@ -201,6 +201,13 @@ Render the separate Alibaba backend proof recording:
 scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
 ```
 
+Validate that the screenshot, proof recording, and captured `/health` evidence
+all point to the same Alibaba Cloud backend:
+
+```powershell
+scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
+```
+
 Regenerate the PNG architecture upload asset:
 
 ```powershell

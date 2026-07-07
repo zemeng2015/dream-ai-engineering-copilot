@@ -202,6 +202,48 @@ function Invoke-SubmissionPacket {
     }
 }
 
+function Invoke-AlibabaProofIntegrity {
+    if (-not (Test-Path "scripts/qwencloud-validate-alibaba-proof.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-validate-alibaba-proof.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "alibaba-proof-integrity-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-validate-alibaba-proof.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+
+    $stdout = Join-Path $OutputDir "final-readiness-alibaba-proof-integrity-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-alibaba-proof-integrity-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "alibaba-proof-integrity-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "integrity JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $proof = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($proof.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$proof.readyForDevpostAlibabaProof
+        details = if ($proof.readyForDevpostAlibabaProof) { "proof integrity READY: $($newest.FullName)" } else { "proof integrity DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 try {
     $gitStatus = @(git status --porcelain)
     Add-Check -Name "git_worktree_clean" -Ok ($gitStatus.Count -eq 0) -Details $(if ($gitStatus.Count -eq 0) { "clean" } else { "dirty" })
@@ -257,6 +299,7 @@ foreach ($path in @(
     ".github/workflows/qwencloud-release.yml",
     "docs/qwencloud-github-release-workflow.md",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
+    "scripts/qwencloud-validate-alibaba-proof.ps1",
     "scripts/qwencloud-hackathon-submission-packet.ps1"
 )) {
     $fileCheck = Test-File -Path $path
@@ -278,6 +321,9 @@ foreach ($path in @(
     $fileCheck = Test-File -Path $path
     Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
 }
+
+$proofIntegrity = Invoke-AlibabaProofIntegrity
+Add-Check -Name "alibaba_proof_integrity_ready" -Ok $proofIntegrity.ok -Details $proofIntegrity.details
 
 if (-not $SkipPacket) {
     $packetCheck = Invoke-SubmissionPacket

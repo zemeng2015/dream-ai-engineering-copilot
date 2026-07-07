@@ -251,6 +251,9 @@ Add-LatestItem -Name "latest_video_upload_status_json" -Filter "video-upload-sta
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
+Add-Item -Name "alibaba_proof_integrity_script" -Path "scripts/qwencloud-validate-alibaba-proof.ps1" -Required $false
+Add-LatestItem -Name "latest_alibaba_proof_integrity_markdown" -Filter "alibaba-proof-integrity-*.md"
+Add-LatestItem -Name "latest_alibaba_proof_integrity_json" -Filter "alibaba-proof-integrity-*.json"
 Add-Item -Name "devpost_packet_markdown" -Path $packet.markdown
 Add-Item -Name "devpost_packet_json" -Path $packet.json
 Add-Item -Name "devpost_handoff_markdown" -Path $handoff.markdown

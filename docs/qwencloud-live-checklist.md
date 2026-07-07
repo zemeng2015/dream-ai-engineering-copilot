@@ -14,6 +14,8 @@
   `scripts/qwencloud-video-upload-status.ps1`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] Alibaba deployment proof recording path reserved: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
+- [ ] Alibaba proof integrity script ready:
+  `scripts/qwencloud-validate-alibaba-proof.ps1`.
 - [ ] Devpost live draft open and editable:
   `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit`.
 - [ ] Chrome extension file upload permission enabled if using browser automation
@@ -84,6 +86,10 @@ Invoke-RestMethod -Method Post `
 - Render the separate Alibaba backend proof recording:
   ```powershell
   scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl <deployed-url>
+  ```
+- Validate the screenshot, proof recording, and captured `/health` evidence:
+  ```powershell
+  scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl <deployed-url>
   ```
 
 6. Save reproducible proof bundle:

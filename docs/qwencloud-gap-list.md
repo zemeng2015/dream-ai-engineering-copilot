@@ -18,6 +18,8 @@
 - Devpost submission packet generator that validates final URLs and produces
   copy/paste fields plus judge testing instructions.
 - Devpost-friendly architecture PNG upload asset and reproducible export script.
+- Alibaba proof integrity gate that validates the capture JSON, screenshot,
+  proof recording, and backend URL as one evidence chain.
 - Blog/social build journey draft for optional bonus eligibility.
 - Focused backend tests and lint for the Qwen integration.
 

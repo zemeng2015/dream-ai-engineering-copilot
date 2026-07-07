@@ -147,6 +147,60 @@ function Test-HttpReachable([string]$Url) {
     }
 }
 
+function Get-PowerShellExe {
+    $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+    if ($pwsh) { return $pwsh.Source }
+
+    $powershell = Get-Command "powershell" -ErrorAction SilentlyContinue
+    if ($powershell) { return $powershell.Source }
+
+    throw "PowerShell executable not found."
+}
+
+function Invoke-AlibabaProofIntegrity {
+    if (-not (Test-Path "scripts/qwencloud-validate-alibaba-proof.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-validate-alibaba-proof.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "alibaba-proof-integrity-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-validate-alibaba-proof.ps1",
+        "-OutputDir", $OutputDir,
+        "-ScreenshotPath", $AlibabaScreenshotPath,
+        "-ProofVideoPath", $AlibabaProofVideoPath,
+        "-AllowDraft"
+    )
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+
+    $stdout = Join-Path $OutputDir "submission-packet-alibaba-proof-integrity-$timestamp.out"
+    $stderr = Join-Path $OutputDir "submission-packet-alibaba-proof-integrity-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "alibaba-proof-integrity-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) {
+        $newest = @($after | Select-Object -First 1)
+    }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "integrity JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $proof = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($proof.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$proof.readyForDevpostAlibabaProof
+        details = if ($proof.readyForDevpostAlibabaProof) { "proof integrity READY: $($newest.FullName)" } else { "proof integrity DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Test-UploadAsset([string]$Path, [string[]]$Extensions, [int]$MaxMb) {
     if (-not (Test-Path $Path)) {
         return [pscustomobject]@{
@@ -245,6 +299,7 @@ $requiredPaths = @(
     "scripts/qwencloud-alibaba-release.ps1",
     "scripts/qwencloud-capture-alibaba-proof.ps1",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
+    "scripts/qwencloud-validate-alibaba-proof.ps1",
     "scripts/qwencloud-export-architecture-png.ps1",
     "scripts/qwencloud-finalize-after-urls.ps1",
     "scripts/qwencloud-deploy-preflight.ps1",
@@ -298,6 +353,9 @@ else {
     Add-Check -Name "alibaba_proof_video_duration" -Ok $false -Details "ffprobe unavailable or proof video missing"
     Add-Check -Name "alibaba_proof_video_resolution" -Ok $false -Details "ffprobe unavailable or proof video missing"
 }
+
+$alibabaProofIntegrity = Invoke-AlibabaProofIntegrity
+Add-Check -Name "alibaba_proof_integrity_ready" -Ok $alibabaProofIntegrity.ok -Details $alibabaProofIntegrity.details
 
 $videoExists = Test-Path $LocalVideoPath
 Add-Check -Name "local_video_exists" -Ok $videoExists -Details $LocalVideoPath -Required $false

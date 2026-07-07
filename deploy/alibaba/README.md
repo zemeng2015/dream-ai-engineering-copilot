@@ -84,3 +84,10 @@ scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-com
 
 The proof recording is written to
 `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`.
+
+Validate that the screenshot, proof recording, and captured health metadata all
+come from the same Alibaba Cloud backend:
+
+```powershell
+scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
+```

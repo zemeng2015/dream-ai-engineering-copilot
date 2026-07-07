@@ -37,6 +37,7 @@ scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
@@ -79,6 +80,10 @@ and renders the Devpost-required Alibaba deployment screenshot.
 `qwencloud-render-alibaba-proof-video.ps1` verifies the same backend proof and
 renders a separate short Alibaba deployment proof recording.
 
+`qwencloud-validate-alibaba-proof.ps1` checks the latest Alibaba capture JSON,
+deployment screenshot, proof recording, and backend URL for one consistent
+Alibaba Cloud Function Compute evidence chain.
+
 `qwencloud-export-architecture-png.ps1` regenerates the Devpost-friendly PNG
 architecture upload asset from the source SVG.
 
@@ -88,7 +93,7 @@ health proof, Alibaba screenshot/video readiness, and copy/paste Devpost text.
 
 `qwencloud-final-readiness.ps1` is the final submit dashboard. It checks clean
 git state, remote sync, latest CI, local tools, cloud env, Serverless Devs,
-artifact readiness, and final Devpost packet readiness.
+Alibaba proof integrity, artifact readiness, and final Devpost packet readiness.
 
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission

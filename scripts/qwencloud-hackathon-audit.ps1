@@ -24,6 +24,8 @@ param(
         "scripts/qwencloud-final-upload-bundle.ps1",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-render-alibaba-proof-video.ps1",
+        "scripts/qwencloud-validate-alibaba-proof.ps1",
+        "scripts/qwencloud-video-upload-status.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",

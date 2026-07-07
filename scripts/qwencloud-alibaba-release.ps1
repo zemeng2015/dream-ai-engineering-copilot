@@ -144,7 +144,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 }
 
 try {
-    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-cloud-credentials-handoff.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
+    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-validate-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-cloud-credentials-handoff.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required release file missing: $path"
         }
@@ -258,6 +258,14 @@ try {
             $proofVideoArgs += "-IncludeDraft"
         }
         Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $proofVideoArgs -Name "render-alibaba-proof-video" | Out-Null
+    }
+
+    if ($SkipScreenshot -or $SkipProofVideo) {
+        Add-Step -Name "validate_alibaba_proof_integrity" -Status "skipped" -Details "requires screenshot and proof video"
+    }
+    else {
+        $integrityArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-validate-alibaba-proof.ps1", "-BackendUrl", $effectiveBackendUrl)
+        Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $integrityArgs -Name "validate-alibaba-proof-integrity" | Out-Null
     }
 
     $packetArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-submission-packet.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
