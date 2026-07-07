@@ -155,6 +155,20 @@ else {
     Add-Step -Name "refresh-alibaba-proof" -Ok $true -Details "skipped: pass -RefreshAlibabaProof after backend URL is live"
 }
 
+$liveInputsArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-live-inputs-intake.ps1",
+    "-OutputDir", $OutputDir
+)
+if ($DemoVideoUrl) { $liveInputsArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $liveInputsArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $liveInputsArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $liveInputsArgs += @("-EnvFile", $EnvFile) }
+if ($SkipExternalUrlChecks) { $liveInputsArgs += "-SkipExternalUrlChecks" }
+if ($AllowDraft) { $liveInputsArgs += "-AllowDraft" }
+Invoke-Step -Name "live-inputs-intake" -ArgumentList $liveInputsArgs
+
 $packetArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -220,6 +234,7 @@ if ($AllowDraft) { $bundleArgs += "-AllowDraft" }
 Invoke-Step -Name "final-upload-bundle" -ArgumentList $bundleArgs
 
 $packetJsonFile = Get-NewestFile -Filter "devpost-submission-packet-*.json"
+$liveInputsJsonFile = Get-NewestFile -Filter "live-inputs-intake-*.json"
 $readinessJsonFile = Get-NewestFile -Filter "final-readiness-*.json"
 $officialSourceJsonFile = Get-NewestFile -Filter "official-source-refresh-*.json"
 $bundleManifestJsonFile = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
@@ -258,6 +273,7 @@ $result = [ordered]@{
     alibabaScreenshotPath = $AlibabaScreenshotPath
     alibabaProofVideoPath = $AlibabaProofVideoPath
     officialSourceJson = if ($officialSourceJsonFile) { $officialSourceJsonFile.FullName } else { $null }
+    liveInputsJson = if ($liveInputsJsonFile) { $liveInputsJsonFile.FullName } else { $null }
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
     bundleManifestJson = if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { $null }
@@ -279,6 +295,7 @@ $lines = @(
     "- Refresh Alibaba proof: $([bool]$RefreshAlibabaProof)",
     "- Alibaba screenshot: $AlibabaScreenshotPath",
     "- Alibaba proof video: $AlibabaProofVideoPath",
+    "- Live inputs intake: $(if ($liveInputsJsonFile) { $liveInputsJsonFile.FullName } else { '<missing>' })",
     "- Bundle zip: $(if ($bundleManifest) { $bundleManifest.zipPath } else { '<missing>' })",
     "",
     "## Steps",

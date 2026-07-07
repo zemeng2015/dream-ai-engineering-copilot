@@ -74,6 +74,9 @@ def test_live_inputs_intake_registered_in_final_submission_flow() -> None:
         "docs/qwencloud-final-5min-checklist.md",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
+        "scripts/qwencloud-final-action-board.ps1",
+        "scripts/qwencloud-final-sprint.ps1",
+        "scripts/qwencloud-finalize-after-urls.ps1",
     ]:
         assert script_path in (ROOT / path).read_text(encoding="utf-8-sig")
 
@@ -87,3 +90,21 @@ def test_live_inputs_intake_registered_in_final_submission_flow() -> None:
     assert "live_inputs_intake_ready" in final_bundle
     assert "live_inputs_intake_markdown" in final_bundle
     assert "live_inputs_intake_json" in final_bundle
+
+    final_action_board = (
+        ROOT / "scripts" / "qwencloud-final-action-board.ps1"
+    ).read_text(encoding="utf-8-sig")
+    final_sprint = (ROOT / "scripts" / "qwencloud-final-sprint.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    finalize_after_urls = (
+        ROOT / "scripts" / "qwencloud-finalize-after-urls.ps1"
+    ).read_text(encoding="utf-8-sig")
+    assert "live-inputs-intake" in final_action_board
+    assert "liveInputsReady" in final_action_board
+    assert "Collect live submission inputs" in final_action_board
+    assert "final-sprint-live-inputs-intake" in final_sprint
+    assert "liveInputsReady" in final_sprint
+    assert "Collect live submission inputs" in final_sprint
+    assert "live-inputs-intake" in finalize_after_urls
+    assert "liveInputsJson" in finalize_after_urls

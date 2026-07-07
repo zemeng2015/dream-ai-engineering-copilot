@@ -190,6 +190,20 @@ if ($BackendUrl) { $cloudArgs += @("-BackendUrl", $BackendUrl) }
 if ($EnvFile) { $cloudArgs += @("-EnvFile", $EnvFile) }
 Invoke-SprintStep -Name "final-sprint-cloud-handoff" -Arguments $cloudArgs | Out-Null
 
+$liveInputsArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-live-inputs-intake.ps1",
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $liveInputsArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $liveInputsArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $liveInputsArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $liveInputsArgs += @("-EnvFile", $EnvFile) }
+if ($SkipExternalUrlChecks) { $liveInputsArgs += "-SkipExternalUrlChecks" }
+Invoke-SprintStep -Name "final-sprint-live-inputs-intake" -Arguments $liveInputsArgs | Out-Null
+
 $githubArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -276,6 +290,7 @@ Invoke-SprintStep -Name "final-sprint-action-board" -Arguments $actionBoardArgs 
 $video = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublication = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
+$liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
 $finalize = Read-LatestJson -Filter "finalize-after-urls-*.json"
@@ -308,6 +323,7 @@ $signals = [ordered]@{
     publicDemoVideoReady = [bool]($video.data -and $video.data.readyForDevpostVideoField)
     videoPublicationHandoffReady = [bool]($videoPublication.data -and $videoPublication.data.readyForManualUpload)
     cloudReleaseReady = [bool]($cloud.data -and $cloud.data.readyForCloudRelease)
+    liveInputsReady = [bool]($liveInputs.data -and $liveInputs.data.readyForLiveInputs)
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
@@ -333,6 +349,15 @@ if (-not $signals.cloudReleaseReady) {
         -Name "Configure Alibaba/Qwen local release env" `
         -Reason "Deployment cannot run until the local env file and Serverless Devs default access are configured." `
         -Command 'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft' `
+        -RequiresZackConfirmation $true
+}
+
+if (-not $signals.liveInputsReady) {
+    $liveMissing = if ($liveInputs.data) { @($liveInputs.data.missingRequiredChecks) -join ', ' } else { "live inputs intake report missing" }
+    Add-NextAction `
+        -Name "Collect live submission inputs" `
+        -Reason "The live inputs gate is still DRAFT: $liveMissing." `
+        -Command 'scripts/qwencloud-live-inputs-intake.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"' `
         -RequiresZackConfirmation $true
 }
 
@@ -408,6 +433,7 @@ $result = [ordered]@{
         videoUploadStatusJson = $video.file
         videoPublicationHandoffJson = $videoPublication.file
         cloudCredentialsHandoffJson = $cloud.file
+        liveInputsIntakeJson = $liveInputs.file
         githubSecretsHandoffJson = $github.file
         alibabaReleaseJson = $release.file
         finalizeAfterUrlsJson = $finalize.file
@@ -462,6 +488,7 @@ $lines += @(
     "- Video upload status: $(if ($video.file) { $video.file } else { '<missing>' })",
     "- Video publication handoff: $(if ($videoPublication.file) { $videoPublication.file } else { '<missing>' })",
     "- Cloud credentials handoff: $(if ($cloud.file) { $cloud.file } else { '<missing>' })",
+    "- Live inputs intake: $(if ($liveInputs.file) { $liveInputs.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",
     "- Finalize after URLs: $(if ($finalize.file) { $finalize.file } else { '<missing>' })",

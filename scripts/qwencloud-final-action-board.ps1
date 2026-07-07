@@ -137,6 +137,20 @@ if ($BackendUrl) { $cloudArgs += @("-BackendUrl", $BackendUrl) }
 if ($EnvFile) { $cloudArgs += @("-EnvFile", $EnvFile) }
 Invoke-BoardStep -Name "cloud-credentials-handoff" -Arguments $cloudArgs
 
+$liveInputsArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-live-inputs-intake.ps1",
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $liveInputsArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $liveInputsArgs += @("-BackendUrl", $BackendUrl) }
+if ($BlogPostUrl) { $liveInputsArgs += @("-BlogPostUrl", $BlogPostUrl) }
+if ($EnvFile) { $liveInputsArgs += @("-EnvFile", $EnvFile) }
+if ($SkipExternalUrlChecks) { $liveInputsArgs += "-SkipExternalUrlChecks" }
+Invoke-BoardStep -Name "live-inputs-intake" -Arguments $liveInputsArgs
+
 if ($SkipGitHubSecrets) {
     Add-Step -Name "github-secrets-handoff" -ExitCode 0 -Details "skipped by -SkipGitHubSecrets"
 }
@@ -172,6 +186,7 @@ Invoke-BoardStep -Name "final-readiness" -Arguments $readinessArgs -AllowedExitC
 $videoReport = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublicationReport = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloudReport = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
+$liveInputsReport = Read-LatestJson -Filter "live-inputs-intake-*.json"
 $secretsReport = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $officialRulesReport = Read-LatestJson -Filter "official-rules-gate-*.json"
 $readinessReport = Read-LatestJson -Filter "final-readiness-*.json"
@@ -179,6 +194,7 @@ $readinessReport = Read-LatestJson -Filter "final-readiness-*.json"
 $videoReady = [bool]($videoReport.data -and $videoReport.data.readyForDevpostVideoField)
 $videoPublicationReady = [bool]($videoPublicationReport.data -and $videoPublicationReport.data.readyForManualUpload)
 $cloudReady = [bool]($cloudReport.data -and $cloudReport.data.readyForCloudRelease)
+$liveInputsReady = [bool]($liveInputsReport.data -and $liveInputsReport.data.readyForLiveInputs)
 $secretsReady = [bool]($SkipGitHubSecrets -or ($secretsReport.data -and $secretsReport.data.readyForGitHubReleaseWorkflow))
 $officialRulesReady = [bool]($officialRulesReport.data -and $officialRulesReport.data.readyForOfficialRules)
 $finalReady = [bool]($readinessReport.data -and $readinessReport.data.readyForFinalSubmit)
@@ -211,6 +227,16 @@ if (-not $cloudReady) {
         'scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
         's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
         'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
+    )
+}
+
+if (-not $liveInputsReady) {
+    $liveMissing = if ($liveInputsReport.data) { @($liveInputsReport.data.missingRequiredChecks) -join ', ' } else { "live inputs intake report missing" }
+    Add-Action -Name "Collect live submission inputs" -Reason "Live inputs intake is not READY: $liveMissing." -RequiresUser $true -Commands @(
+        'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
+        "# Fill .env.qwencloud.local locally; do not commit it.",
+        'scripts/qwencloud-live-inputs-intake.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+        'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -RefreshAlibabaProof'
     )
 }
 
@@ -279,6 +305,7 @@ $result = [ordered]@{
         videoUploadStatus = $videoReport.file
         videoPublicationHandoff = $videoPublicationReport.file
         cloudCredentialsHandoff = $cloudReport.file
+        liveInputsIntake = $liveInputsReport.file
         githubSecretsHandoff = if ($SkipGitHubSecrets) { "<skipped>" } else { $secretsReport.file }
         finalReadiness = $readinessReport.file
         officialRulesGate = $officialRulesReport.file
@@ -287,6 +314,7 @@ $result = [ordered]@{
         videoReady = $videoReady
         videoPublicationHandoffReady = $videoPublicationReady
         cloudReady = $cloudReady
+        liveInputsReady = $liveInputsReady
         githubSecretsReady = $secretsReady
         githubSecretsSkipped = [bool]$SkipGitHubSecrets
         localVideoChecksSkipped = [bool]$SkipLocalVideoChecks
@@ -319,6 +347,7 @@ $lines = @(
     "| Video URL | $(if ($videoReady) { 'yes' } else { 'no' }) |",
     "| Video publication handoff | $(if ($videoPublicationReady) { 'yes' } else { 'no' }) |",
     "| Local cloud release env | $(if ($cloudReady) { 'yes' } else { 'no' }) |",
+    "| Live inputs intake | $(if ($liveInputsReady) { 'yes' } else { 'no' }) |",
     "| GitHub release secrets | $(if ($SkipGitHubSecrets) { 'skipped' } elseif ($secretsReady) { 'yes' } else { 'no' }) |",
     "| Latest CI | $(if ($ciCheck -and $ciCheck.ok) { 'yes' } else { 'no' }) |",
     "| Docker deploy preflight | $(if ($deployPreflightCheck -and $deployPreflightCheck.ok) { 'yes' } else { 'no' }) |",
@@ -331,6 +360,7 @@ $lines = @(
     "- Video status: $(if ($videoReport.file) { $videoReport.file } else { '<missing>' })",
     "- Video publication handoff: $(if ($videoPublicationReport.file) { $videoPublicationReport.file } else { '<missing>' })",
     "- Cloud credentials: $(if ($cloudReport.file) { $cloudReport.file } else { '<missing>' })",
+    "- Live inputs intake: $(if ($liveInputsReport.file) { $liveInputsReport.file } else { '<missing>' })",
     "- GitHub secrets: $(if ($SkipGitHubSecrets) { '<skipped>' } elseif ($secretsReport.file) { $secretsReport.file } else { '<missing>' })",
     "- Official rules gate: $(if ($officialRulesReport.file) { $officialRulesReport.file } else { '<missing>' })",
     "- Final readiness: $(if ($readinessReport.file) { $readinessReport.file } else { '<missing>' })",
