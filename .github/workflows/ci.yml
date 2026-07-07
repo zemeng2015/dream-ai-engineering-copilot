@@ -22,32 +22,9 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest
-      - name: Start Qwen mode API
-        env:
-          DREAM_CONFIG_FILE: examples/config/dream.qwen.yaml
-          QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-          QWEN_MODEL: qwen3.7-plus
-        run: |
-          mkdir -p artifacts/qwencloud-proof
-          python -m uvicorn dream.api.app:app --host 127.0.0.1 --port 8000 > artifacts/qwencloud-proof/ci-api.log 2>&1 &
-          echo $! > artifacts/qwencloud-proof/ci-api.pid
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:8000/health; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat artifacts/qwencloud-proof/ci-api.log
-          exit 1
-      - name: Hackathon audit
+      - name: Local Qwen proof runner
         shell: pwsh
-        run: ./scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://127.0.0.1:8000 -SkipDraft
-      - name: Stop Qwen mode API
-        if: always()
-        run: |
-          if [ -f artifacts/qwencloud-proof/ci-api.pid ]; then
-            kill "$(cat artifacts/qwencloud-proof/ci-api.pid)" || true
-          fi
+        run: ./scripts/qwencloud-run-local-proof.ps1 -SkipDraft
       - name: Upload hackathon proof artifacts
         if: always()
         uses: actions/upload-artifact@v4

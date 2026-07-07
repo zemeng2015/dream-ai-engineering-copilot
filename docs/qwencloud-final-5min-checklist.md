@@ -21,6 +21,12 @@ scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 ```
 
+One-command local alternative:
+
+```powershell
+scripts/qwencloud-run-local-proof.ps1
+```
+
 - Confirm output includes:
   - `llm_provider: qwen-cloud`
   - `track: Track 1: MemoryAgent`

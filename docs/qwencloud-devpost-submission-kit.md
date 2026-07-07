@@ -15,6 +15,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-demo-video-script.md`
   - `docs/assets/qwencloud-architecture.png`
   - `scripts/qwencloud-alibaba-release.ps1`
+  - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
@@ -61,6 +62,12 @@ Run preflight before a real deployment:
 
 ```powershell
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
+Run local proof without manually opening a second shell:
+
+```powershell
+scripts/qwencloud-run-local-proof.ps1
 ```
 
 Or use the full release orchestrator after credentials, registry login, and
@@ -141,5 +148,6 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 - `scripts/qwencloud-hackathon-submission-packet.ps1`
 - `scripts/qwencloud-alibaba-release.ps1`
+- `scripts/qwencloud-run-local-proof.ps1`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`

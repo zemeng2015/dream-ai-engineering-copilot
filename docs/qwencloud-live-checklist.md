@@ -11,6 +11,7 @@
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
+- [ ] One-command local proof script present: `scripts/qwencloud-run-local-proof.ps1`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 
 ## Runbook (submission window)
@@ -71,6 +72,12 @@ Invoke-RestMethod -Method Post `
 
 ```powershell
 scripts/qwencloud-hackathon-proof.ps1 -BaseUrl <deployed-url>
+```
+
+For local proof before deploy, run:
+
+```powershell
+scripts/qwencloud-run-local-proof.ps1
 ```
 
 Optional strict gate (health + draft + field checks):

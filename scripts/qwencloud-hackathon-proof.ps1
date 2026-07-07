@@ -2,7 +2,8 @@ param(
     [string]$BaseUrl = "http://localhost:8000",
     [string]$TeamId = "demo_team",
     [string]$Request = "Users need to know why a forecast job is stuck running",
-    [string]$OutputDir = "artifacts/qwencloud-proof"
+    [string]$OutputDir = "artifacts/qwencloud-proof",
+    [switch]$SkipDraft
 )
 
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
@@ -25,23 +26,29 @@ try {
     $health = Invoke-RestMethod -Method Get -Uri "$BaseUrl/health" -TimeoutSec 20 -ErrorAction Stop
     Save-Json -Path $healthPath -Payload $health
 
-    Write-Host "Collecting draft proof..."
-    $body = @{
-        team_id = $TeamId
-        rough_business_request = $Request
-        llm_provider = "qwen-cloud"
-    } | ConvertTo-Json
-    $draft = Invoke-RestMethod -Method Post `
-        -Uri "$BaseUrl/requirements/draft" `
-        -Body $body `
-        -ContentType "application/json" `
-        -TimeoutSec 30 `
-        -ErrorAction Stop
-    Save-Json -Path $draftPath -Payload $draft
+    if (-not $SkipDraft) {
+        Write-Host "Collecting draft proof..."
+        $body = @{
+            team_id = $TeamId
+            rough_business_request = $Request
+            llm_provider = "qwen-cloud"
+        } | ConvertTo-Json
+        $draft = Invoke-RestMethod -Method Post `
+            -Uri "$BaseUrl/requirements/draft" `
+            -Body $body `
+            -ContentType "application/json" `
+            -TimeoutSec 30 `
+            -ErrorAction Stop
+        Save-Json -Path $draftPath -Payload $draft
+    }
 
     Write-Host "Proof package created:"
     Write-Host "  health:    $healthPath"
-    Write-Host "  draft:     $draftPath"
+    if ($SkipDraft) {
+        Write-Host "  draft:     skipped"
+    } else {
+        Write-Host "  draft:     $draftPath"
+    }
 } catch {
     Write-Error "Proof collection failed: $($_.Exception.Message)"
     exit 1

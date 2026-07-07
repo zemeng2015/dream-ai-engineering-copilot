@@ -28,6 +28,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 
 ```powershell
 scripts/qwencloud-hackathon-smoke.ps1
+scripts/qwencloud-run-local-proof.ps1
 scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
@@ -49,6 +50,13 @@ requirement-draft success (unless `-SkipDraft` is set).
 
 `qwencloud-hackathon-audit.ps1` adds a one-command pre-submit checklist:
 repo/docs presence, public repo license visibility checks, and endpoint checks.
+
+`qwencloud-run-local-proof.ps1` starts an isolated local Qwen-mode API,
+waits for hackathon `/health` proof, runs verify/proof/submit gate/audit, and
+then stops the API process.
+
+Use `-AllowDirty` only while developing local changes; omit it for the final
+pre-submit proof so the audit enforces a clean pushed worktree.
 
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
 and local container smoke before the image is pushed to Container Registry.

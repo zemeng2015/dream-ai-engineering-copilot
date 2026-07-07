@@ -20,6 +20,7 @@ param(
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",
+        "scripts/qwencloud-run-local-proof.ps1",
         "scripts/qwencloud-hackathon-submission-packet.ps1",
         "scripts/qwencloud-render-demo-video.ps1",
         "examples/config/dream.qwen.yaml",
@@ -28,7 +29,8 @@ param(
     [string]$TeamId = "demo_team",
     [string]$Request = "Users need to know why a forecast job is stuck running",
     [string]$OutputDir = "artifacts/qwencloud-proof",
-    [switch]$SkipDraft
+    [switch]$SkipDraft,
+    [switch]$AllowDirty
 )
 
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
@@ -91,7 +93,9 @@ $checks = @()
 
 try {
     $gitStatus = git status --porcelain
-    Add-Check -Name "Git working tree clean" -Pass ($gitStatus.Count -eq 0) -Details ($(if ($gitStatus.Count -eq 0) {"clean"} else {"dirty"}) )
+    $cleanOrAllowed = ($gitStatus.Count -eq 0) -or $AllowDirty
+    $gitDetails = if ($gitStatus.Count -eq 0) { "clean" } elseif ($AllowDirty) { "dirty allowed" } else { "dirty" }
+    Add-Check -Name "Git working tree clean" -Pass $cleanOrAllowed -Details $gitDetails
 } catch {
     Add-Check -Name "Git working tree clean" -Pass $false -Details $_.Exception.Message
 }

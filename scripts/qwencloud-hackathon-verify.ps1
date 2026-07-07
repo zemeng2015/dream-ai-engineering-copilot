@@ -1,5 +1,6 @@
 param(
-    [string]$BaseUrl = "http://localhost:8000"
+    [string]$BaseUrl = "http://localhost:8000",
+    [switch]$SkipDraft
 )
 
 function Assert-JsonField {
@@ -34,6 +35,11 @@ if ($health.proof_file -notmatch "deploy/alibaba/serverless-devs.yaml") {
 }
 
 Write-Output "Health proof passed."
+
+if ($SkipDraft) {
+    Write-Output "Draft proof skipped."
+    exit 0
+}
 
 $draftBody = @{
     team_id = "demo_team"

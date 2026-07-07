@@ -150,6 +150,12 @@ scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 ```
 
+Or run the local proof flow on an isolated port:
+
+```powershell
+scripts/qwencloud-run-local-proof.ps1
+```
+
 Key submission artifacts:
 
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)
