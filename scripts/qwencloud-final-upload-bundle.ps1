@@ -126,6 +126,20 @@ function Get-PowerShellExe {
     throw "PowerShell executable not found."
 }
 
+function Invoke-GitText([string[]]$Arguments) {
+    try {
+        $output = & git @Arguments 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return ""
+        }
+
+        return (($output | Out-String).Trim())
+    }
+    catch {
+        return ""
+    }
+}
+
 function Invoke-Packet {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -402,11 +416,24 @@ Add-LatestItem -Name "latest_docker_run_stdout" -Filter "docker-run-*.out"
 Add-LatestItem -Name "latest_docker_run_stderr" -Filter "docker-run-*.err"
 
 $ready = $missing.Count -eq 0
+$gitCommit = Invoke-GitText -Arguments @("rev-parse", "HEAD")
+$gitBranch = Invoke-GitText -Arguments @("rev-parse", "--abbrev-ref", "HEAD")
+$gitStatus = Invoke-GitText -Arguments @("status", "--porcelain")
+$gitBranchLine = (Invoke-GitText -Arguments @("status", "-sb") -split "`r?`n" | Select-Object -First 1)
+$gitWorktreeClean = [string]::IsNullOrWhiteSpace($gitStatus)
+$gitRemoteSynced = (-not [string]::IsNullOrWhiteSpace($gitBranchLine)) -and
+    ($gitBranchLine -match "\.\.\.") -and
+    ($gitBranchLine -notmatch "\[(ahead|behind)")
+
 $manifest = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
     readyForUpload = $ready
     allowDraft = [bool]$AllowDraft
     repoUrl = $RepoUrl
+    gitCommit = $gitCommit
+    gitBranch = $gitBranch
+    gitWorktreeClean = $gitWorktreeClean
+    gitRemoteSynced = $gitRemoteSynced
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
@@ -424,6 +451,10 @@ $lines = @(
     "",
     "- Ready for upload: $ready",
     "- Repo: $RepoUrl",
+    "- Git commit: $(if ($gitCommit) { $gitCommit } else { '<unknown>' })",
+    "- Git branch: $(if ($gitBranch) { $gitBranch } else { '<unknown>' })",
+    "- Git worktree clean: $gitWorktreeClean",
+    "- Git remote synced: $gitRemoteSynced",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
