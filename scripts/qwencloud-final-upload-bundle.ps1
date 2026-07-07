@@ -280,6 +280,53 @@ function Invoke-DraftPayload {
     }
 }
 
+function Invoke-AutofillSnippet([string]$PayloadJson) {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-autofill-snippet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $payloadJsonArg = $PayloadJson
+    try {
+        $payloadJsonArg = Resolve-Path -LiteralPath $PayloadJson -Relative
+    }
+    catch {
+        $payloadJsonArg = $PayloadJson
+    }
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-devpost-autofill-snippet.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-PayloadJson", $payloadJsonArg,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-autofill-snippet-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-autofill-snippet-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Devpost autofill snippet generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-autofill-snippet-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Devpost autofill snippet JSON was not found."
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [string]$data.markdown
+        javascript = [string]$data.snippetJavaScript
+        ready = [bool]$data.readyForAutofillSnippet
+    }
+}
+
 function Invoke-JudgingScorecard {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "judging-scorecard-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -404,6 +451,7 @@ function Invoke-CloudCredentialsHandoff {
 $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
+$autofillSnippet = Invoke-AutofillSnippet -PayloadJson $draftPayload.json
 $judgingScorecard = Invoke-JudgingScorecard
 $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
@@ -413,6 +461,7 @@ Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullO
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
 Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
 Add-ExternalRequirement -Name "devpost_draft_payload_ready" -Ok $draftPayload.ready -Details $(if ($draftPayload.ready) { "READY" } else { "DRAFT; publicTextReady=$($draftPayload.publicTextReady); missing=$($draftPayload.failures -join ', ')" })
+Add-ExternalRequirement -Name "devpost_autofill_snippet_ready" -Ok $autofillSnippet.ready -Details $(if ($autofillSnippet.ready) { "READY" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "judging_scorecard_ready" -Ok $judgingScorecard.ready -Details $(if ($judgingScorecard.ready) { "READY" } else { "DRAFT; missing=$($judgingScorecard.missing -join ', ')" })
 Add-ExternalRequirement -Name "official_rules_gate_ready" -Ok $officialRulesGate.ready -Details $(if ($officialRulesGate.ready) { "READY" } else { "DRAFT; missing=$($officialRulesGate.missing -join ', ')" })
 Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandoff.ready -Details $(if ($cloudHandoff.ready) { "READY" } else { "DRAFT; missing=$($cloudHandoff.blockers -join ', ')" }) -Required $false
@@ -441,6 +490,10 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "devpost_draft_payload_markdown" -Path $draftPayload.markdown
 Add-Item -Name "devpost_draft_payload_json" -Path $draftPayload.json
 Add-Item -Name "devpost_draft_payload_script" -Path "scripts/qwencloud-devpost-draft-payload.ps1" -Required $false
+Add-Item -Name "devpost_autofill_snippet_markdown" -Path $autofillSnippet.markdown
+Add-Item -Name "devpost_autofill_snippet_json" -Path $autofillSnippet.json
+Add-Item -Name "devpost_autofill_snippet_javascript" -Path $autofillSnippet.javascript
+Add-Item -Name "devpost_autofill_snippet_script" -Path "scripts/qwencloud-devpost-autofill-snippet.ps1" -Required $false
 Add-Item -Name "official_rules_gate_markdown" -Path $officialRulesGate.markdown
 Add-Item -Name "official_rules_gate_json" -Path $officialRulesGate.json
 Add-Item -Name "official_rules_gate_script" -Path "scripts/qwencloud-official-rules-gate.ps1" -Required $false

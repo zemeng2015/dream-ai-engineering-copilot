@@ -46,6 +46,7 @@ scripts/qwencloud-hackathon-submit-gate.ps1
 scripts/qwencloud-hackathon-audit.ps1
 scripts/qwencloud-official-rules-gate.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
+scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
@@ -133,6 +134,11 @@ status report.
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and
 next commands for the final Devpost form.
+
+`qwencloud-devpost-autofill-snippet.ps1` generates a local browser-console
+JavaScript snippet from the draft payload. It fills only non-legal public
+text/link fields and does not upload files, check legal attestations, save the
+draft, or submit.
 
 `qwencloud-post-submit-verification.ps1` is the final proof script after
 Devpost submit. It verifies the public Devpost project page, public demo video,

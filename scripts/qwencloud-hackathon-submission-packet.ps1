@@ -277,6 +277,7 @@ $deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deplo
 $qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
 $buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
 $testingAndRightsNotesUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-testing-and-rights-notes.md"
+$devpostAutofillSnippetScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-devpost-autofill-snippet.ps1"
 $judgingScorecardScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-judging-scorecard.ps1"
 $officialRulesGateScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-official-rules-gate.ps1"
 $ciUrl = "$repoUsed/actions/workflows/ci.yml"
@@ -310,6 +311,7 @@ $requiredPaths = @(
     "scripts/qwencloud-final-readiness.ps1",
     "scripts/qwencloud-final-upload-bundle.ps1",
     "scripts/qwencloud-devpost-draft-payload.ps1",
+    "scripts/qwencloud-devpost-autofill-snippet.ps1",
     "scripts/qwencloud-judging-scorecard.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
@@ -474,6 +476,7 @@ $packet = [ordered]@{
         qwenConfig = $qwenConfigUrl
         buildJourneyDraft = $buildJourneyDraftUrl
         testingAndRightsNotes = $testingAndRightsNotesUrl
+        devpostAutofillSnippetScript = $devpostAutofillSnippetScriptUrl
         judgingScorecardScript = $judgingScorecardScriptUrl
         officialRulesGateScript = $officialRulesGateScriptUrl
         ci = $ciUrl
@@ -512,6 +515,7 @@ $md = @(
     "- Deploy preflight script: $deployPreflightUrl",
     "- Qwen mode config: $qwenConfigUrl",
     "- Testing and rights notes: $testingAndRightsNotesUrl",
+    "- Devpost autofill snippet generator: $devpostAutofillSnippetScriptUrl",
     "- Judging scorecard generator: $judgingScorecardScriptUrl",
     "- Official rules gate: $officialRulesGateScriptUrl",
     "- Blog/social build journey draft: $buildJourneyDraftUrl",

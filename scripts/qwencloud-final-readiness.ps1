@@ -414,6 +414,7 @@ foreach ($path in @(
     "scripts/qwencloud-validate-alibaba-proof.ps1",
     "scripts/qwencloud-hackathon-submission-packet.ps1",
     "scripts/qwencloud-devpost-draft-payload.ps1",
+    "scripts/qwencloud-devpost-autofill-snippet.ps1",
     "scripts/qwencloud-judging-scorecard.ps1"
 )) {
     $fileCheck = Test-File -Path $path

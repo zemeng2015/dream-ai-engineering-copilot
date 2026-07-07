@@ -229,6 +229,12 @@ Generate a local Devpost handoff page with copy fields and upload paths:
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 ```
 
+Generate a local console snippet for non-legal Devpost text/link fields:
+
+```powershell
+scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
+```
+
 Upload the rendered MP4 using the video handoff:
 
 ```text

@@ -22,6 +22,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
   - `scripts/qwencloud-cloud-credentials-handoff.ps1`
   - `scripts/qwencloud-devpost-handoff.ps1`
+  - `scripts/qwencloud-devpost-autofill-snippet.ps1`
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
@@ -119,6 +120,13 @@ Generate a local browser handoff with copy fields, blockers, and upload paths:
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 ```
 
+Generate a local browser-console autofill snippet for non-legal public text
+fields:
+
+```powershell
+scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
+```
+
 ### Project Title
 
 `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
@@ -157,7 +165,8 @@ produce traceable requirement and review outputs instead of one-shot chat answer
    reports `READY`.
 7. Run `scripts/qwencloud-final-upload-bundle.ps1` with real URLs and keep the
    generated zip nearby for upload fields, the Devpost handoff HTML, and manual
-   review.
+   review. Use the bundled `devpost-autofill-snippet-*.js` only for non-legal
+   public text/link fields after action-time confirmation.
 8. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
 9. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
 10. Submit only after the external Devpost form shows accepted URLs.

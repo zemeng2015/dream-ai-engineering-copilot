@@ -36,6 +36,16 @@ scripts/qwencloud-devpost-draft-payload.ps1 -AllowDraft
 This payload is local only. Saving it into Devpost is an external write action
 and still requires Zack action-time confirmation.
 
+Generate a local browser-console snippet for safe non-legal text/link fields
+with:
+
+```powershell
+scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
+```
+
+The snippet does not upload files, check legal attestations, save the draft, or
+submit.
+
 Generate the judging alignment scorecard with:
 
 ```powershell
