@@ -75,6 +75,7 @@ Add-Criterion `
         "examples/config/dream.qwen.yaml",
         "dream/api/routes.py",
         "dream/llm/qwen_cloud.py",
+        "tests/test_api_health.py",
         "tests/test_qwen_cloud_provider.py",
         "deploy/alibaba/serverless-devs.yaml",
         "docs/qwencloud-submission.md",
@@ -106,6 +107,7 @@ Add-Criterion `
     -DREAMClaim "The project includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba custom container deployment, CI, proof automation, final readiness gates, and deterministic local verification." `
     -EvidencePaths @(
         "dream/api/app.py",
+        "dream/api/routes.py",
         "dream/core/config.py",
         "dream/config/loader.py",
         "Dockerfile",
@@ -114,6 +116,8 @@ Add-Criterion `
         "scripts/qwencloud-run-local-proof.sh",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
+        "scripts/qwencloud-live-inputs-intake.ps1",
+        "scripts/qwencloud-official-rules-gate.ps1",
         "docs/qwencloud-architecture.md",
         "docs/assets/qwencloud-architecture.png",
         "docs/qwencloud-judging-evidence-matrix.md"

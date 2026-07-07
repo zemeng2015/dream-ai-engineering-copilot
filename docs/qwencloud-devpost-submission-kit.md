@@ -56,6 +56,8 @@ Suggested Description points (copy into Devpost):
 - Inputs include knowledge packs, codebase index, incidents, PR context, and approved memory claims.
 - Outputs are traceable and reviewable, and memory improves through audit/eval feedback.
 - `/health` proves runtime mode, model, deployment target, and proof file.
+- `/qwencloud/showcase` proves the judge-facing Track 1 flow, evidence paths,
+  and scorecard posture from the deployed backend.
 
 ## 3) Demo Video (Under 3 Minutes)
 
@@ -78,7 +80,7 @@ caption SHA256, and Chrome file upload troubleshooting.
 
 Recommended 4-shot order:
 
-1. `/hackathon-demo` guided route and live `/health` proof panel (Track, provider, model, deployment target, region, API-key status, proof file).
+1. `/hackathon-demo` guided route, live `/health` proof panel, and `/qwencloud/showcase` scorecard posture (Track, provider, model, deployment target, region, API-key status, proof file, judge flow).
 2. Seeded Memory Hub claim review using `scripts/qwencloud_seed_demo_artifact.py`.
 3. Requirement case flow (prompt -> impact map -> brief -> Jira draft).
 4. Audit/eval and manual scoring.
@@ -156,7 +158,7 @@ Required proof artifacts:
 - Separate Alibaba backend proof recording from:
   `scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"`
 - `curl` or browser result from `/health`.
-- One successful `POST /requirements/draft` response.
+- `curl` or browser result from `/qwencloud/showcase`.
 
 ## 5) Devpost Copy (Optional Paste-ready)
 
@@ -202,7 +204,8 @@ produce traceable requirement and review outputs instead of one-shot chat answer
 
 - Reduces hallucination by grounding outputs with local source evidence.
 - Improves team continuity with role-aware, context-based requirement drafting.
-- Keeps secrets in environment variables; only status flags are exposed in health outputs.
+- Keeps secrets in environment variables; only status flags are exposed in
+  health and showcase outputs.
 
 ## 6) Final 30-minute Submission Run
 

@@ -43,6 +43,41 @@ describe('HackathonDemoComponent', () => {
       llm_api_key_configured: true,
       proof_file: 'deploy/alibaba/serverless-devs.yaml',
     });
+    const showcaseRequest = httpTesting.expectOne('http://127.0.0.1:8000/qwencloud/showcase');
+
+    expect(showcaseRequest.request.method).toBe('GET');
+
+    showcaseRequest.flush({
+      generated_at: '2026-07-07T18:20:00Z',
+      project_title: 'DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence',
+      track: 'Track 1: MemoryAgent',
+      elevator_pitch: 'Source-backed engineering memory for Qwen Cloud.',
+      runtime: {
+        status: 'ok',
+        service: 'dream-memoryagent-api',
+        track: 'Track 1: MemoryAgent',
+        deployment_target: 'Alibaba Cloud Function Compute custom container',
+        alibaba_cloud_region: 'ap-southeast-1',
+        alibaba_cloud_service: 'Function Compute custom container',
+        llm_provider: 'qwen-cloud',
+        llm_model: 'qwen3.7-plus',
+        llm_api_key_configured: true,
+        proof_file: 'deploy/alibaba/serverless-devs.yaml',
+        qwen_cloud_ready: true,
+        alibaba_runtime_ready: true,
+        live_backend_ready: true,
+      },
+      judge_flow: [],
+      evidence: [],
+      scorecard: {
+        weighted_current_evidence_ready: 85,
+        weighted_static_evidence_ready: 100,
+        weighted_total: 100,
+        live_backend_points: 30,
+        public_video_points: 0,
+        missing_external_inputs: ['public_demo_video_url'],
+      },
+    });
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -58,7 +93,9 @@ describe('HackathonDemoComponent', () => {
     expect(text).toContain('Public video URL');
     expect(text).toContain('Alibaba deployment proof');
     expect(text).toContain('Judging Scorecard Alignment');
-    expect(text).toContain('55/100');
+    expect(text).toContain('85/100');
+    expect(text).toContain('15 pts');
+    expect(text).toContain('public_demo_video_url');
     expect(text).toContain('Innovation and AI Creativity');
     expect(text).toContain('Technical Depth and Engineering');
     expect(text).toContain('Presentation and Documentation');
@@ -71,6 +108,11 @@ describe('HackathonDemoComponent', () => {
     const request = httpTesting.expectOne('http://127.0.0.1:8000/health');
 
     request.flush({ message: 'offline' }, { status: 503, statusText: 'Service Unavailable' });
+    const showcaseRequest = httpTesting.expectOne('http://127.0.0.1:8000/qwencloud/showcase');
+    showcaseRequest.flush(
+      { message: 'offline' },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';

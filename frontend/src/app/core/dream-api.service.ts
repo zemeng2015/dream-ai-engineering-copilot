@@ -46,6 +46,56 @@ interface ApiHealthResponse {
   proof_file: string;
 }
 
+interface ApiQwenCloudShowcaseRuntime {
+  status: string;
+  service: string;
+  track: string;
+  deployment_target: string;
+  alibaba_cloud_region?: string | null;
+  alibaba_cloud_service?: string | null;
+  llm_provider: string;
+  llm_model?: string | null;
+  llm_api_key_configured: boolean;
+  proof_file: string;
+  qwen_cloud_ready: boolean;
+  alibaba_runtime_ready: boolean;
+  live_backend_ready: boolean;
+}
+
+interface ApiQwenCloudShowcaseStep {
+  order: string;
+  title: string;
+  route: string;
+  outcome: string;
+  evidence_paths: string[];
+}
+
+interface ApiQwenCloudShowcaseEvidenceItem {
+  name: string;
+  state: string;
+  proof_paths: string[];
+}
+
+interface ApiQwenCloudShowcaseScorecard {
+  weighted_current_evidence_ready: number;
+  weighted_static_evidence_ready: number;
+  weighted_total: number;
+  live_backend_points: number;
+  public_video_points: number;
+  missing_external_inputs: string[];
+}
+
+interface ApiQwenCloudShowcaseResponse {
+  generated_at: string;
+  project_title: string;
+  track: string;
+  elevator_pitch: string;
+  runtime: ApiQwenCloudShowcaseRuntime;
+  judge_flow: ApiQwenCloudShowcaseStep[];
+  evidence: ApiQwenCloudShowcaseEvidenceItem[];
+  scorecard: ApiQwenCloudShowcaseScorecard;
+}
+
 interface ApiRequirementCaseSnapshot {
   case: ApiRequirementCase;
   evidence: ApiContextEvidence[];
@@ -1258,6 +1308,56 @@ export interface DreamHealth {
   proofFile: string;
 }
 
+export interface QwenCloudShowcaseRuntime {
+  status: string;
+  service: string;
+  track: string;
+  deploymentTarget: string;
+  alibabaCloudRegion: string | null;
+  alibabaCloudService: string | null;
+  llmProvider: string;
+  llmModel: string | null;
+  llmApiKeyConfigured: boolean;
+  proofFile: string;
+  qwenCloudReady: boolean;
+  alibabaRuntimeReady: boolean;
+  liveBackendReady: boolean;
+}
+
+export interface QwenCloudShowcaseStep {
+  order: string;
+  title: string;
+  route: string;
+  outcome: string;
+  evidencePaths: string[];
+}
+
+export interface QwenCloudShowcaseEvidenceItem {
+  name: string;
+  state: string;
+  proofPaths: string[];
+}
+
+export interface QwenCloudShowcaseScorecard {
+  weightedCurrentEvidenceReady: number;
+  weightedStaticEvidenceReady: number;
+  weightedTotal: number;
+  liveBackendPoints: number;
+  publicVideoPoints: number;
+  missingExternalInputs: string[];
+}
+
+export interface QwenCloudShowcase {
+  generatedAt: string;
+  projectTitle: string;
+  track: string;
+  elevatorPitch: string;
+  runtime: QwenCloudShowcaseRuntime;
+  judgeFlow: QwenCloudShowcaseStep[];
+  evidence: QwenCloudShowcaseEvidenceItem[];
+  scorecard: QwenCloudShowcaseScorecard;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly http = inject(HttpClient);
@@ -1265,6 +1365,12 @@ export class DreamApiService {
 
   getHealth(): Observable<DreamHealth> {
     return this.http.get<ApiHealthResponse>(`${this.baseUrl}/health`).pipe(map(mapHealth));
+  }
+
+  getQwenCloudShowcase(): Observable<QwenCloudShowcase> {
+    return this.http
+      .get<ApiQwenCloudShowcaseResponse>(`${this.baseUrl}/qwencloud/showcase`)
+      .pipe(map(mapQwenCloudShowcase));
   }
 
   draftRequirementWithOpenAI(
@@ -1915,6 +2021,50 @@ function mapHealth(response: ApiHealthResponse): DreamHealth {
     llmBaseUrl: response.llm_base_url ?? null,
     llmApiKeyConfigured: response.llm_api_key_configured,
     proofFile: response.proof_file,
+  };
+}
+
+function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloudShowcase {
+  return {
+    generatedAt: response.generated_at,
+    projectTitle: response.project_title,
+    track: response.track,
+    elevatorPitch: response.elevator_pitch,
+    runtime: {
+      status: response.runtime.status,
+      service: response.runtime.service,
+      track: response.runtime.track,
+      deploymentTarget: response.runtime.deployment_target,
+      alibabaCloudRegion: response.runtime.alibaba_cloud_region ?? null,
+      alibabaCloudService: response.runtime.alibaba_cloud_service ?? null,
+      llmProvider: response.runtime.llm_provider,
+      llmModel: response.runtime.llm_model ?? null,
+      llmApiKeyConfigured: response.runtime.llm_api_key_configured,
+      proofFile: response.runtime.proof_file,
+      qwenCloudReady: response.runtime.qwen_cloud_ready,
+      alibabaRuntimeReady: response.runtime.alibaba_runtime_ready,
+      liveBackendReady: response.runtime.live_backend_ready,
+    },
+    judgeFlow: response.judge_flow.map((step) => ({
+      order: step.order,
+      title: step.title,
+      route: step.route,
+      outcome: step.outcome,
+      evidencePaths: step.evidence_paths,
+    })),
+    evidence: response.evidence.map((item) => ({
+      name: item.name,
+      state: item.state,
+      proofPaths: item.proof_paths,
+    })),
+    scorecard: {
+      weightedCurrentEvidenceReady: response.scorecard.weighted_current_evidence_ready,
+      weightedStaticEvidenceReady: response.scorecard.weighted_static_evidence_ready,
+      weightedTotal: response.scorecard.weighted_total,
+      liveBackendPoints: response.scorecard.live_backend_points,
+      publicVideoPoints: response.scorecard.public_video_points,
+      missingExternalInputs: response.scorecard.missing_external_inputs,
+    },
   };
 }
 

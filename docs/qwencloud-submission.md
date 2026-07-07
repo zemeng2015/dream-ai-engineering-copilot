@@ -47,12 +47,14 @@ model: qwen3.7-plus
 
 1. Start API and frontend.
 2. Show `/health` proving Qwen Cloud mode and Alibaba Cloud deployment metadata.
-3. Ingest or promote an engineering source document in Memory Hub.
-4. Run memory scan and review claims.
-5. Create a requirement case from a rough user ask.
-6. Show context trail, impact map, role questions, Qwen-generated brief, and
+3. Show `/qwencloud/showcase` proving the judge-facing Track 1 flow, evidence
+   paths, and scorecard posture from the deployed backend.
+4. Ingest or promote an engineering source document in Memory Hub.
+5. Run memory scan and review claims.
+6. Create a requirement case from a rough user ask.
+7. Show context trail, impact map, role questions, Qwen-generated brief, and
    Jira-ready draft.
-7. Show audit/eval record and human rating loop.
+8. Show audit/eval record and human rating loop.
 
 ## Judging Alignment
 

@@ -120,6 +120,25 @@ function Get-BackendHealth([string]$Url) {
     }
 }
 
+function Get-BackendShowcase([string]$Url) {
+    if (-not (Is-HttpUrl $Url)) {
+        return [pscustomobject]@{ ok = $false; details = "BackendUrl missing"; showcase = $null }
+    }
+
+    try {
+        $base = $Url.TrimEnd("/")
+        $showcase = Invoke-RestMethod -Uri "$base/qwencloud/showcase" -TimeoutSec 20
+        return [pscustomobject]@{
+            ok = ($showcase.track -eq "Track 1: MemoryAgent" -and $showcase.runtime.status -eq "ok")
+            details = "track=$($showcase.track); live_backend_ready=$($showcase.runtime.live_backend_ready); weighted_static_evidence_ready=$($showcase.scorecard.weighted_static_evidence_ready)"
+            showcase = $showcase
+        }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; details = $_.Exception.Message; showcase = $null }
+    }
+}
+
 $envFileExists = Test-Path -LiteralPath $EnvFile
 if ($envFileExists) {
     $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
@@ -150,6 +169,11 @@ if ((Is-HttpUrl $BackendUrl) -and -not $SkipBackendChecks) {
     Add-Check -Name "backend_provider_qwen_cloud" -Ok ($backend.ok -and $health -and $health.llm_provider -eq "qwen-cloud") -Details $(if ($health) { [string]$health.llm_provider } else { "health missing" })
     Add-Check -Name "backend_track_memoryagent" -Ok ($backend.ok -and $health -and $health.track -eq "Track 1: MemoryAgent") -Details $(if ($health) { [string]$health.track } else { "health missing" })
     Add-Check -Name "backend_proof_file_alibaba" -Ok ($backend.ok -and $health -and $health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details $(if ($health) { [string]$health.proof_file } else { "health missing" })
+    $showcaseResult = Get-BackendShowcase -Url $BackendUrl
+    $showcase = $showcaseResult.showcase
+    Add-Check -Name "backend_showcase_reachable" -Ok $showcaseResult.ok -Details $showcaseResult.details
+    Add-Check -Name "backend_showcase_track_memoryagent" -Ok ($showcaseResult.ok -and $showcase -and $showcase.track -eq "Track 1: MemoryAgent") -Details $(if ($showcase) { [string]$showcase.track } else { "showcase missing" })
+    Add-Check -Name "backend_showcase_static_evidence_ready" -Ok ($showcaseResult.ok -and $showcase -and [int]$showcase.scorecard.weighted_static_evidence_ready -eq 100) -Details $(if ($showcase) { "$($showcase.scorecard.weighted_static_evidence_ready)/$($showcase.scorecard.weighted_total)" } else { "showcase missing" })
 }
 else {
     $skipOk = $SkipBackendChecks
@@ -158,6 +182,9 @@ else {
     Add-Check -Name "backend_provider_qwen_cloud" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
     Add-Check -Name "backend_track_memoryagent" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
     Add-Check -Name "backend_proof_file_alibaba" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
+    Add-Check -Name "backend_showcase_reachable" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
+    Add-Check -Name "backend_showcase_track_memoryagent" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
+    Add-Check -Name "backend_showcase_static_evidence_ready" -Ok $skipOk -Details $(if ($skipOk) { "skipped by -SkipBackendChecks" } else { "BackendUrl missing" }) -Required (-not $skipOk)
 }
 
 $screenshotExists = Test-Path -LiteralPath $AlibabaScreenshotPath

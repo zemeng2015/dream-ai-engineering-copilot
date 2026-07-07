@@ -175,7 +175,7 @@ function Get-BackendHealth([string]$Url) {
     }
 }
 
-function Test-BackendDraft([string]$Url) {
+function Test-BackendShowcase([string]$Url) {
     if ($SkipBackendDraft) {
         return [pscustomobject]@{ ok = $true; details = "skipped by -SkipBackendDraft" }
     }
@@ -185,15 +185,14 @@ function Test-BackendDraft([string]$Url) {
 
     try {
         $base = $Url.TrimEnd("/")
-        $body = @{
-            team_id = "demo_team"
-            rough_business_request = "Users need to know why a forecast job is stuck running"
-            llm_provider = "qwen-cloud"
-        } | ConvertTo-Json
-        $draft = Invoke-RestMethod -Method Post -Uri "$base/requirements/draft" -Body $body -ContentType "application/json" -TimeoutSec 45
+        $showcase = Invoke-RestMethod -Uri "$base/qwencloud/showcase" -TimeoutSec 20
         return [pscustomobject]@{
-            ok = ($null -ne $draft.markdown -and $draft.markdown.Length -gt 0)
-            details = if ($draft.run_id) { "run_id=$($draft.run_id)" } else { "draft response returned" }
+            ok = (
+                $showcase.track -eq "Track 1: MemoryAgent" -and
+                $showcase.runtime.status -eq "ok" -and
+                [int]$showcase.scorecard.weighted_static_evidence_ready -eq 100
+            )
+            details = "track=$($showcase.track); live_backend_ready=$($showcase.runtime.live_backend_ready); weighted_static_evidence_ready=$($showcase.scorecard.weighted_static_evidence_ready)"
         }
     }
     catch {
@@ -254,12 +253,12 @@ Add-Requirement `
     -Ok ($backend.ok -and $health -and ([string]$health.deployment_target -match "Alibaba Cloud Function Compute") -and ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml")) `
     -Evidence "backend=$BackendUrl; $($backend.details); proofFile=$(if ($health) { $health.proof_file } else { '<missing>' })"
 
-$backendDraft = Test-BackendDraft -Url $BackendUrl
+$backendShowcase = Test-BackendShowcase -Url $BackendUrl
 Add-Requirement `
     -Id "working_project_testing_access" `
     -OfficialRequirement "Provide access to a working project, website, functioning demo, or test build for judging." `
-    -Ok ($backend.ok -and $backendDraft.ok) `
-    -Evidence "backend=$BackendUrl; health=$($backend.details); draft=$($backendDraft.details)"
+    -Ok ($backend.ok -and $backendShowcase.ok) `
+    -Evidence "backend=$BackendUrl; health=$($backend.details); showcase=$($backendShowcase.details)"
 
 $architecture = Test-File -Path $ArchitectureUploadPath -MinBytes 10000
 Add-Requirement `

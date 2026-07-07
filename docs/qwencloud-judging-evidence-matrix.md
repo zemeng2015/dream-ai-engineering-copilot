@@ -42,6 +42,8 @@ External proof required:
 
 - Public deployed backend URL returning `/health` with `llm_provider=qwen-cloud`
   and `deployment_target=alibaba-function-compute`.
+- Public deployed backend URL returning `/qwencloud/showcase` with Track 1,
+  Qwen Cloud, Alibaba runtime, judge-flow, and scorecard posture fields.
 
 ### Innovation and AI Creativity
 
@@ -74,6 +76,7 @@ gates, and deterministic local verification.
 Static evidence:
 
 - `dream/api/app.py`
+- `dream/api/routes.py`
 - `dream/core/config.py`
 - `dream/config/loader.py`
 - `Dockerfile`
@@ -82,12 +85,15 @@ Static evidence:
 - `scripts/qwencloud-run-local-proof.sh`
 - `scripts/qwencloud-final-readiness.ps1`
 - `scripts/qwencloud-final-upload-bundle.ps1`
+- `scripts/qwencloud-live-inputs-intake.ps1`
+- `scripts/qwencloud-official-rules-gate.ps1`
 - `docs/qwencloud-architecture.md`
 - `docs/assets/qwencloud-architecture.png`
 
 External proof required:
 
 - Public deployed backend URL.
+- `/qwencloud/showcase` reachable from that backend URL.
 - Alibaba screenshot and backend proof recording in the final upload bundle.
 
 ### Problem Value and Impact

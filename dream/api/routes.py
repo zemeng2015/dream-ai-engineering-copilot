@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -51,6 +52,56 @@ class HealthResponse(BaseModel):
     llm_base_url: str | None = None
     llm_api_key_configured: bool = False
     proof_file: str = "deploy/alibaba/serverless-devs.yaml"
+
+
+class QwenCloudShowcaseRuntime(BaseModel):
+    status: str
+    service: str
+    track: str
+    deployment_target: str
+    alibaba_cloud_region: str | None = None
+    alibaba_cloud_service: str | None = None
+    llm_provider: str
+    llm_model: str | None = None
+    llm_api_key_configured: bool
+    proof_file: str
+    qwen_cloud_ready: bool
+    alibaba_runtime_ready: bool
+    live_backend_ready: bool
+
+
+class QwenCloudShowcaseStep(BaseModel):
+    order: str
+    title: str
+    route: str
+    outcome: str
+    evidence_paths: list[str]
+
+
+class QwenCloudShowcaseEvidenceItem(BaseModel):
+    name: str
+    state: str
+    proof_paths: list[str]
+
+
+class QwenCloudShowcaseScorecard(BaseModel):
+    weighted_current_evidence_ready: int
+    weighted_static_evidence_ready: int = 100
+    weighted_total: int = 100
+    live_backend_points: int
+    public_video_points: int = 0
+    missing_external_inputs: list[str]
+
+
+class QwenCloudShowcaseResponse(BaseModel):
+    generated_at: str
+    project_title: str
+    track: str
+    elevator_pitch: str
+    runtime: QwenCloudShowcaseRuntime
+    judge_flow: list[QwenCloudShowcaseStep]
+    evidence: list[QwenCloudShowcaseEvidenceItem]
+    scorecard: QwenCloudShowcaseScorecard
 
 
 class TestGenRunRequest(TestGenRequest):
@@ -164,6 +215,159 @@ def health() -> HealthResponse:
         llm_model=config.llm.model,
         llm_base_url=config.llm.base_url,
         llm_api_key_configured=config.llm.api_key_configured,
+    )
+
+
+@router.get("/qwencloud/showcase", response_model=QwenCloudShowcaseResponse)
+def qwencloud_showcase() -> QwenCloudShowcaseResponse:
+    health_payload = health()
+    qwen_cloud_ready = (
+        health_payload.status == "ok"
+        and health_payload.track == "Track 1: MemoryAgent"
+        and health_payload.llm_provider == "qwen-cloud"
+        and health_payload.llm_api_key_configured
+        and health_payload.proof_file == "deploy/alibaba/serverless-devs.yaml"
+    )
+    alibaba_runtime_ready = (
+        "Alibaba Cloud Function Compute" in health_payload.deployment_target
+        and health_payload.proof_file == "deploy/alibaba/serverless-devs.yaml"
+    )
+    live_backend_ready = qwen_cloud_ready and alibaba_runtime_ready
+    live_backend_points = 30 if live_backend_ready else 0
+    missing_external_inputs = ["public_demo_video_url"]
+    if not live_backend_ready:
+        missing_external_inputs.insert(0, "deployed_backend_url")
+
+    return QwenCloudShowcaseResponse(
+        generated_at=datetime.now(UTC).isoformat(),
+        project_title="DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence",
+        track="Track 1: MemoryAgent",
+        elevator_pitch=(
+            "DREAM turns tickets, code, incidents, runbooks, and review history into "
+            "auditable memory so Qwen Cloud can draft and review engineering work from "
+            "source-backed context instead of one-shot prompts."
+        ),
+        runtime=QwenCloudShowcaseRuntime(
+            status=health_payload.status,
+            service=health_payload.service,
+            track=health_payload.track,
+            deployment_target=health_payload.deployment_target,
+            alibaba_cloud_region=health_payload.alibaba_cloud_region,
+            alibaba_cloud_service=health_payload.alibaba_cloud_service,
+            llm_provider=health_payload.llm_provider,
+            llm_model=health_payload.llm_model,
+            llm_api_key_configured=health_payload.llm_api_key_configured,
+            proof_file=health_payload.proof_file,
+            qwen_cloud_ready=qwen_cloud_ready,
+            alibaba_runtime_ready=alibaba_runtime_ready,
+            live_backend_ready=live_backend_ready,
+        ),
+        judge_flow=[
+            QwenCloudShowcaseStep(
+                order="01",
+                title="Approve source-backed memory",
+                route="/memory",
+                outcome=(
+                    "Review source claims, conflicts, section proofs, and promoted memory "
+                    "before generation."
+                ),
+                evidence_paths=[
+                    "dream/memory/distiller.py",
+                    "dream/memory/repository.py",
+                    "docs/memory-distillation.md",
+                ],
+            ),
+            QwenCloudShowcaseStep(
+                order="02",
+                title="Generate a requirement case",
+                route="/requirements",
+                outcome=(
+                    "Turn a rough engineering request into questions, impact areas, an "
+                    "engineering brief, and Jira draft."
+                ),
+                evidence_paths=[
+                    "dream/requirement_cases/service.py",
+                    "dream/requirements/generator.py",
+                    "tests/test_requirement_cases.py",
+                ],
+            ),
+            QwenCloudShowcaseStep(
+                order="03",
+                title="Inspect the context trail",
+                route="/context/case_async_status",
+                outcome=(
+                    "Show retrieval paths, graph expansion, memory claims, and prompt "
+                    "preview before the model writes."
+                ),
+                evidence_paths=[
+                    "dream/context/service.py",
+                    "docs/context-intelligence-layer.md",
+                    "tests/test_context_intelligence.py",
+                ],
+            ),
+            QwenCloudShowcaseStep(
+                order="04",
+                title="Bind codebase evidence",
+                route="/codebase",
+                outcome=(
+                    "Map the request to backend, frontend, tests, incidents, historical "
+                    "PRs, and Jira sources."
+                ),
+                evidence_paths=[
+                    "dream/codebase/indexer.py",
+                    "dream/graph/builder.py",
+                    "tests/test_codebase_memory.py",
+                ],
+            ),
+            QwenCloudShowcaseStep(
+                order="05",
+                title="Close with audit and eval",
+                route="/audit",
+                outcome=(
+                    "Prove outputs are reviewable through scorecards, warnings, source "
+                    "coverage, and human ratings."
+                ),
+                evidence_paths=[
+                    "dream/evals/evaluator.py",
+                    "dream/audit/logger.py",
+                    "tests/test_audit_logger.py",
+                ],
+            ),
+        ],
+        evidence=[
+            QwenCloudShowcaseEvidenceItem(
+                name="Qwen Cloud provider",
+                state="live" if qwen_cloud_ready else "configured",
+                proof_paths=[
+                    "dream/llm/qwen_cloud.py",
+                    "examples/config/dream.qwen.yaml",
+                    "tests/test_qwen_cloud_provider.py",
+                ],
+            ),
+            QwenCloudShowcaseEvidenceItem(
+                name="Alibaba Function Compute deployment",
+                state="live" if alibaba_runtime_ready else "packaged",
+                proof_paths=[
+                    "deploy/alibaba/serverless-devs.yaml",
+                    "Dockerfile",
+                    "scripts/qwencloud-deploy-preflight.ps1",
+                ],
+            ),
+            QwenCloudShowcaseEvidenceItem(
+                name="Judge-facing demo route",
+                state="ready",
+                proof_paths=[
+                    "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts",
+                    "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html",
+                    "docs/qwencloud-demo-video-script.md",
+                ],
+            ),
+        ],
+        scorecard=QwenCloudShowcaseScorecard(
+            weighted_current_evidence_ready=55 + live_backend_points,
+            live_backend_points=live_backend_points,
+            missing_external_inputs=missing_external_inputs,
+        ),
     )
 
 

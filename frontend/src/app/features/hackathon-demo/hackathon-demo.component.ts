@@ -4,7 +4,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
-import { DreamApiService, DreamHealth } from '../../core/dream-api.service';
+import { DreamApiService, DreamHealth, QwenCloudShowcase } from '../../core/dream-api.service';
 import { UiIconComponent, UiIconName } from '../../shared/ui-icon.component';
 
 interface DemoSignal {
@@ -63,6 +63,7 @@ type LiveHealthState = 'checking' | 'ready' | 'watch' | 'offline';
 export class HackathonDemoComponent implements OnInit {
   private readonly dream = inject(DreamApiService);
   private readonly health = signal<DreamHealth | null>(null);
+  private readonly showcase = signal<QwenCloudShowcase | null>(null);
 
   readonly liveHealthState = signal<LiveHealthState>('checking');
   readonly liveHealthTitle = computed(() => {
@@ -107,6 +108,26 @@ export class HackathonDemoComponent implements OnInit {
       { label: 'API key configured', value: health.llmApiKeyConfigured ? 'yes' : 'no' },
       { label: 'Proof file', value: health.proofFile },
     ];
+  });
+
+  readonly scorecardCurrentEvidence = computed(() => {
+    const scorecard = this.showcase()?.scorecard;
+    return `${scorecard?.weightedCurrentEvidenceReady ?? 55}/${scorecard?.weightedTotal ?? 100}`;
+  });
+  readonly externalEvidenceGap = computed(() => {
+    const scorecard = this.showcase()?.scorecard;
+    const total = scorecard?.weightedTotal ?? 100;
+    const current = scorecard?.weightedCurrentEvidenceReady ?? 55;
+    return `${Math.max(0, total - current)} pts`;
+  });
+  readonly scorecardDetail = computed(() => {
+    const missing = this.showcase()?.scorecard.missingExternalInputs ?? [
+      'deployed_backend_url',
+      'public_demo_video_url',
+    ];
+    return missing.length > 0
+      ? `Waiting on ${missing.join(', ')}.`
+      : 'All judge-facing scorecard inputs are present.';
   });
 
   readonly runtimeSignals: DemoSignal[] = [
@@ -248,7 +269,7 @@ export class HackathonDemoComponent implements OnInit {
     },
   ];
 
-  readonly submitGates: SubmitGate[] = [
+  readonly submitGates = computed<SubmitGate[]>(() => [
     {
       label: 'Local CI proof',
       value: 'green',
@@ -257,15 +278,15 @@ export class HackathonDemoComponent implements OnInit {
     },
     {
       label: 'Judge scorecard',
-      value: '55/100',
-      detail: 'Local evidence is ready for 55 weighted points; live URL and public video close the rest.',
-      tone: 'watch',
+      value: this.scorecardCurrentEvidence(),
+      detail: this.scorecardDetail(),
+      tone: this.showcase()?.runtime.liveBackendReady ? 'ready' : 'watch',
     },
     {
       label: 'Live inputs',
-      value: 'pending',
+      value: this.showcase()?.runtime.liveBackendReady ? 'backend live' : 'pending',
       detail: 'Needs env file, public demo URL, Alibaba backend URL, screenshot, and proof recording.',
-      tone: 'blocked',
+      tone: this.showcase()?.runtime.liveBackendReady ? 'watch' : 'blocked',
     },
     {
       label: 'Upload bundle',
@@ -273,7 +294,7 @@ export class HackathonDemoComponent implements OnInit {
       detail: 'Bundle exists with hashes; final state waits for external proof assets.',
       tone: 'blocked',
     },
-  ];
+  ]);
 
   readonly quickProofCommands = [
     'bash scripts/qwencloud-run-local-proof.sh --skip-draft',
@@ -298,6 +319,20 @@ export class HackathonDemoComponent implements OnInit {
         }
         this.health.set(health);
         this.liveHealthState.set(this.isReadyHealth(health) ? 'ready' : 'watch');
+      });
+
+    this.dream
+      .getQwenCloudShowcase()
+      .pipe(
+        catchError(() => {
+          this.showcase.set(null);
+          return of(null);
+        }),
+      )
+      .subscribe((showcase) => {
+        if (showcase) {
+          this.showcase.set(showcase);
+        }
       });
   }
 

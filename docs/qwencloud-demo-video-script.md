@@ -15,7 +15,8 @@ Qwen Cloud, local proof, and remaining external submission gates.
 
 ## 0:20 - 0:45 Architecture Proof
 
-Show `docs/assets/qwencloud-architecture.svg`, then open `/health`.
+Show `docs/assets/qwencloud-architecture.svg`, then open `/health` and
+`/qwencloud/showcase`.
 
 Call out:
 
@@ -24,6 +25,8 @@ Call out:
 - Model is `qwen3.7-plus`.
 - Deployment target is Alibaba Cloud Function Compute custom container.
 - `/health` never exposes secrets.
+- `/qwencloud/showcase` exposes the judge-facing flow, evidence paths, and
+  scorecard posture without exposing secrets.
 
 ## 0:45 - 1:20 Memory Intake and Review
 

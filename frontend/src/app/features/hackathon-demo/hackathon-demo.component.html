@@ -112,12 +112,12 @@
       <div class="submit-grid scorecard-summary" aria-label="Current judging evidence score">
         <div data-tone="watch">
           <span>Current evidence</span>
-          <strong>55/100</strong>
+          <strong>{{ scorecardCurrentEvidence() }}</strong>
           <small>ready before external URLs</small>
         </div>
         <div data-tone="blocked">
           <span>External gap</span>
-          <strong>45 pts</strong>
+          <strong>{{ externalEvidenceGap() }}</strong>
           <small>public video and Alibaba proof</small>
         </div>
       </div>
@@ -157,7 +157,7 @@
         </div>
       </div>
       <div class="submit-grid">
-        @for (gate of submitGates; track gate.label) {
+        @for (gate of submitGates(); track gate.label) {
           <div [attr.data-tone]="gate.tone">
             <span>{{ gate.label }}</span>
             <strong>{{ gate.value }}</strong>
