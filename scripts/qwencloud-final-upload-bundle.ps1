@@ -542,10 +542,14 @@ Add-LatestItem -Name "latest_frontend_test_stdout" -Filter "frontend-npm-test-*.
 Add-LatestItem -Name "latest_frontend_test_stderr" -Filter "frontend-npm-test-*.err"
 Add-Item -Name "final_action_board_script" -Path "scripts/qwencloud-final-action-board.ps1" -Required $false
 Add-Item -Name "final_sprint_script" -Path "scripts/qwencloud-final-sprint.ps1" -Required $false
+Add-Item -Name "final_external_handoff_script" -Path "scripts/qwencloud-final-external-handoff.ps1" -Required $false
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
 Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
 Add-LatestItem -Name "latest_final_action_board_markdown" -Filter "final-action-board-*.md"
 Add-LatestItem -Name "latest_final_action_board_json" -Filter "final-action-board-*.json"
+Add-LatestItem -Name "latest_final_external_handoff_markdown" -Filter "external-handoff-*.md"
+Add-LatestItem -Name "latest_final_external_handoff_json" -Filter "external-handoff-*.json"
+Add-LatestItem -Name "latest_final_external_handoff_zip" -Filter "external-handoff-*.zip"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
 Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
 Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath

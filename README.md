@@ -333,6 +333,13 @@ If any signal is still DRAFT, generate the final action board:
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 ```
 
+Generate the final external handoff pack before Zack takes over real accounts,
+secrets, uploads, deployment, and legal submission:
+
+```powershell
+scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+```
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,

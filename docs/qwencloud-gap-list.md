@@ -32,6 +32,10 @@
 - Judge rehearsal dashboard, `scripts/qwencloud-judge-rehearsal.ps1`, that
   refreshes seeded memory, local runtime proof, frontend build proof, judging
   scorecard, and final readiness into a single demo-shot report.
+- Final external handoff pack, `scripts/qwencloud-final-external-handoff.ps1`,
+  that packages the action-time order, safety boundaries, generated reports,
+  and copy/paste commands for real video upload, Alibaba secrets/deploy,
+  Devpost field save, legal submit, and post-submit verification.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost

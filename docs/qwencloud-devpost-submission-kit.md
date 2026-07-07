@@ -31,6 +31,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-devpost-autofill-snippet.ps1`
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
+  - `scripts/qwencloud-final-external-handoff.ps1`
   - `scripts/qwencloud-official-rules-gate.ps1`
   - `scripts/qwencloud-frontend-build-proof.ps1`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
@@ -212,9 +213,12 @@ produce traceable requirement and review outputs instead of one-shot chat answer
    generated zip nearby for upload fields, the Devpost handoff HTML, and manual
    review. Use the bundled `devpost-autofill-snippet-*.js` only for non-legal
    public text/link fields after action-time confirmation.
-8. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
-9. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
-10. Submit only after the external Devpost form shows accepted URLs.
+8. Run `scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft`
+   and keep the generated `external-handoff-*.zip` as the final action-time
+   handoff for accounts, secrets, uploads, deployment, and legal submit.
+9. Run `docs/qwencloud-live-checklist.md` items 1-6 quickly.
+10. Add optional blog/social link if `docs/qwencloud-build-journey-post.md` was published.
+11. Submit only after the external Devpost form shows accepted URLs.
 
 ## 7) Reproducibility Commands
 

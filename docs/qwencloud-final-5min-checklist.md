@@ -50,6 +50,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
   - `scripts/qwencloud_seed_demo_artifact.py`
   - `scripts/qwencloud-judge-rehearsal.ps1`
+  - `scripts/qwencloud-final-external-handoff.ps1`
 
 - Open the judge-facing Angular route:
   `http://localhost:4300/hackathon-demo`
@@ -194,6 +195,13 @@ scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "
 
 - Open the generated `devpost-handoff-*.html` from the upload bundle and use it
   as the final copy/paste dashboard while filling Devpost.
+- Generate the final external handoff pack before touching real accounts,
+  uploads, deployment, or legal submit:
+
+```powershell
+scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+```
+
 - Confirm the bundle also includes the latest `deploy-preflight-*.md/json` so
   the Docker build and container `/health` smoke proof is available with the
   upload files.

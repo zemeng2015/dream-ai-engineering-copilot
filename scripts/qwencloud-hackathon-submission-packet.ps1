@@ -312,6 +312,7 @@ $requiredPaths = @(
     "scripts/qwencloud-final-readiness.ps1",
     "scripts/qwencloud-final-upload-bundle.ps1",
     "scripts/qwencloud-judge-rehearsal.ps1",
+    "scripts/qwencloud-final-external-handoff.ps1",
     "scripts/qwencloud-devpost-draft-payload.ps1",
     "scripts/qwencloud-devpost-autofill-snippet.ps1",
     "scripts/qwencloud-judging-scorecard.ps1",

@@ -150,6 +150,7 @@ Add-Criterion `
         "scripts/qwencloud-devpost-draft-payload.ps1",
         "scripts/qwencloud_seed_demo_artifact.py",
         "scripts/qwencloud-judge-rehearsal.ps1",
+        "scripts/qwencloud-final-external-handoff.ps1",
         "frontend/src/app/core/dream-api.service.ts",
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts",
         "frontend/src/app/features/hackathon-demo/hackathon-demo.component.html",
