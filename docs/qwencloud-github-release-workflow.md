@@ -30,6 +30,8 @@ values into repo files.
 The workflow sets `GH_TOKEN` from the GitHub-provided `github.token` so the
 final CI proof, release summary, and artifact handoff checks can query the
 current repository with `gh` without requiring a personal access token.
+Its explicit token permissions are `contents: read` and `actions: read`, which
+cover checkout plus workflow-run and artifact-proof queries.
 
 You can keep values in an ignored local dotenv file:
 
