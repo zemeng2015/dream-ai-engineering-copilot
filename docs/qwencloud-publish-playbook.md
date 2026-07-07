@@ -129,15 +129,16 @@ Docker build/run logs, final action board when available, git commit metadata,
 and SHA256 hashes for bundled upload files so the final Devpost assets can be
 checked before submit.
 
-`qwencloud-final-action-board.ps1` runs video URL, cloud credential, GitHub
-secret, Docker deploy preflight, official rules gate, and final readiness
-checks, then emits one Markdown board with the next remaining action and whether
-Zack/action-time confirmation is required.
+`qwencloud-final-action-board.ps1` runs video URL, cloud credential, live input,
+judging scorecard, GitHub secret, Docker deploy preflight, official rules gate,
+and final readiness checks, then emits one Markdown board with the next
+remaining action and whether Zack/action-time confirmation is required.
 
 `qwencloud-final-sprint.ps1` is the last-day cockpit. It refreshes video status,
-cloud credentials, GitHub secrets, release plan, Docker deploy preflight,
-official rules gate, final packet, upload bundle, readiness, and action board in
-one pass. By default it only writes local status reports; use
+cloud credentials, live inputs, judging scorecard, GitHub secrets, release plan,
+Docker deploy preflight, official rules gate, final packet, upload bundle,
+readiness, and action board in one pass. By default it only writes local status
+reports; use
 `-SetGitHubSecrets` or `-RunLocalRelease` only after action-time confirmation.
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the

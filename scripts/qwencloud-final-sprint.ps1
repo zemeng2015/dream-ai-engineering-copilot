@@ -204,6 +204,18 @@ if ($EnvFile) { $liveInputsArgs += @("-EnvFile", $EnvFile) }
 if ($SkipExternalUrlChecks) { $liveInputsArgs += "-SkipExternalUrlChecks" }
 Invoke-SprintStep -Name "final-sprint-live-inputs-intake" -Arguments $liveInputsArgs | Out-Null
 
+$scorecardArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-judging-scorecard.ps1",
+    "-RepoUrl", $RepoUrl,
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $scorecardArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($BackendUrl) { $scorecardArgs += @("-BackendUrl", $BackendUrl) }
+Invoke-SprintStep -Name "final-sprint-judging-scorecard" -Arguments $scorecardArgs | Out-Null
+
 $githubArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -291,6 +303,7 @@ $video = Read-LatestJson -Filter "video-upload-status-*.json"
 $videoPublication = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $liveInputs = Read-LatestJson -Filter "live-inputs-intake-*.json"
+$scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
 $finalize = Read-LatestJson -Filter "finalize-after-urls-*.json"
@@ -324,6 +337,7 @@ $signals = [ordered]@{
     videoPublicationHandoffReady = [bool]($videoPublication.data -and $videoPublication.data.readyForManualUpload)
     cloudReleaseReady = [bool]($cloud.data -and $cloud.data.readyForCloudRelease)
     liveInputsReady = [bool]($liveInputs.data -and $liveInputs.data.readyForLiveInputs)
+    judgingScorecardReady = [bool]($scorecard.data -and $scorecard.data.readyForJudgingNarrative)
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
@@ -358,6 +372,15 @@ if (-not $signals.liveInputsReady) {
         -Name "Collect live submission inputs" `
         -Reason "The live inputs gate is still DRAFT: $liveMissing." `
         -Command 'scripts/qwencloud-live-inputs-intake.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"' `
+        -RequiresZackConfirmation $true
+}
+
+if (-not $signals.judgingScorecardReady) {
+    $scorecardMissing = if ($scorecard.data) { @($scorecard.data.missingRequiredCriteria) -join ', ' } else { "judging scorecard report missing" }
+    Add-NextAction `
+        -Name "Close judging scorecard gaps" `
+        -Reason "The judging scorecard is still DRAFT: $scorecardMissing." `
+        -Command 'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"; scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
         -RequiresZackConfirmation $true
 }
 
@@ -434,6 +457,7 @@ $result = [ordered]@{
         videoPublicationHandoffJson = $videoPublication.file
         cloudCredentialsHandoffJson = $cloud.file
         liveInputsIntakeJson = $liveInputs.file
+        judgingScorecardJson = $scorecard.file
         githubSecretsHandoffJson = $github.file
         alibabaReleaseJson = $release.file
         finalizeAfterUrlsJson = $finalize.file
@@ -489,6 +513,7 @@ $lines += @(
     "- Video publication handoff: $(if ($videoPublication.file) { $videoPublication.file } else { '<missing>' })",
     "- Cloud credentials handoff: $(if ($cloud.file) { $cloud.file } else { '<missing>' })",
     "- Live inputs intake: $(if ($liveInputs.file) { $liveInputs.file } else { '<missing>' })",
+    "- Judging scorecard: $(if ($scorecard.file) { $scorecard.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",
     "- Finalize after URLs: $(if ($finalize.file) { $finalize.file } else { '<missing>' })",

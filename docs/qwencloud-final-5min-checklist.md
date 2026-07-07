@@ -197,8 +197,8 @@ scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVide
 ```
 
 - Or run the final sprint dashboard, which refreshes video status, cloud
-  credentials, GitHub secrets, release plan, final packet, upload bundle, and
-  final action board in one pass:
+  credentials, live inputs, judging scorecard, GitHub secrets, release plan,
+  final packet, upload bundle, and final action board in one pass:
 
 ```powershell
 scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft

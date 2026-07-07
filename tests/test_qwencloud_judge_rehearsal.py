@@ -84,7 +84,23 @@ def test_qwencloud_judge_rehearsal_registered_in_submission_flow() -> None:
         "docs/qwencloud-final-5min-checklist.md",
         "scripts/qwencloud-final-readiness.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
+        "scripts/qwencloud-final-action-board.ps1",
+        "scripts/qwencloud-final-sprint.ps1",
         "scripts/qwencloud-judging-scorecard.ps1",
         "scripts/qwencloud-hackathon-submission-packet.ps1",
     ]:
         assert script_path in (ROOT / path).read_text(encoding="utf-8-sig")
+
+    scorecard_script_path = "scripts/qwencloud-judging-scorecard.ps1"
+    final_action_board = (
+        ROOT / "scripts" / "qwencloud-final-action-board.ps1"
+    ).read_text(encoding="utf-8-sig")
+    final_sprint = (ROOT / "scripts" / "qwencloud-final-sprint.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    assert scorecard_script_path in final_action_board
+    assert "judgingScorecardReady" in final_action_board
+    assert "Close judging scorecard gaps" in final_action_board
+    assert "final-sprint-judging-scorecard" in final_sprint
+    assert "judgingScorecardReady" in final_sprint
+    assert "Close judging scorecard gaps" in final_sprint
