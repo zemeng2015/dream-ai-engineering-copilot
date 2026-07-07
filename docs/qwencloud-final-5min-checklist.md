@@ -46,6 +46,12 @@ scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
 ```
 
+Optional one-command pre-submit audit:
+
+```powershell
+scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
+```
+
 ## Step 3 — Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`

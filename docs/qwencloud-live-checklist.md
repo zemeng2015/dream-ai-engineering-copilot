@@ -62,6 +62,12 @@ Optional strict gate (health + draft + field checks):
 scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl <deployed-url>
 ```
 
+Optional full audit report (includes file + repo + remote visibility checks):
+
+```powershell
+scripts/qwencloud-hackathon-audit.ps1 -BaseUrl <deployed-url>
+```
+
 7. Record demo with <3 minute duration.
 
 ## Submission packet

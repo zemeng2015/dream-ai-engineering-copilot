@@ -147,6 +147,7 @@ curl http://localhost:8000/health
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-proof.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-hackathon-submit-gate.ps1 -BaseUrl http://localhost:8000
+scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 ```
 
 Key submission artifacts:
