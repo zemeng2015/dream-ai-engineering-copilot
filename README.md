@@ -164,6 +164,12 @@ Key submission artifacts:
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)
 
+Run deployment preflight before pushing to Alibaba Cloud:
+
+```powershell
+scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
 Render the final under-3-minute Devpost upload video:
 
 ```powershell

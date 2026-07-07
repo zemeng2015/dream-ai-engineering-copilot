@@ -52,7 +52,18 @@ Optional one-command pre-submit audit:
 scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 ```
 
-## Step 3 - Demo video (about 1 minute)
+## Step 3 - Alibaba deploy proof (about 1 minute)
+
+- Run deploy preflight:
+
+```powershell
+scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
+- Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
+  model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
+
+## Step 4 - Demo video (about 1 minute)
 
 - Render the final upload video:
 
@@ -63,7 +74,7 @@ scripts/qwencloud-render-demo-video.ps1
 - Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
 - Confirm the public video page plays and remains under 3 minutes.
 
-## Step 4 - Devpost fill (about 1.5 minutes)
+## Step 5 - Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
 - Track: `Track 1: MemoryAgent`
@@ -74,7 +85,7 @@ scripts/qwencloud-render-demo-video.ps1
 - Add demo video link
 - Add deployment proof line and `/health` proof summary text
 
-## Step 5 - Submit
+## Step 6 - Submit
 
 - Click submit on Devpost.
 - Immediately open the public project page and confirm links, video, and video

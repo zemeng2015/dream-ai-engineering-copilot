@@ -53,6 +53,12 @@ Recommended 4-shot order:
 
 Use `deploy/alibaba/README.md`.
 
+Run preflight before a real deployment:
+
+```powershell
+scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
 Required proof artifacts:
 
 - FC build/deploy success output or screenshot.

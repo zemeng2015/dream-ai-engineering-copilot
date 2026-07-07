@@ -17,6 +17,14 @@ $env:QWEN_MODEL="qwen3.7-plus"
 
 ## Build And Deploy
 
+Run a deploy preflight first. It checks required files, Docker, Serverless Devs,
+required environment variables, and optionally builds and smokes the container
+locally.
+
+```powershell
+scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
 ```powershell
 docker build -t dream-qwencloud-memoryagent:latest .
 docker tag dream-qwencloud-memoryagent:latest $env:ALIBABA_CLOUD_CONTAINER_IMAGE

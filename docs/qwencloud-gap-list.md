@@ -13,6 +13,8 @@
 - Devpost submission brief, architecture doc, architecture SVG, and demo script.
 - Final demo video renderer that produces
   `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
+- Deploy preflight script that checks env, Serverless Devs, Docker build, and
+  local container smoke before Alibaba Cloud push/deploy.
 - Focused backend tests and lint for the Qwen integration.
 
 ## Must Finish Before Devpost

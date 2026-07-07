@@ -11,6 +11,7 @@ param(
         "docs/qwencloud-live-checklist.md",
         "deploy/alibaba/serverless-devs.yaml",
         "deploy/alibaba/README.md",
+        "scripts/qwencloud-deploy-preflight.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1",

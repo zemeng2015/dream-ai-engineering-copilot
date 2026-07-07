@@ -4,7 +4,7 @@
 
 ## Before final day
 
-- [ ] Git branch clean and pushed (`codex/qwen-hackathon-dream`).
+- [ ] Git branch clean and pushed (`main`).
 - [ ] Public repo url ready.
 - [ ] `LICENSE` visible as Apache-2.0.
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
@@ -46,6 +46,10 @@ Invoke-RestMethod -Method Post `
 - `docs/qwencloud-final-5min-checklist.md`
 
 5. Deploy proof:
+- Run preflight:
+  ```powershell
+  scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+  ```
 - Build and push image to `$env:ALIBABA_CLOUD_CONTAINER_IMAGE`.
 - Run Serverless Devs deployment using `deploy/alibaba/serverless-devs.yaml`.
 - Re-test deployed URL `.../health`.

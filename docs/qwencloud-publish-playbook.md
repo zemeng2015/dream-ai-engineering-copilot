@@ -25,6 +25,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 
 ```powershell
 scripts/qwencloud-hackathon-smoke.ps1
+scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
 scripts/qwencloud-hackathon-submit-gate.ps1
@@ -41,6 +42,9 @@ requirement-draft success (unless `-SkipDraft` is set).
 
 `qwencloud-hackathon-audit.ps1` adds a one-command pre-submit checklist:
 repo/docs presence, public repo license visibility checks, and endpoint checks.
+
+`qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
+and local container smoke before the image is pushed to Container Registry.
 
 ## Devpost fill order
 

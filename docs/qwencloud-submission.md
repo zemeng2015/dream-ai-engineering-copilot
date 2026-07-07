@@ -81,4 +81,5 @@ and `deploy/alibaba/README.md` for Devpost.
 - License: Apache-2.0
 - Architecture diagram: `docs/assets/qwencloud-architecture.svg`
 - Alibaba Cloud proof: `deploy/alibaba/serverless-devs.yaml`
+- Deploy preflight: `scripts/qwencloud-deploy-preflight.ps1`
 - Demo video: target under 3 minutes
