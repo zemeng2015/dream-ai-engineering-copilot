@@ -311,8 +311,11 @@ def test_question_waiver_drives_readiness_and_audit(tmp_path) -> None:
     snapshot_after_review = service.get_case(analyzed.case.case_id)
     records = audit_repository.list_audit_records()
 
+    expected_waiver_reason = (
+        "Out of scope for this release: documented as a demo handoff risk."
+    )
     assert waived.status == "waived"
-    assert waived.waived_reason == "Out of scope for this release: documented as a demo handoff risk."
+    assert waived.waived_reason == expected_waiver_reason
     assert readiness.ready is True
     assert readiness.status == "jira_ready_draft"
     assert readiness.open_questions == 0

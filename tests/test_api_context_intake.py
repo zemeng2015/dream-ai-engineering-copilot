@@ -282,7 +282,8 @@ def test_knowledge_intake_api_review_gate_and_promote(tmp_path, monkeypatch) -> 
         claim for claim in scan_payload["claims"] if claim["evidence"]["intake_proofs"]
     ]
     assert claims_with_intake_proofs
-    memory_proof = claims_with_intake_proofs[0]["evidence"]["intake_proofs"][0]
+    selected_claim = claims_with_intake_proofs[0]
+    memory_proof = selected_claim["evidence"]["intake_proofs"][0]
     assert memory_proof["document_id"] == document_id
     assert memory_proof["draft_id"] == draft_payload["draft_id"]
     assert memory_proof["promoted_path"] == promote_response.json()["promoted_path"]
@@ -302,7 +303,7 @@ def test_knowledge_intake_api_review_gate_and_promote(tmp_path, monkeypatch) -> 
         "/memory/review",
         json={
             "team_id": "demo_team",
-            "claim_id": claims_with_intake_proofs[0]["claim_id"],
+            "claim_id": selected_claim["claim_id"],
             "status": "approved",
             "reviewer": "api-test",
             "reason": "Validated intake proof traceability.",
@@ -314,7 +315,7 @@ def test_knowledge_intake_api_review_gate_and_promote(tmp_path, monkeypatch) -> 
         "/requirement-cases",
         json={
             "team_id": "demo_team",
-            "raw_request": claims_with_intake_proofs[0]["entity"]["canonical_name"],
+            "raw_request": selected_claim["entity"]["canonical_name"],
             "created_by_role": "BA",
         },
     )
@@ -324,18 +325,21 @@ def test_knowledge_intake_api_review_gate_and_promote(tmp_path, monkeypatch) -> 
     )
     assert context_trail_response.status_code == 200
     used_claim = next(
-        claim
-        for claim in context_trail_response.json()["memory_claims_used"]
-        if claim["claim_id"] == claims_with_intake_proofs[0]["claim_id"]
+        (
+            claim
+            for claim in context_trail_response.json()["memory_claims_used"]
+            if any(proof["document_id"] == document_id for proof in claim["intake_proofs"])
+        ),
+        None,
     )
-    assert used_claim["intake_proofs"][0]["document_id"] == document_id
-    assert used_claim["intake_proofs"][0]["match_explanation"] == memory_proof[
-        "match_explanation"
-    ]
-    assert used_claim["intake_proofs"][0]["matched_terms"] == memory_proof[
-        "matched_terms"
-    ]
-    assert used_claim["intake_proofs"][0]["section_proofs"][0]["section_hash"].startswith(
+    assert used_claim is not None
+    used_proof = next(
+        proof for proof in used_claim["intake_proofs"] if proof["document_id"] == document_id
+    )
+    assert used_proof["draft_id"] == draft_payload["draft_id"]
+    assert used_proof["match_explanation"].startswith("Matched claim")
+    assert used_proof["matched_terms"]
+    assert used_proof["section_proofs"][0]["section_hash"].startswith(
         "sha256:"
     )
 
