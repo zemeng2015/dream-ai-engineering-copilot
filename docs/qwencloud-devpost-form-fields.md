@@ -14,6 +14,14 @@ Checked in the signed-in Devpost session on 2026-07-07.
 - Additional info URL: `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit`
 - Finalization URL: `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization`
 - Current status observed: `DRAFT`, `2/5 steps done`
+- Browser audit on 2026-07-07 05:15 EDT: Project details required fields
+  (`software_description`, `software_tag_list`, first project URL, and
+  `software_video_url`) were still empty in the live draft.
+- Browser audit on 2026-07-07 05:16 EDT: Additional info fields for submitter
+  type, country, new/existing project, start date, Track, repository URL,
+  Alibaba proof code URL, architecture upload, deployment screenshot upload,
+  AI tools, learning level, and eligibility attestations were still unset in
+  the live draft.
 
 Do not click final Submit until the final readiness dashboard reports `READY`.
 The eligibility checkboxes are legal attestations and should be confirmed by
@@ -144,6 +152,9 @@ change them after a form refresh.
 
 ### Current live blockers
 
+- Project details and Additional info still need to be pasted into the live
+  Devpost draft and saved. Saving the draft is an external write action and
+  should only be done after Zack confirms it at action time.
 - `software_video_url` is empty until the demo MP4 is uploaded to YouTube,
   Vimeo, or Youku.
 - `submission_field_file_27544_add_files` needs
