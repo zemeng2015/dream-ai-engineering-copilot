@@ -14,6 +14,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-architecture.md`
   - `docs/qwencloud-demo-video-script.md`
   - `docs/assets/qwencloud-architecture.png`
+  - `scripts/qwencloud-alibaba-release.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `docs/qwencloud-build-journey-post.md`
   - `deploy/alibaba/serverless-devs.yaml`
@@ -60,6 +61,13 @@ Run preflight before a real deployment:
 
 ```powershell
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+```
+
+Or use the full release orchestrator after credentials, registry login, and
+video URL are ready:
+
+```powershell
+scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 Required proof artifacts:
@@ -132,5 +140,6 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-proof.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 - `scripts/qwencloud-hackathon-submission-packet.ps1`
+- `scripts/qwencloud-alibaba-release.ps1`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`
 - `scripts/qwencloud-export-architecture-png.ps1`

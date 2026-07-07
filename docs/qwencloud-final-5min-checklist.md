@@ -62,6 +62,12 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 
+Optional one-command release after credentials and video URL are available:
+
+```powershell
+scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+```
+
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
   model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
 - Capture the required Devpost screenshot from the deployed `/health` proof:

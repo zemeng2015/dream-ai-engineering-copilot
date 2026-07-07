@@ -25,6 +25,13 @@ locally.
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 
+To run the complete release path in one command after environment variables,
+Serverless Devs access, and registry login are configured:
+
+```powershell
+scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+```
+
 ```powershell
 docker build -t dream-qwencloud-memoryagent:latest .
 docker tag dream-qwencloud-memoryagent:latest $env:ALIBABA_CLOUD_CONTAINER_IMAGE

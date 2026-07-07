@@ -10,6 +10,7 @@
 - [ ] Qwen config file present: `examples/config/dream.qwen.yaml`.
 - [ ] Architecture PNG ready: `docs/assets/qwencloud-architecture.png`.
 - [ ] Alibaba deployment screenshot path reserved: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`.
+- [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
 - [ ] Health endpoint smoke works and returns `llm_provider: qwen-cloud`.
 
 ## Runbook (submission window)
@@ -53,6 +54,10 @@ Invoke-RestMethod -Method Post `
 - Run preflight:
   ```powershell
   scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+  ```
+- Or run the full release script after video URL is available:
+  ```powershell
+  scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "<public-video-url>"
   ```
 - Build and push image to `$env:ALIBABA_CLOUD_CONTAINER_IMAGE`.
 - Run Serverless Devs deployment using `deploy/alibaba/serverless-devs.yaml`.

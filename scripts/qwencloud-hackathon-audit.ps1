@@ -13,6 +13,7 @@ param(
         "docs/qwencloud-live-checklist.md",
         "deploy/alibaba/serverless-devs.yaml",
         "deploy/alibaba/README.md",
+        "scripts/qwencloud-alibaba-release.ps1",
         "scripts/qwencloud-capture-alibaba-proof.ps1",
         "scripts/qwencloud-deploy-preflight.ps1",
         "scripts/qwencloud-export-architecture-png.ps1",

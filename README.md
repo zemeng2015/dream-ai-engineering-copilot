@@ -172,6 +172,13 @@ Run deployment preflight before pushing to Alibaba Cloud:
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 
+Run the end-to-end Alibaba release flow after credentials and the container
+registry image are configured:
+
+```powershell
+scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
+```
+
 After deployment, capture the Devpost-ready Alibaba proof screenshot:
 
 ```powershell

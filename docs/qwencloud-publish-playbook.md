@@ -30,6 +30,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
+scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-hackathon-verify.ps1
 scripts/qwencloud-hackathon-proof.ps1
@@ -51,6 +52,10 @@ repo/docs presence, public repo license visibility checks, and endpoint checks.
 
 `qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
 and local container smoke before the image is pushed to Container Registry.
+
+`qwencloud-alibaba-release.ps1` orchestrates the release path: preflight,
+Docker tag/push, Serverless Devs deploy, backend verification, Alibaba proof
+screenshot, and final Devpost packet generation.
 
 `qwencloud-capture-alibaba-proof.ps1` verifies the deployed `/health` response
 and renders the Devpost-required Alibaba deployment screenshot.
