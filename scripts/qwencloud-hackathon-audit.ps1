@@ -14,6 +14,7 @@ param(
         "docs/qwencloud-live-checklist.md",
         "deploy/alibaba/serverless-devs.yaml",
         "deploy/alibaba/README.md",
+        "scripts/qwencloud-cloud-credentials-handoff.ps1",
         "scripts/qwencloud-devpost-handoff.ps1",
         "scripts/qwencloud-alibaba-release.ps1",
         "scripts/qwencloud-capture-alibaba-proof.ps1",

@@ -176,6 +176,7 @@ Key submission artifacts:
 Run deployment preflight before pushing to Alibaba Cloud:
 
 ```powershell
+scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 

@@ -66,6 +66,7 @@ scripts/qwencloud-hackathon-audit.ps1 -BaseUrl http://localhost:8000
 - Run deploy preflight:
 
 ```powershell
+scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 

@@ -57,6 +57,7 @@ Invoke-RestMethod -Method Post `
 5. Deploy proof:
 - Run preflight:
   ```powershell
+  scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
   scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
   ```
 - Or run the full release script after video URL is available:

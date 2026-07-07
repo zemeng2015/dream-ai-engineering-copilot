@@ -134,7 +134,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 }
 
 try {
-    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
+    foreach ($path in @("Dockerfile", $ServerlessTemplate, "scripts/qwencloud-deploy-preflight.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-cloud-credentials-handoff.ps1", "scripts/qwencloud-devpost-handoff.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required release file missing: $path"
         }

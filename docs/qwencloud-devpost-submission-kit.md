@@ -19,6 +19,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-capture-alibaba-proof.ps1`
   - `scripts/qwencloud-render-alibaba-proof-video.ps1`
+  - `scripts/qwencloud-cloud-credentials-handoff.ps1`
   - `scripts/qwencloud-devpost-handoff.ps1`
   - `scripts/qwencloud-final-readiness.ps1`
   - `scripts/qwencloud-final-upload-bundle.ps1`
@@ -70,6 +71,7 @@ Use `deploy/alibaba/README.md`.
 Run preflight before a real deployment:
 
 ```powershell
+scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
 

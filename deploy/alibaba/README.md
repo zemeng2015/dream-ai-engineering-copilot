@@ -22,8 +22,14 @@ required environment variables, and optionally builds and smokes the container
 locally.
 
 ```powershell
+scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 ```
+
+The credentials handoff writes a local placeholder template under
+`artifacts/qwencloud-proof/` with the exact environment variables, `s config add`
+command, registry login command, and final release commands. It does not write
+real secrets.
 
 To run the complete release path in one command after environment variables,
 Serverless Devs access, and registry login are configured:

@@ -32,6 +32,7 @@ curl -X POST http://localhost:8000/requirements/draft -H "Content-Type: applicat
 scripts/qwencloud-hackathon-smoke.ps1
 scripts/qwencloud-run-local-proof.ps1
 scripts/qwencloud-export-architecture-png.ps1
+scripts/qwencloud-cloud-credentials-handoff.ps1 -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer
 scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
