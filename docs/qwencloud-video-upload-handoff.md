@@ -19,7 +19,7 @@ scripts/qwencloud-video-upload-status.ps1 -AllowDraft
 
 Expected metadata:
 
-- Duration: under 3 minutes.
+- Duration: under 3 minutes, target around 2:15 to 2:45.
 - Resolution: at least 1280x720.
 - Format: MP4/H.264.
 

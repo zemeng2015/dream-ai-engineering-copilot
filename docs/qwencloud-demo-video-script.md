@@ -2,9 +2,9 @@
 
 # Qwen Cloud Demo Video Script
 
-Target length: 2:45 to 3:00.
+Target length: 2:15 to 2:45.
 
-## 0:00 - 0:20 Problem
+## 0:00 - 0:20 Opening and Problem
 
 Engineering teams often ask AI for help, but existing context is scattered across
 tickets, runbooks, code, PRs, incidents, and past decisions. The AI often
@@ -32,7 +32,7 @@ Open Memory Hub and show:
 - approve or quarantine one claim
 - ledger evidence that only reviewed memory is reusable
 
-## 1:20 - 2:05 Requirement Case Flow
+## 1:20 - 1:55 Requirement Case Flow
 
 Create a requirement case from:
 
@@ -49,7 +49,7 @@ Show:
 - Qwen-generated engineering brief
 - Jira-ready draft
 
-## 2:05 - 2:35 Audit and Evaluation
+## 1:55 - 2:20 Product Walkthrough and Audit
 
 Open Audit/Eval:
 
@@ -58,7 +58,7 @@ Open Audit/Eval:
 - source-backed explanation links
 - one human rating interaction
 
-## 2:35 - 3:00 Close
+## 2:20 - 2:45 Submission Proof and Close
 
 DREAM is a Qwen Cloud MemoryAgent for engineering teams: it remembers source truth,
 retrieves the right context, quarantines stale memory, and improves future outputs
