@@ -364,6 +364,9 @@ Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "devpost_draft_payload_markdown" -Path $draftPayload.markdown
 Add-Item -Name "devpost_draft_payload_json" -Path $draftPayload.json
 Add-Item -Name "devpost_draft_payload_script" -Path "scripts/qwencloud-devpost-draft-payload.ps1" -Required $false
+Add-Item -Name "post_submit_verification_script" -Path "scripts/qwencloud-post-submit-verification.ps1" -Required $false
+Add-LatestItem -Name "latest_post_submit_verification_markdown" -Filter "devpost-post-submit-verification-*.md"
+Add-LatestItem -Name "latest_post_submit_verification_json" -Filter "devpost-post-submit-verification-*.json"
 Add-Item -Name "judging_scorecard_markdown" -Path $judgingScorecard.markdown
 Add-Item -Name "judging_scorecard_json" -Path $judgingScorecard.json
 Add-Item -Name "judging_scorecard_script" -Path "scripts/qwencloud-judging-scorecard.ps1" -Required $false

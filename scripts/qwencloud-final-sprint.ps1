@@ -343,8 +343,8 @@ if ($signals.deployedBackendUrlPresent -and -not $signals.finalReadinessReady) {
 if ($signals.finalReadinessReady) {
     Add-NextAction `
         -Name "Save Devpost draft and final submit" `
-        -Reason "All machine checks are ready; remaining actions are Devpost form save, legal attestations, and final submit." `
-        -Command 'Use the latest devpost-handoff HTML from the final upload bundle, then confirm legal checkboxes before Submit.' `
+        -Reason "All machine checks are ready; remaining actions are Devpost form save, legal attestations, final submit, and public-page verification." `
+        -Command 'Use the latest devpost-handoff HTML, confirm legal checkboxes before Submit, then run scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "<public-devpost-project-url>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>".' `
         -RequiresZackConfirmation $true
 }
 

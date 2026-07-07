@@ -22,6 +22,8 @@
   for YouTube/Devpost uploads.
 - [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
 - [ ] Final sprint dashboard present: `scripts/qwencloud-final-sprint.ps1`.
+- [ ] Post-submit verifier present:
+  `scripts/qwencloud-post-submit-verification.ps1`.
 - [ ] Optional GitHub release workflow present:
   `.github/workflows/qwencloud-release.yml`.
 - [ ] GitHub release secrets handoff present:
@@ -164,6 +166,12 @@ place.
 Do not click final Submit until Zack confirms the legal eligibility checkboxes,
 the final Official Rules / Devpost Terms of Service checkbox, and the final
 readiness dashboard reports `READY`.
+
+11. Verify public submission after clicking submit:
+
+```powershell
+scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
 
 ## Submission packet
 

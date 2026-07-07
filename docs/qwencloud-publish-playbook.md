@@ -51,6 +51,7 @@ scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVid
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
+scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
 `qwencloud-hackathon-proof.ps1` writes timestamped JSON artifacts in
@@ -123,6 +124,11 @@ status report.
 with official requirement coverage, copy fields, blockers, upload paths, and
 next commands for the final Devpost form.
 
+`qwencloud-post-submit-verification.ps1` is the final proof script after
+Devpost submit. It verifies the public Devpost project page, public demo video,
+public repo, deployed Alibaba backend `/health`, and local Alibaba proof
+screenshot/recording, then writes the final completion evidence report.
+
 Use `docs/qwencloud-video-upload-handoff.md` for the public video upload title,
 description, accepted platforms, visibility check, and Chrome file-access
 troubleshooting.
@@ -143,3 +149,6 @@ troubleshooting.
 12. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
 13. Add optional build journey link if published
 14. Submit and immediately open public project page to confirm links are visible
+15. Run `scripts/qwencloud-post-submit-verification.ps1` with the public Devpost
+    URL and keep the generated `devpost-post-submit-verification-*.md/json`
+    report as final completion evidence

@@ -207,6 +207,11 @@ scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "
 - Click submit on Devpost.
 - Immediately open the public project page and confirm links, video, and video
   visibility.
+- Save final completion evidence:
+
+```powershell
+scripts/qwencloud-post-submit-verification.ps1 -DevpostProjectUrl "https://devpost.com/software/<project-slug>" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"
+```
 
 ## Emergency fallback if LLM generation fails live
 
