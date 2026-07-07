@@ -36,6 +36,33 @@ if ($health.proof_file -notmatch "deploy/alibaba/serverless-devs.yaml") {
 
 Write-Output "Health proof passed."
 
+$showcase = Invoke-RestMethod -Method Get -Uri "$BaseUrl/qwencloud/showcase"
+Assert-JsonField -Payload $showcase -Field "track"
+Assert-JsonField -Payload $showcase -Field "runtime"
+Assert-JsonField -Payload $showcase -Field "scorecard"
+
+if ($showcase.track -ne "Track 1: MemoryAgent") {
+    Write-Warning "showcase track is '$($showcase.track)' instead of 'Track 1: MemoryAgent'."
+    exit 1
+}
+
+if ($showcase.runtime.status -ne "ok") {
+    Write-Warning "showcase runtime status is '$($showcase.runtime.status)' instead of 'ok'."
+    exit 1
+}
+
+if ($showcase.runtime.llm_provider -ne "qwen-cloud") {
+    Write-Warning "showcase runtime provider is '$($showcase.runtime.llm_provider)' instead of 'qwen-cloud'."
+    exit 1
+}
+
+if ([int]$showcase.scorecard.weighted_static_evidence_ready -ne 100) {
+    Write-Warning "showcase static evidence is '$($showcase.scorecard.weighted_static_evidence_ready)' instead of 100."
+    exit 1
+}
+
+Write-Output "Showcase proof passed."
+
 if ($SkipDraft) {
     Write-Output "Draft proof skipped."
     exit 0

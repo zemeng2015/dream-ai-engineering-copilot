@@ -40,3 +40,21 @@ def test_deploy_preflight_uses_isolated_showcase_smoke() -> None:
     assert 'Where-Object { $_.name -eq "docker.smoke_showcase" }' in readiness
     assert "docker.smoke_showcase=$($showcaseCheck.ok)" in readiness
     assert "[bool]$showcaseCheck.ok" in readiness
+
+
+def test_hackathon_verify_and_proof_collect_showcase_endpoint() -> None:
+    verify = (ROOT / "scripts" / "qwencloud-hackathon-verify.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+    proof = (ROOT / "scripts" / "qwencloud-hackathon-proof.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "/qwencloud/showcase" in verify
+    assert "Showcase proof passed." in verify
+    assert "weighted_static_evidence_ready" in verify
+    assert "showcase runtime provider" in verify
+
+    assert 'Join-Path $OutputDir "showcase-$timestamp.json"' in proof
+    assert "/qwencloud/showcase" in proof
+    assert "Collecting showcase proof" in proof

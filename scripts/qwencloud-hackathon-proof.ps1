@@ -19,12 +19,17 @@ function Save-Json {
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $healthPath = Join-Path $OutputDir "health-$timestamp.json"
+$showcasePath = Join-Path $OutputDir "showcase-$timestamp.json"
 $draftPath = Join-Path $OutputDir "requirements-draft-$timestamp.json"
 
 try {
     Write-Host "Collecting health proof..."
     $health = Invoke-RestMethod -Method Get -Uri "$BaseUrl/health" -TimeoutSec 20 -ErrorAction Stop
     Save-Json -Path $healthPath -Payload $health
+
+    Write-Host "Collecting showcase proof..."
+    $showcase = Invoke-RestMethod -Method Get -Uri "$BaseUrl/qwencloud/showcase" -TimeoutSec 20 -ErrorAction Stop
+    Save-Json -Path $showcasePath -Payload $showcase
 
     if (-not $SkipDraft) {
         Write-Host "Collecting draft proof..."
@@ -44,6 +49,7 @@ try {
 
     Write-Host "Proof package created:"
     Write-Host "  health:    $healthPath"
+    Write-Host "  showcase:  $showcasePath"
     if ($SkipDraft) {
         Write-Host "  draft:     skipped"
     } else {
