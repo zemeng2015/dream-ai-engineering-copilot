@@ -209,6 +209,13 @@ $videoPublicationReady = [bool]($videoPublicationReport.data -and $videoPublicat
 $cloudReady = [bool]($cloudReport.data -and $cloudReport.data.readyForCloudRelease)
 $liveInputsReady = [bool]($liveInputsReport.data -and $liveInputsReport.data.readyForLiveInputs)
 $scorecardReady = [bool]($scorecardReport.data -and $scorecardReport.data.readyForJudgingNarrative)
+$scorecardStaticReady = [bool]($scorecardReport.data -and $scorecardReport.data.weightedStaticEvidenceReady -eq $scorecardReport.data.weightedTotal)
+$scorecardMissingExternalInputs = @()
+$scorecardMissingEvidencePaths = @()
+if ($scorecardReport.data) {
+    $scorecardMissingExternalInputs = @($scorecardReport.data.criteria | ForEach-Object { @($_.missingExternalInputs) } | Where-Object { $_ } | Sort-Object -Unique)
+    $scorecardMissingEvidencePaths = @($scorecardReport.data.criteria | ForEach-Object { @($_.missingEvidencePaths) } | Where-Object { $_ } | Sort-Object -Unique)
+}
 $secretsReady = [bool]($SkipGitHubSecrets -or ($secretsReport.data -and $secretsReport.data.readyForGitHubReleaseWorkflow))
 $officialRulesReady = [bool]($officialRulesReport.data -and $officialRulesReport.data.readyForOfficialRules)
 $finalReady = [bool]($readinessReport.data -and $readinessReport.data.readyForFinalSubmit)
@@ -256,11 +263,21 @@ if (-not $liveInputsReady) {
 
 if (-not $scorecardReady) {
     $scorecardMissing = if ($scorecardReport.data) { @($scorecardReport.data.missingRequiredCriteria) -join ', ' } else { "judging scorecard report missing" }
-    Add-Action -Name "Close judging scorecard gaps" -Reason "Judging scorecard is not READY: $scorecardMissing." -RequiresUser $true -Commands @(
-        'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
-        'scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
-        "# Use the latest judging-scorecard-*.md to tighten Devpost text and demo narration before final submit."
-    )
+    if ($scorecardStaticReady -and $scorecardMissingEvidencePaths.Count -eq 0) {
+        $externalMissing = if ($scorecardMissingExternalInputs.Count -gt 0) { $scorecardMissingExternalInputs -join ', ' } else { $scorecardMissing }
+        Add-Action -Name "Supply public video/backend URLs for final scorecard" -Reason "Static judging evidence is complete ($($scorecardReport.data.weightedStaticEvidenceReady)/$($scorecardReport.data.weightedTotal)); the scorecard is DRAFT only because external inputs are missing: $externalMissing." -RequiresUser $true -Commands @(
+            'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+            'scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+            "# This should flip the scorecard to READY once the public video and deployed backend URL are real."
+        )
+    }
+    else {
+        Add-Action -Name "Close judging scorecard gaps" -Reason "Judging scorecard is not READY: $scorecardMissing." -RequiresUser $true -Commands @(
+            'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+            'scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+            "# Use the latest judging-scorecard-*.md to tighten Devpost text and demo narration before final submit."
+        )
+    }
 }
 
 if (-not ($deployPreflightCheck -and $deployPreflightCheck.ok)) {
@@ -343,6 +360,9 @@ $result = [ordered]@{
         judgingScorecardWeightedEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedEvidenceReady } else { $null }
         judgingScorecardWeightedStaticEvidenceReady = if ($scorecardReport.data) { $scorecardReport.data.weightedStaticEvidenceReady } else { $null }
         judgingScorecardWeightedTotal = if ($scorecardReport.data) { $scorecardReport.data.weightedTotal } else { $null }
+        judgingScorecardStaticEvidenceReady = $scorecardStaticReady
+        judgingScorecardMissingExternalInputs = $scorecardMissingExternalInputs
+        judgingScorecardMissingEvidencePaths = $scorecardMissingEvidencePaths
         githubSecretsReady = $secretsReady
         githubSecretsSkipped = [bool]$SkipGitHubSecrets
         localVideoChecksSkipped = [bool]$SkipLocalVideoChecks

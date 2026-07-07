@@ -119,9 +119,14 @@ def test_qwencloud_judge_rehearsal_registered_in_submission_flow() -> None:
     )
     assert scorecard_script_path in final_action_board
     assert "judgingScorecardReady" in final_action_board
+    assert "Supply public video/backend URLs for final scorecard" in final_action_board
+    assert "Static judging evidence is complete" in final_action_board
     assert "Close judging scorecard gaps" in final_action_board
     assert "final-sprint-judging-scorecard" in final_sprint
     assert "judgingScorecardReady" in final_sprint
+    assert "judgingScorecardStaticEvidenceReady" in final_sprint
+    assert "Supply public video/backend URLs for final scorecard" in final_sprint
+    assert "Static judging evidence is complete" in final_sprint
     assert "Close judging scorecard gaps" in final_sprint
 
     for path in [
@@ -137,3 +142,5 @@ def test_qwencloud_judge_rehearsal_registered_in_submission_flow() -> None:
     assert (
         "judgingScorecardWeightedStaticEvidenceReady" in final_action_board
     )
+    assert "judgingScorecardMissingExternalInputs" in final_action_board
+    assert "judgingScorecardMissingEvidencePaths" in final_action_board

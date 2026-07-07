@@ -388,6 +388,13 @@ $deployPreflightCheck = $null
 if ($readiness.data) {
     $deployPreflightCheck = @($readiness.data.checks | Where-Object { $_.name -eq "latest_deploy_preflight_build_smoke" } | Select-Object -First 1)
 }
+$scorecardStaticReady = [bool]($scorecard.data -and $scorecard.data.weightedStaticEvidenceReady -eq $scorecard.data.weightedTotal)
+$scorecardMissingExternalInputs = @()
+$scorecardMissingEvidencePaths = @()
+if ($scorecard.data) {
+    $scorecardMissingExternalInputs = @($scorecard.data.criteria | ForEach-Object { @($_.missingExternalInputs) } | Where-Object { $_ } | Sort-Object -Unique)
+    $scorecardMissingEvidencePaths = @($scorecard.data.criteria | ForEach-Object { @($_.missingEvidencePaths) } | Where-Object { $_ } | Sort-Object -Unique)
+}
 
 $signals = [ordered]@{
     publicDemoVideoReady = [bool]($video.data -and $video.data.readyForDevpostVideoField)
@@ -395,6 +402,7 @@ $signals = [ordered]@{
     cloudReleaseReady = [bool]($cloud.data -and $cloud.data.readyForCloudRelease)
     liveInputsReady = [bool]($liveInputs.data -and $liveInputs.data.readyForLiveInputs)
     judgingScorecardReady = [bool]($scorecard.data -and $scorecard.data.readyForJudgingNarrative)
+    judgingScorecardStaticEvidenceReady = $scorecardStaticReady
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
     githubSecretsPresent = [bool]($github.data -and $github.data.readyForGitHubReleaseWorkflow)
@@ -434,11 +442,21 @@ if (-not $signals.liveInputsReady) {
 
 if (-not $signals.judgingScorecardReady) {
     $scorecardMissing = if ($scorecard.data) { @($scorecard.data.missingRequiredCriteria) -join ', ' } else { "judging scorecard report missing" }
-    Add-NextAction `
-        -Name "Close judging scorecard gaps" `
-        -Reason "The judging scorecard is still DRAFT: $scorecardMissing." `
-        -Command 'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"; scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
-        -RequiresZackConfirmation $true
+    if ($scorecardStaticReady -and $scorecardMissingEvidencePaths.Count -eq 0) {
+        $externalMissing = if ($scorecardMissingExternalInputs.Count -gt 0) { $scorecardMissingExternalInputs -join ', ' } else { $scorecardMissing }
+        Add-NextAction `
+            -Name "Supply public video/backend URLs for final scorecard" `
+            -Reason "Static judging evidence is complete ($($scorecard.data.weightedStaticEvidenceReady)/$($scorecard.data.weightedTotal)); the scorecard is DRAFT only because external inputs are missing: $externalMissing." `
+            -Command 'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"; scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
+            -RequiresZackConfirmation $true
+    }
+    else {
+        Add-NextAction `
+            -Name "Close judging scorecard gaps" `
+            -Reason "The judging scorecard is still DRAFT: $scorecardMissing." `
+            -Command 'scripts/qwencloud-judging-scorecard.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"; scripts/qwencloud-judge-rehearsal.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft' `
+            -RequiresZackConfirmation $true
+    }
 }
 
 if (-not $signals.dockerDeployPreflightReady) {
