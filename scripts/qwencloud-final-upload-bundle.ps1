@@ -1,0 +1,223 @@
+param(
+    [Parameter(Mandatory = $false)]
+    [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
+    [Parameter(Mandatory = $false)]
+    [string]$DemoVideoUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$BackendUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$BlogPostUrl = "",
+    [Parameter(Mandatory = $false)]
+    [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
+    [Parameter(Mandatory = $false)]
+    [string]$LocalDemoVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaProofVideoPath = "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4",
+    [switch]$SkipBackendDraft,
+    [switch]$SkipExternalUrlChecks,
+    [switch]$AllowDraft
+)
+
+$ErrorActionPreference = "Stop"
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+
+$bundleRoot = Join-Path $OutputDir "final-upload-bundle-$timestamp"
+$uploadsDir = Join-Path $bundleRoot "uploads"
+New-Item -ItemType Directory -Path $uploadsDir -Force | Out-Null
+
+$manifestJson = Join-Path $bundleRoot "manifest.json"
+$manifestMd = Join-Path $bundleRoot "manifest.md"
+$zipPath = Join-Path $OutputDir "final-upload-bundle-$timestamp.zip"
+$items = @()
+$missing = @()
+
+function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
+    $exists = Test-Path $Path
+    $dest = $null
+    $details = ""
+
+    if ($exists) {
+        $source = Get-Item -LiteralPath $Path
+        $dest = Join-Path $script:uploadsDir $source.Name
+        Copy-Item -LiteralPath $source.FullName -Destination $dest -Force
+        $details = "copied=$dest; size=$($source.Length)"
+    }
+    else {
+        $details = "missing=$Path"
+        if ($Required) {
+            $script:missing += $Name
+        }
+    }
+
+    $script:items += [ordered]@{
+        name = $Name
+        source = $Path
+        required = $Required
+        exists = $exists
+        bundledPath = $dest
+        details = $details
+    }
+}
+
+function Add-ExternalRequirement([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
+    if ($Required -and -not $Ok) {
+        $script:missing += $Name
+    }
+
+    $script:items += [ordered]@{
+        name = $Name
+        source = $Details
+        required = $Required
+        exists = $Ok
+        bundledPath = $null
+        details = $Details
+    }
+}
+
+function Get-PowerShellExe {
+    $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
+    if ($pwsh) { return $pwsh.Source }
+
+    $powershell = Get-Command "powershell" -ErrorAction SilentlyContinue
+    if ($powershell) { return $powershell.Source }
+
+    throw "PowerShell executable not found."
+}
+
+function Invoke-Packet {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-hackathon-submission-packet.ps1",
+        "-RepoUrl", $RepoUrl,
+        "-OutputDir", $OutputDir,
+        "-ArchitectureUploadPath", $ArchitectureUploadPath,
+        "-LocalVideoPath", $LocalDemoVideoPath,
+        "-AlibabaScreenshotPath", $AlibabaScreenshotPath,
+        "-AlibabaProofVideoPath", $AlibabaProofVideoPath
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($BackendUrl) { $args += @("-BackendUrl", $BackendUrl) }
+    if ($BlogPostUrl) { $args += @("-BlogPostUrl", $BlogPostUrl) }
+    if ($SkipBackendDraft) { $args += "-SkipBackendDraft" }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($AllowDraft -or [string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) {
+        $args += "-AllowDraft"
+    }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-packet-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-packet-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Submission packet generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "devpost-submission-packet-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Submission packet JSON was not found."
+    }
+
+    $mdPath = [System.IO.Path]::ChangeExtension($json.FullName, ".md")
+    $packetData = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($packetData.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = $mdPath
+        ready = [bool]$packetData.readyForDevpost
+        failedRequired = $failedRequired
+    }
+}
+
+$packet = Invoke-Packet
+
+Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
+Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
+Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
+Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath
+Add-Item -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
+Add-Item -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
+Add-Item -Name "devpost_packet_markdown" -Path $packet.markdown
+Add-Item -Name "devpost_packet_json" -Path $packet.json
+
+$ready = $missing.Count -eq 0
+$manifest = [ordered]@{
+    generatedAt = (Get-Date).ToUniversalTime().ToString("o")
+    readyForUpload = $ready
+    allowDraft = [bool]$AllowDraft
+    repoUrl = $RepoUrl
+    demoVideoUrl = $DemoVideoUrl
+    backendUrl = $BackendUrl
+    blogPostUrl = $BlogPostUrl
+    bundleRoot = $bundleRoot
+    zipPath = $zipPath
+    missingRequiredItems = $missing
+    items = $items
+}
+Set-Content -Path $manifestJson -Value ($manifest | ConvertTo-Json -Depth 12) -Encoding UTF8
+
+$lines = @(
+    "# Qwen Cloud Final Upload Bundle ($timestamp)",
+    "",
+    "- Ready for upload: $ready",
+    "- Repo: $RepoUrl",
+    "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
+    "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
+    "- Bundle zip: $zipPath",
+    "",
+    "## Items",
+    "",
+    "| Item | Required | Exists | Details |",
+    "|---|---:|---:|---|"
+)
+foreach ($item in $items) {
+    $required = if ($item.required) { "yes" } else { "no" }
+    $exists = if ($item.exists) { "yes" } else { "no" }
+    $lines += "| $($item.name) | $required | $exists | $($item.details -replace '\|', '/') |"
+}
+
+if (-not $ready) {
+    $lines += @(
+        "",
+        "## Missing Required Items",
+        ""
+    )
+    foreach ($name in $missing) {
+        $lines += "- $name"
+    }
+}
+
+Set-Content -Path $manifestMd -Value ($lines -join "`r`n") -Encoding UTF8
+
+Copy-Item -LiteralPath $manifestJson -Destination (Join-Path $uploadsDir "manifest.json") -Force
+Copy-Item -LiteralPath $manifestMd -Destination (Join-Path $uploadsDir "manifest.md") -Force
+
+if (-not $ready -and -not $AllowDraft) {
+    Write-Host "Final upload bundle blocked. Missing: $($missing -join ', ')" -ForegroundColor Yellow
+    Write-Host "Manifest: $manifestMd"
+    exit 1
+}
+
+if (Test-Path $zipPath) {
+    Remove-Item -LiteralPath $zipPath -Force
+}
+Compress-Archive -Path (Join-Path $bundleRoot "*") -DestinationPath $zipPath -Force
+
+if ($ready) {
+    Write-Host "Final upload bundle READY: $zipPath"
+}
+else {
+    Write-Host "Final upload bundle DRAFT: $zipPath" -ForegroundColor Yellow
+    Write-Host "Missing required items: $($missing -join ', ')"
+}
+Write-Host "Manifest: $manifestMd"

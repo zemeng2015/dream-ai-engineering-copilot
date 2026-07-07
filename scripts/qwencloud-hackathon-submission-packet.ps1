@@ -245,6 +245,7 @@ $requiredPaths = @(
     "scripts/qwencloud-export-architecture-png.ps1",
     "scripts/qwencloud-deploy-preflight.ps1",
     "scripts/qwencloud-final-readiness.ps1",
+    "scripts/qwencloud-final-upload-bundle.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
     "scripts/qwencloud-hackathon-proof.ps1",
     "scripts/qwencloud-run-local-proof.ps1",

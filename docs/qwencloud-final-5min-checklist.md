@@ -121,6 +121,12 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+- Create the final upload bundle:
+
+```powershell
+scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ## Step 6 - Devpost fill (about 1.5 minutes)
 
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`

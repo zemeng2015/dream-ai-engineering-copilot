@@ -117,6 +117,12 @@ scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "<public-video-url>" -Backen
 
 This must report `READY` before the Devpost form is submitted.
 
+10. Create final upload bundle:
+
+```powershell
+scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
+
 ## Submission packet
 
 - GitHub link

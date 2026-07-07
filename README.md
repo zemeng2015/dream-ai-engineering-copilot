@@ -222,6 +222,12 @@ Run the final readiness dashboard before submitting:
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+Create the final local upload bundle:
+
+```powershell
+scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 ## Angular Frontend
 
 The frontend lives in `frontend/` and uses Angular 19 standalone components,
