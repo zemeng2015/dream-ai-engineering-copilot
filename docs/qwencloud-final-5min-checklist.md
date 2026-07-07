@@ -128,6 +128,12 @@ scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/z
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+- Or run the final one-command gate:
+
+```powershell
+scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 - Create the final upload bundle:
 
 ```powershell

@@ -251,6 +251,7 @@ foreach ($path in @(
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
     "scripts/qwencloud-devpost-handoff.ps1",
     "scripts/qwencloud-alibaba-release.ps1",
+    "scripts/qwencloud-finalize-after-urls.ps1",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
     "scripts/qwencloud-hackathon-submission-packet.ps1"
 )) {

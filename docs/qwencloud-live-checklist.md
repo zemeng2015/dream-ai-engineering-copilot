@@ -122,6 +122,12 @@ scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "<public-video-url>" -Backen
 
 This must report `READY` before the Devpost form is submitted.
 
+One-command final gate alternative:
+
+```powershell
+scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+```
+
 10. Create final upload bundle:
 
 ```powershell

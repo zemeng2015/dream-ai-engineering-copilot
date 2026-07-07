@@ -236,6 +236,13 @@ Run the final readiness dashboard before submitting:
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
+After the public video and deployed backend URLs are known, run the final
+one-command gate:
+
+```powershell
+scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+```
+
 Create the final local upload bundle:
 
 ```powershell

@@ -44,6 +44,7 @@ scripts/qwencloud-hackathon-audit.ps1
 scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-finalize-after-urls.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 ```
 
@@ -93,6 +94,11 @@ artifact readiness, and final Devpost packet readiness.
 assets, the generated Devpost packet, and a manifest so the final submission
 files are all in one place. It also includes the latest deploy preflight report
 and Docker build/run logs when available.
+
+`qwencloud-finalize-after-urls.ps1` is the final one-command gate after the
+public video and deployed backend URLs are known. It runs the submission packet,
+final readiness dashboard, final upload bundle, and then writes a single final
+status report.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and

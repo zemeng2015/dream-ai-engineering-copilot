@@ -19,6 +19,7 @@ param(
         "scripts/qwencloud-alibaba-release.ps1",
         "scripts/qwencloud-capture-alibaba-proof.ps1",
         "scripts/qwencloud-deploy-preflight.ps1",
+        "scripts/qwencloud-finalize-after-urls.ps1",
         "scripts/qwencloud-export-architecture-png.ps1",
         "scripts/qwencloud-final-upload-bundle.ps1",
         "scripts/qwencloud-final-readiness.ps1",
