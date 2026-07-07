@@ -223,6 +223,13 @@ Render the final under-3-minute Devpost upload video:
 scripts/qwencloud-render-demo-video.ps1
 ```
 
+Generate the upload publication handoff with the final MP4 hash, title,
+description, tags, and action-time confirmation boundary:
+
+```powershell
+scripts/qwencloud-video-publication-handoff.ps1
+```
+
 Generate a local Devpost handoff page with copy fields and upload paths:
 
 ```powershell

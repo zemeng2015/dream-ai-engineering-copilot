@@ -97,6 +97,7 @@ $uploadItems = @(
     Get-UploadItem -Name "architecture_diagram" -Path $ArchitectureUploadPath
     Get-UploadItem -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
     Get-UploadItem -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
+    Get-UploadItem -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
     Get-UploadItem -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
     Get-UploadItem -Name "alibaba_backend_proof_recording" -Path $AlibabaProofVideoPath
     Get-UploadItem -Name "devpost_form_fields_reference" -Path "docs/qwencloud-devpost-form-fields.md"
@@ -150,6 +151,7 @@ $shortPitch = "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering i
 
 $nextCommands = @(
     'scripts/qwencloud-render-demo-video.ps1',
+    'scripts/qwencloud-video-publication-handoff.ps1',
     'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
     'scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
     'scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',

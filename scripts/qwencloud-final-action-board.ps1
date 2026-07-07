@@ -115,6 +115,16 @@ if ($SkipExternalUrlChecks) { $videoArgs += "-SkipExternalUrlChecks" }
 if ($SkipLocalVideoChecks) { $videoArgs += "-SkipLocalVideoChecks" }
 Invoke-BoardStep -Name "video-upload-status" -Arguments $videoArgs
 
+$videoPublicationArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-video-publication-handoff.ps1",
+    "-OutputDir", $OutputDir,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $videoPublicationArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+Invoke-BoardStep -Name "video-publication-handoff" -Arguments $videoPublicationArgs
+
 $cloudArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -160,12 +170,14 @@ if ($SkipLocalVideoChecks) { $readinessArgs += "-SkipLocalVideoChecks" }
 Invoke-BoardStep -Name "final-readiness" -Arguments $readinessArgs -AllowedExitCodes @(0, 1)
 
 $videoReport = Read-LatestJson -Filter "video-upload-status-*.json"
+$videoPublicationReport = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloudReport = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $secretsReport = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $officialRulesReport = Read-LatestJson -Filter "official-rules-gate-*.json"
 $readinessReport = Read-LatestJson -Filter "final-readiness-*.json"
 
 $videoReady = [bool]($videoReport.data -and $videoReport.data.readyForDevpostVideoField)
+$videoPublicationReady = [bool]($videoPublicationReport.data -and $videoPublicationReport.data.readyForManualUpload)
 $cloudReady = [bool]($cloudReport.data -and $cloudReport.data.readyForCloudRelease)
 $secretsReady = [bool]($SkipGitHubSecrets -or ($secretsReport.data -and $secretsReport.data.readyForGitHubReleaseWorkflow))
 $officialRulesReady = [bool]($officialRulesReport.data -and $officialRulesReport.data.readyForOfficialRules)
@@ -179,6 +191,7 @@ $deployPreflightCheck = Get-Check -Readiness $readiness -Name "latest_deploy_pre
 
 if (-not $videoReady) {
     Add-Action -Name "Publish public demo video" -Reason "Devpost requires a public demo video URL." -RequiresUser $true -Commands @(
+        'scripts/qwencloud-video-publication-handoff.ps1',
         "# Enable Chrome file access only after explicit confirmation, or upload manually.",
         "# Upload artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4 to YouTube, Vimeo, or Youku.",
         'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"'
@@ -264,6 +277,7 @@ $result = [ordered]@{
     deadline = "2026-07-09 14:00 PDT / 17:00 EDT"
     reports = [ordered]@{
         videoUploadStatus = $videoReport.file
+        videoPublicationHandoff = $videoPublicationReport.file
         cloudCredentialsHandoff = $cloudReport.file
         githubSecretsHandoff = if ($SkipGitHubSecrets) { "<skipped>" } else { $secretsReport.file }
         finalReadiness = $readinessReport.file
@@ -271,6 +285,7 @@ $result = [ordered]@{
     }
     statusSummary = [ordered]@{
         videoReady = $videoReady
+        videoPublicationHandoffReady = $videoPublicationReady
         cloudReady = $cloudReady
         githubSecretsReady = $secretsReady
         githubSecretsSkipped = [bool]$SkipGitHubSecrets
@@ -302,6 +317,7 @@ $lines = @(
     "| Signal | Ready |",
     "|---|---:|",
     "| Video URL | $(if ($videoReady) { 'yes' } else { 'no' }) |",
+    "| Video publication handoff | $(if ($videoPublicationReady) { 'yes' } else { 'no' }) |",
     "| Local cloud release env | $(if ($cloudReady) { 'yes' } else { 'no' }) |",
     "| GitHub release secrets | $(if ($SkipGitHubSecrets) { 'skipped' } elseif ($secretsReady) { 'yes' } else { 'no' }) |",
     "| Latest CI | $(if ($ciCheck -and $ciCheck.ok) { 'yes' } else { 'no' }) |",
@@ -313,6 +329,7 @@ $lines = @(
     "## Reports",
     "",
     "- Video status: $(if ($videoReport.file) { $videoReport.file } else { '<missing>' })",
+    "- Video publication handoff: $(if ($videoPublicationReport.file) { $videoPublicationReport.file } else { '<missing>' })",
     "- Cloud credentials: $(if ($cloudReport.file) { $cloudReport.file } else { '<missing>' })",
     "- GitHub secrets: $(if ($SkipGitHubSecrets) { '<skipped>' } elseif ($secretsReport.file) { $secretsReport.file } else { '<missing>' })",
     "- Official rules gate: $(if ($officialRulesReport.file) { $officialRulesReport.file } else { '<missing>' })",

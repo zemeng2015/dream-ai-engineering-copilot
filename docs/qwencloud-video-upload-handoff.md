@@ -14,6 +14,7 @@ Render or refresh it with:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
+scripts/qwencloud-video-publication-handoff.ps1
 scripts/qwencloud-video-upload-status.ps1 -AllowDraft
 ```
 
@@ -21,6 +22,11 @@ The render command also writes `artifacts/qwencloud-proof/demo-video-render-*.md
 and `.json` manifests with the final MP4 duration, resolution, codec, SHA256,
 and source asset hashes. Use the SHA256 to confirm the uploaded video came from
 the reviewed local file.
+
+The publication handoff command writes `video-publication-handoff-*.md` and
+`.json` with the final upload title, description, tags, local MP4 SHA256, and
+the exact action-time confirmation boundary before selecting the file in a
+third-party upload page.
 
 Expected metadata:
 

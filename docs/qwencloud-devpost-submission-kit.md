@@ -50,15 +50,17 @@ upload file with:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
+scripts/qwencloud-video-publication-handoff.ps1
 ```
 
 Expected local upload file:
 
 `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
 
-Use `docs/qwencloud-video-upload-handoff.md` for the public upload title,
-description, accepted video platforms, visibility check, and Chrome file upload
-troubleshooting.
+Use `docs/qwencloud-video-upload-handoff.md` plus the latest
+`video-publication-handoff-*.md` report for the public upload title,
+description, accepted video platforms, visibility check, local MP4 SHA256, and
+Chrome file upload troubleshooting.
 
 Recommended 4-shot order:
 

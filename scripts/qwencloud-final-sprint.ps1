@@ -167,6 +167,17 @@ if ($DemoVideoUrl) { $videoArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
 if ($SkipExternalUrlChecks) { $videoArgs += "-SkipExternalUrlChecks" }
 Invoke-SprintStep -Name "final-sprint-video-status" -Arguments $videoArgs | Out-Null
 
+$videoPublicationArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-video-publication-handoff.ps1",
+    "-OutputDir", $OutputDir,
+    "-LocalVideoPath", $LocalVideoPath,
+    "-AllowDraft"
+)
+if ($DemoVideoUrl) { $videoPublicationArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+Invoke-SprintStep -Name "final-sprint-video-publication-handoff" -Arguments $videoPublicationArgs | Out-Null
+
 $cloudArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -263,6 +274,7 @@ if ($SkipExternalUrlChecks) { $actionBoardArgs += "-SkipExternalUrlChecks" }
 Invoke-SprintStep -Name "final-sprint-action-board" -Arguments $actionBoardArgs | Out-Null
 
 $video = Read-LatestJson -Filter "video-upload-status-*.json"
+$videoPublication = Read-LatestJson -Filter "video-publication-handoff-*.json"
 $cloud = Read-LatestJson -Filter "cloud-credentials-handoff-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $release = Read-LatestJson -Filter "alibaba-release-*.json"
@@ -294,6 +306,7 @@ if ($readiness.data) {
 
 $signals = [ordered]@{
     publicDemoVideoReady = [bool]($video.data -and $video.data.readyForDevpostVideoField)
+    videoPublicationHandoffReady = [bool]($videoPublication.data -and $videoPublication.data.readyForManualUpload)
     cloudReleaseReady = [bool]($cloud.data -and $cloud.data.readyForCloudRelease)
     githubReleaseWorkflowRequired = [bool]$UseGitHubReleaseWorkflow
     githubReleaseWorkflowReady = [bool]((-not $UseGitHubReleaseWorkflow) -or ($github.data -and $github.data.readyForGitHubReleaseWorkflow))
@@ -311,7 +324,7 @@ if (-not $signals.publicDemoVideoReady) {
     Add-NextAction `
         -Name "Publish public demo video" `
         -Reason "Devpost video field needs a public YouTube, Vimeo, or Youku URL." `
-        -Command 'scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"' `
+        -Command 'scripts/qwencloud-video-publication-handoff.ps1; scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"' `
         -RequiresZackConfirmation $true
 }
 
@@ -393,6 +406,7 @@ $result = [ordered]@{
     signals = $signals
     reports = [ordered]@{
         videoUploadStatusJson = $video.file
+        videoPublicationHandoffJson = $videoPublication.file
         cloudCredentialsHandoffJson = $cloud.file
         githubSecretsHandoffJson = $github.file
         alibabaReleaseJson = $release.file
@@ -446,6 +460,7 @@ $lines += @(
     "## Reports",
     "",
     "- Video upload status: $(if ($video.file) { $video.file } else { '<missing>' })",
+    "- Video publication handoff: $(if ($videoPublication.file) { $videoPublication.file } else { '<missing>' })",
     "- Cloud credentials handoff: $(if ($cloud.file) { $cloud.file } else { '<missing>' })",
     "- GitHub secrets handoff: $(if ($github.file) { $github.file } else { '<missing>' })",
     "- Alibaba release report: $(if ($release.file) { $release.file } else { '<missing>' })",

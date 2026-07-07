@@ -314,6 +314,7 @@ $requiredPaths = @(
     "scripts/qwencloud-devpost-autofill-snippet.ps1",
     "scripts/qwencloud-judging-scorecard.ps1",
     "scripts/qwencloud-official-rules-gate.ps1",
+    "scripts/qwencloud-video-publication-handoff.ps1",
     "scripts/qwencloud-hackathon-audit.ps1",
     "scripts/qwencloud-hackathon-proof.ps1",
     "scripts/qwencloud-run-local-proof.ps1",

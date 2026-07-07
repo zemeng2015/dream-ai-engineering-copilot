@@ -448,6 +448,44 @@ function Invoke-CloudCredentialsHandoff {
     }
 }
 
+function Invoke-VideoPublicationHandoff {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-publication-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-video-publication-handoff.ps1",
+        "-OutputDir", $OutputDir,
+        "-LocalVideoPath", $LocalDemoVideoPath,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-video-publication-handoff-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-video-publication-handoff-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        throw "Video publication handoff generation failed. See $stderr"
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-publication-handoff-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) {
+        $json = @($after | Select-Object -First 1)
+    }
+    if (-not $json) {
+        throw "Video publication handoff JSON was not found."
+    }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [string]$data.reportMarkdown
+        readyForManualUpload = [bool]$data.readyForManualUpload
+        readyForDevpostVideoField = [bool]$data.readyForDevpostVideoField
+    }
+}
+
+$videoPublicationHandoff = Invoke-VideoPublicationHandoff
 $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
@@ -457,6 +495,7 @@ $officialRulesGate = Invoke-OfficialRulesGate
 $cloudHandoff = Invoke-CloudCredentialsHandoff
 
 Add-ExternalRequirement -Name "public_demo_video_url" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
+Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
 Add-ExternalRequirement -Name "devpost_handoff_ready" -Ok $handoff.ready -Details $(if ($handoff.ready) { "READY" } else { "DRAFT; missing=$($handoff.blockers -join ', ')" }) -Required $false
@@ -468,6 +507,9 @@ Add-ExternalRequirement -Name "cloud_credentials_handoff_ready" -Ok $cloudHandof
 Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
 Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false
+Add-Item -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
+Add-Item -Name "video_publication_handoff_markdown" -Path $videoPublicationHandoff.markdown
+Add-Item -Name "video_publication_handoff_json" -Path $videoPublicationHandoff.json
 Add-Item -Name "demo_video_render_script" -Path "scripts/qwencloud-render-demo-video.ps1" -Required $false
 Add-LatestItem -Name "latest_demo_video_render_markdown" -Filter "demo-video-render-*.md"
 Add-LatestItem -Name "latest_demo_video_render_json" -Filter "demo-video-render-*.json"

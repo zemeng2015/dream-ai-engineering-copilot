@@ -115,10 +115,12 @@ scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-comp
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
+scripts/qwencloud-video-publication-handoff.ps1
 ```
 
 - Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
-- Use `docs/qwencloud-video-upload-handoff.md` for the title, description,
+- Use `docs/qwencloud-video-upload-handoff.md` and the latest
+  `video-publication-handoff-*.md` for the title, description, MP4 hash,
   platform rules, and Chrome upload troubleshooting.
 - If Codex-controlled Chrome reports `Not allowed` on file upload, open
   `chrome://extensions`, click Details under the Codex extension, and enable
