@@ -124,13 +124,14 @@ function Test-LatestDeployPreflight {
             $preflight = Get-Content -LiteralPath $candidate.FullName -Raw | ConvertFrom-Json
             $buildCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.build" } | Select-Object -First 1)
             $smokeCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_container" } | Select-Object -First 1)
+            $showcaseCheck = @($preflight.checks | Where-Object { $_.name -eq "docker.smoke_showcase" } | Select-Object -First 1)
             $preflightCommit = [string]$preflight.gitCommit
             $commitMatchesHead = (-not [string]::IsNullOrWhiteSpace($head)) -and ($preflightCommit -eq $head)
-            $details = "path=$($candidate.FullName); gitCommit=$preflightCommit; head=$head; commitMatchesHead=$commitMatchesHead; buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok)"
+            $details = "path=$($candidate.FullName); gitCommit=$preflightCommit; head=$head; commitMatchesHead=$commitMatchesHead; buildImage=$($preflight.buildImage); smokeContainer=$($preflight.smokeContainer); docker.build=$($buildCheck.ok); docker.smoke_container=$($smokeCheck.ok); docker.smoke_showcase=$($showcaseCheck.ok)"
             if ([string]::IsNullOrWhiteSpace($latestDetails)) {
                 $latestDetails = $details
             }
-            if ([bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok -and $commitMatchesHead) {
+            if ([bool]$preflight.buildImage -and [bool]$preflight.smokeContainer -and [bool]$buildCheck.ok -and [bool]$smokeCheck.ok -and [bool]$showcaseCheck.ok -and $commitMatchesHead) {
                 return [pscustomobject]@{
                     ok = $true
                     details = $details

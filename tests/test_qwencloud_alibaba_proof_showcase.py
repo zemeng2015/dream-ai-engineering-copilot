@@ -29,8 +29,14 @@ def test_deploy_preflight_uses_isolated_showcase_smoke() -> None:
     preflight = (ROOT / "scripts" / "qwencloud-deploy-preflight.ps1").read_text(
         encoding="utf-8-sig"
     )
+    readiness = (ROOT / "scripts" / "qwencloud-final-readiness.ps1").read_text(
+        encoding="utf-8-sig"
+    )
 
     assert "Resolve-SmokePort" in preflight
     assert "docker.smoke_port_available" in preflight
     assert "/qwencloud/showcase" in preflight
     assert "docker.smoke_showcase" in preflight
+    assert 'Where-Object { $_.name -eq "docker.smoke_showcase" }' in readiness
+    assert "docker.smoke_showcase=$($showcaseCheck.ok)" in readiness
+    assert "[bool]$showcaseCheck.ok" in readiness
