@@ -27,6 +27,15 @@ Do not click final Submit until the final readiness dashboard reports `READY`.
 The eligibility checkboxes are legal attestations and should be confirmed by
 Zack at final submission time.
 
+Generate the current structured draft payload with:
+
+```powershell
+scripts/qwencloud-devpost-draft-payload.ps1 -AllowDraft
+```
+
+This payload is local only. Saving it into Devpost is an external write action
+and still requires Zack action-time confirmation.
+
 ## Project name
 
 DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence

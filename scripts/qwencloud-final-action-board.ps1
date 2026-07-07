@@ -218,6 +218,12 @@ if (-not ($packetCheck -and $packetCheck.ok)) {
     )
 }
 
+Add-Action -Name "Prepare and save Devpost draft fields" -Reason "The live Devpost draft still needs public text fields saved before final review." -RequiresUser $true -Commands @(
+    'scripts/qwencloud-devpost-draft-payload.ps1 -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -AllowDraft',
+    "# After Zack confirms, save only non-legal public text fields to Devpost.",
+    "# Do not upload files, check legal attestations, or click final Submit from this step."
+)
+
 Add-Action -Name "Final Devpost legal submit" -Reason "Eligibility and Official Rules / Terms checkboxes are legal attestations." -RequiresUser $true -Commands @(
     "# Zack confirms age, jurisdiction, sponsor/government employment, Official Rules, and Devpost Terms.",
     "# Submit Devpost only after final-readiness reports READY."

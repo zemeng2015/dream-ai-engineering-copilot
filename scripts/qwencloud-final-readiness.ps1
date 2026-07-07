@@ -360,7 +360,8 @@ foreach ($path in @(
     "docs/qwencloud-github-release-workflow.md",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
     "scripts/qwencloud-validate-alibaba-proof.ps1",
-    "scripts/qwencloud-hackathon-submission-packet.ps1"
+    "scripts/qwencloud-hackathon-submission-packet.ps1",
+    "scripts/qwencloud-devpost-draft-payload.ps1"
 )) {
     $fileCheck = Test-File -Path $path
     Add-Check -Name "file.$path" -Ok $fileCheck.ok -Details $fileCheck.details
