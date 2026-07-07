@@ -493,6 +493,7 @@ class ContextIntelligenceService:
                     reason="Memory claim matched request terms.",
                 )
             )
+        refs.sort(key=lambda ref: (0 if ref.intake_proofs else 1, ref.entity, ref.claim_id))
         return refs[:20]
 
     def _claim_counts(self, team_id: str) -> tuple[int, int]:
