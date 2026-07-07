@@ -4,6 +4,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$DevpostProjectUrl = "",
     [Parameter(Mandatory = $false)]
+    [string]$DevpostHtmlPath = "",
+    [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
@@ -136,6 +138,86 @@ function Is-TrueBoolean($Value) {
     return ([string]$Value).ToLowerInvariant() -eq "true"
 }
 
+function Test-TextContains([string]$Text, [string]$Needle) {
+    if ([string]::IsNullOrWhiteSpace($Text) -or [string]::IsNullOrWhiteSpace($Needle)) {
+        return $false
+    }
+
+    return $Text.IndexOf($Needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+function Get-UrlHostToken([string]$Url) {
+    try {
+        return ([System.Uri]$Url).Host.ToLowerInvariant() -replace "^www\.", ""
+    }
+    catch {
+        return ""
+    }
+}
+
+function Get-VideoUrlToken([string]$Url) {
+    if ($Url -match "youtu\.be/(?<id>[A-Za-z0-9_-]{6,})") {
+        return $matches.id
+    }
+    if ($Url -match "youtube\.com/(?:watch\?[^#]*v=|embed/|shorts/)(?<id>[A-Za-z0-9_-]{6,})") {
+        return $matches.id
+    }
+    if ($Url -match "vimeo\.com/(?:video/)?(?<id>[0-9]+)") {
+        return $matches.id
+    }
+    if ($Url -match "facebook\.com/.*/videos/(?<id>[0-9]+)") {
+        return $matches.id
+    }
+    if ($Url -match "facebook\.com/watch/\?v=(?<id>[0-9]+)") {
+        return $matches.id
+    }
+    if ($Url -match "youku\.com/(?:v_show/)?id_(?<id>[A-Za-z0-9=_-]+)") {
+        return $matches.id
+    }
+
+    return ""
+}
+
+function Test-DevpostRepoMention([string]$Content, [string]$RepoUrlValue, [string]$RepoNameValue) {
+    $exactUrl = Test-TextContains -Text $Content -Needle $RepoUrlValue
+    $repoNameMention = Test-TextContains -Text $Content -Needle $RepoNameValue
+    return [pscustomobject]@{
+        ok = ($exactUrl -or $repoNameMention)
+        details = "repoUrl=$exactUrl; repoName=$repoNameMention"
+    }
+}
+
+function Test-DevpostVideoMention([string]$Content, [string]$VideoUrlValue) {
+    if (-not (Is-DevpostVideoUrl $VideoUrlValue)) {
+        return [pscustomobject]@{ ok = $false; details = "DemoVideoUrl missing or not $script:QwenCloudDevpostVideoPlatformLabel" }
+    }
+
+    $exactUrl = Test-TextContains -Text $Content -Needle $VideoUrlValue
+    $videoHost = Get-UrlHostToken -Url $VideoUrlValue
+    $videoToken = Get-VideoUrlToken -Url $VideoUrlValue
+    $hostCandidates = @($videoHost)
+    if ($videoHost -match "youtube" -or $videoHost -eq "youtu.be") {
+        $hostCandidates += @("youtube.com", "youtu.be", "youtube-nocookie.com")
+    }
+    elseif ($videoHost -match "facebook") {
+        $hostCandidates += @("facebook.com", "fb.watch")
+    }
+
+    $hostMention = $false
+    foreach ($candidate in @($hostCandidates | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)) {
+        if (Test-TextContains -Text $Content -Needle $candidate) {
+            $hostMention = $true
+            break
+        }
+    }
+
+    $tokenMention = if ([string]::IsNullOrWhiteSpace($videoToken)) { $true } else { Test-TextContains -Text $Content -Needle $videoToken }
+    return [pscustomobject]@{
+        ok = ($exactUrl -or ($hostMention -and $tokenMention))
+        details = "exactUrl=$exactUrl; host=$videoHost; hostMention=$hostMention; videoToken=$(if ($videoToken) { $videoToken } else { '<none>' }); tokenMention=$tokenMention"
+    }
+}
+
 function Test-Url {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -161,6 +243,24 @@ function Test-Url {
     catch {
         return [pscustomobject]@{ ok = $false; status = 0; content = ""; details = $_.Exception.Message }
     }
+}
+
+function Get-DevpostProjectResponse([string]$Url) {
+    if (-not [string]::IsNullOrWhiteSpace($DevpostHtmlPath)) {
+        if (-not (Test-Path -LiteralPath $DevpostHtmlPath)) {
+            return [pscustomobject]@{ ok = $false; status = 0; content = ""; details = "DevpostHtmlPath missing: $DevpostHtmlPath" }
+        }
+
+        $content = Get-Content -LiteralPath $DevpostHtmlPath -Raw
+        return [pscustomobject]@{
+            ok = $true
+            status = 0
+            content = [string]$content
+            details = "fixture=$DevpostHtmlPath"
+        }
+    }
+
+    return Test-Url -Url $Url -Method "Get"
 }
 
 function Get-GitHubRepoMetadata([string]$RepoName) {
@@ -350,21 +450,32 @@ else {
 
 Add-Check -Name "devpost_public_project_url_present" -Ok (Is-DevpostProjectUrl $DevpostProjectUrl) -Details $(if ($DevpostProjectUrl) { $DevpostProjectUrl } else { "missing" })
 if (Is-DevpostProjectUrl $DevpostProjectUrl) {
-    $devpost = Test-Url -Url $DevpostProjectUrl -Method "Get"
+    $devpost = Get-DevpostProjectResponse -Url $DevpostProjectUrl
     Add-Check -Name "devpost_public_project_reachable" -Ok $devpost.ok -Details $devpost.details
-    if ($SkipExternalUrlChecks) {
+    if ($SkipExternalUrlChecks -and [string]::IsNullOrWhiteSpace($DevpostHtmlPath)) {
         Add-Check -Name "devpost_public_project_mentions_dream" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
         Add-Check -Name "devpost_public_project_mentions_qwen" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
+        Add-Check -Name "devpost_public_project_mentions_repo" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
+        Add-Check -Name "devpost_public_project_mentions_demo_video" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
+        Add-Check -Name "devpost_public_project_mentions_track_memoryagent" -Ok $true -Details "skipped by -SkipExternalUrlChecks" -Required $false
     }
     else {
-        Add-Check -Name "devpost_public_project_mentions_dream" -Ok ($devpost.content -match [regex]::Escape($ExpectedTitle)) -Details "expected text: $ExpectedTitle"
-        Add-Check -Name "devpost_public_project_mentions_qwen" -Ok ($devpost.content -match "Qwen") -Details "expected text: Qwen"
+        $repoMention = Test-DevpostRepoMention -Content $devpost.content -RepoUrlValue $RepoUrl -RepoNameValue $repoName
+        $videoMention = Test-DevpostVideoMention -Content $devpost.content -VideoUrlValue $DemoVideoUrl
+        Add-Check -Name "devpost_public_project_mentions_dream" -Ok ($devpost.ok -and (Test-TextContains -Text $devpost.content -Needle $ExpectedTitle)) -Details "expected text: $ExpectedTitle"
+        Add-Check -Name "devpost_public_project_mentions_qwen" -Ok ($devpost.ok -and (Test-TextContains -Text $devpost.content -Needle "Qwen")) -Details "expected text: Qwen"
+        Add-Check -Name "devpost_public_project_mentions_repo" -Ok ($devpost.ok -and $repoMention.ok) -Details $repoMention.details
+        Add-Check -Name "devpost_public_project_mentions_demo_video" -Ok ($devpost.ok -and $videoMention.ok) -Details $videoMention.details
+        Add-Check -Name "devpost_public_project_mentions_track_memoryagent" -Ok ($devpost.ok -and (Test-TextContains -Text $devpost.content -Needle "MemoryAgent")) -Details "optional expected text: MemoryAgent" -Required $false
     }
 }
 else {
     Add-Check -Name "devpost_public_project_reachable" -Ok $false -Details "DevpostProjectUrl missing or not public project URL"
     Add-Check -Name "devpost_public_project_mentions_dream" -Ok $false -Details "DevpostProjectUrl missing or not public project URL"
     Add-Check -Name "devpost_public_project_mentions_qwen" -Ok $false -Details "DevpostProjectUrl missing or not public project URL"
+    Add-Check -Name "devpost_public_project_mentions_repo" -Ok $false -Details "DevpostProjectUrl missing or not public project URL"
+    Add-Check -Name "devpost_public_project_mentions_demo_video" -Ok $false -Details "DevpostProjectUrl missing or not public project URL"
+    Add-Check -Name "devpost_public_project_mentions_track_memoryagent" -Ok $false -Details "DevpostProjectUrl missing or not public project URL" -Required $false
 }
 
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
@@ -487,6 +598,7 @@ $result = [ordered]@{
     status = $status
     readyForGoalCompletionEvidence = $ready
     devpostProjectUrl = $DevpostProjectUrl
+    devpostHtmlPath = $DevpostHtmlPath
     repoUrl = $RepoUrl
     repoName = $repoName
     demoVideoUrl = $DemoVideoUrl

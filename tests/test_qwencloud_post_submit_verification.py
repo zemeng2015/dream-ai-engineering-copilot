@@ -107,6 +107,21 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
         ),
         encoding="utf-8",
     )
+    devpost_html = tmp_path / "devpost.html"
+    devpost_html.write_text(
+        """
+        <html>
+          <head><title>DREAM</title></head>
+          <body>
+            <h1>DREAM</h1>
+            <p>Qwen Cloud MemoryAgent submission.</p>
+            <a href="https://github.com/zemeng2015/dream-ai-engineering-copilot">Code</a>
+            <iframe src="https://www.youtube.com/embed/abc123fixture"></iframe>
+          </body>
+        </html>
+        """,
+        encoding="utf-8",
+    )
 
     result = subprocess.run(
         _powershell_command()
@@ -121,6 +136,8 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
             str(runs_json),
             "-RepoJsonPath",
             str(repo_json),
+            "-DevpostHtmlPath",
+            str(devpost_html),
             "-DevpostProjectUrl",
             "https://devpost.com/software/dream-qwen-cloud-memoryagent",
             "-DemoVideoUrl",
@@ -150,6 +167,9 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
     assert _check(report, "repo_url_github")["ok"] is True
     assert _check(report, "repo_github_public")["ok"] is True
     assert _check(report, "repo_license_apache_2_0")["ok"] is True
+    assert _check(report, "devpost_public_project_mentions_repo")["ok"] is True
+    assert _check(report, "devpost_public_project_mentions_demo_video")["ok"] is True
+    assert _check(report, "devpost_public_project_mentions_track_memoryagent")["required"] is False
 
 
 def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
@@ -157,8 +177,11 @@ def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
 
     assert "[string]$RunsJsonPath" in text
     assert "[string]$RepoJsonPath" in text
+    assert "[string]$DevpostHtmlPath" in text
     assert "[string]$GitHead" in text
     assert "function Get-RepoName" in text
+    assert "function Get-DevpostProjectResponse" in text
+    assert "function Test-DevpostVideoMention" in text
     assert "function Get-GitHubRepoMetadata" in text
     assert "ConvertTo-FlatArray" in text
     assert "matchingRuns" in text
@@ -166,3 +189,5 @@ def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
     assert "$manifest.gitCommit" in text
     assert "repo_github_public" in text
     assert "repo_license_apache_2_0" in text
+    assert "devpost_public_project_mentions_repo" in text
+    assert "devpost_public_project_mentions_demo_video" in text
