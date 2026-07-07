@@ -49,6 +49,9 @@ def test_cloud_credentials_template_does_not_shadow_process_env(tmp_path: Path) 
     markdown = Path(report["markdown"]).read_text(encoding="utf-8-sig")
 
     assert "$env:DASHSCOPE_API_KEY" in template
+    assert "$env:ALIBABA_CONTAINER_REGISTRY_USERNAME" in template
+    assert "$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD" in template
+    assert "--password-stdin" in template
     assert "intentionally omits -EnvFile" in template
     assert "qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer" in template
     assert "qwencloud-alibaba-release.ps1 -DemoVideoUrl" in template

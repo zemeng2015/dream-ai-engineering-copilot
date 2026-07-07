@@ -99,6 +99,8 @@ $envChecks = @(
     Env-State -Name "DASHSCOPE_API_KEY"
     Env-State -Name "ALIBABA_CLOUD_REGION"
     Env-State -Name "ALIBABA_CLOUD_CONTAINER_IMAGE"
+    Env-State -Name "ALIBABA_CONTAINER_REGISTRY_USERNAME"
+    Env-State -Name "ALIBABA_CONTAINER_REGISTRY_PASSWORD"
     Env-State -Name "QWEN_BASE_URL" -Required $false
     Env-State -Name "QWEN_MODEL" -Required $false
 )
@@ -127,11 +129,13 @@ $setupCommands = @(
     '$env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"',
     "`$env:ALIBABA_CLOUD_REGION=`"$Region`"",
     "`$env:ALIBABA_CLOUD_CONTAINER_IMAGE=`"$ContainerImage`"",
+    '$env:ALIBABA_CONTAINER_REGISTRY_USERNAME="<registry-username>"',
+    '$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD="<registry-password>"',
     '$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"',
     '$env:QWEN_MODEL="qwen3.7-plus"',
     's config add -a default --AccessKeyID "<alibaba-access-key-id>" --AccessKeySecret "<alibaba-access-key-secret>" --force',
     's config get -a default',
-    "docker login $registryHost",
+    "`$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login $registryHost -u `$env:ALIBABA_CONTAINER_REGISTRY_USERNAME --password-stdin",
     'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft',
     "scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl `"$videoValue`"",
     "scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`"",

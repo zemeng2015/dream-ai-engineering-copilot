@@ -62,6 +62,59 @@ function Require-Env([string]$Name) {
     }
 }
 
+function Get-RegistryHost([string]$Image) {
+    if ([string]::IsNullOrWhiteSpace($Image)) {
+        throw "ALIBABA_CLOUD_CONTAINER_IMAGE is required before registry login."
+    }
+
+    $registryHost = ($Image -split "/")[0]
+    if ([string]::IsNullOrWhiteSpace($registryHost) -or $registryHost -eq $Image -or $registryHost -notmatch "\.") {
+        throw "ALIBABA_CLOUD_CONTAINER_IMAGE must include a registry host, for example registry-intl.ap-southeast-1.aliyuncs.com/namespace/repo:tag"
+    }
+
+    return $registryHost
+}
+
+function Quote-ProcessArg([string]$Value) {
+    return '"' + ($Value -replace '"', '\"') + '"'
+}
+
+function Invoke-DockerLogin([string]$RegistryHost) {
+    $username = [Environment]::GetEnvironmentVariable("ALIBABA_CONTAINER_REGISTRY_USERNAME")
+    $password = [Environment]::GetEnvironmentVariable("ALIBABA_CONTAINER_REGISTRY_PASSWORD")
+    if (-not (Has-Env "ALIBABA_CONTAINER_REGISTRY_USERNAME") -or -not (Has-Env "ALIBABA_CONTAINER_REGISTRY_PASSWORD")) {
+        throw "ALIBABA_CONTAINER_REGISTRY_USERNAME and ALIBABA_CONTAINER_REGISTRY_PASSWORD are required unless -SkipPush is set."
+    }
+
+    $stdout = Join-Path $OutputDir "docker-login-$timestamp.out"
+    $stderr = Join-Path $OutputDir "docker-login-$timestamp.err"
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = "docker"
+    $psi.Arguments = "login $(Quote-ProcessArg $RegistryHost) -u $(Quote-ProcessArg $username) --password-stdin"
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+
+    $proc = [System.Diagnostics.Process]::new()
+    $proc.StartInfo = $psi
+    $proc.Start() | Out-Null
+    $proc.StandardInput.WriteLine($password)
+    $proc.StandardInput.Close()
+    $outText = $proc.StandardOutput.ReadToEnd()
+    $errText = $proc.StandardError.ReadToEnd()
+    $proc.WaitForExit()
+
+    Set-Content -Path $stdout -Value $outText -Encoding UTF8
+    Set-Content -Path $stderr -Value $errText -Encoding UTF8
+    if ($proc.ExitCode -ne 0) {
+        Add-Step -Name "docker_login" -Status "fail" -Details "docker login $RegistryHost with ALIBABA_CONTAINER_REGISTRY_USERNAME; stdout=$stdout; stderr=$stderr"
+        throw "docker login failed with exit code $($proc.ExitCode). See $stderr"
+    }
+
+    Add-Step -Name "docker_login" -Status "pass" -Details "logged in to $RegistryHost with ALIBABA_CONTAINER_REGISTRY_USERNAME; stdout=$stdout; stderr=$stderr"
+}
+
 function Get-PowerShellExe {
     $pwsh = Get-Command "pwsh" -ErrorAction SilentlyContinue
     if ($pwsh) { return $pwsh.Source }
@@ -176,7 +229,11 @@ try {
         Add-Step -Name "required_env" -Status "skipped" -Details "SkipDeploy with explicit BackendUrl"
     }
     else {
-        $missingEnv = @("DASHSCOPE_API_KEY", "ALIBABA_CLOUD_REGION", "ALIBABA_CLOUD_CONTAINER_IMAGE") | Where-Object { -not (Has-Env $_) }
+        $requiredEnv = @("DASHSCOPE_API_KEY", "ALIBABA_CLOUD_REGION", "ALIBABA_CLOUD_CONTAINER_IMAGE")
+        if (-not $SkipPush) {
+            $requiredEnv += @("ALIBABA_CONTAINER_REGISTRY_USERNAME", "ALIBABA_CONTAINER_REGISTRY_PASSWORD")
+        }
+        $missingEnv = $requiredEnv | Where-Object { -not (Has-Env $_) }
         if ($missingEnv.Count -gt 0) {
             if ($PlanOnly) {
                 Add-Step -Name "required_env" -Status "missing" -Details "Set before real release: $($missingEnv -join ', ')"
@@ -186,7 +243,7 @@ try {
             }
         }
         else {
-            Add-Step -Name "required_env" -Status "pass" -Details "DASHSCOPE_API_KEY, ALIBABA_CLOUD_REGION, ALIBABA_CLOUD_CONTAINER_IMAGE present"
+            Add-Step -Name "required_env" -Status "pass" -Details "$($requiredEnv -join ', ') present"
         }
     }
 
@@ -221,6 +278,8 @@ try {
         Add-Step -Name "docker_push" -Status "skipped" -Details "SkipPush set"
     }
     else {
+        $registryHost = Get-RegistryHost -Image $containerImage
+        Invoke-DockerLogin -RegistryHost $registryHost
         Invoke-Logged -FilePath "docker" -ArgumentList @("tag", $ImageTag, $containerImage) -Name "docker-tag" | Out-Null
         Invoke-Logged -FilePath "docker" -ArgumentList @("push", $containerImage) -Name "docker-push" | Out-Null
     }
