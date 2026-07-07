@@ -616,7 +616,7 @@ $md += @(
     "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, or Facebook Video URL.",
     "- Generate `scripts/qwencloud-devpost-handoff.ps1 -AllowDraft` for one local HTML page with final copy fields and upload paths.",
-    "- Run `scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl <url> -BackendUrl <url>` as the final one-command gate before submitting Devpost.",
+    "- Run `scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl <url> -BackendUrl <url> -RefreshAlibabaProof` as the final one-command gate before submitting Devpost.",
     "- Publish `docs/qwencloud-build-journey-post.md` if pursuing the optional blog/social bonus, then pass `-BlogPostUrl`.",
     "- Paste this packet into Devpost and submit before the deadline."
 )

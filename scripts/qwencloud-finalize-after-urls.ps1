@@ -11,8 +11,16 @@ param(
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
     [string]$EnvFile = "",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaProofVideoPath = "artifacts/qwencloud-proof/alibaba-deployment-proof.mp4",
+    [Parameter(Mandatory = $false)]
+    [int]$AlibabaProofVideoDurationSeconds = 12,
     [switch]$SkipBackendDraft,
     [switch]$SkipExternalUrlChecks,
+    [switch]$RefreshAlibabaProof,
+    [switch]$AllowLocalBackend,
     [switch]$AllowDraft
 )
 
@@ -78,6 +86,58 @@ function Read-JsonFile($File) {
 
 if (([string]::IsNullOrWhiteSpace($DemoVideoUrl) -or [string]::IsNullOrWhiteSpace($BackendUrl)) -and -not $AllowDraft) {
     throw "DemoVideoUrl and BackendUrl are required unless -AllowDraft is set."
+}
+
+$videoStatusArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", "scripts/qwencloud-video-upload-status.ps1",
+    "-OutputDir", $OutputDir,
+    "-SkipLocalVideoChecks"
+)
+if ($DemoVideoUrl) { $videoStatusArgs += @("-DemoVideoUrl", $DemoVideoUrl) }
+if ($SkipExternalUrlChecks) { $videoStatusArgs += "-SkipExternalUrlChecks" }
+if ($AllowDraft) { $videoStatusArgs += "-AllowDraft" }
+Invoke-Step -Name "video-upload-status" -ArgumentList $videoStatusArgs
+
+if ($RefreshAlibabaProof) {
+    if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
+        if ($AllowDraft) {
+            Add-Step -Name "refresh-alibaba-proof" -Ok $true -Details "skipped: BackendUrl missing in draft mode"
+        }
+        else {
+            throw "BackendUrl is required when -RefreshAlibabaProof is set."
+        }
+    }
+    else {
+        $renderArgs = @(
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", "scripts/qwencloud-render-alibaba-proof-video.ps1",
+            "-BaseUrl", $BackendUrl,
+            "-ScreenshotPath", $AlibabaScreenshotPath,
+            "-OutputMp4", $AlibabaProofVideoPath,
+            "-DurationSeconds", "$AlibabaProofVideoDurationSeconds"
+        )
+        if (-not $SkipBackendDraft) { $renderArgs += "-IncludeDraft" }
+        if ($AllowLocalBackend) { $renderArgs += "-AllowLocal" }
+        Invoke-Step -Name "render-alibaba-proof" -ArgumentList $renderArgs
+
+        $validateArgs = @(
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", "scripts/qwencloud-validate-alibaba-proof.ps1",
+            "-BackendUrl", $BackendUrl,
+            "-OutputDir", $OutputDir,
+            "-ScreenshotPath", $AlibabaScreenshotPath,
+            "-ProofVideoPath", $AlibabaProofVideoPath
+        )
+        if ($AllowDraft) { $validateArgs += "-AllowDraft" }
+        Invoke-Step -Name "validate-alibaba-proof" -ArgumentList $validateArgs
+    }
+}
+else {
+    Add-Step -Name "refresh-alibaba-proof" -Ok $true -Details "skipped: pass -RefreshAlibabaProof after backend URL is live"
 }
 
 $packetArgs = @(
@@ -177,6 +237,9 @@ $result = [ordered]@{
     blogPostUrl = $BlogPostUrl
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
+    refreshAlibabaProof = [bool]$RefreshAlibabaProof
+    alibabaScreenshotPath = $AlibabaScreenshotPath
+    alibabaProofVideoPath = $AlibabaProofVideoPath
     packetJson = if ($packetJsonFile) { $packetJsonFile.FullName } else { $null }
     readinessJson = if ($readinessJsonFile) { $readinessJsonFile.FullName } else { $null }
     bundleManifestJson = if ($bundleManifestJsonFile) { $bundleManifestJsonFile.FullName } else { $null }
@@ -194,6 +257,9 @@ $lines = @(
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "- Blog/social URL: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
     "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
+    "- Refresh Alibaba proof: $([bool]$RefreshAlibabaProof)",
+    "- Alibaba screenshot: $AlibabaScreenshotPath",
+    "- Alibaba proof video: $AlibabaProofVideoPath",
     "- Bundle zip: $(if ($bundleManifest) { $bundleManifest.zipPath } else { '<missing>' })",
     "",
     "## Steps",

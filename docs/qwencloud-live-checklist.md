@@ -144,7 +144,7 @@ This must report `READY` before the Devpost form is submitted.
 One-command final gate alternative:
 
 ```powershell
-scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"
+scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>" -RefreshAlibabaProof
 ```
 
 Last-day dashboard alternative:

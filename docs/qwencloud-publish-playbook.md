@@ -49,7 +49,7 @@ scripts/qwencloud-devpost-handoff.ps1 -AllowDraft
 scripts/qwencloud-devpost-autofill-snippet.ps1 -AllowDraft
 scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
-scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
+scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -RefreshAlibabaProof
 scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-final-action-board.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
 scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..." -BackendUrl "https://<function-compute-endpoint>" -AllowDraft
@@ -127,9 +127,11 @@ one pass. By default it only writes local status reports; use
 `-SetGitHubSecrets` or `-RunLocalRelease` only after action-time confirmation.
 
 `qwencloud-finalize-after-urls.ps1` is the final one-command gate after the
-public video and deployed backend URLs are known. It runs the submission packet,
-final readiness dashboard, final upload bundle, and then writes a single final
-status report.
+public video and deployed backend URLs are known. With `-RefreshAlibabaProof`,
+it validates the public video URL, captures the Alibaba proof screenshot,
+renders the short proof recording, validates proof integrity, runs the
+submission packet, final readiness dashboard, final upload bundle, and then
+writes a single final status report.
 
 `qwencloud-devpost-handoff.ps1` generates a local Markdown/HTML/JSON handoff
 with official requirement coverage, copy fields, blockers, upload paths, and

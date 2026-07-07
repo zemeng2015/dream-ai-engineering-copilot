@@ -237,7 +237,7 @@ if (-not ($proofCheck -and $proofCheck.ok)) {
 
 if (-not ($packetCheck -and $packetCheck.ok)) {
     Add-Action -Name "Generate final Devpost packet" -Reason "The copy/paste packet is still DRAFT." -Commands @(
-        'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"',
+        'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -RefreshAlibabaProof',
         'scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"'
     )
 }

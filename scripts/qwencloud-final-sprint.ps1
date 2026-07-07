@@ -364,7 +364,7 @@ if ($signals.deployedBackendUrlPresent -and -not $signals.finalReadinessReady) {
     Add-NextAction `
         -Name "Generate final proof and packet" `
         -Reason "The backend URL exists, but the final proof chain or Devpost packet is not READY yet." `
-        -Command 'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>"' `
+        -Command 'scripts/qwencloud-finalize-after-urls.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-backend-url>" -RefreshAlibabaProof' `
         -RequiresZackConfirmation $false
 }
 
