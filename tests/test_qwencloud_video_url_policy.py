@@ -71,6 +71,7 @@ def test_video_status_accepts_devpost_facebook_video_url(tmp_path: Path) -> None
     report = _latest_status_json(tmp_path)
     assert report["readyForDevpostVideoField"] is True
     assert _check(report, "public_demo_video_url_platform")["ok"] is True
+    assert _check(report, "public_demo_video_current_title")["ok"] is True
 
 
 def test_video_status_accepts_youku_after_official_rules_refresh(tmp_path: Path) -> None:
@@ -83,3 +84,19 @@ def test_video_status_accepts_youku_after_official_rules_refresh(tmp_path: Path)
     report = _latest_status_json(tmp_path)
     assert report["readyForDevpostVideoField"] is True
     assert _check(report, "public_demo_video_url_platform")["ok"] is True
+    assert _check(report, "public_demo_video_current_title")["ok"] is True
+
+
+def test_final_readiness_requires_current_public_video_gate() -> None:
+    final_readiness = (
+        ROOT / "scripts" / "qwencloud-final-readiness.ps1"
+    ).read_text(encoding="utf-8-sig")
+    video_status = (
+        ROOT / "scripts" / "qwencloud-video-upload-status.ps1"
+    ).read_text(encoding="utf-8-sig")
+
+    assert "Invoke-VideoUploadStatus" in final_readiness
+    assert "current_public_demo_video_ready" in final_readiness
+    assert "youtube.com/oembed" in video_status
+    assert "public_demo_video_current_title" in video_status
+    assert "One Current Truth Across Qwen Sessions" in video_status

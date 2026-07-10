@@ -500,6 +500,48 @@ function Invoke-DevpostMaterialsAudit([string]$PacketJson) {
     }
 }
 
+function Invoke-VideoUploadStatus {
+    if (-not (Test-Path "scripts/qwencloud-video-upload-status.ps1")) {
+        return [pscustomobject]@{
+            ok = $false
+            details = "missing scripts/qwencloud-video-upload-status.ps1"
+        }
+    }
+
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-upload-status-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-video-upload-status.ps1",
+        "-OutputDir", $OutputDir,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipLocalVideoChecks) { $args += "-SkipLocalVideoChecks" }
+
+    $stdout = Join-Path $OutputDir "final-readiness-video-upload-status-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-readiness-video-upload-status-$timestamp.err"
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if ($proc.ExitCode -ne 0) {
+        return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
+    }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-upload-status-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $newest = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $newest) { $newest = @($after | Select-Object -First 1) }
+    if (-not $newest) {
+        return [pscustomobject]@{ ok = $false; details = "video upload status JSON not found; stdout=$stdout; stderr=$stderr" }
+    }
+
+    $status = Get-Content -LiteralPath $newest.FullName -Raw | ConvertFrom-Json
+    $failedRequired = @($status.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        ok = [bool]$status.readyForDevpostVideoField
+        details = if ($status.readyForDevpostVideoField) { "current public demo video READY: $($newest.FullName)" } else { "current public demo video DRAFT: $($newest.FullName); missing=$($failedRequired -join ', ')" }
+    }
+}
+
 function Invoke-AlibabaProofIntegrity {
     if (-not (Test-Path "scripts/qwencloud-validate-alibaba-proof.ps1")) {
         return [pscustomobject]@{
@@ -725,6 +767,9 @@ else {
         Add-Check -Name "demo_video_under_3_minutes" -Ok $false -Details "ffprobe unavailable or demo video missing"
     }
 }
+
+$videoUploadStatus = Invoke-VideoUploadStatus
+Add-Check -Name "current_public_demo_video_ready" -Ok $videoUploadStatus.ok -Details $videoUploadStatus.details
 
 foreach ($path in @(
     "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",

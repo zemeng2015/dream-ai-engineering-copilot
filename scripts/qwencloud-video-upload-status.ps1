@@ -5,6 +5,8 @@ param(
     [string]$LocalVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$ExpectedTitle = "DREAM MemoryAgent: One Current Truth Across Qwen Sessions | Qwen Cloud",
     [switch]$SkipExternalUrlChecks,
     [switch]$SkipLocalVideoChecks,
     [switch]$AllowDraft
@@ -85,6 +87,30 @@ function Test-ExternalReachable([string]$Url) {
     }
 }
 
+function Get-PublicVideoMetadata([string]$Url) {
+    if ($SkipExternalUrlChecks) {
+        return [pscustomobject]@{ ok = $true; title = ""; author = ""; provider = ""; details = "skipped by -SkipExternalUrlChecks" }
+    }
+    if ($Url -notmatch "(?i)(youtube\.com|youtu\.be)") {
+        return [pscustomobject]@{ ok = $true; title = ""; author = ""; provider = "unsupported"; details = "title verification currently applies to YouTube URLs" }
+    }
+
+    try {
+        $encodedUrl = [System.Uri]::EscapeDataString($Url)
+        $metadata = Invoke-RestMethod -Uri "https://www.youtube.com/oembed?url=$encodedUrl&format=json" -TimeoutSec 20 -ErrorAction Stop
+        return [pscustomobject]@{
+            ok = $true
+            title = [string]$metadata.title
+            author = [string]$metadata.author_name
+            provider = [string]$metadata.provider_name
+            details = "provider=$($metadata.provider_name); author=$($metadata.author_name); title=$($metadata.title)"
+        }
+    }
+    catch {
+        return [pscustomobject]@{ ok = $false; title = ""; author = ""; provider = "YouTube"; details = $_.Exception.Message }
+    }
+}
+
 if ($SkipLocalVideoChecks) {
     Add-Check -Name "local_demo_video_exists" -Ok $true -Details "skipped by -SkipLocalVideoChecks" -Required $false
     Add-Check -Name "local_demo_video_metadata" -Ok $true -Details "skipped by -SkipLocalVideoChecks" -Required $false
@@ -111,6 +137,15 @@ Add-Check -Name "public_demo_video_url_platform" -Ok $platform.ok -Details $plat
 $reachable = Test-ExternalReachable -Url $DemoVideoUrl
 Add-Check -Name "public_demo_video_url_reachable" -Ok $reachable.ok -Details $reachable.details
 
+$publicMetadata = Get-PublicVideoMetadata -Url $DemoVideoUrl
+Add-Check -Name "public_demo_video_metadata_reachable" -Ok $publicMetadata.ok -Details $publicMetadata.details
+$isYouTube = $DemoVideoUrl -match "(?i)(youtube\.com|youtu\.be)"
+$titleMatches = (-not $isYouTube) -or $SkipExternalUrlChecks -or (
+    $publicMetadata.ok -and
+    [string]::Equals($publicMetadata.title.Trim(), $ExpectedTitle.Trim(), [System.StringComparison]::OrdinalIgnoreCase)
+)
+Add-Check -Name "public_demo_video_current_title" -Ok $titleMatches -Details "expected=$ExpectedTitle; actual=$($publicMetadata.title)"
+
 $requiredFailures = @($checks | Where-Object { $_.required -and -not $_.ok })
 $ready = $requiredFailures.Count -eq 0
 $status = if ($ready) { "READY" } else { "DRAFT" }
@@ -122,6 +157,10 @@ $result = [ordered]@{
     localVideoPath = $LocalVideoPath
     skipLocalVideoChecks = [bool]$SkipLocalVideoChecks
     demoVideoUrl = $DemoVideoUrl
+    expectedTitle = $ExpectedTitle
+    publicVideoTitle = $publicMetadata.title
+    publicVideoAuthor = $publicMetadata.author
+    publicVideoProvider = $publicMetadata.provider
     reportJson = $reportJson
     reportMarkdown = $reportMd
     checks = $checks
@@ -162,7 +201,7 @@ $lines += @(
     "",
     "- Upload file: ``$LocalVideoPath``",
     "- Preferred platform: YouTube",
-    '- Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`',
+    "- Title: ``$ExpectedTitle``",
     '- If Codex-controlled Chrome file upload returns `Not allowed`, enable Chrome extension file access:',
     "",
     '```text',
