@@ -2,19 +2,33 @@
 
 from pathlib import Path
 
+from dream.connectors.lineage import ArtifactLineageRegistry
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, ensure_artifacts_dir
 from dream.graph.models import EvidenceGraph
 
 
 class EvidenceGraphRepository:
-    def __init__(self, artifacts_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        artifacts_dir: Path | None = None,
+        *,
+        lineage_registry: ArtifactLineageRegistry | None = None,
+    ) -> None:
         self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
+        self.lineage_registry = lineage_registry or ArtifactLineageRegistry(self.artifacts_dir)
 
     def save(self, graph: EvidenceGraph) -> Path:
         path = self.graph_path(graph.team_id, graph.repo_name)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(graph.model_dump_json(indent=2), encoding="utf-8")
+        versions = {version for node in graph.nodes for version in node.access.acl_versions()}
+        self.lineage_registry.register_path(
+            team_id=graph.team_id,
+            artifact_kind="evidence_graph",
+            path=path,
+            acl_versions=versions,
+        )
         return path
 
     def load(self, team_id: str, repo_name: str | None = None) -> EvidenceGraph:

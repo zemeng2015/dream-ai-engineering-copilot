@@ -3,18 +3,34 @@
 from pathlib import Path
 
 from dream.codebase.models import RepoIndex
+from dream.connectors.lineage import ArtifactLineageRegistry
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, ensure_artifacts_dir
 
 
 class CodebaseIndexRepository:
-    def __init__(self, artifacts_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        artifacts_dir: Path | None = None,
+        *,
+        lineage_registry: ArtifactLineageRegistry | None = None,
+    ) -> None:
         self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
+        self.lineage_registry = lineage_registry or ArtifactLineageRegistry(self.artifacts_dir)
 
     def save(self, index: RepoIndex) -> Path:
         path = self.index_path(index.team_id, index.repo_name)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(index.model_dump_json(indent=2), encoding="utf-8")
+        versions = index.access.acl_versions()
+        for item in [*index.files, *index.symbols, *index.tests, *index.concepts]:
+            versions.update(item.access.acl_versions())
+        self.lineage_registry.register_path(
+            team_id=index.team_id,
+            artifact_kind="codebase_index",
+            path=path,
+            acl_versions=versions,
+        )
         return path
 
     def load(self, team_id: str, repo_name: str) -> RepoIndex:

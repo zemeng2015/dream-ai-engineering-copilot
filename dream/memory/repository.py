@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from dream.connectors.lineage import ArtifactLineageRegistry
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, ensure_artifacts_dir
 from dream.memory.models import (
@@ -15,15 +16,35 @@ from dream.memory.models import (
 
 
 class MemoryDistillationRepository:
-    def __init__(self, artifacts_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        artifacts_dir: Path | None = None,
+        *,
+        lineage_registry: ArtifactLineageRegistry | None = None,
+    ) -> None:
         self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
+        self.lineage_registry = lineage_registry or ArtifactLineageRegistry(self.artifacts_dir)
 
     def save_scan(self, scan: MemoryScanResult) -> Path:
         path = self.scan_path(scan.team_id, scan.scan_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = scan.model_dump_json(indent=2)
         path.write_text(payload, encoding="utf-8")
-        self.latest_scan_path(scan.team_id).write_text(payload, encoding="utf-8")
+        latest_path = self.latest_scan_path(scan.team_id)
+        latest_path.write_text(payload, encoding="utf-8")
+        versions = {version for source in scan.sources for version in source.access.acl_versions()}
+        for claim in scan.claims:
+            versions.update(claim.security.resource_access().acl_versions())
+        for artifact_path, artifact_kind in (
+            (path, "memory_scan"),
+            (latest_path, "memory_scan_latest"),
+        ):
+            self.lineage_registry.register_path(
+                team_id=scan.team_id,
+                artifact_kind=artifact_kind,
+                path=artifact_path,
+                acl_versions=versions,
+            )
         return path
 
     def load_scan(self, team_id: str, scan_id: str) -> MemoryScanResult:

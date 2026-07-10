@@ -4,11 +4,21 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from dream.connectors.lineage import ArtifactLineageRegistry
 from dream.context.models import ContextPack, MemoryMapReport, PromptPreview, RetrievalTrail
-from dream.core.paths import display_path, resolve_artifact_path
+from dream.core.paths import display_path, ensure_artifacts_dir
 
 
 class ContextArtifactRepository:
+    def __init__(
+        self,
+        artifacts_dir: Path | None = None,
+        *,
+        lineage_registry: ArtifactLineageRegistry | None = None,
+    ) -> None:
+        self.artifacts_dir = artifacts_dir or ensure_artifacts_dir()
+        self.lineage_registry = lineage_registry or ArtifactLineageRegistry(self.artifacts_dir)
+
     def save_trail(self, trail: RetrievalTrail) -> RetrievalTrail:
         base = self._base_dir("context-trails") / self._safe_name(trail.trail_id)
         return self._save_pair(trail, base, self._trail_markdown(trail))
@@ -45,14 +55,12 @@ class ContextArtifactRepository:
         )
         return PromptPreview.model_validate_json(path.read_text(encoding="utf-8"))
 
-    @staticmethod
-    def _base_dir(name: str) -> Path:
-        path = resolve_artifact_path(name)
+    def _base_dir(self, name: str) -> Path:
+        path = self.artifacts_dir / name
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @staticmethod
-    def _save_pair(model: BaseModel, base: Path, markdown: str):
+    def _save_pair(self, model: BaseModel, base: Path, markdown: str):
         base.mkdir(parents=True, exist_ok=True)
         json_path = base / _json_name(model)
         markdown_path = base / _markdown_name(model)
@@ -64,6 +72,16 @@ class ContextArtifactRepository:
         )
         json_path.write_text(updated.model_dump_json(indent=2), encoding="utf-8")
         markdown_path.write_text(markdown, encoding="utf-8")
+        team_id = getattr(updated, "team_id", "")
+        versions = _artifact_acl_versions(updated)
+        if team_id and versions:
+            self.lineage_registry.register_path(
+                team_id=team_id,
+                artifact_kind=_artifact_kind(updated),
+                path=base,
+                acl_versions=versions,
+                directory=True,
+            )
         return updated
 
     @staticmethod
@@ -219,3 +237,41 @@ def _markdown_name(model: BaseModel) -> str:
     if isinstance(model, PromptPreview):
         return "prompt-preview.md"
     return "report.md"
+
+
+def _artifact_kind(model: BaseModel) -> str:
+    if isinstance(model, RetrievalTrail):
+        return "context_trail"
+    if isinstance(model, ContextPack):
+        return "context_pack"
+    if isinstance(model, PromptPreview):
+        return "prompt_preview"
+    return "memory_map_report"
+
+
+def _artifact_acl_versions(model: BaseModel) -> set[str]:
+    access = getattr(model, "access", None)
+    versions = access.acl_versions() if access is not None else set()
+    if isinstance(model, RetrievalTrail):
+        for item in [
+            *model.candidate_evidence,
+            *model.selected_evidence,
+            *model.excluded_evidence,
+            *model.memory_claims_considered,
+            *model.memory_claims_used,
+        ]:
+            versions.update(item.access.acl_versions())
+    elif isinstance(model, ContextPack):
+        for item in [
+            *model.selected_docs,
+            *model.selected_code,
+            *model.selected_tests,
+            *model.selected_incidents,
+            *model.selected_historical_jira,
+            *model.selected_historical_pr,
+            *model.selected_memory_claims,
+            *model.candidate_memory_claims,
+            *model.excluded_evidence,
+        ]:
+            versions.update(item.access.acl_versions())
+    return versions

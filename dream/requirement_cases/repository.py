@@ -3,14 +3,21 @@
 import sqlite3
 from pathlib import Path
 
+from dream.connectors.lineage import ArtifactLineageRegistry
 from dream.core.errors import NotFoundError
-from dream.core.paths import get_audit_db_path
+from dream.core.paths import ensure_artifacts_dir, get_audit_db_path
 from dream.requirement_cases.models import RequirementCaseSnapshot
 
 
 class RequirementCaseRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        db_path: Path | None = None,
+        *,
+        lineage_registry: ArtifactLineageRegistry | None = None,
+    ) -> None:
         self.db_path = db_path or get_audit_db_path()
+        self.lineage_registry = lineage_registry or ArtifactLineageRegistry(ensure_artifacts_dir())
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
@@ -38,6 +45,14 @@ class RequirementCaseRepository:
                     snapshot.model_dump_json(),
                 ),
             )
+        versions = case.access.acl_versions()
+        for evidence in snapshot.evidence:
+            versions.update(evidence.access.acl_versions())
+        self.lineage_registry.register_requirement_case(
+            team_id=case.team_id,
+            case_id=case.case_id,
+            acl_versions=versions,
+        )
 
     def get(self, case_id: str) -> RequirementCaseSnapshot:
         with self._connect() as conn:
