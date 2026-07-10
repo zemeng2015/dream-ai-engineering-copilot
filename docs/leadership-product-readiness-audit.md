@@ -20,7 +20,7 @@ is recorded as incomplete rather than inferred from implementation intent.
 | 2 | One consistent synthetic DFP scenario and evidence chain | **Proven for leadership path** | Fixed seed ids; double-reset acceptance; preflight source boundary; README examples now use `dfp-demo-repo` | Other legacy example directories remain in the repository but are outside the leadership path |
 | 3 | Provider-neutral ten-minute leadership workflow | **Proven locally** | `/leadership-demo`; product profile tests; runbook; Angular build/tests; fixed seeded case; automated human-gate rehearsal | A timed rehearsal with the actual presenters and approved deployment is still required |
 | 4 | Credible paired value evidence including citation, recall, unsupported claims, edit distance, latency, tokens, and cost | **Partially proven** | Same-provider/model/request/contract suite; alternating arm order; GPT-5.4 local synthetic suite; metric distributions; SME/pricing manifest gates | The live run is local and unapproved; no approved SME reference or exact provider pricing evidence yet |
-| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally** | `run_leadership_preflight.py`; reset/rehearsal tests; fallback/runbook; full Python and Angular verification; prior frozen leadership release | Exact custody-branch release freeze, approved deployment smoke and presenter-timed rehearsal remain pending |
+| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally and integration-frozen** | Strict product-branch preflight; reset/rehearsal; expanded critical-source release manifest; full Python/Angular verification; verified frozen candidate | Approved deployment smoke and presenter-timed rehearsal remain pending |
 | 6 | Enterprise trust boundary clear and first demo read-only/human-gated | **Core controls implemented; organization approval pending** | Signed proxy identity; role/source ACL enforcement and revocation; connector lifecycle; DLP; provider egress; runtime decision ledgers; v2 evidence export; Ed25519 custody; no-write scope | Approved SSO/proxy and connector deployment, shared/private storage, organization DLP/provider/network/residency/retention policy, managed keys and admin process remain pending |
 | 7 | Executable one-team/one-app/one-repo Pilot proposal | **Proposal complete; organization decision pending** | Six-week proposal with scope, roles, baseline, metrics, gates, exit and leadership ask | Named sponsor/owners, application/repository, thresholds and Security/Data approval are unassigned |
 | 8 | README/current-state/boundary/runbook match implementation and avoid inflated claims | **Proven for named current-state documents** | README; product-current-state; enterprise boundary; security/connector/DLP/provider/evidence/custody foundations; Human Rating and ROI disclaimers | Older research/handoff documents are historical context and must not be presented as current product truth |
@@ -66,13 +66,17 @@ Angular ChromeHeadless tests: 23 passed
 Angular production/full dependency audit: 0 vulnerabilities
 Leadership preflight: ready_for_demo=true
 Raw-document acceptance: passed
-Strict preflight: passed on the committed custody predecessor; final candidate rerun pending
-Candidate presentation release freeze: pending final integration commit
+Strict product-branch preflight: passed with no warnings on committed integration snapshot
+Candidate presentation release freeze: frozen and verified on committed integration snapshot
 ```
 
 The current test count is evidence for the audited working tree only. Rerun all
 commands on the frozen presentation commit; do not quote this count after code
 changes without a fresh run.
+
+The generated release manifest, rather than this static document, is the
+authoritative id/commit/source hash. The final manifest must be rebuilt after any
+later documentation-only commit as well as after code changes.
 
 ## Local GPT-5.4 Synthetic Evidence
 

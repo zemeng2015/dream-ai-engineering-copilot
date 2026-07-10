@@ -142,8 +142,9 @@ data flow. Still external or incomplete:
 
 ## Handoff Decision
 
-This candidate is suitable for final local product acceptance and a synthetic
-leadership demonstration after its strict release gate passes. It remains No-Go
+This candidate has passed its strict local integration release gate and is
+suitable for final local product acceptance and a synthetic leadership
+demonstration. Rebuild the manifest after any later commit. It remains No-Go
 for real-source Pilot activation until the external gates above are assigned and
 approved. Keep the long-term goal active; do not mark enterprise Pilot readiness
 complete based only on local tests or cryptographic receipts.
