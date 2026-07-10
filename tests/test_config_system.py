@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from dream.config import load_config, resolve_config, sanitized_config_dict, validate_config
@@ -35,6 +36,27 @@ def test_config_loads_from_dream_config_file(tmp_path, monkeypatch) -> None:
 
     assert resolved.mode == "private-extension"
     assert resolved.artifacts.root == (tmp_path / "artifacts").resolve()
+
+
+def test_llm_provider_env_explicitly_overrides_safe_mock_default(monkeypatch) -> None:
+    monkeypatch.delenv("DREAM_CONFIG_FILE", raising=False)
+    monkeypatch.setenv("DREAM_LLM_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_MODEL", "gpt-5.4")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-only-secret")
+
+    resolved = resolve_config()
+
+    assert resolved.llm.provider == "openai-compatible"
+    assert resolved.llm.model == "gpt-5.4"
+    assert resolved.llm.api_key_env == "OPENAI_API_KEY"
+    assert resolved.llm.api_key_configured is True
+
+
+def test_invalid_llm_provider_env_is_rejected(monkeypatch) -> None:
+    monkeypatch.setenv("DREAM_LLM_PROVIDER", "not-a-provider")
+
+    with pytest.raises(ValueError, match="DREAM_LLM_PROVIDER"):
+        resolve_config()
 
 
 def test_env_var_resolution_does_not_print_secret_values(tmp_path, monkeypatch) -> None:

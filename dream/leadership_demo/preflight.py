@@ -9,6 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from dream.config import load_config
 from dream.context import ContextIntelligenceService
 from dream.core.paths import PROJECT_ROOT
 from dream.leadership_demo.benchmark import (
@@ -320,25 +321,34 @@ class LeadershipPreflightRunner:
 
     def _provider_profile_check(self) -> PreflightCheck:
         path = self.project_root / "frontend/src/app/core/product-profile.ts"
+        config_path = self.project_root / "dream.yaml"
         content = path.read_text(encoding="utf-8") if path.exists() else ""
+        default_provider = (
+            load_config(config_path).llm.provider if config_path.exists() else "missing"
+        )
         valid = all(
             value in content
             for value in [
-                "generationProvider: 'mock'",
+                "generationProvider: 'config'",
                 "judgeProvider: 'none'",
                 "generationProvider: 'qwen-cloud'",
                 "judgeProvider: 'qwen-cloud'",
             ]
-        )
+        ) and default_provider == "mock"
         return PreflightCheck(
             check_id="provider_profile_isolation",
             status="pass" if valid else "fail",
             summary=(
-                "Leadership and Hackathon provider policies are explicitly separated."
+                "Leadership uses the safe backend config selector while Hackathon remains "
+                "Qwen-only."
                 if valid
-                else "Provider profile isolation contract is missing."
+                else "Provider profile isolation or the checked-in mock default is missing."
             ),
-            evidence=[path.as_posix()],
+            evidence=[
+                path.as_posix(),
+                config_path.as_posix(),
+                f"checked_in_default_provider={default_provider}",
+            ],
         )
 
     def _docs_check(self) -> PreflightCheck:

@@ -25,6 +25,7 @@ def test_preflight_proves_demo_contract_and_reports_non_blocking_evidence_gaps(
     assert status_by_id["approved_claim_consumed"] == "pass"
     assert status_by_id["human_gate"] == "pass"
     assert status_by_id["synthetic_source_boundary"] == "pass"
+    assert status_by_id["provider_profile_isolation"] == "pass"
     assert status_by_id["paired_benchmark_harness"] == "pass"
     assert any("approved" in item and "SME" in item for item in report.next_actions)
     assert (tmp_path / "preflight/leadership-preflight.json").exists()

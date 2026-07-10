@@ -35,8 +35,10 @@ is recorded as incomplete rather than inferred from implementation intent.
   blocked until a human answers or explicitly waives it.
 - The rehearsal answers that question, reaches Jira Ready with claim proof
   preserved, emits local Eval/Audit evidence, and restores the blocked baseline.
-- Leadership/Workbench generation defaults to `mock` with no LLM judge;
-  Qwen/Qwen-judge behavior is restricted to the explicit Hackathon profile.
+- Leadership/Workbench generation routes through the backend `config` selector;
+  the checked-in public configuration still defaults to `mock` with no LLM
+  judge. GPT-5.4 requires an explicit local/private environment override.
+  Qwen/Qwen-judge behavior remains restricted to the Hackathon profile.
 - PR Review returns the selected claim ids, conflict-blocked ids, and a working
   PR Context Trail/Pack/Prompt API path.
 - Benchmark fixture runs are labeled `harness_validation` and cannot satisfy the
@@ -48,7 +50,7 @@ is recorded as incomplete rather than inferred from implementation intent.
 ## Current Verification Baseline
 
 ```text
-Python: 206 passed, 1 skipped
+Python: 208 passed, 1 skipped
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
 Leadership preflight: ready_for_demo=true
@@ -66,6 +68,12 @@ On 2026-07-10, the paired runner completed three repetitions (six calls) using
 the OpenAI endpoint, requested model `gpt-5.4`, and resolved model
 `gpt-5.4-2026-03-05`. Both arms used the same provider, model, request, output
 contract, and alternating arm order; only the DREAM source catalog differed.
+
+The real Requirement/Jira product path was also smoke-tested with the frontend's
+`config` selector and an explicit local `DREAM_LLM_PROVIDER=openai-compatible`
+override. It resolved to `gpt-5.4-2026-03-05`, used 31 source paths, preserved
+the approved MemoryClaim in the generated draft, and kept the Human Gate closed
+with one open question. The checked-in configuration remains `mock`.
 
 After separating retrieval coverage from model-output coverage and fixing the
 file/symbol dedupe ranking, the current local report recorded:

@@ -21,7 +21,7 @@ describe('product profile', () => {
     const profile = resolveProductProfile(profileDocument, '/mission-control');
 
     expect(profile).toEqual(DREAM_PRODUCT_PROFILES.leadership);
-    expect(profile.generationProvider).toBe('mock');
+    expect(profile.generationProvider).toBe('config');
     expect(profile.judgeProvider).toBe('none');
   });
 

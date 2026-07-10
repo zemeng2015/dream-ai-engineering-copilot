@@ -23,6 +23,7 @@ from dream.core.paths import (
 from dream.llm.qwen_cloud import QWEN_CLOUD_BASE_URL, QWEN_CLOUD_DEFAULT_MODEL
 
 DEFAULT_CONFIG_FILE = PROJECT_ROOT / "dream.yaml"
+LLM_PROVIDERS = {"mock", "openai-compatible", "qwen-cloud", "plugin"}
 
 
 def find_config_file(config_file: str | Path | None = None) -> Path | None:
@@ -48,6 +49,11 @@ def resolve_config(
     config_file: str | Path | None = None,
 ) -> ResolvedDreamConfig:
     loaded = config or load_config(config_file)
+    provider = os.getenv("DREAM_LLM_PROVIDER", "").strip() or loaded.llm.provider
+    if provider not in LLM_PROVIDERS:
+        raise ValueError(
+            "DREAM_LLM_PROVIDER must be one of: " + ", ".join(sorted(LLM_PROVIDERS))
+        )
     source_file = find_config_file(config_file) if config is None or config_file else None
     knowledge_root, knowledge_source = _path_from_config_or_env(
         value=loaded.knowledge.pack_root,
@@ -69,7 +75,7 @@ def resolve_config(
         default_source="default",
         hard_override_env="DREAM_AUDIT_DB_PATH",
     )
-    if loaded.llm.provider == "qwen-cloud":
+    if provider == "qwen-cloud":
         default_base_url = (
             os.getenv("QWEN_BASE_URL")
             or os.getenv("DASHSCOPE_BASE_URL")
@@ -86,7 +92,7 @@ def resolve_config(
         env_name=loaded.llm.base_url_env,
         default=default_base_url,
     )
-    api_key_env = _choose_api_key_env(loaded.llm.api_key_env, provider=loaded.llm.provider)
+    api_key_env = _choose_api_key_env(loaded.llm.api_key_env, provider=provider)
     resolved_base_url_env = (
         loaded.llm.base_url_env
         if loaded.llm.base_url_env
@@ -98,7 +104,7 @@ def resolve_config(
         mode=loaded.mode,
         source_file=source_file,
         llm=ResolvedLLMConfig(
-            provider=loaded.llm.provider,
+            provider=provider,
             model=resolved_model,
             base_url=base_url,
             base_url_env=resolved_base_url_env,

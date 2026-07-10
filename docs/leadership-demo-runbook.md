@@ -56,6 +56,22 @@ exists. This prevents accidental mutation of an in-progress demonstration.
 
 ## Start the Product
 
+The checked-in configuration resolves the Leadership/Workbench `config`
+selector to `mock`, so the safe default makes no external model call. For an
+explicit synthetic local GPT-5.4 run, set these variables in Terminal 1 before
+starting the backend:
+
+```powershell
+$env:DREAM_LLM_PROVIDER="openai-compatible"
+$env:OPENAI_COMPATIBLE_BASE_URL="https://api.openai.com/v1"
+$env:OPENAI_COMPATIBLE_MODEL="gpt-5.4"
+# OPENAI_API_KEY must already be configured in the local environment.
+```
+
+Do not use this override with real organization sources until the endpoint and
+data flow are approved. Removing `DREAM_LLM_PROVIDER` returns the product to the
+checked-in mock default.
+
 Terminal 1:
 
 ```powershell

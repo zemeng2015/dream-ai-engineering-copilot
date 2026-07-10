@@ -14,7 +14,7 @@ export interface DreamProductProfile {
   environmentLabel: string;
   environmentState: string;
   showHackathonNavigation: boolean;
-  generationProvider: 'mock' | 'qwen-cloud';
+  generationProvider: 'config' | 'qwen-cloud';
   judgeProvider: 'none' | 'qwen-cloud';
 }
 
@@ -34,7 +34,7 @@ export const DREAM_PRODUCT_PROFILES: Record<DreamProductProfileId, DreamProductP
     environmentLabel: 'Deployment',
     environmentState: 'Provider Neutral',
     showHackathonNavigation: false,
-    generationProvider: 'mock',
+    generationProvider: 'config',
     judgeProvider: 'none',
   },
   workbench: {
@@ -46,7 +46,7 @@ export const DREAM_PRODUCT_PROFILES: Record<DreamProductProfileId, DreamProductP
     environmentLabel: 'Environment',
     environmentState: 'Local / Private',
     showHackathonNavigation: false,
-    generationProvider: 'mock',
+    generationProvider: 'config',
     judgeProvider: 'none',
   },
   hackathon: {

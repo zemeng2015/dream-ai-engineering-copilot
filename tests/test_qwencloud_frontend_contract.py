@@ -18,7 +18,7 @@ def test_frontend_uses_same_origin_api_and_profile_scoped_provider_policy() -> N
     assert "llm_provider: this.productProfile.generationProvider" in service
     assert "llm_provider=${this.productProfile.generationProvider}" in service
     assert "judge_provider: this.productProfile.judgeProvider" in service
-    assert "generationProvider: 'mock'" in profiles
+    assert "generationProvider: 'config'" in profiles
     assert "judgeProvider: 'none'" in profiles
     assert "generationProvider: 'qwen-cloud'" in profiles
     assert "judgeProvider: 'qwen-cloud'" in profiles
