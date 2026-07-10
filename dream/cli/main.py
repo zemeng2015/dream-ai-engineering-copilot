@@ -10,7 +10,7 @@ from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
 from dream.config import resolve_config, sanitized_config_dict, validate_config
 from dream.context import ContextEvaluationService, ContextIntelligenceService
-from dream.core.errors import DreamError
+from dream.core.errors import DreamError, ProviderConfigurationError
 from dream.demo import run_demo_verification
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationRequest
@@ -22,6 +22,7 @@ from dream.graph import EvidenceGraphBuilder, EvidenceGraphRepository, EvidenceG
 from dream.intake import KnowledgeIntakeService, ReviewDecision
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
+from dream.llm.egress import require_private_provider_selector
 from dream.memory import (
     MemoryClaimRetriever,
     MemoryDistillationEvaluator,
@@ -707,14 +708,7 @@ def llm_smoke(
         typer.Option("--prompt"),
     ] = "Reply with DREAM_OK and one short phrase.",
 ) -> None:
-    if provider == "mock":
-        llm_provider = MockLLMProvider()
-    elif provider == "openai-compatible":
-        llm_provider = OpenAICompatibleProvider()
-    elif provider == "qwen-cloud":
-        llm_provider = QwenCloudProvider()
-    else:
-        raise typer.BadParameter(f"Unsupported LLM provider: {provider}")
+    llm_provider = _llm_provider(provider)
 
     try:
         response = llm_provider.complete(prompt)
@@ -892,6 +886,10 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
 
 
 def _llm_provider(provider: str) -> LLMProvider:
+    try:
+        require_private_provider_selector(provider, config=resolve_config())
+    except ProviderConfigurationError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":

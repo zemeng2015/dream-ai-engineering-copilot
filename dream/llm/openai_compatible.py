@@ -4,10 +4,25 @@ import json
 import os
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from dream.core.errors import ProviderConfigurationError, ProviderRequestError
 from dream.llm.base import LLMRequest, LLMResponse, prompt_text
+from dream.llm.egress import normalize_provider_base_url
+
+
+class _RejectRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001, ARG002
+        raise ProviderRequestError("Provider redirect was blocked by egress policy.")
+
+
+_NO_REDIRECT_OPENER = build_opener(_RejectRedirectHandler())
+
+
+def urlopen(request: Request, *, timeout: float):
+    """Compatibility seam for tests; the default opener never follows redirects."""
+
+    return _NO_REDIRECT_OPENER.open(request, timeout=timeout)
 
 
 class OpenAICompatibleProvider:
@@ -29,7 +44,7 @@ class OpenAICompatibleProvider:
         self.base_url = base_url or os.getenv(
             "OPENAI_COMPATIBLE_BASE_URL", "https://api.openai.com/v1"
         )
-        self.base_url = self.base_url.rstrip("/")
+        self.base_url = normalize_provider_base_url(self.base_url)
         self.model_name = model_name or os.getenv("OPENAI_COMPATIBLE_MODEL", "gpt-4o-mini")
         self.timeout_seconds = timeout_seconds or float(
             os.getenv("OPENAI_COMPATIBLE_TIMEOUT_SECONDS", "30")
@@ -91,13 +106,12 @@ class OpenAICompatibleProvider:
             with urlopen(request, timeout=self.timeout_seconds) as response:
                 raw = response.read().decode("utf-8")
         except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
             raise ProviderRequestError(
-                f"OpenAI-compatible request failed with HTTP {exc.code}: {detail[:500]}"
+                f"OpenAI-compatible request failed with HTTP {exc.code}."
             ) from exc
         except URLError as exc:
             raise ProviderRequestError(
-                f"OpenAI-compatible request failed: {exc.reason}"
+                "OpenAI-compatible request failed before receiving a response."
             ) from exc
         except TimeoutError as exc:
             raise ProviderRequestError(

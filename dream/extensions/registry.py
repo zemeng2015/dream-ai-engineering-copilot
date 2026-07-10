@@ -17,6 +17,11 @@ from dream.dlp import ensure_dlp_guarded_provider
 from dream.extensions.loader import load_instance
 from dream.knowledge.pack_loader import KnowledgePackLoader
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
+from dream.llm.egress import (
+    EgressGuardedLLMProvider,
+    ProviderEgressPolicy,
+    ProviderEgressRepository,
+)
 
 
 class LocalArtifactStore:
@@ -215,6 +220,8 @@ class NativeCodebaseMemoryProvider:
 
 def build_llm_provider(config: DreamConfig | ResolvedDreamConfig | None = None):
     resolved = config if isinstance(config, ResolvedDreamConfig) else resolve_config(config)
+    egress_policy = ProviderEgressPolicy(ProviderEgressRepository(resolved.artifacts.root))
+    egress_policy.require_approved(resolved)
     if resolved.llm.provider == "mock":
         provider = MockLLMProvider()
     elif resolved.llm.provider == "openai-compatible":
@@ -235,6 +242,12 @@ def build_llm_provider(config: DreamConfig | ResolvedDreamConfig | None = None):
         provider = load_instance(resolved.llm.class_path)
     else:
         raise ValueError(f"Unsupported LLM provider: {resolved.llm.provider}")
+    if resolved.mode == "private-extension" and resolved.llm.provider != "mock":
+        provider = EgressGuardedLLMProvider(
+            provider,
+            config=resolved,
+            policy=egress_policy,
+        )
     return ensure_dlp_guarded_provider(provider)
 
 

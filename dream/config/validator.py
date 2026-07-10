@@ -8,9 +8,11 @@ from pydantic import ValidationError
 
 from dream.config.loader import load_config, resolve_config
 from dream.config.models import ConfigDiagnostic, ConfigValidationReport, DreamConfig
+from dream.core.errors import ProviderConfigurationError
 from dream.core.paths import PROJECT_ROOT
 from dream.extensions.errors import ExtensionLoadError
 from dream.extensions.loader import load_class
+from dream.llm.egress import ProviderEgressPolicy
 
 
 def validate_config(
@@ -36,7 +38,9 @@ def validate_config(
     _check_config_file_exists(config_file, diagnostics)
     _check_declared_env_vars(config, diagnostics)
     _check_llm_provider(config, diagnostics)
-    _check_plugin("llm", config.llm.provider, config.llm.class_path, diagnostics)
+    _check_private_provider_approval(resolved, diagnostics)
+    if not (resolved.mode == "private-extension" and config.llm.provider == "plugin"):
+        _check_plugin("llm", config.llm.provider, config.llm.class_path, diagnostics)
     _check_plugin("redaction", config.redaction.provider, config.redaction.class_path, diagnostics)
     _check_plugin(
         "prompt_policy",
@@ -242,6 +246,24 @@ def _check_private_artifacts(
                 message="private-extension mode is writing artifacts inside the public repo.",
                 recommended_fix=(
                     "Set DREAM_ARTIFACT_ROOT to a private path outside the public checkout."
+                ),
+            )
+        )
+
+
+def _check_private_provider_approval(resolved, diagnostics: list[ConfigDiagnostic]) -> None:
+    if resolved.mode != "private-extension":
+        return
+    try:
+        ProviderEgressPolicy().require_approved(resolved)
+    except ProviderConfigurationError as exc:
+        diagnostics.append(
+            ConfigDiagnostic(
+                severity="error",
+                message=str(exc),
+                recommended_fix=(
+                    "Set DREAM_LLM_APPROVAL_FILE to an unexpired exact provider/model/endpoint "
+                    "approval outside the public checkout, or use the mock provider."
                 ),
             )
         )

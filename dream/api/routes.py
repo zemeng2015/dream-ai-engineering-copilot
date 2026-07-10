@@ -21,7 +21,12 @@ from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
 from dream.config import resolve_config
 from dream.context import ContextEvaluationService, ContextIntelligenceService
-from dream.core.errors import DreamError, NotFoundError, PathTraversalError
+from dream.core.errors import (
+    DreamError,
+    NotFoundError,
+    PathTraversalError,
+    ProviderConfigurationError,
+)
 from dream.core.paths import resolve_project_path
 from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationJudgeRequest, EvaluationRequest, EvaluationResult
@@ -32,6 +37,7 @@ from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.intake import DraftMetadataUpdate, KnowledgeIntakeService, ReviewDecision
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
+from dream.llm.egress import require_private_provider_selector
 from dream.memory import (
     MemoryClaimRetriever,
     MemoryDistillationEvaluator,
@@ -1435,6 +1441,7 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
 
 
 def _llm_provider(provider: str) -> LLMProvider:
+    _enforce_provider_selector(provider)
     if provider == "mock":
         return MockLLMProvider()
     if provider == "openai-compatible":
@@ -1450,6 +1457,7 @@ def _llm_provider(provider: str) -> LLMProvider:
 def _optional_llm_provider(
     provider: str,
 ) -> LLMProvider | None:
+    _enforce_provider_selector(provider)
     if provider in {"deterministic", "none"}:
         return None
     if provider == "mock":
@@ -1462,6 +1470,13 @@ def _optional_llm_provider(
     if provider in {"config", "plugin"}:
         return _configured_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
+
+
+def _enforce_provider_selector(provider: str) -> None:
+    try:
+        require_private_provider_selector(provider, config=resolve_config())
+    except ProviderConfigurationError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 def _configured_llm_provider() -> LLMProvider:
