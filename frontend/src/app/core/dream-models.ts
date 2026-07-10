@@ -379,6 +379,9 @@ export interface PrReviewResult {
   risk: 'Low' | 'Medium' | 'High';
   sourcesUsed: KnowledgeChunk[];
   warnings: string[];
+  memoryClaimsUsed: string[];
+  blockedMemoryClaimIds: string[];
+  contextTrailId?: string;
   changedFiles: string[];
   relatedCode: CodebaseFile[];
   scorecard: EvaluationScorecard;

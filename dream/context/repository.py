@@ -94,7 +94,8 @@ class ContextArtifactRepository:
         lines.extend(["", "## Memory Claims"])
         lines.extend(
             f"- `{item.claim_id}` `{item.status}` {item.entity} --{item.relation}--> "
-            f"{item.value or '_'}"
+            f"{item.value or '_'}; reviewed by {item.reviewed_by or 'unknown'} "
+            f"at {item.reviewed_at or 'unknown'}"
             for item in trail.memory_claims_considered
         )
         lines.extend(["", "## Warnings"])
@@ -135,7 +136,8 @@ class ContextArtifactRepository:
         ]
         lines.extend(
             f"- `{item.claim_id}` `{item.status}` {item.entity} --{item.relation}--> "
-            f"{item.value or '_'}"
+            f"{item.value or '_'}; reviewed by {item.reviewed_by or 'unknown'} "
+            f"at {item.reviewed_at or 'unknown'}"
             for item in pack.selected_memory_claims
         )
         lines.extend(["", "## Warnings"])

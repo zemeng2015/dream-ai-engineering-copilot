@@ -83,7 +83,8 @@ domain-aware memory applications.
 - Records generation runs in SQLite.
 - Stores human ratings for generated outputs.
 - Exposes a FastAPI API and Typer CLI.
-- Includes an Angular mock-data workbench for the main MVP workflows.
+- Includes an Angular workbench backed by the live FastAPI workflows; mock data
+  remains available only for isolated frontend tests and offline fixtures.
 - Provides a `TestGenProvider` interface plus mock and JTestGen stub providers.
 
 ## What DREAM Does Not Do
@@ -118,6 +119,67 @@ pip install -e ".[dev]"
 pytest
 ruff check .
 ```
+
+## Provider-Neutral Leadership Demo
+
+The default Angular entry point is a provider-neutral leadership narrative for
+the governed Engineering Memory and Decision Workbench. Seed the fixed synthetic
+Forecast Platform scenario before a demonstration:
+
+```powershell
+python scripts/seed_leadership_demo.py --reset
+```
+
+The command deterministically creates `case-leadership-async-status` against
+`demo_team / dfp-demo-repo`, approves one source-backed status architecture
+claim, leaves one material human decision open, and generates the Context Trail,
+Jira draft, Eval, and Audit chain.
+
+Run the consolidated pre-meeting gate after building Angular:
+
+```powershell
+python scripts/run_leadership_preflight.py --require-frontend-bundle
+```
+
+Rehearse the full human-gate transition before the meeting:
+
+```powershell
+python scripts/run_leadership_rehearsal.py
+```
+
+The rehearsal proves blocked -> answered -> Jira Ready, preserves approved claim
+proof, produces local Eval/Audit evidence, performs no external writes, and then
+restores the fixed one-question-open baseline.
+
+Use `--strict-git` for the frozen presentation commit. Reports are written to
+`artifacts/leadership-preflight/`.
+
+Bind the reviewed source, evidence, and Angular bundle into a checksummed
+presentation candidate:
+
+```powershell
+python scripts/build_leadership_release.py
+python scripts/verify_leadership_release.py
+```
+
+After committing and rerunning strict preflight, use `--strict` to produce a
+`frozen` manifest. See the
+[Leadership release process](docs/leadership-release-process.md).
+
+See the [Leadership Demo runbook](docs/leadership-demo-runbook.md) for the
+ten-minute script, Pilot ask, safety boundary, fallback plan, and verification
+commands.
+
+Validate the same-model/same-request/same-contract A/B harness locally:
+
+```powershell
+python scripts/run_leadership_ab_benchmark.py --provider fixture
+```
+
+Fixture output proves the harness only and is labeled `harness_validation`.
+See the [Leadership paired A/B benchmark](docs/leadership-ab-benchmark.md) for
+metric definitions, the approved-endpoint live run, evidence acceptance gates,
+and the synthetic-versus-production claim boundary.
 
 ## Qwen Cloud Hackathon Mode
 
@@ -439,8 +501,9 @@ Current live workflows included:
   content endpoints.
 - Requirement Case workflow with impact map, open questions, Jira proposal,
   source-detail links for matched intake docs, and strict Eval Agent result.
-- PR Review workflow with inline diff/Jira context, codebase memory, source-detail
-  links for matched intake docs, review output, and strict Eval Agent result.
+- PR Review workflow with inline diff/Jira context, codebase memory, approved-only
+  governed claims, conflict warnings, source-detail/Context Trail proof, review
+  output, and strict Eval Agent result.
 - Audit & Eval with scorecards, case-by-case detail, audit runs, and
   FastAPI-backed human ratings persisted in SQLite. Audit run source chips link
   back to `/memory/:documentId` when a retrieved source matches a registered
@@ -475,18 +538,28 @@ For the latest UI simplification pass and product planning context, start here:
   memory behavior.
 - `docs/evaluation-agent.md` - Eval Agent scorecards, dimensions, API, and
   frontend detail flow.
+- `docs/product-current-state.md` - verified current capabilities, demo-ready
+  boundary, known limitations, and evidence status.
+- `docs/enterprise-pilot-boundary.md` - required identity, ACL, connector,
+  redaction, provider, storage, audit, and no-write controls for real sources.
+- `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
+  one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
+- `docs/leadership-product-readiness-audit.md` - requirement-by-requirement
+  evidence decision, safe claim boundary, and remaining Demo/Pilot gates.
+- `docs/leadership-release-process.md` - candidate/frozen rules, checksum scope,
+  strict release commands, verifier, and evidence interpretation.
 
 ## CLI Examples
 
 ```bash
 dream kb list-teams
 dream kb search --team demo_team --query "job execution"
-dream codebase index --team demo_team --repo examples/java-demo-repo --name java-demo-repo
-dream codebase search --team demo_team --repo java-demo-repo --query "async status tracking"
-dream graph build --team demo_team --repo java-demo-repo
-dream graph search --team demo_team --repo java-demo-repo --query "execution status"
-dream graph explain --team demo_team --repo java-demo-repo --concept "execution status"
-dream memory scan --team demo_team --repo examples/java-demo-repo --name java-demo-repo
+dream codebase index --team demo_team --repo examples/dfp-demo-repo --name dfp-demo-repo
+dream codebase search --team demo_team --repo dfp-demo-repo --query "async status tracking"
+dream graph build --team demo_team --repo dfp-demo-repo
+dream graph search --team demo_team --repo dfp-demo-repo --query "execution status"
+dream graph explain --team demo_team --repo dfp-demo-repo --concept "execution status"
+dream memory scan --team demo_team --repo examples/dfp-demo-repo --name dfp-demo-repo
 dream memory diff --team demo_team
 dream memory review --team demo_team --claim <claim_id> --status approved --reviewer zack
 dream memory search --team demo_team --query "execution status"
@@ -499,9 +572,9 @@ dream req questions --case <case_id> --role TL
 dream req brief --case <case_id>
 dream req jira --case <case_id>
 dream requirement draft --team demo_team --request "Add async status tracking"
-dream review pr --team demo_team --repo java-demo-repo --diff examples/fake_pr_diff.diff --jira examples/fake_jira_ticket.md
-dream testgen plan --team demo_team --repo examples/java-demo-repo
-dream testgen run --provider mock --team demo_team --repo examples/java-demo-repo --dry-run
+dream review pr --team demo_team --repo dfp-demo-repo --diff examples/pr-diffs/DFP-110-output-collector-idempotency.diff --jira knowledge_packs/demo_team/docs/historical-jira/DFP-110-output-collection-idempotency.md
+dream testgen plan --team demo_team --repo examples/dfp-demo-repo
+dream testgen run --provider mock --team demo_team --repo examples/dfp-demo-repo --dry-run
 dream audit list
 dream eval run --target-type engineering_brief --artifact examples/outputs/engineering-brief-async-status-example.md --team demo_team --profile async-status-tracking
 ```
@@ -562,7 +635,7 @@ Codebase index:
 ```bash
 curl -X POST http://localhost:8000/codebase/index \
   -H "Content-Type: application/json" \
-  -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
+  -d '{"team_id":"demo_team","repo_path":"examples/dfp-demo-repo","repo_name":"dfp-demo-repo"}'
 ```
 
 Evidence graph:
@@ -570,9 +643,9 @@ Evidence graph:
 ```bash
 curl -X POST http://localhost:8000/graph/build \
   -H "Content-Type: application/json" \
-  -d '{"team_id":"demo_team","repo_name":"java-demo-repo"}'
+  -d '{"team_id":"demo_team","repo_name":"dfp-demo-repo"}'
 
-curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=java-demo-repo&query=execution%20status"
+curl "http://localhost:8000/graph/search?team_id=demo_team&repo_name=dfp-demo-repo&query=execution%20status"
 ```
 
 Knowledge intake:
@@ -594,7 +667,7 @@ Governed memory distillation:
 ```bash
 curl -X POST http://localhost:8000/memory/scan \
   -H "Content-Type: application/json" \
-  -d '{"team_id":"demo_team","repo_path":"examples/java-demo-repo","repo_name":"java-demo-repo"}'
+  -d '{"team_id":"demo_team","repo_path":"examples/dfp-demo-repo","repo_name":"dfp-demo-repo"}'
 
 curl "http://localhost:8000/memory/diff?team_id=demo_team"
 
@@ -638,7 +711,7 @@ PR review summary:
 ```bash
 curl -X POST http://localhost:8000/review/pr \
   -H "Content-Type: application/json" \
-  -d '{"team_id":"demo_team","repo_name":"java-demo-repo","pr_diff_path":"examples/fake_pr_diff.diff","jira_context_path":"examples/fake_jira_ticket.md"}'
+  -d '{"team_id":"demo_team","repo_name":"dfp-demo-repo","pr_diff_path":"examples/pr-diffs/DFP-110-output-collector-idempotency.diff","jira_context_path":"knowledge_packs/demo_team/docs/historical-jira/DFP-110-output-collection-idempotency.md"}'
 ```
 
 Mock test generation:
@@ -646,7 +719,7 @@ Mock test generation:
 ```bash
 curl -X POST http://localhost:8000/testgen/run \
   -H "Content-Type: application/json" \
-  -d '{"provider":"mock","team_id":"demo_team","repo_path":"examples/java-demo-repo","target_language":"java","dry_run":true}'
+  -d '{"provider":"mock","team_id":"demo_team","repo_path":"examples/dfp-demo-repo","target_language":"java","dry_run":true}'
 ```
 
 Evaluation scorecard:
@@ -867,16 +940,21 @@ DREAM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 - [SECURITY](SECURITY.md) documents vulnerability reporting and sensitive-data
   boundaries.
 
-## Roadmap
+## Pilot and Product Roadmap
 
-- Vector retrieval
-- Deeper code graph relationships beyond Evidence Graph Lite
-- GitHub and Jira connectors
-- Historical PR/Jira ingestion
-- Workflow integration for approved memory context cards
-- JTestGen integration
-- UI workspace and role-specific dashboards
-- Angular frontend API integration
-- Mock-to-real service adapter layer
-- Team-level and organization-wide configuration
-- Evaluation Agent metrics, score trends, and quality gates
+- Run the paired suite on an organization-approved provider/model and approve an
+  SME baseline plus versioned pricing evidence.
+- Add private, read-only GitHub/Jira/document connectors with source ACL
+  propagation and caller-aware retrieval.
+- Add enterprise SSO, role-based memory review, reviewer authorization, and
+  organization/team administration.
+- Add approved redaction/DLP, private storage, retention/deletion, data residency,
+  audit export, and network/provider policy controls.
+- Establish Pilot score trends, failure review, and quality/security gates against
+  the frozen SME baseline.
+- Define a reviewed Human Rating feedback policy before ratings influence ranking
+  or future memory decisions.
+- Evaluate JTestGen integration only after the Requirement Case Pilot passes its
+  trust and usefulness gates.
+- Consider vector or hybrid retrieval only when measured recall evidence shows it
+  is the highest-value bottleneck.

@@ -378,6 +378,51 @@ def test_knowledge_intake_api_browser_upload(tmp_path, monkeypatch) -> None:
     assert parse_response.json()["sections"]
 
 
+def test_pr_review_context_artifacts_are_available_through_context_api(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _configure_isolated_runtime(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+    review_response = client.post(
+        "/review/pr",
+        json={
+            "team_id": "demo_team",
+            "repo_name": "dfp-demo-repo",
+            "pr_diff_text": "\n".join(
+                [
+                    "diff --git a/status.ts b/status.ts",
+                    "--- a/status.ts",
+                    "+++ b/status.ts",
+                    "@@ -1 +1,2 @@",
+                    "-return status;",
+                    "+return taskStatus;",
+                ]
+            ),
+            "jira_context_text": "Show task-level execution status.",
+            "llm_provider": "mock",
+        },
+    )
+    assert review_response.status_code == 200
+    payload = review_response.json()
+    run_id = payload["run_id"]
+    assert payload["context_trail_id"] == f"context-trail-{run_id}"
+
+    trail_response = client.get(f"/context/trails/{run_id}")
+    assert trail_response.status_code == 200
+    assert trail_response.json()["run_id"] == run_id
+    assert trail_response.json()["review_id"] == run_id
+
+    pack_response = client.get(f"/context/packs/{run_id}")
+    assert pack_response.status_code == 200
+    assert pack_response.json()["run_id"] == run_id
+
+    preview_response = client.get(f"/context/prompt-preview/{run_id}")
+    assert preview_response.status_code == 200
+    assert preview_response.json()["run_id"] == run_id
+    assert preview_response.json()["target"] == "pr_review"
+
+
 def _configure_isolated_runtime(tmp_path: Path, monkeypatch) -> None:
     knowledge_root = tmp_path / "knowledge_packs"
     shutil.copytree(Path("knowledge_packs"), knowledge_root)

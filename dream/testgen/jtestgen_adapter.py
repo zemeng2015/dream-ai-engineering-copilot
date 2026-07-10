@@ -46,4 +46,3 @@ Human review required: true
             report_markdown=markdown,
             warnings=["JTestGenAdapter is a safe stub. No external command was executed."],
         )
-

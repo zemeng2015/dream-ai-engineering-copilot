@@ -5,4 +5,3 @@ from dream.audit.models import AuditRecord
 from dream.audit.repository import AuditRepository
 
 __all__ = ["AuditLogger", "AuditRecord", "AuditRepository"]
-

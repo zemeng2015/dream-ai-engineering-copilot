@@ -38,4 +38,3 @@ def parse_unified_diff(diff_text: str) -> DiffSummary:
         removed_line_count=removed,
         rough_changed_content=rough_content,
     )
-

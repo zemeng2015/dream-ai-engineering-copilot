@@ -29,4 +29,3 @@ class Chunk(BaseModel):
     title: str
     content: str
     metadata: dict[str, str] = Field(default_factory=dict)
-

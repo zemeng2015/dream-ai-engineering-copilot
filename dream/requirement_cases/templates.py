@@ -322,10 +322,29 @@ def _impact_lines(items: list[ImpactItem]) -> str:
 def _evidence_lines(evidence: list[ContextEvidence]) -> str:
     if not evidence:
         return "- No matching evidence was retrieved."
-    return "\n".join(
-        f"- {item.title} [{item.source_type}] ({item.source_path}) - {item.reason}"
-        for item in evidence
+    return "\n".join(_evidence_line(item) for item in evidence)
+
+
+def _evidence_line(item: ContextEvidence) -> str:
+    governance = ""
+    if item.memory_claim_id:
+        underlying = ", ".join(item.evidence_paths) or "missing"
+        reviewer = item.reviewed_by or "governance policy"
+        governance = (
+            f" Governed claim: {item.memory_claim_id}; status: "
+            f"{item.governance_status or 'unknown'}; reviewed by: {reviewer}; "
+            f"underlying sources: {underlying}."
+        )
+    return (
+        f"- {item.title} [{item.source_type}] ({item.source_path}) "
+        f"Evidence: {_compact_excerpt(item.excerpt)} Why selected: {item.reason}"
+        f"{governance}"
     )
+
+
+def _compact_excerpt(value: str, limit: int = 400) -> str:
+    compact = " ".join(value.split())
+    return compact[:limit] if compact else "_No excerpt available._"
 
 
 def _question_lines(questions: list[ClarificationQuestion]) -> str:
@@ -346,7 +365,9 @@ def _affected_file_lines(
     paths: list[str] = []
     for item in impact_items:
         paths.extend(source for source in item.sources if _looks_like_file_path(source))
-    paths.extend(item.source_path for item in evidence if _looks_like_file_path(item.source_path))
+    paths.extend(
+        path for item in evidence for path in item.provenance_paths() if _looks_like_file_path(path)
+    )
     unique_paths = sorted(dict.fromkeys(paths))
     if not unique_paths:
         return "  - No concrete file paths were identified."
@@ -390,5 +411,5 @@ def _answer_line(question: ClarificationQuestion) -> str:
 
 
 def _source_lines(evidence: list[ContextEvidence]) -> str:
-    sources = sorted({item.source_path for item in evidence})
+    sources = sorted({path for item in evidence for path in item.provenance_paths()})
     return "\n".join(f"- {source}" for source in sources) or "- No sources used."

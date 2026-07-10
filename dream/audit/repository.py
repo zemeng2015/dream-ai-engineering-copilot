@@ -108,6 +108,21 @@ class AuditRepository:
             for row in rows
         ]
 
+    def delete_case_records(self, case_id: str) -> None:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT run_id FROM audit_runs WHERE case_id = ?",
+                (case_id,),
+            ).fetchall()
+            run_ids = [row["run_id"] for row in rows]
+            if run_ids:
+                placeholders = ",".join("?" for _ in run_ids)
+                conn.execute(
+                    f"DELETE FROM human_ratings WHERE run_id IN ({placeholders})",
+                    run_ids,
+                )
+            conn.execute("DELETE FROM audit_runs WHERE case_id = ?", (case_id,))
+
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row

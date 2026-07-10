@@ -24,12 +24,16 @@ import {
   RunStatus,
   WorkflowType,
 } from './dream-models';
+import { DREAM_PRODUCT_PROFILE } from './product-profile';
 
 interface ApiGenerationResponse {
   run_id: string;
   markdown: string;
   sources_used: string[];
   warnings: string[];
+  memory_claims_used?: string[];
+  blocked_memory_claim_ids?: string[];
+  context_trail_id?: string | null;
 }
 
 interface ApiHealthResponse {
@@ -205,6 +209,8 @@ interface ApiMemoryClaimReference {
   evidence_paths: string[];
   intake_proofs?: ApiMemoryIntakeProof[];
   reason: string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
 }
 
 interface ApiMemoryEntity {
@@ -992,6 +998,8 @@ export interface ContextMemoryClaimReference {
   evidencePaths: string[];
   intakeProofs: ContextMemoryIntakeProof[];
   reason: string;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 }
 
 export interface MemoryEntity {
@@ -1414,6 +1422,7 @@ function resolveApiBaseUrl(): string {
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly http = inject(HttpClient);
+  private readonly productProfile = inject(DREAM_PRODUCT_PROFILE);
   private readonly baseUrl = resolveApiBaseUrl();
 
   getHealth(): Observable<DreamHealth> {
@@ -1845,7 +1854,7 @@ export class DreamApiService {
         app: input.app,
         component: input.component,
         top_k: input.topK,
-        llm_provider: 'qwen-cloud',
+        llm_provider: this.productProfile.generationProvider,
       })
       .pipe(
         switchMap((response) =>
@@ -1900,6 +1909,7 @@ export class DreamApiService {
         status: scorecard.passStatus === 'fail' ? 'failed' : 'success',
         outputPath: `artifacts/pr-review-summary-${response.run_id}.md`,
         sourcesUsed: response.sources_used,
+        modelProvider: this.productProfile.generationProvider,
       });
     return {
       run,
@@ -1913,6 +1923,9 @@ export class DreamApiService {
         input.component,
       ),
       warnings: response.warnings,
+      memoryClaimsUsed: response.memory_claims_used ?? [],
+      blockedMemoryClaimIds: response.blocked_memory_claim_ids ?? [],
+      contextTrailId: response.context_trail_id ?? undefined,
       changedFiles,
       relatedCode: codePaths.map(codebaseFileFromPath),
       scorecard,
@@ -1936,7 +1949,7 @@ export class DreamApiService {
           this.trackRequirementStep(
             'draft_jira',
             this.http.get<ApiJiraDraft>(
-              `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=qwen-cloud`,
+              `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=${this.productProfile.generationProvider}`,
             ),
             onProgress,
           ),
@@ -1963,18 +1976,21 @@ export class DreamApiService {
             onProgress,
           ),
         ),
-        switchMap((evaluation) =>
-          this.trackRequirementStep(
+        switchMap((evaluation) => {
+          if (this.productProfile.judgeProvider === 'none') {
+            return of(evaluation);
+          }
+          return this.trackRequirementStep(
             'llm_judge',
             this.http
               .post<ApiEvaluationResult>(
                 `${this.baseUrl}/eval/runs/${evaluation.scorecard.evaluation_id}/judge`,
-                { judge_provider: 'qwen-cloud' },
+                { judge_provider: this.productProfile.judgeProvider },
               )
               .pipe(catchError(() => of(evaluation))),
             onProgress,
-          ),
-        ),
+          );
+        }),
         switchMap((evaluation) =>
           this.trackRequirementStep(
             'load_result',
@@ -2045,6 +2061,7 @@ export class DreamApiService {
           scorecard.outputPath ||
           `artifacts/requirement-cases/${snapshot.case.case_id}/jira-draft.md`,
         sourcesUsed: sourcePaths,
+        modelProvider: this.productProfile.generationProvider,
       });
     return {
       run,
@@ -2461,6 +2478,8 @@ function mapContextMemoryClaim(
     evidencePaths: claim.evidence_paths,
     intakeProofs: (claim.intake_proofs ?? []).map(mapContextMemoryIntakeProof),
     reason: claim.reason,
+    reviewedBy: claim.reviewed_by,
+    reviewedAt: claim.reviewed_at,
   };
 }
 
@@ -2943,6 +2962,7 @@ function buildSyntheticRun(input: {
   status: RunStatus;
   outputPath: string;
   sourcesUsed: string[];
+  modelProvider: string;
 }): AuditRun {
   return {
     runId: input.runId,
@@ -2953,7 +2973,7 @@ function buildSyntheticRun(input: {
     status: input.status,
     startedAt: new Date().toISOString(),
     duration: 'recorded',
-    modelProvider: 'qwen-cloud',
+    modelProvider: input.modelProvider,
     modelName: 'server-configured',
     outputPath: input.outputPath,
     warnings: [],

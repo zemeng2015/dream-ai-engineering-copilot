@@ -27,4 +27,3 @@ class HumanRatingService:
         )
         self.repository.add_rating(rating)
         return rating
-

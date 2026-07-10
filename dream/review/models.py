@@ -21,3 +21,6 @@ class PRReviewResponse(BaseModel):
     markdown: str
     sources_used: list[str]
     warnings: list[str] = Field(default_factory=list)
+    memory_claims_used: list[str] = Field(default_factory=list)
+    blocked_memory_claim_ids: list[str] = Field(default_factory=list)
+    context_trail_id: str | None = None

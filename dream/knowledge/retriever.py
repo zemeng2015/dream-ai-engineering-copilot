@@ -119,4 +119,3 @@ class SimpleRetriever:
             if expected is not None and chunk.metadata.get(key) != expected:
                 return False
         return True
-

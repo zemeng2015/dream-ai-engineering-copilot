@@ -77,4 +77,3 @@ Help DemoCorp stakeholders clarify the desired outcome before engineering implem
 ## Sources Used
 {source_text}
 """
-

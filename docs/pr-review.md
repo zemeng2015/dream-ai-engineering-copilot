@@ -35,3 +35,21 @@ If no index exists, DREAM falls back to document and diff context and includes
 this warning:
 
 `No codebase index found for this repo/team. Review used document and diff context only.`
+
+## Governed Memory Policy
+
+PR Review also searches the team's latest MemoryClaim scan with the same policy
+used by Requirement Case generation:
+
+- only effective `approved` claims can enter the prompt;
+- candidate, rejected, and quarantined claims remain outside generation;
+- approved claims involved in unresolved single-value conflicts are blocked and
+  returned as explicit warnings;
+- human-reviewed approved claims are retained ahead of auto-approved code facts
+  when the PR prompt has a bounded claim budget; and
+- claim id, reviewer, review timestamp, and evidence paths are preserved in the
+  review output, `sources_used`, Context Trail, Context Pack, and Audit record.
+
+The API response exposes `memory_claims_used`, `blocked_memory_claim_ids`, and
+`context_trail_id`. A missing memory scan does not fail PR Review; it produces a
+warning and continues with document, codebase, and graph context.

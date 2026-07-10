@@ -49,6 +49,16 @@ class RequirementCaseRepository:
             raise NotFoundError(f"Requirement case not found: {case_id}")
         return RequirementCaseSnapshot.model_validate_json(row["payload"])
 
+    def try_get(self, case_id: str) -> RequirementCaseSnapshot | None:
+        try:
+            return self.get(case_id)
+        except NotFoundError:
+            return None
+
+    def delete(self, case_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM requirement_cases WHERE case_id = ?", (case_id,))
+
     def list(self) -> list[RequirementCaseSnapshot]:
         with self._connect() as conn:
             rows = conn.execute(

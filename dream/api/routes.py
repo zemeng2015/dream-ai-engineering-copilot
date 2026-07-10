@@ -734,7 +734,10 @@ def promote_intake_draft(draft_id: str) -> dict[str, object]:
 @router.get("/context/trails/{case_id}")
 def get_context_trail(case_id: str) -> dict[str, object]:
     try:
-        return ContextIntelligenceService().trace_case(case_id).model_dump()
+        service = ContextIntelligenceService()
+        if case_id.startswith("pr-"):
+            return service.repository.load_trail(f"context-trail-{case_id}").model_dump()
+        return service.trace_case(case_id).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -742,7 +745,10 @@ def get_context_trail(case_id: str) -> dict[str, object]:
 @router.get("/context/packs/{case_id}")
 def get_context_pack(case_id: str) -> dict[str, object]:
     try:
-        return ContextIntelligenceService().assemble_case(case_id).model_dump()
+        service = ContextIntelligenceService()
+        if case_id.startswith("pr-"):
+            return service.repository.load_context_pack(f"context-pack-{case_id}").model_dump()
+        return service.assemble_case(case_id).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -750,7 +756,12 @@ def get_context_pack(case_id: str) -> dict[str, object]:
 @router.get("/context/prompt-preview/{case_id}")
 def get_prompt_preview(case_id: str, target: str = "jira_draft") -> dict[str, object]:
     try:
-        return ContextIntelligenceService().prompt_for_case(case_id, target=target).model_dump()
+        service = ContextIntelligenceService()
+        if case_id.startswith("pr-"):
+            return service.repository.load_prompt_preview(
+                f"prompt-preview-{case_id}-pr_review"
+            ).model_dump()
+        return service.prompt_for_case(case_id, target=target).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

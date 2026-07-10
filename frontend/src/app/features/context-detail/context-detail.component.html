@@ -162,6 +162,12 @@
               <span class="status-pill" [class]="statusClass(claim.status)">{{ formatLabel(claim.status) }}</span>
               <strong>{{ claim.entity }} / {{ claim.relation }}</strong>
               <p>{{ claim.value || claim.reason }}</p>
+              @if (claim.reviewedBy || claim.reviewedAt) {
+                <small>
+                  Reviewed by {{ claim.reviewedBy || 'unknown' }} at
+                  {{ claim.reviewedAt || 'unknown time' }}
+                </small>
+              }
               <small>{{ claim.evidencePaths.join(', ') || 'No evidence path' }}</small>
               @if (claim.intakeProofs.length) {
                 <div class="claim-proof-list">

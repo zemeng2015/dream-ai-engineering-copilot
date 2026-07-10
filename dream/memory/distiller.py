@@ -86,9 +86,7 @@ CONFLICT_SINGLE_VALUED_RELATIONS = {
     "sla",
 }
 CONFLICT_RESOLUTION_ACTIONS = {"approve_winner_reject_other"}
-SECRET_RE = re.compile(
-    r"(?i)(api[_-]?key|secret|password|passwd|token|private[_-]?key)\s*[:=]"
-)
+SECRET_RE = re.compile(r"(?i)(api[_-]?key|secret|password|passwd|token|private[_-]?key)\s*[:=]")
 SECRET_VALUE_RE = re.compile(
     r"(?i)\b(api[_-]?key|secret|password|passwd|token|private[_-]?key)(\s*[:=]\s*)([^\s,;\"']+)"
 )
@@ -131,9 +129,11 @@ class MemoryDistillationService:
         team_id: str,
         repo_path: str | Path,
         repo_name: str | None = None,
+        scan_id: str | None = None,
+        created_at: str | None = None,
     ) -> MemoryScanResult:
-        created_at = datetime.now(UTC).isoformat()
-        scan_id = f"memscan-{uuid4().hex[:12]}"
+        created_at = created_at or datetime.now(UTC).isoformat()
+        scan_id = scan_id or f"memscan-{uuid4().hex[:12]}"
         root = resolve_project_path(repo_path, must_exist=True)
         provenance = self._repo_provenance(root)
         index = CodebaseIndexer(
@@ -383,8 +383,7 @@ class MemoryDistillationService:
         active_claims = [
             claim
             for claim in scan.claims
-            if self._effective_review_status(claim, latest_by_claim)
-            in {"candidate", "approved"}
+            if self._effective_review_status(claim, latest_by_claim) in {"candidate", "approved"}
         ]
         pairs: list[MemoryConflictPair] = []
         for index, left in enumerate(sorted(active_claims, key=lambda item: item.claim_id)):
@@ -458,8 +457,7 @@ class MemoryDistillationService:
             new_status="rejected",
             reviewer=reviewer,
             reason=(
-                f"{reason_text} Rejected in favor of {winning_claim_id} "
-                f"for conflict {conflict_id}."
+                f"{reason_text} Rejected in favor of {winning_claim_id} for conflict {conflict_id}."
             ),
             scan_id=pair.scan_id,
         )
@@ -570,13 +568,9 @@ class MemoryDistillationService:
             risk_level=claim.governance.risk_level,
             security_classification=claim.security.classification,
             evidence_paths=[span.path for span in claim.evidence.spans],
-            intake_document_ids=[
-                proof.document_id for proof in claim.evidence.intake_proofs
-            ],
+            intake_document_ids=[proof.document_id for proof in claim.evidence.intake_proofs],
             source_hashes=[
-                proof.source_hash
-                for proof in claim.evidence.intake_proofs
-                if proof.source_hash
+                proof.source_hash for proof in claim.evidence.intake_proofs if proof.source_hash
             ],
         )
 
@@ -638,10 +632,7 @@ class MemoryDistillationService:
                 continue
             other_value = _relation_compare_value(other)
             if other_value != claim_value:
-                conflicts.append(
-                    "potential_conflict:"
-                    f"{other.claim_id}:{other_value or '_'}"
-                )
+                conflicts.append(f"potential_conflict:{other.claim_id}:{other_value or '_'}")
         return sorted(conflicts)
 
     @staticmethod
@@ -655,8 +646,7 @@ class MemoryDistillationService:
         conflict_signals: list[str],
     ) -> list[MemoryReviewSignalExplanation]:
         explanations = [
-            MemoryDistillationService._risk_signal_explanation(signal)
-            for signal in risk_signals
+            MemoryDistillationService._risk_signal_explanation(signal) for signal in risk_signals
         ]
         explanations.extend(
             MemoryDistillationService._conflict_signal_explanation(signal)
@@ -804,9 +794,7 @@ class MemoryDistillationService:
             effective_status=latest.new_status if latest else claim.governance.status,
             relation_value=_relation_compare_value(claim) or None,
             evidence_paths=[span.path for span in claim.evidence.spans],
-            intake_document_ids=[
-                proof.document_id for proof in claim.evidence.intake_proofs
-            ],
+            intake_document_ids=[proof.document_id for proof in claim.evidence.intake_proofs],
             latest_review=latest,
         )
 
@@ -872,9 +860,7 @@ class MemoryDistillationService:
                     "".join(item.model_dump_json() for item in field_diffs).encode("utf-8")
                 ).hexdigest(),
                 hashlib.sha256(
-                    "".join(
-                        item.model_dump_json() for item in signal_explanations
-                    ).encode("utf-8")
+                    "".join(item.model_dump_json() for item in signal_explanations).encode("utf-8")
                 ).hexdigest(),
             ]
         )

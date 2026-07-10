@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Test-only rates. This file validates cost math and is not provider price evidence.
+
+schema_version: provider-pricing-v1
+status: approved
+provider: benchmark-fixture
+model: deterministic-context-transform-v1
+currency: USD
+input_cost_per_million_tokens: 1.25
+output_cost_per_million_tokens: 3.5
+effective_at: '2026-07-10T00:00:00Z'
+approved_by: automated-test-fixture
+approved_at: '2026-07-10T00:00:00Z'
+source_reference: test-only-not-provider-pricing

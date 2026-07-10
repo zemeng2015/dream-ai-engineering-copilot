@@ -89,7 +89,7 @@ class QuestionGenerator:
         role: str | None = None,
     ) -> list[ClarificationQuestion]:
         roles = [role.upper()] if role else ["BA", "TL", "FE", "BE", "QA", "OPS", "SECURITY"]
-        sources = sorted({item.source_path for item in evidence})[:5]
+        sources = sorted({path for item in evidence for path in item.provenance_paths()})[:5]
         questions: list[ClarificationQuestion] = []
         for target_role in roles:
             for question, why in QUESTION_BANK.get(target_role, []):

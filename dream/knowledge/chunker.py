@@ -51,4 +51,3 @@ class Chunker:
     @staticmethod
     def _stable_id(value: str) -> str:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
-

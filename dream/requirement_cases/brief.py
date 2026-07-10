@@ -37,7 +37,7 @@ class EngineeringBriefGenerator:
         else:
             self.last_model_provider = "deterministic"
             self.last_model_name = "engineering-brief-v1"
-        sources = sorted({item.source_path for item in snapshot.evidence})
+        sources = sorted({path for item in snapshot.evidence for path in item.provenance_paths()})
         warnings = [] if snapshot.evidence else ["No evidence was available for this brief."]
         return EngineeringBrief(
             case_id=snapshot.case.case_id,

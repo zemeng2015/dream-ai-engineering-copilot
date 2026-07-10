@@ -21,6 +21,7 @@ from dream.extensions import DefaultRedactionProvider
 from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.knowledge.models import Chunk
 from dream.memory.claim_retriever import MemoryClaimRetriever
+from dream.memory.models import MemoryClaimSearchResult
 from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases.models import ContextEvidence, RequirementCaseSnapshot
 from dream.requirement_cases.repository import RequirementCaseRepository
@@ -87,7 +88,15 @@ class ContextIntelligenceService:
             query=snapshot.case.raw_request,
             include_candidates=True,
         )
-        used_claims = [item for item in considered_claims if item.status == "approved"]
+        used_claims, claim_policy_warnings = self._approved_memory_claims(
+            team_id=snapshot.case.team_id,
+            query=snapshot.case.raw_request,
+        )
+        used_claim_ids = {item.claim_id for item in used_claims}
+        considered_claims = [
+            *used_claims,
+            *(item for item in considered_claims if item.claim_id not in used_claim_ids),
+        ]
         trail = RetrievalTrail(
             trail_id=f"context-trail-{case_id}",
             case_id=case_id,
@@ -126,7 +135,7 @@ class ContextIntelligenceService:
             graph_expansion_paths=graph_paths,
             memory_claims_considered=considered_claims,
             memory_claims_used=used_claims,
-            warnings=snapshot.warnings,
+            warnings=list(dict.fromkeys([*snapshot.warnings, *claim_policy_warnings])),
             final_context_summary=_summary(selected, graph_paths, used_claims),
         )
         return self.repository.save_trail(trail)
@@ -187,6 +196,7 @@ class ContextIntelligenceService:
         chunks: list[Chunk],
         codebase_results,
         related_tests,
+        memory_claims: list[MemoryClaimSearchResult],
         warnings: list[str],
         prompt: str,
     ) -> tuple[RetrievalTrail, ContextPack, PromptPreview]:
@@ -212,6 +222,16 @@ class ContextIntelligenceService:
             repo_name=request.repo_name,
             query=" ".join([diff_summary.rough_changed_content, *diff_summary.files_changed]),
         )
+        claim_refs = [
+            self._memory_claim_reference(
+                result.claim,
+                status=result.effective_status,
+                reason=result.reason,
+                reviewed_by=result.review_event.reviewer if result.review_event else None,
+                reviewed_at=result.review_event.reviewed_at if result.review_event else None,
+            )
+            for result in memory_claims
+        ]
         selected = [item.model_copy(update={"selected": True}) for item in evidence]
         trail = RetrievalTrail(
             trail_id=f"context-trail-{run_id}",
@@ -236,14 +256,26 @@ class ContextIntelligenceService:
                     candidates_found=len(codebase_results) + len(related_tests),
                     selected_count=len(codebase_results) + len(related_tests),
                 ),
+                RetrievalStep(
+                    step_name="pr_governed_memory_search",
+                    query=" ".join(
+                        [diff_summary.rough_changed_content, *diff_summary.files_changed]
+                    ),
+                    provider="MemoryClaimRetriever",
+                    candidates_found=len(memory_claims),
+                    selected_count=len(memory_claims),
+                    notes=["Only policy-approved, conflict-free claims can be selected."],
+                ),
             ],
             candidate_evidence=selected,
             selected_evidence=selected,
             excluded_evidence=[],
             ranking_reasons=sorted({item.reason for item in selected}),
             graph_expansion_paths=graph_paths,
+            memory_claims_considered=claim_refs,
+            memory_claims_used=claim_refs,
             warnings=warnings,
-            final_context_summary=_summary(selected, graph_paths, []),
+            final_context_summary=_summary(selected, graph_paths, claim_refs),
         )
         trail = self.repository.save_trail(trail)
         pack = self._pack_from_candidates(
@@ -254,6 +286,7 @@ class ContextIntelligenceService:
             run_id=run_id,
             candidates=selected,
             graph_paths=graph_paths,
+            selected_claims=claim_refs,
             warnings=warnings,
         )
         preview = PromptPreview(
@@ -482,19 +515,61 @@ class ContextIntelligenceService:
             if terms and not terms.intersection(claim_terms):
                 continue
             refs.append(
-                MemoryClaimReference(
-                    claim_id=claim.claim_id,
+                self._memory_claim_reference(
+                    claim,
                     status=status,
-                    entity=claim.entity.canonical_name,
-                    relation=claim.relation.type,
-                    value=claim.relation.value or claim.relation.object_entity_id,
-                    evidence_paths=[span.path for span in claim.evidence.spans],
-                    intake_proofs=claim.evidence.intake_proofs,
                     reason="Memory claim matched request terms.",
                 )
             )
         refs.sort(key=lambda ref: (0 if ref.intake_proofs else 1, ref.entity, ref.claim_id))
         return refs[:20]
+
+    def _approved_memory_claims(
+        self,
+        *,
+        team_id: str,
+        query: str,
+    ) -> tuple[list[MemoryClaimReference], list[str]]:
+        try:
+            batch = self.memory_retriever.search_with_policy(
+                team_id=team_id,
+                query=query,
+                top_k=20,
+            )
+        except Exception:  # noqa: BLE001 - a missing scan must not break context trace.
+            return [], []
+        return [
+            self._memory_claim_reference(
+                result.claim,
+                status=result.effective_status,
+                reason=result.reason,
+                reviewed_by=result.review_event.reviewer if result.review_event else None,
+                reviewed_at=result.review_event.reviewed_at if result.review_event else None,
+            )
+            for result in batch.results
+        ], batch.warnings
+
+    @staticmethod
+    def _memory_claim_reference(
+        claim,
+        *,
+        status: str,
+        reason: str,
+        reviewed_by: str | None = None,
+        reviewed_at: str | None = None,
+    ) -> MemoryClaimReference:
+        return MemoryClaimReference(
+            claim_id=claim.claim_id,
+            status=status,
+            entity=claim.entity.canonical_name,
+            relation=claim.relation.type,
+            value=claim.relation.value or claim.relation.object_entity_id,
+            evidence_paths=[span.path for span in claim.evidence.spans],
+            intake_proofs=claim.evidence.intake_proofs,
+            reason=reason,
+            reviewed_by=reviewed_by,
+            reviewed_at=reviewed_at,
+        )
 
     def _claim_counts(self, team_id: str) -> tuple[int, int]:
         try:
@@ -588,9 +663,7 @@ def _detect_concepts(raw_text: str, evidence: list[EvidenceCandidate]) -> list[s
         "idempotency": ["idempotency"],
     }
     detected = {
-        name
-        for name, required in phrases.items()
-        if all(term in tokens for term in required)
+        name for name, required in phrases.items() if all(term in tokens for term in required)
     }
     common = [item for item, _ in Counter(tokens).most_common(8) if item not in STOP_WORDS]
     return sorted(detected | set(common[:6]))

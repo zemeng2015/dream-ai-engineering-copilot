@@ -13,4 +13,3 @@ class TestGenProvider(Protocol):
 
     def run(self, request: TestGenRequest) -> TestGenResult:
         """Run or simulate test generation."""
-

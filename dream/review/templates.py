@@ -2,6 +2,7 @@
 
 from dream.codebase.models import CodebaseSearchResult, TestMapping
 from dream.knowledge.models import Chunk
+from dream.memory.models import MemoryClaimSearchResult
 from dream.review.diff_parser import DiffSummary
 
 
@@ -12,6 +13,7 @@ def render_pr_review_summary(
     chunks: list[Chunk],
     codebase_results: list[CodebaseSearchResult] | None = None,
     related_tests: list[TestMapping] | None = None,
+    memory_claims: list[MemoryClaimSearchResult] | None = None,
     warnings: list[str] | None = None,
 ) -> str:
     total_changed = diff_summary.added_line_count + diff_summary.removed_line_count
@@ -25,9 +27,11 @@ def render_pr_review_summary(
     files = "\n".join(f"- {path}" for path in diff_summary.files_changed) or "- No files parsed."
     codebase_results = codebase_results or []
     related_tests = related_tests or []
-    sources = _source_lines(chunks, codebase_results, related_tests)
+    memory_claims = memory_claims or []
+    sources = _source_lines(chunks, codebase_results, related_tests, memory_claims)
     codebase_lines = _codebase_lines(codebase_results)
     test_lines = _test_lines(related_tests)
+    memory_claim_lines = _memory_claim_lines(memory_claims)
     warning_lines = _warning_lines(warnings or [])
     jira_note = "Jira context was provided." if jira_context else "No Jira context was provided."
 
@@ -44,6 +48,9 @@ Human review is required.
 
 ## Related Codebase Memory
 {codebase_lines}
+
+## Governed Memory Claims
+{memory_claim_lines}
 
 ## Business Logic Alignment
 {jira_note} Review the changed behavior against the stated requirement and DemoCorp domain workflow.
@@ -116,6 +123,7 @@ def _source_lines(
     chunks: list[Chunk],
     codebase_results: list[CodebaseSearchResult],
     related_tests: list[TestMapping],
+    memory_claims: list[MemoryClaimSearchResult],
 ) -> str:
     lines = [f"- {chunk.title} ({chunk.source_path})" for chunk in chunks]
     lines.extend(
@@ -124,5 +132,30 @@ def _source_lines(
         if result.result_type != "concept"
     )
     lines.extend(f"- Related test: {mapping.test_file}" for mapping in related_tests)
+    for result in memory_claims:
+        lines.append(f"- Approved memory claim: memory-claim:{result.claim.claim_id}")
+        lines.extend(
+            f"- Claim evidence: {span.path}" for span in result.claim.evidence.spans
+        )
     deduped = list(dict.fromkeys(lines))
     return "\n".join(deduped) or "- No matching sources were retrieved."
+
+
+def _memory_claim_lines(results: list[MemoryClaimSearchResult]) -> str:
+    if not results:
+        return "- No policy-approved memory claim matched this PR."
+    lines = []
+    for result in results:
+        claim = result.claim
+        value = claim.relation.value or claim.relation.object_entity_id or "_"
+        paths = ", ".join(span.path for span in claim.evidence.spans) or "missing"
+        reviewer = result.review_event.reviewer if result.review_event else None
+        reviewed_at = result.review_event.reviewed_at if result.review_event else None
+        review_proof = ""
+        if reviewer or reviewed_at:
+            review_proof = f" Reviewed by {reviewer or 'unknown'} at {reviewed_at or 'unknown'}."
+        lines.append(
+            f"- `{claim.claim_id}` {claim.entity.canonical_name} "
+            f"--{claim.relation.type}--> {value}. Evidence: {paths}.{review_proof}"
+        )
+    return "\n".join(lines)

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version: provider-pricing-v1
+status: draft
+provider: REPLACE_WITH_RESOLVED_PROVIDER
+model: REPLACE_WITH_RESOLVED_MODEL
+currency: USD
+input_cost_per_million_tokens: 0
+output_cost_per_million_tokens: 0
+effective_at: null
+approved_by: null
+approved_at: null
+source_reference: null

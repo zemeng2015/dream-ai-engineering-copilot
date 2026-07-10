@@ -1,9 +1,11 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
   <aside class="sidebar" aria-label="Primary navigation">
     <div class="sidebar-head">
-      <a class="brand" routerLink="/mission-control" aria-label="DREAM mission control">
+      <a class="brand" [routerLink]="profile.landingPath" aria-label="DREAM home">
         <span class="brand-mark">D</span>
         <span class="brand-text">
           <strong>DREAM</strong>
@@ -37,12 +39,12 @@
     <div class="sidebar-footer">
       <div class="mode-line">
         <span class="pulse-dot" aria-hidden="true"></span>
-        <span>Qwen Cloud</span>
-        <strong>Live Runtime</strong>
+        <span>{{ profile.modeLabel }}</span>
+        <strong>{{ profile.modeState }}</strong>
       </div>
       <div class="environment-line">
-        <span>Environment</span>
-        <strong>Alibaba Cloud</strong>
+        <span>{{ profile.environmentLabel }}</span>
+        <strong>{{ profile.environmentState }}</strong>
       </div>
       <div class="version-line">
         <strong>Angular + FastAPI</strong>
@@ -53,15 +55,15 @@
   <section class="workspace">
     <header class="topbar">
       <div class="topbar-title">
-        <strong>DREAM</strong>
+        <strong>DREAM · {{ profile.shellLabel }}</strong>
       </div>
       <div class="topbar-actions">
         <span class="mode-chip">
           <span class="pulse-dot" aria-hidden="true"></span>
-          Live Backend
+          {{ profile.modeState }}
         </span>
         <a class="ghost-button" routerLink="/memory">Memory</a>
-        <span class="avatar" aria-label="Signed in as Demo Engineer">DE</span>
+        <span class="avatar" aria-label="Demo user">DE</span>
       </div>
     </header>
 

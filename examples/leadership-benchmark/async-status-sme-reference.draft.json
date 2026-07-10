@@ -1,0 +1,29 @@
+{
+  "intent_summary": "Define task-level execution visibility and bounded automatic refresh for long-running forecast work.",
+  "impact_areas": [
+    {
+      "statement": "SME: replace with an accepted implementation impact and stable source ids.",
+      "citations": []
+    }
+  ],
+  "critical_questions": [
+    {
+      "role": "SME",
+      "question": "SME: replace with the accepted role-specific decision questions.",
+      "citations": []
+    }
+  ],
+  "test_targets": [
+    {
+      "statement": "SME: replace with accepted regression targets and stable source ids.",
+      "citations": []
+    }
+  ],
+  "historical_risks": [
+    {
+      "statement": "SME: replace with accepted incident/Jira/PR risks and stable source ids.",
+      "citations": []
+    }
+  ],
+  "unsupported_assumptions": []
+}

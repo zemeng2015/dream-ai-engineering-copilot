@@ -37,6 +37,8 @@ class MemoryClaimReference(BaseModel):
     evidence_paths: list[str] = Field(default_factory=list)
     intake_proofs: list[MemoryIntakeProof] = Field(default_factory=list)
     reason: str = ""
+    reviewed_by: str | None = None
+    reviewed_at: str | None = None
 
 
 class GraphPathReference(BaseModel):

@@ -5,7 +5,7 @@ from uuid import uuid4
 from dream.audit.logger import AuditLogger
 from dream.codebase import CodebaseIndexRepository, CodebaseRetriever
 from dream.codebase.models import CodebaseSearchResult, TestMapping
-from dream.core.errors import DreamError
+from dream.core.errors import DreamError, NotFoundError
 from dream.core.paths import (
     display_path,
     resolve_artifact_path,
@@ -15,6 +15,9 @@ from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.llm import BaseLLMProvider, MockLLMProvider
+from dream.memory import MemoryClaimRetriever
+from dream.memory.models import MemoryClaimRetrievalBatch, MemoryClaimSearchResult
+from dream.memory.repository import MemoryDistillationRepository
 from dream.review.diff_parser import parse_unified_diff
 from dream.review.models import PRReviewRequest, PRReviewResponse
 from dream.review.templates import render_pr_review_summary
@@ -33,6 +36,8 @@ class PRReviewAssistant:
         codebase_retriever: CodebaseRetriever | None = None,
         graph_repository: EvidenceGraphRepository | None = None,
         graph_retriever: EvidenceGraphRetriever | None = None,
+        memory_repository: MemoryDistillationRepository | None = None,
+        memory_claim_retriever: MemoryClaimRetriever | None = None,
     ) -> None:
         self.pack_loader = pack_loader or KnowledgePackLoader()
         self.doc_loader = doc_loader or MarkdownDocumentLoader()
@@ -46,6 +51,10 @@ class PRReviewAssistant:
         self.graph_repository = graph_repository or EvidenceGraphRepository()
         self.graph_retriever = graph_retriever or EvidenceGraphRetriever(
             repository=self.graph_repository
+        )
+        self.memory_repository = memory_repository or MemoryDistillationRepository()
+        self.memory_claim_retriever = memory_claim_retriever or MemoryClaimRetriever(
+            repository=self.memory_repository
         )
 
     def review(self, request: PRReviewRequest) -> PRReviewResponse:
@@ -93,12 +102,19 @@ class PRReviewAssistant:
             query=query,
         )
         warnings.extend(codebase_warnings)
+        memory_batch = self._governed_memory_context(
+            team_id=request.team_id,
+            query=" ".join([query, *diff_summary.files_changed]),
+            top_k=request.top_k,
+        )
+        warnings.extend(memory_batch.warnings)
         prompt = render_pr_review_summary(
             diff_summary=diff_summary,
             jira_context=jira_context,
             chunks=retrieved,
             codebase_results=codebase_results,
             related_tests=related_tests,
+            memory_claims=memory_batch.results,
             warnings=warnings,
         )
         from dream.context import ContextIntelligenceService
@@ -106,6 +122,7 @@ class PRReviewAssistant:
         ContextIntelligenceService(
             codebase_repository=self.codebase_repository,
             graph_repository=self.graph_repository,
+            memory_repository=self.memory_repository,
         ).save_pr_review_context(
             run_id=run_id,
             request=request,
@@ -113,6 +130,7 @@ class PRReviewAssistant:
             chunks=retrieved,
             codebase_results=codebase_results,
             related_tests=related_tests,
+            memory_claims=memory_batch.results,
             warnings=warnings,
             prompt=prompt,
         )
@@ -124,6 +142,11 @@ class PRReviewAssistant:
             {chunk.source_path for chunk in retrieved}
             | {result.source_path for result in codebase_results}
             | {mapping.test_file for mapping in related_tests}
+            | {
+                source
+                for result in memory_batch.results
+                for source in self._memory_claim_sources(result)
+            }
         )
         self.audit_logger.log_generation(
             run_id=run_id,
@@ -143,7 +166,54 @@ class PRReviewAssistant:
             markdown=markdown,
             sources_used=sources_used,
             warnings=warnings,
+            memory_claims_used=[
+                result.claim.claim_id for result in memory_batch.results
+            ],
+            blocked_memory_claim_ids=memory_batch.blocked_claim_ids,
+            context_trail_id=f"context-trail-{run_id}",
         )
+
+    def _governed_memory_context(
+        self,
+        *,
+        team_id: str,
+        query: str,
+        top_k: int,
+    ) -> MemoryClaimRetrievalBatch:
+        try:
+            batch = self.memory_claim_retriever.search_with_policy(
+                team_id=team_id,
+                query=query,
+                top_k=200,
+            )
+        except NotFoundError:
+            return MemoryClaimRetrievalBatch(
+                warnings=[
+                    "No governed memory scan exists for this team; PR review used "
+                    "document, codebase, and graph context only."
+                ]
+            )
+        if batch.results:
+            batch.results = sorted(
+                batch.results,
+                key=lambda item: (
+                    0 if item.review_event is not None else 1,
+                    -item.score,
+                    item.claim.claim_id,
+                ),
+            )[: max(top_k, 8)]
+        if not batch.results and not batch.warnings:
+            batch.warnings.append(
+                "No policy-approved memory claim matched this PR review context."
+            )
+        return batch
+
+    @staticmethod
+    def _memory_claim_sources(result: MemoryClaimSearchResult) -> set[str]:
+        return {
+            f"memory-claim:{result.claim.claim_id}",
+            *(span.path for span in result.claim.evidence.spans),
+        }
 
     @staticmethod
     def _read_diff(request: PRReviewRequest) -> str:

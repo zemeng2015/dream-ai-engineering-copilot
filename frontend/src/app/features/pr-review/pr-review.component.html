@@ -136,8 +136,11 @@
           <h2>Memory & Code Impact</h2>
           <p>Default view keeps the review path compact; details open only when needed.</p>
         </div>
-        <a class="link-button" routerLink="/audit">
-          View eval trail
+        <a
+          class="link-button"
+          [routerLink]="review.contextTrailId ? ['/context', review.run.runId] : '/audit'"
+        >
+          {{ review.contextTrailId ? 'View context trail' : 'View eval trail' }}
           <app-ui-icon name="chevron-right" />
         </a>
       </div>
@@ -163,6 +166,13 @@
             <span>Memory docs used</span>
             <strong>{{ review.sourcesUsed.length }}</strong>
             <small>{{ sourceFamilies(review).length }} source families</small>
+          </div>
+          <div class="summary-tile">
+            <span>Approved claims used</span>
+            <strong>{{ review.memoryClaimsUsed.length }}</strong>
+            <small>
+              {{ review.blockedMemoryClaimIds.length }} conflict-blocked
+            </small>
           </div>
           <div class="summary-tile">
             <span>Risk</span>

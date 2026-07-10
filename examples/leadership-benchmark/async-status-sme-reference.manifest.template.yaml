@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+scenario_id: leadership-async-status-v1
+contract_version: engineering-decision-v1
+status: draft
+reviewer: null
+approved_at: null
+reference_json: async-status-sme-reference.draft.json
+reference_sha256: REPLACE_WITH_SHA256_AFTER_SME_APPROVAL

@@ -400,8 +400,8 @@ export class MemoryHubComponent {
     this.api
       .scanMemory({
         teamId: 'demo_team',
-        repoPath: 'examples/java-demo-repo',
-        repoName: 'java-demo-repo',
+        repoPath: 'examples/dfp-demo-repo',
+        repoName: 'dfp-demo-repo',
       })
       .pipe(
         switchMap((scan) =>

@@ -259,6 +259,8 @@ ${sourceLines || '- No matching sources were retrieved.'}
       risk,
       sourcesUsed: sources,
       warnings: ['Human review is required before using this summary.'],
+      memoryClaimsUsed: [],
+      blockedMemoryClaimIds: [],
       changedFiles,
       relatedCode,
       scorecard,

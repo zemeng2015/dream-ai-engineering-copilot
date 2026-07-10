@@ -43,7 +43,7 @@ class JiraDraftGenerator:
             questions=snapshot.questions,
             deterministic_draft=deterministic_markdown,
         )
-        sources = sorted({item.source_path for item in snapshot.evidence})
+        sources = sorted({path for item in snapshot.evidence for path in item.provenance_paths()})
         warnings = [] if snapshot.evidence else ["No evidence was available for this Jira draft."]
         return JiraDraftContext(
             case_id=snapshot.case.case_id,

@@ -60,6 +60,13 @@ class EvaluationRepository:
             ).fetchall()
         return [EvaluationScorecard.model_validate_json(row["payload"]) for row in rows]
 
+    def delete_case(self, case_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "DELETE FROM evaluation_scorecards WHERE case_id = ?",
+                (case_id,),
+            )
+
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
