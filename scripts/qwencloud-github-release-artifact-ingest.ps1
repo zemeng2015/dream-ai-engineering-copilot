@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$Repo = "zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
-    [string]$Branch = "main",
+    [string]$Branch = "codex/champion-memory-loop",
     [Parameter(Mandatory = $false)]
     [string]$WorkflowName = "Qwen Cloud Release",
     [Parameter(Mandatory = $false)]

@@ -164,6 +164,7 @@ def test_post_submit_verification_selects_latest_head_ci_run(tmp_path) -> None:
     assert "Latest passing CI" in latest_ci["details"]
     assert bundle_commit["ok"] is True
     assert report["repoName"] == "zemeng2015/dream-ai-engineering-copilot"
+    assert report["repoRef"] == "codex/champion-memory-loop"
     assert _check(report, "repo_url_github")["ok"] is True
     assert _check(report, "repo_github_public")["ok"] is True
     assert _check(report, "repo_license_apache_2_0")["ok"] is True
@@ -186,6 +187,8 @@ def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
     assert "ConvertTo-FlatArray" in text
     assert "matchingRuns" in text
     assert "gh run list --repo $repoName" in text
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in text
+    assert "--branch $RepoRef" in text
     assert "$manifest.gitCommit" in text
     assert "repo_github_public" in text
     assert "repo_license_apache_2_0" in text

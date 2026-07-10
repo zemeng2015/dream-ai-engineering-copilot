@@ -316,6 +316,7 @@ def test_github_release_artifact_ingest_registered_in_final_flow() -> None:
         encoding="utf-8-sig"
     )
     ingest = (ROOT / script_path).read_text(encoding="utf-8-sig")
+    assert '[string]$Branch = "codex/champion-memory-loop"' in ingest
     docs = (ROOT / "docs/qwencloud-github-release-workflow.md").read_text(
         encoding="utf-8-sig"
     )

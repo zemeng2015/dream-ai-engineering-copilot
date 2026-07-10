@@ -8,6 +8,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -330,7 +332,7 @@ function Test-HeadCiSuccess {
             ConvertTo-FlatArray -Value (Read-JsonPath -Path $RunsJsonPath)
         }
         else {
-            $runsJson = gh run list --repo $repoName --branch main --limit 10 --json databaseId,headSha,status,conclusion,url,displayTitle,createdAt,updatedAt
+            $runsJson = gh run list --repo $repoName --branch $RepoRef --limit 10 --json databaseId,headSha,status,conclusion,url,displayTitle,createdAt,updatedAt
             ConvertTo-FlatArray -Value ($runsJson | ConvertFrom-Json)
         }
         $matchingRuns = @(
@@ -600,6 +602,7 @@ $result = [ordered]@{
     devpostProjectUrl = $DevpostProjectUrl
     devpostHtmlPath = $DevpostHtmlPath
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
     repoName = $repoName
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl

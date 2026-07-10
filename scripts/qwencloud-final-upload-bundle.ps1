@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$RepoName = "zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
@@ -207,6 +209,21 @@ function Get-PowerShellExe {
     throw "PowerShell executable not found."
 }
 
+function Quote-ProcessArg([string]$Value) {
+    if ($null -eq $Value) { return '""' }
+    return '"' + ($Value -replace '"', '\"') + '"'
+}
+
+function Invoke-PowerShellProcess {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$Stdout,
+        [Parameter(Mandatory = $true)][string]$Stderr
+    )
+    $quotedArguments = @($Arguments | ForEach-Object { Quote-ProcessArg $_ })
+    return Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $quotedArguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr
+}
+
 function Invoke-GitText([string[]]$Arguments) {
     try {
         $output = & git @Arguments 2>$null
@@ -233,7 +250,7 @@ function Invoke-DeadlineGuard {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-deadline-guard-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-deadline-guard-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Deadline guard generation failed. See $stderr"
@@ -287,7 +304,7 @@ function Invoke-LiveInputsIntake {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-live-inputs-intake-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-live-inputs-intake-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Live inputs intake generation failed. See $stderr"
@@ -337,7 +354,7 @@ function Invoke-ReleaseConfigAudit {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-release-config-audit-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-release-config-audit-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Release config audit generation failed. See $stderr"
@@ -394,7 +411,7 @@ function Invoke-ActionBoard {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-action-board-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-action-board-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Final action board generation failed. See $stderr"
@@ -438,13 +455,13 @@ function Invoke-GitHubCiProof {
         "-File", "scripts/qwencloud-github-ci-proof.ps1",
         "-RepoUrl", $RepoUrl,
         "-OutputDir", $OutputDir,
-        "-Branch", "main"
+        "-Branch", $RepoRef
     )
     if ($AllowDraft) { $args += "-AllowDraft" }
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-github-ci-proof-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-github-ci-proof-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "GitHub CI proof generation failed. See $stderr"
@@ -496,7 +513,7 @@ function Invoke-OfficialSourceRefresh {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-official-source-refresh-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-official-source-refresh-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Official source refresh generation failed. See $stderr"
@@ -542,6 +559,7 @@ function Invoke-Packet {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-hackathon-submission-packet.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-ArchitectureUploadPath", $ArchitectureUploadPath,
         "-LocalVideoPath", $LocalDemoVideoPath,
@@ -559,7 +577,7 @@ function Invoke-Packet {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-packet-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-packet-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Submission packet generation failed. See $stderr"
     }
@@ -591,6 +609,7 @@ function Invoke-Handoff {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-devpost-handoff.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-ArchitectureUploadPath", $ArchitectureUploadPath,
         "-LocalDemoVideoPath", $LocalDemoVideoPath,
@@ -607,7 +626,7 @@ function Invoke-Handoff {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-handoff-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-handoff-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Devpost handoff generation failed. See $stderr"
     }
@@ -651,7 +670,7 @@ function Invoke-DraftPayload {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-draft-payload-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-draft-payload-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Devpost draft payload generation failed. See $stderr"
     }
@@ -699,7 +718,7 @@ function Invoke-AutofillSnippet([string]$PayloadJson) {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-autofill-snippet-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-autofill-snippet-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Devpost autofill snippet generation failed. See $stderr"
     }
@@ -739,6 +758,7 @@ function Invoke-DevpostMaterialsAudit([string]$PacketJson, [string]$PayloadJson,
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-ArchitectureUploadPath", $ArchitectureUploadPath,
         "-LocalDemoVideoPath", $LocalDemoVideoPath,
@@ -759,7 +779,7 @@ function Invoke-DevpostMaterialsAudit([string]$PacketJson, [string]$PayloadJson,
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-devpost-materials-audit-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-devpost-materials-audit-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Devpost materials audit generation failed. See $stderr"
@@ -816,7 +836,7 @@ function Invoke-JudgingScorecard {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-judging-scorecard-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-judging-scorecard-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Judging scorecard generation failed. See $stderr"
     }
@@ -846,6 +866,7 @@ function Invoke-OfficialRulesGate {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-official-rules-gate.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-AllowDraft"
     )
@@ -858,7 +879,7 @@ function Invoke-OfficialRulesGate {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-official-rules-gate-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-official-rules-gate-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Official rules gate generation failed. See $stderr"
     }
@@ -896,7 +917,7 @@ function Invoke-CloudCredentialsHandoff {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-cloud-handoff-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-cloud-handoff-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Cloud credentials handoff generation failed. See $stderr"
     }
@@ -934,7 +955,7 @@ function Invoke-VideoPublicationHandoff {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-video-publication-handoff-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-video-publication-handoff-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         throw "Video publication handoff generation failed. See $stderr"
     }
@@ -979,7 +1000,7 @@ function Invoke-ExternalHandoff {
 
     $stdout = Join-Path $OutputDir "final-upload-bundle-external-handoff-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-upload-bundle-external-handoff-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         if (-not $AllowDraft) {
             throw "Final external handoff generation failed. See $stderr"
@@ -1186,6 +1207,7 @@ $manifest = [ordered]@{
     readyForUpload = $ready
     allowDraft = [bool]$AllowDraft
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
     gitCommit = $gitCommit
     gitBranch = $gitBranch
     gitWorktreeClean = $gitWorktreeClean

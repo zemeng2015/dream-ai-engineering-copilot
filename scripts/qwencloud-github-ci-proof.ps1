@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
-    [string]$Branch = "main",
+    [string]$Branch = "codex/champion-memory-loop",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]

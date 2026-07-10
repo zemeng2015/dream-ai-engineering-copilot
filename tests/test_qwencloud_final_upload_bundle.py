@@ -11,6 +11,10 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     )
 
     assert '[string]$RepoName = "zemeng2015/dream-ai-engineering-copilot"' in final_bundle
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in final_bundle
+    assert "function Invoke-PowerShellProcess" in final_bundle
+    assert "-ArgumentList $quotedArguments" in final_bundle
+    assert "-ArgumentList $args" not in final_bundle
     assert "[switch]$SkipGitHubSecrets" in final_bundle
     assert "function Invoke-ActionBoard" in final_bundle
     assert "function Invoke-ExternalHandoff" in final_bundle

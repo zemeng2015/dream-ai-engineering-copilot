@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -190,7 +192,7 @@ function Test-HeadCiSuccess {
 
     try {
         $head = (git rev-parse HEAD).Trim()
-        $runsJson = gh run list --branch main --limit 10 --json headSha,status,conclusion,url,displayTitle
+        $runsJson = gh run list --branch $RepoRef --limit 10 --json headSha,status,conclusion,url,displayTitle
         $runs = $runsJson | ConvertFrom-Json
         $run = @($runs | Where-Object { $_.headSha -eq $head } | Select-Object -First 1)
         if (-not $run) {
@@ -348,7 +350,7 @@ function Invoke-GitHubCiProof {
         "-File", "scripts/qwencloud-github-ci-proof.ps1",
         "-RepoUrl", $RepoUrl,
         "-OutputDir", $OutputDir,
-        "-Branch", "main",
+        "-Branch", $RepoRef,
         "-AllowDraft"
     )
 
@@ -420,6 +422,7 @@ function Invoke-SubmissionPacket {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-hackathon-submission-packet.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir
     )
     if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
@@ -471,6 +474,7 @@ function Invoke-DevpostMaterialsAudit([string]$PacketJson) {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-devpost-materials-audit.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-AllowDraft"
     )
@@ -613,6 +617,7 @@ function Invoke-OfficialRulesGate {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-official-rules-gate.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-AllowDraft"
     )
@@ -817,6 +822,7 @@ $result = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
     readyForFinalSubmit = $ready
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl

@@ -114,6 +114,7 @@ def test_github_ci_proof_accepts_fixture_for_current_head(tmp_path) -> None:
 
     assert report["status"] == "READY"
     assert report["readyForGitHubCiProof"] is True
+    assert report["branch"] == "codex/champion-memory-loop"
     assert report["usingFixtures"] is True
     assert isinstance(report["matchingRun"], dict)
     assert report["matchingRun"]["databaseId"] == 12345
@@ -145,3 +146,8 @@ def test_github_ci_proof_registered_in_final_submission_flow() -> None:
         encoding="utf-8-sig"
     )
     assert "matchingRuns" in (ROOT / script_path).read_text(encoding="utf-8-sig")
+    assert '[string]$Branch = "codex/champion-memory-loop"' in (
+        ROOT / script_path
+    ).read_text(encoding="utf-8-sig")
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in final_bundle
+    assert '"-Branch", $RepoRef' in final_bundle
