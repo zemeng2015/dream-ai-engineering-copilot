@@ -76,6 +76,9 @@ inconsistent requirements, and repeated onboarding.
 
 DREAM is a source-backed MemoryAgent for engineering workflows. It unifies:
 
+- Qwen-curated cross-session experience (preferences, policies, and reusable lessons)
+- Governed remember / supersede / forget / ignore lifecycle decisions
+- TTL expiration, explicit forgetting, limited-context recall, and feedback ranking
 - Knowledge packs (runbooks, incidents, architecture docs, historical Jira/PR context)
 - Codebase memory (files, symbols, concepts, tests, relationships)
 - Governed memory claims with human approval/rejection and conflict resolution
@@ -96,8 +99,25 @@ source paths for later review.
 
 ### Measured Qwen + DREAM evidence
 
-In a real Qwen Cloud paired run over seven synthetic engineering cases, the
-baseline and DREAM conditions used the same `qwen3.7-plus` model, temperature
+Our primary Track 1 benchmark ran 37 real Qwen curator decisions across 24
+synthetic cross-session lifecycle cases. All 24/24 cases passed the lifecycle
+contract. Qwen proposal accuracy, governed action accuracy, critical-memory
+recall, and token-budget compliance were 100%; forbidden-memory leak was 0%;
+the weighted score was 100.0/100. Cases cover durable preference carryover,
+conflict supersession, TTL and explicit forgetting, duplicate rejection, and
+limited-context recall.
+
+This is a reproducible synthetic benchmark, not a production-effectiveness
+claim. The public dataset, runner, methodology, summary, and full report are in
+`examples/experience-benchmark/scenarios.yaml`,
+`scripts/qwencloud_experience_memory_benchmark.py`, and
+`docs/qwen-experience-memory-benchmark.md`.
+
+As a secondary grounding test, a real Qwen Cloud paired run over seven
+synthetic engineering cases compared stateless Qwen with Qwen + retrieved DREAM
+organization evidence.
+
+The baseline and DREAM conditions used the same `qwen3.7-plus` model, temperature
 `0`, output contract, and deterministic reference scorer; the changed variable
 was organization evidence absent versus DREAM-retrieved evidence. The mean
 deterministic reference score increased from `25.3` to `48.7` (`+23.4`), and
@@ -115,14 +135,15 @@ per-case table are in `docs/qwen-memory-ab-benchmark.md`.
 
 ### Why this is Track 1
 
-It is a MemoryAgent: the core value is durable, reviewable memory that improves
-decision quality across requirement drafting, PR review, and engineering workflows.
+It is a MemoryAgent: the core value is Qwen-curated experience that persists
+across sessions, replaces stale conflicts, forgets at the right time, learns
+from feedback, and enters later prompts under a controlled context budget.
 
 ### Judging alignment
 
-- Innovation and AI Creativity: Qwen Cloud is used inside a governed memory
-  workflow with claim distillation, source-backed retrieval, requirement
-  drafting, audit/eval feedback, and human review loops.
+- Innovation and AI Creativity: Qwen is the semantic memory curator, while
+  DREAM adds deterministic lifecycle governance, constrained recall, source
+  provenance, and a visible feedback loop.
 - Technical Depth and Engineering: DREAM includes provider abstraction,
   API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment,
   architecture assets, CI, release workflow, proof automation, and final

@@ -55,6 +55,9 @@ DREAM is built around a reusable memory model:
   folders, including files, symbols, concepts, tests, and relationships.
 - Memory retrieval: deterministic keyword and metadata search today, with a
   clean path to vector retrieval later.
+- Experience memory: Qwen-curated user preferences, operating policies, and
+  reusable lessons that persist across sessions, supersede conflicts, expire,
+  support explicit forgetting, and fit a hard context budget.
 - Memory workflows: assistants that transform rough inputs into structured,
   source-backed outputs.
 - Memory distillation: governed extraction of code/doc facts into cited,
@@ -82,6 +85,8 @@ domain-aware memory applications.
 - Evaluates generated artifacts with deterministic, source-backed scorecards.
 - Records generation runs in SQLite.
 - Stores human ratings for generated outputs.
+- Learns from recall feedback so helpful, correct experience ranks higher in
+  later sessions.
 - Exposes a FastAPI API and Typer CLI.
 - Includes an Angular mock-data workbench for the main MVP workflows.
 - Provides a `TestGenProvider` interface plus mock and JTestGen stub providers.
@@ -124,8 +129,11 @@ ruff check .
 DREAM is now packaged for the Global AI Hackathon Series with Qwen Cloud as a
 Track 1 MemoryAgent submission. The hackathon build keeps DREAM's source-backed
 memory core, governed memory distillation, audit ledger, context trail, and
-human review flow, then swaps live generation to Qwen Cloud through the
-OpenAI-compatible API.
+human review flow, then adds a Qwen-curated cross-session experience layer.
+Qwen decides whether each observation should be remembered, supersede an older
+truth, be forgotten, or be ignored. DREAM enforces lifecycle state, TTL,
+limited-context recall, provenance, and feedback through the OpenAI-compatible
+API.
 
 Live Alibaba Cloud deployment:
 
@@ -188,15 +196,31 @@ frontend proof, scorecard, and readiness evidence in one place:
 scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```
 
-The judge-facing Angular route at `/hackathon-demo` reads
-`http://127.0.0.1:8000/health` and shows a live Qwen Cloud proof panel with the
-track, provider, model, deployment target, region, API-key status, and proof
-file. If the API is offline, the route stays usable and labels the backend as
-waiting rather than hiding the rest of the demo flow.
+The judge-facing Angular route at `/hackathon-demo` is a live three-session
+arena. One click asks Qwen to remember a durable preference, supersede it with
+new conflicting guidance, then recall only the current value under a 64-token
+budget. The same page shows the lifecycle ledger, forbidden-value leak check,
+feedback control, live runtime identity, and the reproducible benchmark. If the
+API is offline, the route keeps the benchmark and guided evidence available.
+
+Reproduce the 24-case Qwen experience-memory benchmark:
+
+```powershell
+python scripts/qwencloud_experience_memory_benchmark.py `
+  --cases examples/experience-benchmark/scenarios.yaml `
+  --policy qwen-cloud `
+  --env-file .env.qwencloud.local
+```
+
+The published run contains 37 real Qwen curator decisions: 24/24 lifecycle
+cases passed, critical-memory recall was 100%, forbidden-memory leak was 0%,
+token-budget compliance was 100%, and the weighted score was 100.0/100.
 
 Key submission artifacts:
 
 - [Qwen Cloud submission brief](docs/qwencloud-submission.md)
+- [Qwen experience-memory benchmark](docs/qwen-experience-memory-benchmark.md)
+- [Published experience benchmark summary](docs/assets/qwen-experience-memory-benchmark-summary.json)
 - [Qwen Cloud architecture](docs/qwencloud-architecture.md)
 - [Qwen Cloud demo video script](docs/qwencloud-demo-video-script.md)
 - [Qwen Cloud demo video captions](docs/qwencloud-demo-video-captions.srt)

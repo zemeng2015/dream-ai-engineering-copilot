@@ -1,79 +1,101 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
   <title id="title">DREAM Qwen Cloud MemoryAgent architecture</title>
-  <desc id="desc">Architecture diagram showing Angular and API clients, DREAM FastAPI, memory systems, Qwen Cloud, and Alibaba Cloud Function Compute deployment.</desc>
+  <desc id="desc">Cross-session flow from the Judge Arena through Qwen experience curation, deterministic lifecycle governance, persistent experience memory, budgeted recall, source claims, feedback, and Alibaba Cloud Function Compute.</desc>
   <defs>
     <style>
-      .bg { fill: #f7fafc; }
-      .band { fill: #ffffff; stroke: #d8e1ea; stroke-width: 2; }
-      .box { fill: #ffffff; stroke: #36546d; stroke-width: 2; rx: 8; }
-      .accent { fill: #e6f6f3; stroke: #0f766e; }
-      .cloud { fill: #fff4e6; stroke: #c76a00; }
-      .store { fill: #eef4ff; stroke: #2854a3; }
-      .title { font: 700 30px Arial, sans-serif; fill: #13293d; }
-      .label { font: 700 18px Arial, sans-serif; fill: #172a3a; }
-      .small { font: 14px Arial, sans-serif; fill: #31465a; }
-      .arrow { stroke: #36546d; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .bg { fill: #f4f7f9; }
+      .band { fill: #ffffff; stroke: #d7e0e7; stroke-width: 2; }
+      .surface { fill: #ffffff; stroke: #28516f; stroke-width: 2; }
+      .qwen { fill: #fff4e6; stroke: #c96912; stroke-width: 2; }
+      .guard { fill: #eaf6ef; stroke: #207245; stroke-width: 2; }
+      .store { fill: #eef5fb; stroke: #2f6f9f; stroke-width: 2; }
+      .audit { fill: #f7f6f1; stroke: #7a6b43; stroke-width: 2; }
+      .benchmark { fill: #05314d; stroke: #05314d; stroke-width: 2; }
+      .title { font: 700 30px Arial, sans-serif; fill: #102f46; }
+      .subtitle { font: 14px Arial, sans-serif; fill: #4d5e69; }
+      .band-title { font: 700 17px Arial, sans-serif; fill: #102f46; }
+      .label { font: 700 17px Arial, sans-serif; fill: #16364d; }
+      .small { font: 13px Arial, sans-serif; fill: #4d5e69; }
+      .number { font: 700 12px Arial, sans-serif; fill: #ffffff; }
+      .metric { font: 700 17px Arial, sans-serif; fill: #ffffff; }
+      .metric-small { font: 12px Arial, sans-serif; fill: #cfe5f2; }
+      .arrow { stroke: #365a73; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .feedback { stroke: #207245; stroke-width: 3; fill: none; marker-end: url(#arrowhead-green); }
+      .step { fill: #0c77ba; }
     </style>
     <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
-      <path d="M0,0 L12,4 L0,8 Z" fill="#36546d" />
+      <path d="M0,0 L12,4 L0,8 Z" fill="#365a73" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#207245" />
     </marker>
   </defs>
+
   <rect class="bg" width="1280" height="720" />
-  <text x="64" y="62" class="title">DREAM on Qwen Cloud: Track 1 MemoryAgent</text>
-  <text x="64" y="92" class="small">Source-backed engineering memory with Qwen Cloud generation, audit, evaluation, and Alibaba Cloud deployment proof.</text>
+  <text x="48" y="52" class="title">DREAM on Qwen Cloud: Governed Cross-Session Experience</text>
+  <text x="48" y="80" class="subtitle">Qwen curates meaning. DREAM enforces lifecycle truth, timely forgetting, limited-context recall, provenance, and feedback.</text>
 
-  <rect x="48" y="124" width="252" height="500" class="band" rx="10" />
-  <text x="76" y="164" class="label">User Surfaces</text>
-  <rect x="76" y="194" width="196" height="92" class="box" />
-  <text x="100" y="230" class="label">Angular Workbench</text>
-  <text x="100" y="255" class="small">Memory Hub, Context Trail</text>
-  <rect x="76" y="326" width="196" height="92" class="box" />
-  <text x="100" y="362" class="label">CLI / API Client</text>
-  <text x="100" y="387" class="small">Demo scripts and curl</text>
+  <rect x="44" y="108" width="236" height="510" rx="8" class="band" />
+  <text x="68" y="142" class="band-title">Judge &amp; User Surfaces</text>
+  <rect x="68" y="184" width="188" height="82" rx="8" class="surface" />
+  <text x="88" y="216" class="label">Judge Arena</text>
+  <text x="88" y="240" class="small">3 live sessions, one truth</text>
+  <rect x="68" y="326" width="188" height="82" rx="8" class="surface" />
+  <text x="88" y="358" class="label">Requirement Flow</text>
+  <text x="88" y="382" class="small">Brief, impact, Jira, audit</text>
 
-  <rect x="372" y="124" width="300" height="500" class="band" rx="10" />
-  <text x="400" y="164" class="label">DREAM API</text>
-  <rect x="400" y="194" width="244" height="92" class="accent" rx="8" />
-  <text x="424" y="230" class="label">FastAPI MemoryAgent</text>
-  <text x="424" y="255" class="small">Requirements, PR review, eval</text>
-  <rect x="400" y="326" width="244" height="92" class="accent" rx="8" />
-  <text x="424" y="362" class="label">Context Assembler</text>
-  <text x="424" y="387" class="small">Compact cited prompt packs</text>
-  <rect x="400" y="458" width="244" height="92" class="accent" rx="8" />
-  <text x="424" y="494" class="label">QwenCloudProvider</text>
-  <text x="424" y="519" class="small">OpenAI-compatible adapter</text>
+  <rect x="310" y="108" width="335" height="510" rx="8" class="band" />
+  <text x="334" y="142" class="band-title">Qwen + DREAM Runtime</text>
+  <rect x="334" y="184" width="287" height="82" rx="8" class="qwen" />
+  <text x="356" y="216" class="label">Qwen Experience Curator</text>
+  <text x="356" y="240" class="small">remember / supersede / forget / ignore</text>
+  <rect x="334" y="302" width="287" height="82" rx="8" class="guard" />
+  <text x="356" y="334" class="label">Lifecycle Governor</text>
+  <text x="356" y="358" class="small">TTL, conflict state, provenance, policy</text>
+  <rect x="334" y="420" width="287" height="82" rx="8" class="guard" />
+  <text x="356" y="452" class="label">Budgeted Recall + Feedback</text>
+  <text x="356" y="476" class="small">active-only ranking into a hard token budget</text>
 
-  <rect x="736" y="124" width="248" height="500" class="band" rx="10" />
-  <text x="764" y="164" class="label">Persistent Memory</text>
-  <rect x="764" y="194" width="192" height="76" class="store" rx="8" />
-  <text x="786" y="228" class="label">Knowledge Packs</text>
-  <text x="786" y="250" class="small">Docs, runbooks, rules</text>
-  <rect x="764" y="300" width="192" height="76" class="store" rx="8" />
-  <text x="786" y="334" class="label">Codebase Index</text>
-  <text x="786" y="356" class="small">Files, tests, concepts</text>
-  <rect x="764" y="406" width="192" height="76" class="store" rx="8" />
-  <text x="786" y="440" class="label">Memory Ledger</text>
-  <text x="786" y="462" class="small">Claims and conflicts</text>
-  <rect x="764" y="512" width="192" height="76" class="store" rx="8" />
-  <text x="786" y="546" class="label">Audit / Eval</text>
-  <text x="786" y="568" class="small">Ratings and scorecards</text>
+  <rect x="675" y="108" width="290" height="510" rx="8" class="band" />
+  <text x="699" y="142" class="band-title">Persistent Governed Memory</text>
+  <rect x="699" y="184" width="242" height="82" rx="8" class="store" />
+  <text x="721" y="216" class="label">Experience Store</text>
+  <text x="721" y="240" class="small">preferences, policies, episodes</text>
+  <rect x="699" y="302" width="242" height="82" rx="8" class="store" />
+  <text x="721" y="334" class="label">Approved Source Claims</text>
+  <text x="721" y="358" class="small">human approval + conflict gate</text>
+  <rect x="699" y="420" width="242" height="82" rx="8" class="audit" />
+  <text x="721" y="452" class="label">Decision + Eval Ledger</text>
+  <text x="721" y="476" class="small">decisions, sources, ratings</text>
 
-  <rect x="1048" y="124" width="184" height="500" class="band" rx="10" />
-  <text x="1070" y="164" class="label">Alibaba Cloud</text>
-  <rect x="1070" y="194" width="140" height="92" class="cloud" rx="8" />
-  <text x="1090" y="230" class="label">Qwen Cloud</text>
-  <text x="1090" y="255" class="small">qwen3.7-plus</text>
-  <rect x="1070" y="366" width="140" height="112" class="cloud" rx="8" />
-  <text x="1090" y="402" class="label">Function</text>
-  <text x="1090" y="426" class="label">Compute</text>
-  <text x="1090" y="452" class="small">Custom runtime</text>
+  <rect x="995" y="108" width="241" height="510" rx="8" class="band" />
+  <text x="1019" y="142" class="band-title">Alibaba Cloud</text>
+  <rect x="1019" y="184" width="193" height="82" rx="8" class="qwen" />
+  <text x="1041" y="216" class="label">Qwen Cloud</text>
+  <text x="1041" y="240" class="small">qwen3.7-plus curator</text>
+  <rect x="1019" y="336" width="193" height="102" rx="8" class="qwen" />
+  <text x="1041" y="370" class="label">Function Compute</text>
+  <text x="1041" y="394" class="small">FastAPI + Angular</text>
+  <text x="1041" y="416" class="small">custom runtime, Singapore</text>
 
-  <path class="arrow" d="M272 240 H400" />
-  <path class="arrow" d="M272 372 H400" />
-  <path class="arrow" d="M644 372 H764" />
-  <path class="arrow" d="M764 550 H644 V504" />
-  <path class="arrow" d="M644 504 H1070 V286" />
-  <path class="arrow" d="M1070 240 H644 V240" />
-  <path class="arrow" d="M522 194 V130 H1140 V194" />
-  <text x="644" y="684" class="small" text-anchor="middle">Secrets stay in environment variables. Health reports provider, model, region, and proof file only.</text>
+  <path class="arrow" d="M256 225 H334" />
+  <path class="arrow" d="M621 205 H650 V165 H1115 V184" />
+  <path class="arrow" d="M1019 246 H975 V284 H654 V343 H621" />
+  <path class="arrow" d="M621 343 H660 V225 H699" />
+  <path class="arrow" d="M699 246 H660 V461 H621" />
+  <path class="arrow" d="M699 343 H660 V461 H621" />
+  <path class="arrow" d="M334 461 H292 V367 H256" />
+  <path class="feedback" d="M621 365 H675 V461 H699" />
+  <path class="feedback" d="M941 461 H953 V225 H941" />
+
+  <circle cx="292" cy="225" r="11" class="step" /><text x="292" y="229" text-anchor="middle" class="number">1</text>
+  <circle cx="960" cy="225" r="11" class="step" /><text x="960" y="229" text-anchor="middle" class="number">2</text>
+  <circle cx="660" cy="343" r="11" class="step" /><text x="660" y="347" text-anchor="middle" class="number">3</text>
+  <circle cx="660" cy="461" r="11" class="step" /><text x="660" y="465" text-anchor="middle" class="number">4</text>
+
+  <rect x="310" y="548" width="655" height="70" rx="8" class="benchmark" />
+  <text x="334" y="577" class="metric">Qwen lifecycle benchmark: 24/24 passed</text>
+  <text x="334" y="601" class="metric-small">37 curator decisions · 100% critical recall · 0% forbidden leak · 100% token-budget compliance</text>
+
+  <text x="640" y="670" text-anchor="middle" class="subtitle">Secrets stay in environment variables. Public health and showcase responses expose status and proof paths only.</text>
 </svg>

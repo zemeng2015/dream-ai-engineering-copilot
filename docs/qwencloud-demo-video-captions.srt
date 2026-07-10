@@ -1,63 +1,63 @@
 1
-00:00:00,000 --> 00:00:08,000
-DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence.
+00:00:00,000 --> 00:00:07,000
+Most AI assistants start every session from zero.
 
 2
-00:00:08,000 --> 00:00:20,000
-Engineering context is scattered across tickets, runbooks, code, incidents, PRs, and past decisions.
+00:00:07,000 --> 00:00:16,000
+DREAM gives Qwen Cloud durable experience, then governs conflicts, forgetting, context budgets, provenance, and feedback.
 
 3
-00:00:20,000 --> 00:00:34,000
-The architecture uses Qwen Cloud generation, governed memory, FastAPI, and Alibaba Function Compute packaging.
+00:00:16,000 --> 00:00:26,000
+In Session 1, Qwen recognizes a durable rollout preference and returns remember.
 
 4
-00:00:34,000 --> 00:00:43,000
-Memory Hub makes source intake, parsed sections, review state, and evidence coverage visible.
+00:00:26,000 --> 00:00:38,000
+In Session 2, Qwen returns supersede, and DREAM marks the old value inactive instead of keeping two conflicting truths.
 
 5
-00:00:43,000 --> 00:00:52,000
-Knowledge intake promotes reviewed source cards and quarantines stale or unsafe claims.
+00:00:38,000 --> 00:00:48,000
+Session 3 starts with no prompt history and a hard 64-token context budget.
 
 6
-00:00:52,000 --> 00:01:01,000
-Retrieval traces show why docs, incidents, code, tests, Jira items, and PRs were selected.
+00:00:48,000 --> 00:00:59,000
+DREAM recalls only the current 20 percent canary for 45 minutes. The old value does not leak.
 
 7
-00:01:01,000 --> 00:01:10,000
-DREAM turns retrieved memory into questions, impact maps, engineering briefs, and Jira-ready drafts.
+00:00:59,000 --> 00:01:06,000
+Helpful and correct feedback is written back to future ranking.
 
 8
-00:01:10,000 --> 00:01:19,000
-Audit and evaluation loops capture scores, source coverage, warnings, and human ratings.
+00:01:06,000 --> 00:01:17,000
+We ran 37 real Qwen curator decisions across 24 synthetic lifecycle cases.
 
 9
-00:01:19,000 --> 00:01:25,000
-DREAM turns scattered engineering context into persistent memory.
+00:01:17,000 --> 00:01:28,000
+Cases cover preference carryover, conflict supersession, TTL, explicit forgetting, duplicates, and limited context.
 
 10
-00:01:25,000 --> 00:01:32,000
-Memory Hub keeps source intake, parsed sections, review state, and evidence visible.
+00:01:28,000 --> 00:01:40,000
+All 24 cases passed. Critical recall was 100 percent, forbidden leak was zero, and budget compliance was 100 percent.
 
 11
-00:01:32,000 --> 00:01:40,000
-Knowledge intake promotes only reviewed source cards into reusable memory.
+00:01:40,000 --> 00:01:48,000
+Organizational claims must retain source proof and human approval.
 
 12
-00:01:40,000 --> 00:01:49,000
-Retrieval paths explain why docs, incidents, code, tests, Jira, and PRs were selected.
+00:01:48,000 --> 00:01:56,000
+Unresolved conflicts are blocked from retrieval.
 
 13
-00:01:49,000 --> 00:01:58,000
-Requirement workflows turn retrieved memory into review-ready Jira drafts.
+00:01:56,000 --> 00:02:08,000
+Approved current truth enters the Requirement Case, impact map, engineering brief, and Jira draft with provenance.
 
 14
-00:01:58,000 --> 00:02:08,000
-Runtime settings expose backend mode before local or Alibaba Cloud execution.
+00:02:08,000 --> 00:02:17,000
+DREAM runs on Alibaba Cloud Function Compute with qwen3.7-plus.
 
 15
-00:02:08,000 --> 00:02:21,000
-The proof chain validates Qwen config, Alibaba deployment files, CI, video, backend health, and final readiness gates.
+00:02:17,000 --> 00:02:29,000
+The benchmark, full report, tests, runtime proof, and deployment template are public in the repository.
 
 16
-00:02:21,000 --> 00:02:31,000
-DREAM remembers source truth, retrieves evidence, generates with Qwen Cloud, and proves deployment on Alibaba Cloud.
+00:02:29,000 --> 00:02:40,000
+DREAM helps Qwen remember the right experience, replace old truth, forget safely, and explain what it used.

@@ -4,12 +4,13 @@
 
 ## Project
 
-**DREAM: Source-backed MemoryAgent for engineering teams**
+**DREAM: Qwen-curated experience memory for engineering teams**
 
-DREAM turns scattered team knowledge, codebase structure, incidents, historical
-Jira/PR context, raw document intake, and review decisions into governed memory
-that a Qwen-backed agent can retrieve, cite, evaluate, and improve across
-sessions.
+DREAM gives Qwen durable experience across sessions without letting old,
+expired, or explicitly forgotten guidance leak back into context. Qwen curates
+preferences, policies, and reusable lessons; DREAM enforces lifecycle state,
+limited-context recall, provenance, and feedback. The same memory layer can
+ground engineering artifacts in approved docs, code, incidents, and decisions.
 
 ## Track
 
@@ -17,17 +18,16 @@ Track 1: MemoryAgent
 
 Why it fits:
 
-- Persistent memory: knowledge packs, codebase indexes, intake documents,
-  approved memory claims, conflict ledgers, audit records, and human ratings are
-  durable across sessions.
-- Better decisions over time: each scan, review, rating, and conflict resolution
-  becomes reusable evidence for later requirement drafts and PR reviews.
-- Limited context windows: retrieval returns compact context cards with source
-  paths, matched terms, claim proof, and graph links instead of dumping whole
-  documents into the prompt.
-- Timely forgetting: conflicting or stale claims can be rejected, quarantined,
-  or superseded through the governed ledger before they are used as trusted
-  memory.
+- Persistent memory: Qwen decides whether an observation is a durable
+  preference, operating policy, reusable episode, or noise.
+- Better decisions over time: explicit helpful/correct feedback changes future
+  ranking, while every curator decision remains auditable.
+- Limited context windows: recall ranks current memory into a hard token budget
+  and emits a compact context card.
+- Timely forgetting: newer conflicts supersede old values, TTL expires temporary
+  guidance, and explicit forget requests remove memory from future recall.
+- Source-backed grounding: approved MemoryClaims retain reviewer identity and
+  underlying source paths before they can influence generated artifacts.
 
 ## Qwen Cloud Usage
 
@@ -60,7 +60,31 @@ The deployed runtime reports `qwen-cloud`, `qwen3.7-plus`,
 automated live gate also requires a non-empty Qwen-generated requirement draft;
 the paired benchmark below intentionally makes no latency claim.
 
-## Paired Benchmark Evidence
+## Experience Lifecycle Benchmark
+
+A real Qwen Cloud run executed 37 curator decisions across 24 synthetic
+cross-session cases. The dataset covers durable preferences, conflict
+supersession, TTL and explicit forgetting, duplicate rejection, and limited
+token budgets.
+
+| Metric | Result |
+|---|---:|
+| Lifecycle cases passed | 24/24 |
+| Qwen proposal accuracy | 100% |
+| Governed action accuracy | 100% |
+| Critical-memory recall | 100% |
+| Forbidden-memory leak | 0% |
+| Token-budget compliance | 100% |
+| Weighted score | 100.0/100 |
+
+The benchmark uses synthetic scenarios and one Qwen curator decision per step;
+it does not establish production effectiveness. The public dataset, runner,
+methodology, summary, and per-step report are in
+`examples/experience-benchmark/scenarios.yaml`,
+`scripts/qwencloud_experience_memory_benchmark.py`, and
+`docs/qwen-experience-memory-benchmark.md`.
+
+## Paired Grounding Benchmark
 
 A real Qwen Cloud run compared a stateless baseline with Qwen + DREAM across
 seven paired synthetic engineering cases. Both arms used `qwen3.7-plus` at
@@ -86,28 +110,26 @@ per-case table are in `docs/qwen-memory-ab-benchmark.md`.
 
 ## Demo Flow
 
-1. Start API and frontend.
-2. Show `/health` proving Qwen Cloud mode and Alibaba Cloud deployment metadata.
-3. Show `/qwencloud/showcase` proving the judge-facing Track 1 flow, evidence
-   paths, and scorecard posture from the deployed backend.
-4. Ingest or promote an engineering source document in Memory Hub.
-5. Run memory scan and review claims.
-6. Create a requirement case from a rough user ask.
-7. Show context trail, impact map, role questions, Qwen-generated brief, and
-   Jira-ready draft.
-8. Show audit/eval record and human rating loop.
+1. Open `/hackathon-demo`; `/health` proves Qwen Cloud and Alibaba runtime identity.
+2. Run the live three-session Arena.
+3. Show Qwen return `remember`, then `supersede` for a conflicting preference.
+4. Show Session 3 recall the current value in 19/64 tokens with old-value leak `no`.
+5. Record helpful/correct feedback and inspect the active/superseded ledger.
+6. Show the 24/24 reproducible lifecycle benchmark on the same page.
+7. Deep dive into approved source memory, requirement generation, context trail,
+   and audit/eval.
 
 ## Judging Alignment
 
 Innovation and AI creativity:
-DREAM is a governed memory layer for engineering decisions, not a stateless
-chatbot. Memory is versioned, reviewed, evaluated, and traceable back to raw
-source spans.
+DREAM combines a Qwen semantic memory curator with deterministic lifecycle
+governance. The live demo proves cross-session conflict handling and constrained
+recall instead of presenting another stateless chatbot.
 
 Technical depth and engineering:
-FastAPI API, Typer CLI, Angular frontend, provider abstraction, codebase index,
-evidence graph, memory distillation, conflict ledger, audit/eval store, tests,
-Docker, and Alibaba Cloud Function Compute deployment proof.
+FastAPI API, Angular Judge Arena, Qwen structured decisions, SQLite lifecycle
+repository, feedback ranking, token-budget recall, governed source claims,
+benchmark runner, tests, and Alibaba Cloud Function Compute deployment proof.
 
 Problem value and impact:
 Engineering teams lose time because AI assistants forget local history,

@@ -2,71 +2,84 @@
 
 # Qwen Cloud Demo Video Script
 
-Target length: 2:15 to 2:45.
+Target length: 2:30 to 2:45.
 
-## 0:00 - 0:20 Opening and Problem
+## 0:00 - 0:15 The Memory Problem
 
-Engineering teams often ask AI for help, but existing context is scattered across
-tickets, runbooks, code, PRs, incidents, and past decisions. The AI often
-forgets this history. DREAM turns this into durable, governed memory.
+Open `/hackathon-demo`.
 
-Open `/hackathon-demo` first to frame the judge flow and show the Track 1,
-Qwen Cloud, local proof, and remaining external submission gates.
+Narration:
 
-## 0:20 - 0:45 Architecture Proof
+"Most AI assistants start every session from zero. DREAM gives Qwen durable
+experience, then governs conflicts, forgetting, context budgets, provenance,
+and feedback. This is not another chat screen. It is a memory lifecycle."
 
-Show `docs/assets/qwencloud-architecture.svg`, then open `/health` and
-`/qwencloud/showcase`.
+Keep the Track 1 label, Qwen model signal, Alibaba runtime signal, and the live
+three-session command visible.
 
-Call out:
+## 0:15 - 1:05 Live Three-Session Arena
 
-- Track is `Track 1: MemoryAgent`.
-- Provider is `qwen-cloud`.
-- Model is `qwen3.7-plus`.
-- Deployment target is Alibaba Cloud Function Compute custom runtime.
-- `/health` never exposes secrets.
-- `/qwencloud/showcase` exposes the judge-facing flow, evidence paths, and
-  scorecard posture without exposing secrets.
+Click `Run Live 3-Session Proof` and keep the three session cards visible as
+they complete.
 
-## 0:45 - 1:20 Memory Intake and Review
+Narration:
 
-Use the `/hackathon-demo` Start Memory entry, then show:
+"In Session 1, Qwen recognizes a durable rollout preference and returns
+remember. In Session 2, the user changes the same preference. Qwen returns
+supersede, and DREAM marks the old value inactive instead of keeping two
+conflicting truths. Session 3 starts with no prompt history. Under a 64-token
+budget, DREAM recalls only the current 20 percent canary for 45 minutes. The old
+10 percent value does not leak."
 
-- raw source document intake
-- parsed sections with source spans
-- claim review queue
-- approve or quarantine one claim
-- ledger evidence that only reviewed memory is reusable
+Call out the visible proof:
 
-## 1:20 - 1:55 Requirement Case Flow
+- Qwen actions: `remember`, then `supersede`
+- Old status: `superseded`
+- Active count: `1`
+- Recall budget: `19 / 64` in the recorded run
+- Selected memories: `1`
+- Old value leaked: `no`
 
-Create a requirement case from:
+Click `Mark Helpful + Correct` and show `Feedback Recorded`.
 
-```text
-Users need to know why a forecast job is stuck running and which downstream
-outputs are blocked.
-```
+## 1:05 - 1:30 Reproducible Benchmark
 
-Show:
+Scroll to the benchmark band.
 
-- retrieved context from docs, codebase, incidents, and approved claims
-- impact map
-- role-specific clarification questions
-- Qwen-generated engineering brief
-- Jira-ready draft
+Narration:
 
-## 1:55 - 2:20 Product Walkthrough and Audit
+"The same lifecycle is tested beyond one polished demo. We ran 37 real Qwen
+curator decisions across 24 synthetic cases covering cross-session preference,
+conflict supersession, TTL, explicit forgetting, duplicate rejection, and
+limited context. All 24 lifecycle cases passed, critical recall was 100 percent,
+forbidden leak was zero, and token-budget compliance was 100 percent."
 
-Open Audit/Eval:
+Briefly show `docs/qwen-experience-memory-benchmark.md` or the machine-readable
+summary if time allows.
 
-- run id and scoring dimensions
-- source paths used
-- source-backed explanation links
-- one human rating interaction
+## 1:30 - 2:05 Source Governance to Engineering Output
 
-## 2:20 - 2:45 Submission Proof and Close
+Open Memory Hub, then Requirement Flow.
 
-DREAM is a Qwen Cloud MemoryAgent for engineering teams: it remembers source truth,
-retrieves the right context, quarantines stale memory, and improves future outputs
-through audit and evaluation.
+Narration:
 
+"Experience is only one memory layer. Organizational claims must retain source
+proof and human approval. Unresolved conflicts are blocked from retrieval. The
+approved current truth then enters the same Requirement Case prompt, impact
+map, engineering brief, and Jira draft with reviewer and source provenance."
+
+Show one approved claim, one blocked conflict warning, and the resulting Jira
+context or context trail.
+
+## 2:05 - 2:40 Alibaba Proof and Close
+
+Return to the Arena or open `/health` beside `/qwencloud/showcase`.
+
+Narration:
+
+"DREAM runs on Alibaba Cloud Function Compute with qwen3.7-plus. The live
+runtime, public benchmark, full report, tests, and deployment template are all
+in the repository. DREAM helps Qwen remember the right experience, replace old
+truth, forget safely, and explain what it used."
+
+End on the Arena lifecycle ledger and the `24/24` benchmark result.

@@ -19,7 +19,12 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-official-requirements-snapshot.md`
   - `docs/qwencloud-judging-evidence-matrix.md`
   - `docs/qwencloud-testing-and-rights-notes.md`
+  - `docs/qwen-experience-memory-benchmark.md`
+  - `docs/assets/qwen-experience-memory-benchmark-summary.json`
+  - `docs/assets/qwen-experience-memory-benchmark-report.json`
   - `docs/assets/qwencloud-architecture.png`
+  - `examples/experience-benchmark/scenarios.yaml`
+  - `scripts/qwencloud_experience_memory_benchmark.py`
   - `scripts/qwencloud-alibaba-runtime-release.ps1`
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-run-local-proof.sh`
@@ -54,6 +59,8 @@ Required track:
 Suggested Description points (copy into Devpost):
 
 - DREAM uses Qwen Cloud as the memory-grounded generation layer.
+- Qwen curates cross-session experience into remember, supersede, forget, or
+  ignore decisions; DREAM enforces TTL, lifecycle state, token budgets, and feedback.
 - Inputs include knowledge packs, codebase index, incidents, PR context, and approved memory claims.
 - Outputs are traceable and reviewable, and memory improves through audit/eval feedback.
 - `/health` proves runtime mode, model, deployment target, and proof file.
@@ -81,10 +88,11 @@ caption SHA256, and Chrome file upload troubleshooting.
 
 Recommended 4-shot order:
 
-1. `/hackathon-demo` guided route, live `/health` proof panel, and `/qwencloud/showcase` scorecard posture (Track, provider, model, deployment target, region, API-key status, proof file, judge flow).
-2. Seeded Memory Hub claim review using `scripts/qwencloud_seed_demo_artifact.py`.
-3. Requirement case flow (prompt -> impact map -> brief -> Jira draft).
-4. Audit/eval and manual scoring.
+1. `/hackathon-demo`: run the live three-session remember -> supersede -> recall Arena.
+2. Show the active/superseded ledger, 19/64-token recall, zero old-value leak,
+   feedback confirmation, and 24/24 benchmark on the same page.
+3. Seeded Memory Hub approval plus Requirement Case evidence propagation.
+4. Context trail, audit/eval, and Alibaba `/health` runtime proof.
 
 ## 4) Deployability Proof
 
@@ -102,9 +110,10 @@ Open the judge-facing Angular route for the first screen of the demo:
 http://localhost:4300/hackathon-demo
 ```
 
-When the API is running on `http://127.0.0.1:8000`, this page shows the live
-`/health` proof panel. When the API is not running, the same route remains
-usable and marks the backend as waiting for live proof.
+When the API is running on `http://127.0.0.1:8000`, this page runs three real
+Qwen-backed memory sessions and shows the lifecycle ledger beside live
+`/health` and benchmark evidence. When the API is not running, the benchmark
+and deep evidence routes remain available.
 
 Run preflight before a real deployment:
 
@@ -201,12 +210,15 @@ scripts/qwencloud-devpost-materials-audit.ps1 `
 ### One-minute Pitch
 
 Engineering teams lose critical context when switching between tickets, code, incidents, and reviews.
-DREAM turns these artifacts into governed, source-backed memory so Qwen Cloud can
-produce traceable requirement and review outputs instead of one-shot chat answers.
+DREAM gives Qwen governed cross-session experience: it remembers durable
+defaults, supersedes conflicts, forgets temporary or invalid guidance, recalls
+the current truth under a hard context budget, and grounds later engineering
+outputs in approved sources.
 
 ### What it does
 
-- Maintains durable engineering memory from docs, codebase, incidents, PRs, and approved claims.
+- Maintains Qwen-curated preferences, policies, and reusable episodes across sessions.
+- Enforces conflict supersession, TTL, explicit forgetting, and limited-context recall.
 - Uses OpenAI-compatible Qwen Cloud APIs in a governed retrieval flow.
 - Adds audit/eval/ratings to improve memory quality over time.
 

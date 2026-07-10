@@ -2,32 +2,40 @@
 
 # Qwen Cloud Demo Video Transcript
 
-This transcript matches the public-upload caption file:
-
-`docs/qwencloud-demo-video-captions.srt`
+This transcript matches `docs/qwencloud-demo-video-captions.srt`.
 
 ## Transcript
 
-DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence.
+Most AI assistants start every session from zero. DREAM gives Qwen Cloud durable
+experience, then governs conflicts, forgetting, context budgets, provenance,
+and feedback.
 
-Engineering context is scattered across tickets, runbooks, code, incidents, PRs,
-and past decisions. The architecture uses Qwen Cloud generation, governed
-memory, FastAPI, and Alibaba Function Compute packaging.
+In Session 1, Qwen recognizes a durable rollout preference and returns
+remember. In Session 2, the user changes the same preference. Qwen returns
+supersede, and DREAM marks the old value inactive instead of keeping two
+conflicting truths.
 
-Memory Hub makes source intake, parsed sections, review state, and evidence
-coverage visible. Knowledge intake promotes reviewed source cards and
-quarantines stale or unsafe claims.
+Session 3 starts with no prompt history. Under a 64-token budget, DREAM recalls
+only the current 20 percent canary for 45 minutes. The old 10 percent value does
+not leak. Helpful and correct feedback is written back to future ranking.
 
-Retrieval traces show why docs, incidents, code, tests, Jira items, and PRs were
-selected. DREAM turns retrieved memory into questions, impact maps, engineering
-briefs, and Jira-ready drafts.
+The same lifecycle is tested beyond one polished demo. We ran 37 real Qwen
+curator decisions across 24 synthetic cases covering cross-session preference,
+conflict supersession, TTL, explicit forgetting, duplicate rejection, and
+limited context.
 
-Audit and evaluation loops capture scores, source coverage, warnings, and human
-ratings. Runtime settings expose backend mode before local or Alibaba Cloud
-execution.
+All 24 lifecycle cases passed. Critical recall was 100 percent, forbidden leak
+was zero, and token-budget compliance was 100 percent.
 
-The proof chain validates Qwen config, Alibaba deployment files, CI, video,
-backend health, and final readiness gates.
+Experience is only one memory layer. Organizational claims must retain source
+proof and human approval. Unresolved conflicts are blocked from retrieval.
 
-DREAM remembers source truth, retrieves evidence, generates with Qwen Cloud, and
-proves deployment on Alibaba Cloud.
+The approved current truth enters the same Requirement Case prompt, impact map,
+engineering brief, and Jira draft with reviewer and source provenance.
+
+DREAM runs on Alibaba Cloud Function Compute with qwen3.7-plus. The live
+runtime, public benchmark, full report, tests, and deployment template are in
+the repository.
+
+DREAM helps Qwen remember the right experience, replace old truth, forget
+safely, and explain what it used.

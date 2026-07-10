@@ -9,13 +9,17 @@ Regenerate it with `scripts/qwencloud-export-architecture-png.ps1`.
 
 ## Runtime Path
 
-1. User opens the Angular workbench or calls the FastAPI API.
-2. DREAM retrieves durable memory from knowledge packs, codebase indexes,
-   approved memory claims, evidence graphs, and audit/eval history.
-3. The prompt is assembled with compact source-backed context and sent through
-   `QwenCloudProvider`.
-4. Qwen Cloud returns the generated engineering output.
-5. DREAM stores audit records, generated artifacts, scorecards, and human
+1. User opens the Angular Judge Arena or calls the FastAPI experience API.
+2. Qwen receives the observation plus current active memory and returns a
+   structured `remember`, `supersede`, `forget`, or `ignore` proposal.
+3. DREAM validates the proposal and commits lifecycle state, TTL, provenance,
+   and decision audit records to the experience repository.
+4. Later sessions rank only active, unexpired memory into a hard token budget;
+   feedback changes future ranking.
+5. Requirement workflows combine recalled experience with approved source
+   claims, knowledge packs, codebase evidence, and graph paths before calling
+   `QwenCloudProvider` for an engineering artifact.
+6. DREAM stores generated artifacts, context trails, scorecards, and human
    ratings for later retrieval and improvement.
 
 ## Deployment Path
