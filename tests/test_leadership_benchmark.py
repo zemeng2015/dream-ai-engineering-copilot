@@ -53,6 +53,13 @@ def test_question_coverage_matches_domain_paraphrases_without_cross_question_lea
     assert metric.misses == ["What runbook update is needed for stuck execution?"]
     assert metric.recall == 0.6667
 
+    empty_terms = _question_coverage(
+        ["What is the source of truth?"],
+        ["What is the?"],
+    )
+    assert empty_terms.hits == []
+    assert empty_terms.recall == 0
+
 
 def test_fixture_benchmark_proves_pair_integrity_without_claiming_model_evidence(
     tmp_path: Path,

@@ -50,7 +50,7 @@ is recorded as incomplete rather than inferred from implementation intent.
 ## Current Verification Baseline
 
 ```text
-Python: 208 passed, 1 skipped
+Python: 210 passed, 1 skipped
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
 Leadership preflight: ready_for_demo=true

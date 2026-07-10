@@ -59,6 +59,33 @@ def test_invalid_llm_provider_env_is_rejected(monkeypatch) -> None:
         resolve_config()
 
 
+def test_provider_env_override_does_not_reuse_other_provider_settings(
+    tmp_path, monkeypatch
+) -> None:
+    config_path = _config_file(
+        tmp_path,
+        {
+            "llm": {
+                "provider": "qwen-cloud",
+                "model": "qwen-file-model",
+                "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+                "api_key_env": "DASHSCOPE_API_KEY",
+            }
+        },
+    )
+    monkeypatch.setenv("DREAM_CONFIG_FILE", str(config_path))
+    monkeypatch.setenv("DREAM_LLM_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_MODEL", "gpt-5.4")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-only-secret")
+
+    resolved = resolve_config()
+
+    assert resolved.llm.provider == "openai-compatible"
+    assert resolved.llm.model == "gpt-5.4"
+    assert resolved.llm.base_url == "https://api.openai.com/v1"
+    assert resolved.llm.api_key_env == "OPENAI_API_KEY"
+
+
 def test_env_var_resolution_does_not_print_secret_values(tmp_path, monkeypatch) -> None:
     config_path = tmp_path / "dream.yaml"
     config_path.write_text(

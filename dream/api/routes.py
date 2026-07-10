@@ -1170,8 +1170,7 @@ def _llm_provider(provider: str) -> LLMProvider:
         _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()
     if provider in {"config", "plugin"}:
-        _enforce_public_qwen_rate_limit()
-        return build_llm_provider()
+        return _configured_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
 
 
@@ -1188,9 +1187,15 @@ def _optional_llm_provider(
         _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()
     if provider in {"config", "plugin"}:
-        _enforce_public_qwen_rate_limit()
-        return build_llm_provider()
+        return _configured_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
+
+
+def _configured_llm_provider() -> LLMProvider:
+    provider = build_llm_provider()
+    if getattr(provider, "provider_name", "") == "qwen-cloud":
+        _enforce_public_qwen_rate_limit()
+    return provider
 
 
 def _enforce_public_qwen_rate_limit() -> None:

@@ -54,6 +54,11 @@ def resolve_config(
         raise ValueError(
             "DREAM_LLM_PROVIDER must be one of: " + ", ".join(sorted(LLM_PROVIDERS))
         )
+    provider_overridden = provider != loaded.llm.provider
+    configured_model = None if provider_overridden else loaded.llm.model
+    configured_base_url = None if provider_overridden else loaded.llm.base_url
+    configured_base_url_env = None if provider_overridden else loaded.llm.base_url_env
+    configured_api_key_env = None if provider_overridden else loaded.llm.api_key_env
     source_file = find_config_file(config_file) if config is None or config_file else None
     knowledge_root, knowledge_source = _path_from_config_or_env(
         value=loaded.knowledge.pack_root,
@@ -82,20 +87,20 @@ def resolve_config(
             or QWEN_CLOUD_BASE_URL
         )
         default_model = os.getenv("QWEN_MODEL") or QWEN_CLOUD_DEFAULT_MODEL
-        resolved_model = os.getenv("QWEN_MODEL") or loaded.llm.model or default_model
+        resolved_model = os.getenv("QWEN_MODEL") or configured_model or default_model
     else:
         default_base_url = os.getenv("OPENAI_COMPATIBLE_BASE_URL") or "https://api.openai.com/v1"
         default_model = os.getenv("OPENAI_COMPATIBLE_MODEL")
-        resolved_model = loaded.llm.model or default_model
+        resolved_model = configured_model or default_model
     base_url, base_url_source = _value_from_config_or_env(
-        value=loaded.llm.base_url,
-        env_name=loaded.llm.base_url_env,
+        value=configured_base_url,
+        env_name=configured_base_url_env,
         default=default_base_url,
     )
-    api_key_env = _choose_api_key_env(loaded.llm.api_key_env, provider=provider)
+    api_key_env = _choose_api_key_env(configured_api_key_env, provider=provider)
     resolved_base_url_env = (
-        loaded.llm.base_url_env
-        if loaded.llm.base_url_env
+        configured_base_url_env
+        if configured_base_url_env
         else base_url_source.removeprefix("env:")
         if base_url_source.startswith("env:")
         else None
@@ -110,7 +115,7 @@ def resolve_config(
             base_url_env=resolved_base_url_env,
             api_key_env=api_key_env,
             api_key_configured=bool(api_key_env and os.getenv(api_key_env)),
-            class_path=loaded.llm.class_path,
+            class_path=None if provider_overridden else loaded.llm.class_path,
         ),
         knowledge=ResolvedPathConfig(root=knowledge_root, source=knowledge_source),
         artifacts=ResolvedPathConfig(root=artifact_root, source=artifact_source),

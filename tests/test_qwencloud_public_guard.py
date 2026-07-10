@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+from types import SimpleNamespace
+
 import pytest
 from fastapi import HTTPException
 
@@ -42,7 +44,11 @@ def test_configured_provider_cannot_bypass_public_qwen_rate_limit(
 ) -> None:
     monkeypatch.setenv("DREAM_PUBLIC_QWEN_REQUESTS_PER_MINUTE", "1")
     routes._PUBLIC_QWEN_REQUEST_TIMES.clear()
-    monkeypatch.setattr(routes, "build_llm_provider", routes.MockLLMProvider)
+    monkeypatch.setattr(
+        routes,
+        "build_llm_provider",
+        lambda: SimpleNamespace(provider_name="qwen-cloud"),
+    )
 
     resolve_provider(selector)
 
@@ -51,3 +57,16 @@ def test_configured_provider_cannot_bypass_public_qwen_rate_limit(
 
     assert exc_info.value.status_code == 429
     routes._PUBLIC_QWEN_REQUEST_TIMES.clear()
+
+
+def test_configured_non_qwen_provider_is_not_subject_to_qwen_rate_limit(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("DREAM_PUBLIC_QWEN_REQUESTS_PER_MINUTE", "1")
+    routes._PUBLIC_QWEN_REQUEST_TIMES.clear()
+    monkeypatch.setattr(routes, "build_llm_provider", routes.MockLLMProvider)
+
+    routes._llm_provider("config")
+    routes._llm_provider("config")
+
+    assert not routes._PUBLIC_QWEN_REQUEST_TIMES

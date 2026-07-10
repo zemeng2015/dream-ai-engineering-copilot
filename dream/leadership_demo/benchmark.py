@@ -815,12 +815,14 @@ def _question_coverage(questions: list[str], expected: list[str]) -> CoverageMet
     hits = []
     for item in expected:
         expected_terms = _terms(item)
+        if not expected_terms:
+            continue
         matched = any(
             len(candidate & expected_terms) >= 2
             and len(candidate & expected_terms) / len(expected_terms) >= 0.6
             for candidate in question_terms
         )
-        if expected_terms and matched:
+        if matched:
             hits.append(item)
     misses = [item for item in expected if item not in hits]
     return CoverageMetric(
