@@ -44,6 +44,7 @@ def test_deploy_preflight_allow_draft_writes_report_without_cloud_env(tmp_path: 
 
     assert data["allowDraft"] is True
     assert data["readyForDeploy"] is False
+    assert data["deploymentMode"] == "custom-runtime-code-package"
     assert data["buildImage"] is False
     assert data["smokeContainer"] is False
     assert data["gitCommit"]
@@ -52,3 +53,6 @@ def test_deploy_preflight_allow_draft_writes_report_without_cloud_env(tmp_path: 
     assert checks["docker.smoke_port_available"]["required"] is False
     assert checks["docker.smoke_container"]["required"] is False
     assert checks["docker.smoke_showcase"]["required"] is False
+    assert checks["env.ALIBABA_CLOUD_CONTAINER_IMAGE"]["ok"] is True
+    assert checks["env.ALIBABA_CLOUD_CONTAINER_IMAGE"]["required"] is False
+    assert checks["file.deploy/alibaba/serverless-devs-runtime.yaml"]["ok"] is True

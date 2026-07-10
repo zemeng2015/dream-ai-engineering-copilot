@@ -9,6 +9,9 @@ param(
     [string]$EnvFile = "",
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "",
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("custom-runtime-code-package", "custom-container")]
+    [string]$DeploymentMode = "custom-runtime-code-package",
     [switch]$BuildImage,
     [switch]$SmokeContainer,
     [switch]$AllowDraft
@@ -130,9 +133,10 @@ Set-Location $ProjectRoot
 try {
     $requiredFiles = @(
         "Dockerfile",
-        "deploy/alibaba/serverless-devs.yaml",
+        "deploy/alibaba/serverless-devs-runtime.yaml",
         "deploy/alibaba/README.md",
         "examples/config/dream.qwen.yaml",
+        "scripts/qwencloud-build-fc-code-package.ps1",
         "scripts/qwencloud-hackathon-verify.ps1",
         "scripts/qwencloud-hackathon-proof.ps1",
         "scripts/qwencloud-hackathon-submit-gate.ps1"
@@ -167,9 +171,10 @@ try {
 
     Add-Check -Name "env.DASHSCOPE_API_KEY" -Ok (Has-Env "DASHSCOPE_API_KEY") -Details "Required for live Qwen Cloud generation on the deployed backend."
     Add-Check -Name "env.ALIBABA_CLOUD_REGION" -Ok (Has-Env "ALIBABA_CLOUD_REGION") -Details "Example: ap-southeast-1"
-    Add-Check -Name "env.ALIBABA_CLOUD_CONTAINER_IMAGE" -Ok (Has-Env "ALIBABA_CLOUD_CONTAINER_IMAGE") -Details "Alibaba Cloud Container Registry image URI."
-    Add-Check -Name "env.ALIBABA_CONTAINER_REGISTRY_USERNAME" -Ok (Has-Env "ALIBABA_CONTAINER_REGISTRY_USERNAME") -Details "Required for docker login before pushing to Alibaba Cloud Container Registry."
-    Add-Check -Name "env.ALIBABA_CONTAINER_REGISTRY_PASSWORD" -Ok (Has-Env "ALIBABA_CONTAINER_REGISTRY_PASSWORD") -Details "Required for docker login before pushing to Alibaba Cloud Container Registry."
+    $requiresContainerRegistry = $DeploymentMode -eq "custom-container"
+    Add-Check -Name "env.ALIBABA_CLOUD_CONTAINER_IMAGE" -Ok ((-not $requiresContainerRegistry) -or (Has-Env "ALIBABA_CLOUD_CONTAINER_IMAGE")) -Details $(if ($requiresContainerRegistry) { "Alibaba Cloud Container Registry image URI." } else { "Not required for FC custom-runtime code-package deployment." }) -Required $requiresContainerRegistry
+    Add-Check -Name "env.ALIBABA_CONTAINER_REGISTRY_USERNAME" -Ok ((-not $requiresContainerRegistry) -or (Has-Env "ALIBABA_CONTAINER_REGISTRY_USERNAME")) -Details $(if ($requiresContainerRegistry) { "Required for docker login before pushing to Alibaba Cloud Container Registry." } else { "Not required for FC custom-runtime code-package deployment." }) -Required $requiresContainerRegistry
+    Add-Check -Name "env.ALIBABA_CONTAINER_REGISTRY_PASSWORD" -Ok ((-not $requiresContainerRegistry) -or (Has-Env "ALIBABA_CONTAINER_REGISTRY_PASSWORD")) -Details $(if ($requiresContainerRegistry) { "Required for docker login before pushing to Alibaba Cloud Container Registry." } else { "Not required for FC custom-runtime code-package deployment." }) -Required $requiresContainerRegistry
     Add-Check -Name "env.QWEN_BASE_URL" -Ok (Has-Env "QWEN_BASE_URL") -Details "Defaults in yaml if unset; recommended for explicit proof." -Required $false
     Add-Check -Name "env.QWEN_MODEL" -Ok (Has-Env "QWEN_MODEL") -Details "Defaults in yaml if unset; recommended for explicit proof." -Required $false
 
@@ -281,6 +286,7 @@ $result = [ordered]@{
     projectRoot = $ProjectRoot
     outputDir = $artifactDir
     readyForDeploy = $ready
+    deploymentMode = $DeploymentMode
     allowDraft = [bool]$AllowDraft
     buildImage = [bool]$BuildImage
     smokeContainer = [bool]$SmokeContainer
@@ -301,6 +307,7 @@ $lines = @(
     "# Qwen Cloud Alibaba Deploy Preflight ($timestamp)",
     "",
     "- Ready for deploy: $ready",
+    "- Deployment mode: $DeploymentMode",
     "- Docker build requested: $([bool]$BuildImage)",
     "- Container smoke requested: $([bool]$SmokeContainer)",
     "- Image tag: $ImageTag",
