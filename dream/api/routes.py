@@ -8,9 +8,15 @@ from threading import Lock
 from time import monotonic
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from dream.api.security import (
+    get_access_context,
+    identity_boundary,
+    private_acl_route,
+    private_anonymous_route,
+)
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
 from dream.config import resolve_config
@@ -39,9 +45,11 @@ from dream.requirements import (
     RequirementDraftResponse,
 )
 from dream.review import PRReviewAssistant, PRReviewRequest, PRReviewResponse
+from dream.security import AccessContext, DefaultAccessPolicy
 from dream.testgen import JTestGenAdapter, MockTestGenProvider, TestGenRequest, TestGenResult
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(identity_boundary)])
+AccessContextDep = Annotated[AccessContext, Depends(get_access_context)]
 _PUBLIC_QWEN_REQUEST_TIMES: deque[float] = deque()
 _PUBLIC_QWEN_RATE_LOCK = Lock()
 
@@ -221,18 +229,31 @@ class RequirementQuestionWaiveRequest(BaseModel):
     waived_by: str | None = None
 
 
+def _authorized_codebase_index(
+    team_id: str,
+    repo_name: str,
+    access_context: AccessContext,
+):
+    index = CodebaseIndexRepository().load(team_id, repo_name)
+    DefaultAccessPolicy().require(
+        context=access_context,
+        team_id=team_id,
+        action="retrieve",
+        resource_access=index.access,
+        resource_id=index.repo_id,
+    )
+    return index
+
+
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     config = resolve_config()
     deployment_target = "local"
     alibaba_service = os.getenv("ALIBABA_CLOUD_SERVICE")
-    if (
-        config.llm.provider == "qwen-cloud"
-        and (alibaba_service or os.getenv("ALIBABA_CLOUD_REGION"))
+    if config.llm.provider == "qwen-cloud" and (
+        alibaba_service or os.getenv("ALIBABA_CLOUD_REGION")
     ):
-        deployment_target = "Alibaba Cloud " + (
-            alibaba_service or "Function Compute"
-        )
+        deployment_target = "Alibaba Cloud " + (alibaba_service or "Function Compute")
     return HealthResponse(
         status="ok",
         deployment_target=deployment_target,
@@ -247,12 +268,16 @@ def health() -> HealthResponse:
     )
 
 
+@router.get("/health/live")
+@private_anonymous_route
+def liveness() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @router.get("/qwencloud/showcase", response_model=QwenCloudShowcaseResponse)
 def qwencloud_showcase() -> QwenCloudShowcaseResponse:
     health_payload = health()
-    proof_file_ready = (
-        health_payload.proof_file == "deploy/alibaba/serverless-devs-runtime.yaml"
-    )
+    proof_file_ready = health_payload.proof_file == "deploy/alibaba/serverless-devs-runtime.yaml"
     qwen_cloud_ready = (
         health_payload.status == "ok"
         and health_payload.track == "Track 1: MemoryAgent"
@@ -261,8 +286,7 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
         and proof_file_ready
     )
     alibaba_runtime_ready = (
-        "Alibaba Cloud Function Compute" in health_payload.deployment_target
-        and proof_file_ready
+        "Alibaba Cloud Function Compute" in health_payload.deployment_target and proof_file_ready
     )
     live_backend_ready = qwen_cloud_ready and alibaba_runtime_ready
     live_backend_points = 30 if live_backend_ready else 0
@@ -452,18 +476,23 @@ def _qwen_benchmark_summary() -> QwenCloudShowcaseBenchmark:
 @router.post("/requirements/draft", response_model=RequirementDraftResponse)
 def draft_requirement(request: RequirementDraftRequest) -> RequirementDraftResponse:
     try:
-        return RequirementDraftGenerator(
-            llm_provider=_llm_provider(request.llm_provider)
-        ).draft(request)
+        return RequirementDraftGenerator(llm_provider=_llm_provider(request.llm_provider)).draft(
+            request
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/review/pr", response_model=PRReviewResponse)
-def review_pr(request: PRReviewRequest) -> PRReviewResponse:
+@private_acl_route
+def review_pr(
+    request: PRReviewRequest,
+    access_context: AccessContextDep,
+) -> PRReviewResponse:
     try:
         return PRReviewAssistant(llm_provider=_llm_provider(request.llm_provider)).review(
-            request
+            request,
+            access_context=access_context,
         )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -496,10 +525,12 @@ def get_codebase_index(team_id: str, repo_name: str) -> CodebaseIndexArtifactRes
 
 
 @router.get("/codebase/search")
+@private_acl_route
 def search_codebase(
     team_id: str,
     repo_name: str,
     query: str,
+    access_context: AccessContextDep,
     top_k: int = 5,
 ) -> list[dict[str, object]]:
     results = CodebaseRetriever().search(
@@ -507,39 +538,81 @@ def search_codebase(
         repo_name=repo_name,
         query=query,
         top_k=top_k,
+        access_context=access_context,
     )
     return [result.model_dump() for result in results]
 
 
 @router.get("/codebase/concepts")
-def list_codebase_concepts(team_id: str, repo_name: str) -> list[dict[str, object]]:
+@private_acl_route
+def list_codebase_concepts(
+    team_id: str,
+    repo_name: str,
+    access_context: AccessContextDep,
+) -> list[dict[str, object]]:
     try:
-        index = CodebaseIndexRepository().load(team_id, repo_name)
-        return [concept.model_dump() for concept in index.concepts]
+        index = _authorized_codebase_index(team_id, repo_name, access_context)
+        policy = DefaultAccessPolicy()
+        return [
+            concept.model_dump()
+            for concept in index.concepts
+            if policy.decide(
+                context=access_context,
+                team_id=team_id,
+                action="retrieve",
+                resource_access=concept.access,
+                resource_id=f"concept:{concept.concept}",
+            ).allowed
+        ]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/codebase/files")
-def list_codebase_files(team_id: str, repo_name: str) -> list[dict[str, object]]:
+@private_acl_route
+def list_codebase_files(
+    team_id: str,
+    repo_name: str,
+    access_context: AccessContextDep,
+) -> list[dict[str, object]]:
     try:
-        index = CodebaseIndexRepository().load(team_id, repo_name)
-        return [file_node.model_dump() for file_node in index.files]
+        index = _authorized_codebase_index(team_id, repo_name, access_context)
+        policy = DefaultAccessPolicy()
+        return [
+            file_node.model_dump()
+            for file_node in index.files
+            if policy.decide(
+                context=access_context,
+                team_id=team_id,
+                action="retrieve",
+                resource_access=file_node.access,
+                resource_id=file_node.file_id,
+            ).allowed
+        ]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/codebase/file-content", response_model=CodebaseFileContentResponse)
+@private_acl_route
 def get_codebase_file_content(
     team_id: str,
     repo_name: str,
     file_path: str,
+    access_context: AccessContextDep,
 ) -> CodebaseFileContentResponse:
     try:
-        index = CodebaseIndexRepository().load(team_id, repo_name)
+        index = _authorized_codebase_index(team_id, repo_name, access_context)
         file_node = next((item for item in index.files if item.path == file_path), None)
         if file_node is None:
             raise NotFoundError(f"File is not present in the codebase index: {file_path}")
+        DefaultAccessPolicy().require(
+            context=access_context,
+            team_id=team_id,
+            action="retrieve",
+            resource_access=file_node.access,
+            resource_id=file_node.file_id,
+        )
 
         repo_root = resolve_project_path(index.repo_path, must_exist=True).resolve()
         target_path = (repo_root / file_node.path).resolve()
@@ -565,18 +638,24 @@ def get_codebase_file_content(
 @router.post("/graph/build")
 def build_evidence_graph(request: EvidenceGraphBuildRequest) -> dict[str, object]:
     try:
-        return EvidenceGraphBuilder().build(
-            team_id=request.team_id,
-            repo_name=request.repo_name,
-        ).model_dump()
+        return (
+            EvidenceGraphBuilder()
+            .build(
+                team_id=request.team_id,
+                repo_name=request.repo_name,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/graph/search")
+@private_acl_route
 def search_evidence_graph(
     team_id: str,
     query: str,
+    access_context: AccessContextDep,
     repo_name: str | None = None,
     top_k: int = 8,
 ) -> list[dict[str, object]]:
@@ -585,45 +664,64 @@ def search_evidence_graph(
         repo_name=repo_name,
         query=query,
         top_k=top_k,
+        access_context=access_context,
     )
     return [result.model_dump() for result in results]
 
 
 @router.get("/graph/explain")
+@private_acl_route
 def explain_evidence_graph(
     team_id: str,
     concept: str,
+    access_context: AccessContextDep,
     repo_name: str | None = None,
 ) -> dict[str, object]:
-    return EvidenceGraphRetriever().explain(
-        team_id=team_id,
-        repo_name=repo_name,
-        query=concept,
-    ).model_dump()
+    return (
+        EvidenceGraphRetriever()
+        .explain(
+            team_id=team_id,
+            repo_name=repo_name,
+            query=concept,
+            access_context=access_context,
+        )
+        .model_dump()
+    )
 
 
 @router.get("/graph/neighbors")
+@private_acl_route
 def get_evidence_graph_neighbors(
     team_id: str,
     node: str,
+    access_context: AccessContextDep,
     repo_name: str | None = None,
 ) -> dict[str, object]:
-    return EvidenceGraphRetriever().neighbors(
-        team_id=team_id,
-        repo_name=repo_name,
-        node=node,
-    ).model_dump()
+    return (
+        EvidenceGraphRetriever()
+        .neighbors(
+            team_id=team_id,
+            repo_name=repo_name,
+            node=node,
+            access_context=access_context,
+        )
+        .model_dump()
+    )
 
 
 @router.post("/intake/documents")
 def upload_intake_document(request: IntakeUploadRequest) -> dict[str, object]:
     try:
-        return KnowledgeIntakeService().upload_local_file(
-            team_id=request.team_id,
-            file_path=request.file_path,
-            document_type=request.document_type,
-            title=request.title,
-        ).model_dump()
+        return (
+            KnowledgeIntakeService()
+            .upload_local_file(
+                team_id=request.team_id,
+                file_path=request.file_path,
+                document_type=request.document_type,
+                title=request.title,
+            )
+            .model_dump()
+        )
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -637,13 +735,17 @@ async def upload_intake_document_file(
 ) -> dict[str, object]:
     try:
         content = await file.read()
-        return KnowledgeIntakeService().upload_file_content(
-            team_id=team_id,
-            filename=file.filename or "uploaded-source",
-            content=content,
-            document_type=document_type,
-            title=title,
-        ).model_dump()
+        return (
+            KnowledgeIntakeService()
+            .upload_file_content(
+                team_id=team_id,
+                filename=file.filename or "uploaded-source",
+                content=content,
+                document_type=document_type,
+                title=title,
+            )
+            .model_dump()
+        )
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
@@ -711,14 +813,18 @@ def update_intake_draft_metadata(
 @router.post("/intake/drafts/{draft_id}/review")
 def review_intake_draft(draft_id: str, request: IntakeReviewRequest) -> dict[str, object]:
     try:
-        return KnowledgeIntakeService().review_draft(
-            draft_id,
-            ReviewDecision(
-                status=request.status,
-                reviewer=request.reviewer,
-                notes=request.notes,
-            ),
-        ).model_dump()
+        return (
+            KnowledgeIntakeService()
+            .review_draft(
+                draft_id,
+                ReviewDecision(
+                    status=request.status,
+                    reviewer=request.reviewer,
+                    notes=request.notes,
+                ),
+            )
+            .model_dump()
+        )
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -732,47 +838,81 @@ def promote_intake_draft(draft_id: str) -> dict[str, object]:
 
 
 @router.get("/context/trails/{case_id}")
-def get_context_trail(case_id: str) -> dict[str, object]:
+@private_acl_route
+def get_context_trail(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
         service = ContextIntelligenceService()
         if case_id.startswith("pr-"):
-            return service.repository.load_trail(f"context-trail-{case_id}").model_dump()
-        return service.trace_case(case_id).model_dump()
+            return service.load_trail(
+                f"context-trail-{case_id}",
+                access_context=access_context,
+            ).model_dump()
+        return service.trace_case(case_id, access_context=access_context).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/context/packs/{case_id}")
-def get_context_pack(case_id: str) -> dict[str, object]:
+@private_acl_route
+def get_context_pack(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
         service = ContextIntelligenceService()
         if case_id.startswith("pr-"):
-            return service.repository.load_context_pack(f"context-pack-{case_id}").model_dump()
-        return service.assemble_case(case_id).model_dump()
+            return service.load_context_pack(
+                f"context-pack-{case_id}",
+                access_context=access_context,
+            ).model_dump()
+        return service.assemble_case(case_id, access_context=access_context).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/context/prompt-preview/{case_id}")
-def get_prompt_preview(case_id: str, target: str = "jira_draft") -> dict[str, object]:
+@private_acl_route
+def get_prompt_preview(
+    case_id: str,
+    access_context: AccessContextDep,
+    target: str = "jira_draft",
+) -> dict[str, object]:
     try:
         service = ContextIntelligenceService()
         if case_id.startswith("pr-"):
-            return service.repository.load_prompt_preview(
-                f"prompt-preview-{case_id}-pr_review"
+            return service.load_prompt_preview(
+                f"prompt-preview-{case_id}-pr_review",
+                access_context=access_context,
             ).model_dump()
-        return service.prompt_for_case(case_id, target=target).model_dump()
+        return service.prompt_for_case(
+            case_id,
+            target=target,
+            access_context=access_context,
+        ).model_dump()
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/context/report")
-def get_context_report(team_id: str, repo_name: str | None = None) -> dict[str, object]:
+@private_acl_route
+def get_context_report(
+    team_id: str,
+    access_context: AccessContextDep,
+    repo_name: str | None = None,
+) -> dict[str, object]:
     try:
-        return ContextIntelligenceService().memory_report(
-            team_id=team_id,
-            repo_name=repo_name,
-        ).model_dump()
+        return (
+            ContextIntelligenceService()
+            .memory_report(
+                team_id=team_id,
+                repo_name=repo_name,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except (DreamError, OSError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -780,11 +920,15 @@ def get_context_report(team_id: str, repo_name: str | None = None) -> dict[str, 
 @router.post("/memory/scan")
 def scan_memory(request: MemoryScanRequest) -> dict[str, object]:
     try:
-        return MemoryDistillationService().scan(
-            team_id=request.team_id,
-            repo_path=request.repo_path,
-            repo_name=request.repo_name,
-        ).model_dump()
+        return (
+            MemoryDistillationService()
+            .scan(
+                team_id=request.team_id,
+                repo_path=request.repo_path,
+                repo_name=request.repo_name,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -820,10 +964,14 @@ def diff_memory(
 @router.get("/memory/conflicts")
 def get_memory_conflicts(team_id: str, scan_id: str = "latest") -> dict[str, object]:
     try:
-        return MemoryDistillationService().conflicts(
-            team_id=team_id,
-            scan_id=scan_id,
-        ).model_dump()
+        return (
+            MemoryDistillationService()
+            .conflicts(
+                team_id=team_id,
+                scan_id=scan_id,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -831,37 +979,49 @@ def get_memory_conflicts(team_id: str, scan_id: str = "latest") -> dict[str, obj
 @router.post("/memory/conflicts/resolve")
 def resolve_memory_conflict(request: MemoryConflictResolveRequest) -> dict[str, object]:
     try:
-        return MemoryDistillationService().resolve_conflict(
-            team_id=request.team_id,
-            conflict_id=request.conflict_id,
-            winning_claim_id=request.winning_claim_id,
-            action=request.action,
-            reviewer=request.reviewer,
-            reason=request.reason,
-            scan_id=request.scan_id,
-        ).model_dump()
+        return (
+            MemoryDistillationService()
+            .resolve_conflict(
+                team_id=request.team_id,
+                conflict_id=request.conflict_id,
+                winning_claim_id=request.winning_claim_id,
+                action=request.action,
+                reviewer=request.reviewer,
+                reason=request.reason,
+                scan_id=request.scan_id,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/memory/conflict-resolutions")
 def get_memory_conflict_resolutions(team_id: str) -> dict[str, object]:
-    return MemoryDistillationRepository().load_conflict_resolution_ledger(
-        team_id,
-    ).model_dump()
+    return (
+        MemoryDistillationRepository()
+        .load_conflict_resolution_ledger(
+            team_id,
+        )
+        .model_dump()
+    )
 
 
 @router.post("/memory/review")
 def review_memory_claim(request: MemoryReviewRequest) -> dict[str, object]:
     try:
-        return MemoryDistillationService().review_claim(
-            team_id=request.team_id,
-            claim_id=request.claim_id,
-            new_status=request.status,
-            reviewer=request.reviewer,
-            reason=request.reason,
-            scan_id=request.scan_id,
-        ).model_dump()
+        return (
+            MemoryDistillationService()
+            .review_claim(
+                team_id=request.team_id,
+                claim_id=request.claim_id,
+                new_status=request.status,
+                reviewer=request.reviewer,
+                reason=request.reason,
+                scan_id=request.scan_id,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -872,9 +1032,11 @@ def get_memory_ledger(team_id: str) -> dict[str, object]:
 
 
 @router.get("/memory/search")
+@private_acl_route
 def search_memory_claims(
     team_id: str,
     query: str,
+    access_context: AccessContextDep,
     scan_id: str = "latest",
     top_k: int = 8,
 ) -> list[dict[str, object]]:
@@ -884,6 +1046,7 @@ def search_memory_claims(
             query=query,
             scan_id=scan_id,
             top_k=top_k,
+            access_context=access_context,
         )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -891,9 +1054,11 @@ def search_memory_claims(
 
 
 @router.get("/memory/context-card")
+@private_acl_route
 def get_memory_context_card(
     team_id: str,
     query: str,
+    access_context: AccessContextDep,
     scan_id: str = "latest",
     top_k: int = 8,
 ) -> dict[str, object]:
@@ -903,6 +1068,7 @@ def get_memory_context_card(
             query=query,
             scan_id=scan_id,
             top_k=top_k,
+            access_context=access_context,
         )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -912,76 +1078,140 @@ def get_memory_context_card(
 @router.post("/memory/eval")
 def eval_memory(request: MemoryEvalRequest) -> dict[str, object]:
     try:
-        return MemoryDistillationEvaluator().evaluate(
-            team_id=request.team_id,
-            scan_id=request.scan_id,
-        ).model_dump()
+        return (
+            MemoryDistillationEvaluator()
+            .evaluate(
+                team_id=request.team_id,
+                scan_id=request.scan_id,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/requirement-cases")
-def create_requirement_case(request: RequirementCaseCreateRequest) -> dict[str, object]:
+@private_acl_route
+def create_requirement_case(
+    request: RequirementCaseCreateRequest,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
-        return RequirementCaseService().create_case(request).model_dump()
+        return (
+            RequirementCaseService()
+            .create_case(
+                request,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/requirement-cases/{case_id}/analyze")
-def analyze_requirement_case(case_id: str) -> dict[str, object]:
+@private_acl_route
+def analyze_requirement_case(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
-        return RequirementCaseService().analyze_case(case_id).model_dump()
+        return (
+            RequirementCaseService()
+            .analyze_case(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases")
-def list_requirement_cases() -> list[dict[str, object]]:
-    return [snapshot.model_dump() for snapshot in RequirementCaseService().list_cases()]
+@private_acl_route
+def list_requirement_cases(
+    access_context: AccessContextDep,
+) -> list[dict[str, object]]:
+    return [
+        snapshot.model_dump()
+        for snapshot in RequirementCaseService().list_cases(access_context=access_context)
+    ]
 
 
 @router.get("/requirement-cases/{case_id}")
-def get_requirement_case(case_id: str) -> dict[str, object]:
+@private_acl_route
+def get_requirement_case(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
-        return RequirementCaseService().get_case(case_id).model_dump()
+        return (
+            RequirementCaseService()
+            .get_case(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases/{case_id}/impact-map")
-def get_requirement_case_impact(case_id: str) -> list[dict[str, object]]:
+@private_acl_route
+def get_requirement_case_impact(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> list[dict[str, object]]:
     try:
-        items = RequirementCaseService().generate_impact_map(case_id)
+        items = RequirementCaseService().generate_impact_map(
+            case_id,
+            access_context=access_context,
+        )
         return [item.model_dump() for item in items]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases/{case_id}/questions")
+@private_acl_route
 def get_requirement_case_questions(
-    case_id: str, role: str | None = None
+    case_id: str,
+    access_context: AccessContextDep,
+    role: str | None = None,
 ) -> list[dict[str, object]]:
     try:
-        questions = RequirementCaseService().generate_questions(case_id, role=role)
+        questions = RequirementCaseService().generate_questions(
+            case_id,
+            role=role,
+            access_context=access_context,
+        )
         return [question.model_dump() for question in questions]
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/requirement-cases/{case_id}/questions/{question_id}/answer")
+@private_acl_route
 def answer_requirement_case_question(
     case_id: str,
     question_id: str,
     request: RequirementQuestionAnswerRequest,
+    access_context: AccessContextDep,
 ) -> dict[str, object]:
     try:
-        return RequirementCaseService().answer_question(
-            case_id,
-            question_id,
-            request.answer,
-            answered_by=request.answered_by,
-        ).model_dump()
+        return (
+            RequirementCaseService()
+            .answer_question(
+                case_id,
+                question_id,
+                request.answer,
+                answered_by=request.answered_by,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except DreamError as exc:
@@ -989,18 +1219,25 @@ def answer_requirement_case_question(
 
 
 @router.post("/requirement-cases/{case_id}/questions/{question_id}/waive")
+@private_acl_route
 def waive_requirement_case_question(
     case_id: str,
     question_id: str,
     request: RequirementQuestionWaiveRequest,
+    access_context: AccessContextDep,
 ) -> dict[str, object]:
     try:
-        return RequirementCaseService().waive_question(
-            case_id,
-            question_id,
-            request.reason,
-            waived_by=request.waived_by,
-        ).model_dump()
+        return (
+            RequirementCaseService()
+            .waive_question(
+                case_id,
+                question_id,
+                request.reason,
+                waived_by=request.waived_by,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except DreamError as exc:
@@ -1008,43 +1245,79 @@ def waive_requirement_case_question(
 
 
 @router.get("/requirement-cases/{case_id}/brief")
+@private_acl_route
 def get_requirement_case_brief(
     case_id: str,
+    access_context: AccessContextDep,
     llm_provider: str = "deterministic",
 ) -> dict[str, object]:
     try:
-        return RequirementCaseService(
-            llm_provider=_optional_llm_provider(llm_provider)
-        ).generate_engineering_brief(case_id).model_dump()
+        return (
+            RequirementCaseService(llm_provider=_optional_llm_provider(llm_provider))
+            .generate_engineering_brief(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases/{case_id}/jira-draft")
+@private_acl_route
 def get_requirement_case_jira_draft(
     case_id: str,
+    access_context: AccessContextDep,
     llm_provider: str = "deterministic",
 ) -> dict[str, object]:
     try:
-        return RequirementCaseService(
-            llm_provider=_optional_llm_provider(llm_provider)
-        ).generate_jira_draft(case_id).model_dump()
+        return (
+            RequirementCaseService(llm_provider=_optional_llm_provider(llm_provider))
+            .generate_jira_draft(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases/{case_id}/jira-draft-context")
-def get_requirement_case_jira_draft_context(case_id: str) -> dict[str, object]:
+@private_acl_route
+def get_requirement_case_jira_draft_context(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
-        return RequirementCaseService().prepare_jira_draft_context(case_id).model_dump()
+        return (
+            RequirementCaseService()
+            .prepare_jira_draft_context(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/requirement-cases/{case_id}/jira-readiness")
-def get_requirement_case_jira_readiness(case_id: str) -> dict[str, object]:
+@private_acl_route
+def get_requirement_case_jira_readiness(
+    case_id: str,
+    access_context: AccessContextDep,
+) -> dict[str, object]:
     try:
-        return RequirementCaseService().jira_readiness(case_id).model_dump()
+        return (
+            RequirementCaseService()
+            .jira_readiness(
+                case_id,
+                access_context=access_context,
+            )
+            .model_dump()
+        )
     except DreamError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

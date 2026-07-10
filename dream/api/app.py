@@ -5,10 +5,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from dream import __version__
 from dream.api.routes import router
+from dream.config import resolve_config
 
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:4200",
@@ -36,6 +37,17 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def private_api_metadata_guard(request, call_next):
+        if resolve_config().mode == "private-extension" and request.url.path in {
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        }:
+            return JSONResponse(status_code=404, content={"detail": "Not found."})
+        return await call_next(request)
+
     app.include_router(router)
     _mount_frontend(app)
     return app
@@ -55,11 +67,7 @@ def _frontend_dist() -> Path:
     if configured:
         return Path(configured).expanduser().resolve()
     return (
-        Path(__file__).resolve().parents[2]
-        / "frontend"
-        / "dist"
-        / "frontend"
-        / "browser"
+        Path(__file__).resolve().parents[2] / "frontend" / "dist" / "frontend" / "browser"
     ).resolve()
 
 
