@@ -190,3 +190,10 @@ because its local sources do not share one global transaction or signed custody.
 See [Security Decision Evidence Foundation](security-decision-evidence-foundation.md)
 and
 [Pilot Evidence Export Foundation](pilot-evidence-export-foundation.md).
+
+A detached Ed25519 receipt can now authenticate a verified bundle against a
+public key held outside both the checkout and artifact root. Signing fails on an
+invalid bundle and receipt verification fails on bundle, manifest, receipt, key
+or key-id drift. This remains a local custody foundation; organization key
+approval, KMS/HSM integration, revocation and immutable registration are still
+required. See [Pilot Evidence Custody Foundation](pilot-evidence-custody-foundation.md).

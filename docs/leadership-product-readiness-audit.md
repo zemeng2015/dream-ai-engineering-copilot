@@ -3,7 +3,8 @@
 # Leadership Product Readiness Audit
 
 Audit date: 2026-07-10
-Branch under review: `codex/leadership-product`
+Branch under review: `codex/pilot-evidence-custody` (cumulative provider-neutral
+Pilot chain based on the frozen leadership product)
 Overall decision: **Synthetic leadership demo ready with warnings; real-source
 Pilot remains No-Go.**
 
@@ -15,14 +16,14 @@ is recorded as incomplete rather than inferred from implementation intent.
 
 | # | Requirement | Decision | Authoritative evidence | Remaining gap |
 |---|---|---|---|---|
-| 1 | Approved MemoryClaim affects Requirement/Jira and bounded PR Review; other statuses and unresolved conflicts stay out | **Proven for current scope** | Requirement same-case approval test; PR candidate/approved/rejected test; MemoryClaim policy tests; Context/Audit assertions | Enterprise reviewer authorization is not implemented |
+| 1 | Approved MemoryClaim affects Requirement/Jira and bounded PR Review; other statuses and unresolved conflicts stay out | **Proven for current scope** | Requirement same-case approval test; PR candidate/approved/rejected test; MemoryClaim policy tests; Context/Audit assertions | Core reviewer action roles exist; organization identity/role mapping and approval remain external |
 | 2 | One consistent synthetic DFP scenario and evidence chain | **Proven for leadership path** | Fixed seed ids; double-reset acceptance; preflight source boundary; README examples now use `dfp-demo-repo` | Other legacy example directories remain in the repository but are outside the leadership path |
 | 3 | Provider-neutral ten-minute leadership workflow | **Proven locally** | `/leadership-demo`; product profile tests; runbook; Angular build/tests; fixed seeded case; automated human-gate rehearsal | A timed rehearsal with the actual presenters and approved deployment is still required |
 | 4 | Credible paired value evidence including citation, recall, unsupported claims, edit distance, latency, tokens, and cost | **Partially proven** | Same-provider/model/request/contract suite; alternating arm order; GPT-5.4 local synthetic suite; metric distributions; SME/pricing manifest gates | The live run is local and unapproved; no approved SME reference or exact provider pricing evidence yet |
-| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally and frozen** | `run_leadership_preflight.py`; reset/rehearsal tests; fallback/runbook; full Python and Angular verification; verified frozen release manifest | Approved deployment smoke and presenter-timed rehearsal remain pending |
-| 6 | Enterprise trust boundary clear and first demo read-only/human-gated | **Boundary documented; enterprise controls absent** | Enterprise Pilot boundary; no-write Pilot scope; product profile uses mock/none by default | SSO, ACL propagation, private connectors, DLP/redaction, private storage, residency and admin controls are not implemented |
+| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally** | `run_leadership_preflight.py`; reset/rehearsal tests; fallback/runbook; full Python and Angular verification; prior frozen leadership release | Exact custody-branch release freeze, approved deployment smoke and presenter-timed rehearsal remain pending |
+| 6 | Enterprise trust boundary clear and first demo read-only/human-gated | **Core controls implemented; organization approval pending** | Signed proxy identity; role/source ACL enforcement and revocation; connector lifecycle; DLP; provider egress; runtime decision ledgers; v2 evidence export; Ed25519 custody; no-write scope | Approved SSO/proxy and connector deployment, shared/private storage, organization DLP/provider/network/residency/retention policy, managed keys and admin process remain pending |
 | 7 | Executable one-team/one-app/one-repo Pilot proposal | **Proposal complete; organization decision pending** | Six-week proposal with scope, roles, baseline, metrics, gates, exit and leadership ask | Named sponsor/owners, application/repository, thresholds and Security/Data approval are unassigned |
-| 8 | README/current-state/boundary/runbook match implementation and avoid inflated claims | **Proven for named documents** | README roadmap/example cleanup; product-current-state limitations; Human Rating and ROI disclaimers; preflight docs check | Older research/handoff documents are historical context and must not be presented as current product truth |
+| 8 | README/current-state/boundary/runbook match implementation and avoid inflated claims | **Proven for named current-state documents** | README; product-current-state; enterprise boundary; security/connector/DLP/provider/evidence/custody foundations; Human Rating and ROI disclaimers | Older research/handoff documents are historical context and must not be presented as current product truth |
 
 ## Verified Product Invariants
 
@@ -46,16 +47,26 @@ is recorded as incomplete rather than inferred from implementation intent.
 - Human edit distance requires an approved, hash-verified SME manifest.
 - Cost requires an approved exact-provider/model pricing manifest plus separate
   input and output token counts.
+- Private runtime identity and DefaultAccessPolicy decisions are persisted as
+  metadata-only evidence; unsigned team assertions are never trusted for tenant
+  attribution.
+- Evidence bundle v2 exports eleven fixed sections, remains compatible with v1,
+  and can receive a detached Ed25519 receipt without changing bundle contents.
+- A valid custody receipt proves possession of the matching private key and
+  byte/root binding only when the public key is independently trusted. It does
+  not prove organization approval or legal non-repudiation.
 
 ## Current Verification Baseline
 
 ```text
-Python: 210 passed, 1 skipped
+Python: 308 passed, 1 skipped
+Ruff: passed
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
+Angular production/full dependency audit: 0 vulnerabilities
 Leadership preflight: ready_for_demo=true
-Strict preflight warnings: none
-Frozen release verification: passed
+Raw-document acceptance: passed
+Strict preflight/release freeze: rerun after custody commits
 ```
 
 The current test count is evidence for the audited working tree only. Rerun all
@@ -108,7 +119,12 @@ Claims that are not yet supported:
 
 - DREAM improves production engineering productivity or ROI.
 - DREAM is approved for real organization data.
-- DREAM preserves source-system ACLs.
+- A production connector automatically synchronizes source-system ACLs and
+  identity lifecycle.
+- DREAM's local JSON/SQLite evidence stores satisfy enterprise retention,
+  availability, legal hold or SIEM requirements.
+- A locally valid Ed25519 receipt proves the organization approved the signer,
+  key, data, model or Pilot result.
 - Human Ratings improve future retrieval or model behavior.
 - The provider/model cost or quality is known for the proposed Pilot.
 - DREAM can safely write Jira tickets or PR actions.
@@ -121,18 +137,22 @@ Claims that are not yet supported:
 4. Decide whether the meeting presents only synthetic technical proof or also an
    approved live-model suite. Do not improvise a provider switch during the demo.
 5. Keep the Pilot ask, owners-to-assign, and No-Go real-source boundary visible.
+6. If custody is demonstrated, verify against an independently retained public
+   key and explicitly label it a local cryptographic foundation.
 
 ## Required Evidence Before Real-Source Pilot Approval
 
 1. Named sponsor, Pilot owner, technical owner, Security/Data owner, source owner,
    and SME reviewers.
 2. Approved private deployment/data flow and threat model.
-3. SSO and caller-aware source ACL enforcement with negative access tests.
-4. Approved read-only connectors, redaction/DLP, storage, deletion/retention,
-   region and network/provider controls.
+3. Organization-approved SSO/proxy deployment and production connector ACL/
+   identity synchronization; rerun the existing negative access tests there.
+4. Approved read-only connector, DLP taxonomy/operations, private shared storage,
+   deletion/retention, region and network/provider controls.
 5. Frozen SME baseline and thresholds created before viewing Pilot results.
 6. Approved provider/model suite with exact provider/model/token/pricing evidence.
-7. Demonstrated disable, incident response, audit export, and deletion procedure.
+7. Demonstrated disable, incident response, signed audit export, custody and
+   deletion procedure using organization-approved keys and storage.
 
 Until these conditions are met, DREAM can support a leadership demonstration and
 Pilot-design discussion, but it must not ingest real organization sources.

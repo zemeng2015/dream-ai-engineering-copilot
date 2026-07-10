@@ -39,6 +39,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | DLP enforcement foundation | Versioned pre-index/pre-prompt/pre-persist/post-response text inspection, deterministic redact/block rules, metadata-only ledger | Engine/provider corpus and workflow-boundary no-leak tests |
 | Provider egress foundation | Exact private endpoint/model approval, invocation-time expiry recheck, request-override/redirect denial, response identity gate | Provider policy, API/CLI selector, redirect and negative config tests |
 | Pilot evidence export | Offline v2 metadata bundle across eleven team/deployment sections, immutable files, checksums and v1/v2 verifier | Scope/no-leak/tamper/path/source-stability/compatibility/CLI tests |
+| Evidence custody | Detached Ed25519 receipt over bundle root, exact manifest, trust-key fingerprint and hashed custody metadata | Valid/wrong-key/tamper/path/key-type/encrypted-key/CLI tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -86,8 +87,9 @@ The public core does not currently prove:
 - organization-approved data residency and network egress controls;
 - organization-approved model endpoint, retention/no-training terms and
   approval-manifest operating process;
-- globally atomic shared audit storage, approved signing/retention/export
-  operations, multi-process durability and SIEM/GRC integration;
+- globally atomic shared audit storage, organization-approved signing keys and
+  managed custody, retention/export operations, multi-process durability and
+  SIEM/GRC integration;
 - production-scale availability, latency, cost, or support SLOs;
 - organization approval of the remediated frontend dependency/runtime baseline;
 - a feedback-learning policy driven by Human Rating;
@@ -123,5 +125,6 @@ See `docs/pilot-security-foundation.md` and
 `docs/dlp-enforcement-foundation.md`,
 `docs/provider-egress-foundation.md`, plus
 `docs/security-decision-evidence-foundation.md` and
-`docs/pilot-evidence-export-foundation.md`. These implementations reduce technical
+`docs/pilot-evidence-export-foundation.md`, plus
+`docs/pilot-evidence-custody-foundation.md`. These implementations reduce technical
 risk but do not change the real-source No-Go decision.

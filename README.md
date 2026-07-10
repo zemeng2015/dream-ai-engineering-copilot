@@ -85,6 +85,8 @@ domain-aware memory applications.
   checksums and an independent-root verifier.
 - Persists metadata-only signed-identity and access-policy decisions in private
   mode, failing closed when required decision evidence cannot be written.
+- Creates detached Ed25519 custody receipts for internally valid Pilot evidence
+  bundles and verifies them against an independently trusted public key.
 - Applies a versioned deterministic DLP foundation before indexing, prompt
   dispatch, selected persistence boundaries, and after model responses; DLP
   evidence is metadata-only.
@@ -576,6 +578,9 @@ For the latest UI simplification pass and product planning context, start here:
 - `docs/security-decision-evidence-foundation.md` - trusted identity attribution,
   access-policy decision events, fail-closed writes, and remaining shared-store
   and custody gates.
+- `docs/pilot-evidence-custody-foundation.md` - detached Ed25519 signing,
+  independently trusted-key verification, key isolation rules and remaining
+  managed-custody gates.
 - `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
   one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
 - `docs/leadership-product-readiness-audit.md` - requirement-by-requirement

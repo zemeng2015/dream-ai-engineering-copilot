@@ -69,6 +69,11 @@ Checksums provide integrity, not identity or non-repudiation. If the enterprise
 Pilot requires signed releases, the private delivery process should sign the
 manifest through the organization-approved artifact/signing service.
 
+`dream audit sign-bundle` signs Pilot evidence bundles, not this presentation
+release manifest. Do not present a signed evidence sidecar as a signed software
+release. The same Ed25519 custody contract may inform a future release-signing
+integration only after that artifact type and organization process are approved.
+
 ## Output
 
 Generated files live under `artifacts/leadership-release/`:

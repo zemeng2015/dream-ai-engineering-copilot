@@ -49,7 +49,7 @@ repository.
 | Network | Private egress policy and endpoint allowlist | Application blocks runtime overrides, insecure/ambiguous URLs and redirects; deployment firewall/DNS allowlist remains external |
 | Secrets | Enterprise secret manager, rotation, no client exposure | Environment variables in local core |
 | Storage | Encrypted private storage, backup, retention, deletion | Local JSON/SQLite artifacts |
-| Audit | Named actor, source use, provider/model, decision and export | Runtime identity/access decisions plus offline team-scoped metadata-only bundle and verifier implemented; signing, shared store, retention and approved admin process pending |
+| Audit | Named actor, source use, provider/model, decision and export | Runtime decisions, metadata-only bundle, v1/v2 verifier and detached Ed25519 receipt implemented; approved keys/custody, shared store, retention and admin process pending |
 | Incident response | Owner, disable switch, investigation and deletion procedure | Pilot process required |
 | Dependency security | Approved supported runtime and remediated/excepted dependency findings | Angular 21 repository baseline passes production/full npm audits; organization runtime approval pending |
 
@@ -88,6 +88,10 @@ Identity rejections remain deployment-scoped because unsigned team headers are
 not trusted. The bundle does not claim a globally atomic or signed production
 audit record. See also
 [Security Decision Evidence Foundation](security-decision-evidence-foundation.md).
+The [Pilot Evidence Custody Foundation](pilot-evidence-custody-foundation.md)
+can bind a verified bundle to a separately trusted Ed25519 public key without
+changing bundle contents. Key approval, managed signing, revocation and immutable
+receipt registration remain organization controls.
 
 ## Human Gate and Side Effects
 

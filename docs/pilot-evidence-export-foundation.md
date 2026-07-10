@@ -93,8 +93,10 @@ checksums, and a mismatched out-of-band root fail verification.
 The manifest root and section checksums provide integrity, not signer identity
 or non-repudiation. Verification without `--expected-root-sha256` proves only
 internal consistency: an attacker able to replace the complete bundle may also
-replace its internal hashes. A production process needs approved signing or an
-independent immutable root registry.
+replace its internal hashes. The optional
+[Pilot Evidence Custody Foundation](pilot-evidence-custody-foundation.md) adds a
+detached Ed25519 signature against a separately trusted public key. Organization
+key approval, managed custody and immutable registration remain external gates.
 
 Audit runs, ratings and evaluations are read in one SQLite read transaction.
 Each JSON/JSONL ledger is accepted only when its pre-read and post-read file hash
@@ -128,7 +130,8 @@ Before this can be treated as production audit evidence, DREAM still needs:
 
 - a shared transactional evidence store or an approved snapshot coordinator;
 - approved retention, legal hold, deletion and export authorization policy;
-- tamper-evident signing or an independently controlled immutable root registry;
+- organization-approved signing keys, managed custody, rotation/revocation and
+  an independently controlled immutable receipt/root registry;
 - organization-approved operator identity, separation of duties and SIEM/GRC
   integration; and
 - documented incident and evidence-custody procedures.

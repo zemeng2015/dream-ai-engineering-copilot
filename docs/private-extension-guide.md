@@ -22,6 +22,9 @@ Recommended setup:
 10. Verify the private runtime can append identity and access decisions under
     `<artifact-root>/pilot-security/`; an unavailable decision ledger fails
     identity/access operations closed by design.
+11. Keep the Ed25519 signing key and independently trusted public key outside
+    both checkout and artifact roots; test `dream audit sign-bundle` and
+    `dream audit verify-signature` with the approved key id.
 
 Private mode rejects request-level live-provider selection and LLM plugins. Use
 `config` at API/CLI generation surfaces so the deployment-owned provider is
@@ -34,5 +37,6 @@ The current evidence bundle is an offline metadata-only foundation, not a
 production audit archive. Its deployment-scoped identity rejections, local
 multi-source snapshot semantics, process-local decision ledgers and unsigned
 root are documented in `docs/security-decision-evidence-foundation.md` and
-`docs/pilot-evidence-export-foundation.md`; the Pilot security owner must approve
-or replace those boundaries.
+`docs/pilot-evidence-export-foundation.md`; local signing semantics and remaining
+managed-custody gates are in `docs/pilot-evidence-custody-foundation.md`. The
+Pilot security owner must approve or replace those boundaries.
