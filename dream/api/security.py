@@ -41,10 +41,15 @@ def identity_boundary(request: Request) -> None:
         return
 
     try:
+        raw_path = request.scope.get("raw_path", request.url.path.encode("utf-8"))
+        query_string = request.scope.get("query_string", b"")
+        request_target = raw_path.decode("latin-1")
+        if query_string:
+            request_target = f"{request_target}?{query_string.decode('latin-1')}"
         context = SignedProxyIdentityProvider.from_environment().authenticate(
             request.headers,
             method=request.method,
-            path=request.url.path,
+            path=request_target,
         )
     except ProviderConfigurationError as exc:
         raise HTTPException(

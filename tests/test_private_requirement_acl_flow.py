@@ -148,6 +148,24 @@ def test_private_requirement_prompt_and_trail_exclude_denied_sources(
     assert "restricted-status.md" not in jira.markdown
     assert "FORBIDDEN-DETAIL" not in jira.markdown
 
+    question = analyzed.questions[0]
+    answered = service.answer_question(
+        created.case.case_id,
+        question.question_id,
+        "Use the approved lifecycle policy.",
+        answered_by="spoofed-actor",
+        access_context=context,
+    )
+    assert answered.answered_by == context.principal.principal_id
+    waived = service.waive_question(
+        created.case.case_id,
+        question.question_id,
+        "Covered by the approved operational exception.",
+        waived_by="spoofed-actor",
+        access_context=context,
+    )
+    assert waived.waived_by == context.principal.principal_id
+
     from dream.context import ContextIntelligenceService
 
     context_service = ContextIntelligenceService(

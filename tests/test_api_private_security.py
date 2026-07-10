@@ -74,6 +74,19 @@ def test_private_api_rejects_unsigned_and_unported_routes(monkeypatch, tmp_path:
     assert openapi.status_code == 404
 
 
+def test_private_api_identity_signature_binds_query_string(monkeypatch, tmp_path: Path) -> None:
+    _configure_private(monkeypatch, tmp_path)
+    client = TestClient(create_app())
+    signed_target = "/requirement-cases?team_id=team-a"
+    headers = _signed_headers(path=signed_target)
+
+    accepted = client.get(signed_target, headers=headers)
+    tampered = client.get("/requirement-cases?team_id=team-b", headers=headers)
+
+    assert accepted.status_code == 200
+    assert tampered.status_code == 401
+
+
 def test_private_requirement_case_is_acl_isolated(monkeypatch, tmp_path: Path) -> None:
     _configure_private(monkeypatch, tmp_path)
     client = TestClient(create_app())

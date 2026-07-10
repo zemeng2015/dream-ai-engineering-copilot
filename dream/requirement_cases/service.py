@@ -294,6 +294,10 @@ class RequirementCaseService:
         access_context: AccessContext | None = None,
     ) -> ClarificationQuestion:
         snapshot = self._ensure_analyzed(case_id, access_context=access_context)
+        context = self._case_context(snapshot, access_context)
+        actor = (
+            context.principal.principal_id if context.mode == "private-extension" else answered_by
+        )
         answer_text = answer.strip()
         if not answer_text:
             raise ValueError("Clarification answer cannot be empty.")
@@ -306,7 +310,7 @@ class RequirementCaseService:
                     update={
                         "status": "answered",
                         "answer": answer_text,
-                        "answered_by": answered_by,
+                        "answered_by": actor,
                         "answered_at": now,
                         "waived_reason": None,
                         "waived_by": None,
@@ -332,7 +336,7 @@ class RequirementCaseService:
                 "case_id": case_id,
                 "question_id": question_id,
                 "answer": answer_text,
-                "answered_by": answered_by,
+                "answered_by": actor,
             },
             retrieved_source_paths=updated_question.related_sources,
             model_provider="human",
@@ -353,6 +357,8 @@ class RequirementCaseService:
         access_context: AccessContext | None = None,
     ) -> ClarificationQuestion:
         snapshot = self._ensure_analyzed(case_id, access_context=access_context)
+        context = self._case_context(snapshot, access_context)
+        actor = context.principal.principal_id if context.mode == "private-extension" else waived_by
         reason_text = reason.strip()
         if not reason_text:
             raise ValueError("Clarification waiver reason cannot be empty.")
@@ -368,7 +374,7 @@ class RequirementCaseService:
                         "answered_by": None,
                         "answered_at": None,
                         "waived_reason": reason_text,
-                        "waived_by": waived_by,
+                        "waived_by": actor,
                         "waived_at": now,
                     }
                 )
@@ -391,7 +397,7 @@ class RequirementCaseService:
                 "case_id": case_id,
                 "question_id": question_id,
                 "reason": reason_text,
-                "waived_by": waived_by,
+                "waived_by": actor,
             },
             retrieved_source_paths=updated_question.related_sources,
             model_provider="human",

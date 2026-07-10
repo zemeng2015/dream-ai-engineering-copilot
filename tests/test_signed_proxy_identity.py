@@ -55,7 +55,7 @@ def test_signed_proxy_identity_authenticates_normalized_context() -> None:
     assert context.request_id == "request-42"
 
 
-def test_signed_proxy_identity_rejects_tampering_and_replay() -> None:
+def test_signed_proxy_identity_rejects_tampering_and_expired_assertions() -> None:
     tampered = _headers()
     tampered["x-dream-team-ids"] = "team-b"
 
@@ -109,6 +109,25 @@ def test_signed_proxy_identity_is_bound_to_method_and_path() -> None:
             headers,
             method="GET",
             path="/audit/runs",
+            now=NOW,
+        )
+
+
+def test_signed_proxy_identity_is_bound_to_query_string() -> None:
+    headers = _headers(path="/codebase/search?team_id=team-a&query=status")
+    provider = SignedProxyIdentityProvider(secret=SECRET)
+
+    provider.authenticate(
+        headers,
+        method="GET",
+        path="/codebase/search?team_id=team-a&query=status",
+        now=NOW,
+    )
+    with pytest.raises(AccessDeniedError, match="signature"):
+        provider.authenticate(
+            headers,
+            method="GET",
+            path="/codebase/search?team_id=team-a&query=payroll",
             now=NOW,
         )
 

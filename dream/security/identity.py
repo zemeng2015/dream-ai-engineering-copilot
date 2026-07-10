@@ -24,7 +24,8 @@ class SignedProxyIdentityProvider:
 
     The API never trusts plain client-supplied identity headers. Private mode
     requires an HMAC secret supplied by the deployment secret manager, a short
-    replay window, and an optional key id for rotation.
+    replay window, and an optional key id for rotation. Signatures bind the
+    method and exact raw request target, including its query string.
     """
 
     def __init__(
