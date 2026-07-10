@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from dream.api.app import create_app
+from dream.api.routes import router
 from dream.security.identity import SignedProxyIdentityProvider
 
 SECRET = "private-api-test-secret-with-at-least-thirty-two-bytes"
@@ -133,9 +134,7 @@ def test_private_requirement_case_is_acl_isolated(monkeypatch, tmp_path: Path) -
 
 
 def test_private_route_surface_is_explicitly_allowlisted() -> None:
-    routes = {
-        route.path: route.endpoint for route in create_app().routes if hasattr(route, "endpoint")
-    }
+    routes = {route.path: route.endpoint for route in router.routes if hasattr(route, "endpoint")}
 
     for path in [
         "/review/pr",
