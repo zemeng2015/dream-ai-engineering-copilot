@@ -316,8 +316,8 @@ curl -X POST http://localhost:8000/memory/eval \
 
 前端：
 
-- Angular 19
-- TypeScript 5.7
+- Angular 21
+- TypeScript 5.9
 - RxJS
 - SCSS design tokens
 - Karma/Jasmine

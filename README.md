@@ -427,7 +427,7 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Allo
 
 ## Angular Frontend
 
-The frontend lives in `frontend/` and uses Angular 19 standalone components,
+The frontend lives in `frontend/` and uses Angular 21 standalone components,
 routing, SCSS design tokens, typed reactive forms, and live FastAPI data. It is
 designed as a large-enterprise finance engineering workbench: deep navy
 navigation, white and pale blue-gray work surfaces, teal/cyan action accents,
@@ -545,6 +545,8 @@ For the latest UI simplification pass and product planning context, start here:
 - `docs/pilot-security-foundation.md` - signed identity boundary, source ACL
   propagation, fail-closed private routes, verified negative cases, and remaining
   approval/revocation gaps.
+- `docs/frontend-dependency-security.md` - Angular 21 migration, zero-audit
+  dependency baseline, build-system change, CI gates, and operating rules.
 - `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
   one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
 - `docs/leadership-product-readiness-audit.md` - requirement-by-requirement

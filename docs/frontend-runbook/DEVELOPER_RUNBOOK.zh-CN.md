@@ -22,7 +22,7 @@
 
 ## 开发者总览
 
-- 前端框架：Angular 19 standalone components + Angular Router。
+- 前端框架：Angular 21 standalone components + Angular Router。
 - 路由定义：`frontend/src/app/app.routes.ts`。
 - 全局 shell：`frontend/src/app/app.component.html` / `app.component.ts`。
 - 主要数据源：`frontend/src/app/core/mock-dream.service.ts`。

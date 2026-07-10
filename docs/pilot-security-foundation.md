@@ -59,8 +59,12 @@ X-Request-Id
 
 Optional headers are `X-DREAM-Group-Ids` and `X-DREAM-Identity-Key-Id`.
 Wildcard teams are forbidden. The signature is bound to request id, method, and
-path, so it cannot be replayed against another route. The default replay window
-is 60 seconds and can only be configured between 10 and 300 seconds.
+the exact raw request target (path plus query string), so it cannot be replayed
+against another target. The default replay window is 60 seconds and can only be
+configured between 10 and 300 seconds.
+
+Private Requirement Case answer and waiver audit actors are derived from the
+verified principal. Client-supplied actor labels cannot replace that identity.
 
 Deployment configuration must come from the approved secret manager:
 
@@ -137,19 +141,17 @@ This foundation does not yet prove:
   export, incident response, data residency, or provider approval; or
 - Security/Data/source-owner approval of the exact Pilot data flow.
 
-### Frontend Dependency Blocker
+### Frontend Dependency Remediation
 
-The 2026-07-10 clean install audit reports 7 production dependency findings
-(6 high, 1 moderate) in the Angular 19.2.25 runtime family and 28 total findings
-when build/test dependencies are included. npm currently offers remediation only
-through an Angular 21 major upgrade. The current SPA does not configure Angular
-SSR, hydration, `HttpTransferCache`, or direct `formatDate` usage, which limits
-some listed exploit paths but does not close the dependency gate.
+The 2026-07-10 security audit initially found 7 production findings and 28 total
+findings in the Angular 19 dependency tree. The isolated Angular upgrade slice
+now uses Angular 21 and `@angular/build`; both production and full npm audits
+report zero vulnerabilities, the production build passes, and all 23
+ChromeHeadless tests pass. See
+[Frontend Dependency Security Baseline](frontend-dependency-security.md).
 
-Do not run `npm audit fix --force` on the presentation branch. Perform the
-Angular 21 migration as a separate reviewed product slice, rebuild/test the
-exact bundle, rerun production and full audits, and obtain the normal enterprise
-dependency approval or a time-bounded exception before a Pilot deployment.
+Repository remediation does not replace organization approval of the exact
+Node/Angular/browser runtime and dependency policy before Pilot deployment.
 
 `source_acl_version`, derived lineage, and the core revocation ledger enforce
 fail-closed invalidation once a version is revoked. A connector must still feed

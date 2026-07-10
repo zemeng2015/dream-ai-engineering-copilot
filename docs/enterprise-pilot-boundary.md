@@ -51,7 +51,7 @@ repository.
 | Storage | Encrypted private storage, backup, retention, deletion | Local JSON/SQLite artifacts |
 | Audit | Named actor, source use, provider/model, decision and export | Local structured audit; export/admin controls pending |
 | Incident response | Owner, disable switch, investigation and deletion procedure | Pilot process required |
-| Dependency security | Approved supported runtime and remediated/excepted dependency findings | Angular 19 audit currently reports unresolved production findings; separate major upgrade required |
+| Dependency security | Approved supported runtime and remediated/excepted dependency findings | Angular 21 repository baseline passes production/full npm audits; organization runtime approval pending |
 
 Any missing control above is a go-live blocker for real organization data unless
 the security owner records an explicit, time-bounded exception.

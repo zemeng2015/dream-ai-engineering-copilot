@@ -33,6 +33,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | Cost evidence gate | Exact provider/model pricing manifest plus input/output token proof | Pricing manifest tests |
 | External writes | None in the leadership scenario | Product boundary and implementation |
 | Pilot security foundation | Signed proxy identity, source ACL model/propagation, fail-closed private routes, derived artifact ACL | Security policy, API, retrieval and no-leak tests |
+| Frontend dependency baseline | Angular 21, TypeScript 5.9, `@angular/build`, zero production/full npm audit | Lockfile, build, ChromeHeadless and CI gates |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -78,7 +79,7 @@ The public core does not currently prove:
 - production secrets management, storage hardening, backup, or retention;
 - organization-approved data residency and network egress controls;
 - production-scale availability, latency, cost, or support SLOs;
-- a remediated and organization-approved frontend dependency baseline;
+- organization approval of the remediated frontend dependency/runtime baseline;
 - a feedback-learning policy driven by Human Rating;
 - production ROI; or
 - safe automatic Jira/PR creation, comments, approval, merge, or deployment.

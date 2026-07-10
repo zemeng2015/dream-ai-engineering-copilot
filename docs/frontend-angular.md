@@ -2,7 +2,7 @@
 
 # Angular Frontend
 
-DREAM includes an Angular 19 frontend under `frontend/`. The current UI is a
+DREAM includes an Angular 21 frontend under `frontend/`. The current UI is a
 live FastAPI workbench, not a mock-only route gallery.
 
 ## Current Routes
