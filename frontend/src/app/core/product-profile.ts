@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { DOCUMENT } from '@angular/common';
-import { InjectionToken, inject } from '@angular/core';
+import { InjectionToken, inject, DOCUMENT } from '@angular/core';
 
 export type DreamProductProfileId = 'leadership' | 'workbench' | 'hackathon';
 
