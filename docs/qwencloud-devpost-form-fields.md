@@ -82,8 +82,9 @@ DREAM is a source-backed MemoryAgent for engineering workflows. It unifies:
 - Audit/evaluation/rating feedback to improve future outputs
 - Qwen Cloud generation via OpenAI-compatible endpoint
 
-The workflow is traceable and production-minded: every generated answer is tied to
-retrieved evidence and can be audited later.
+The workflow is traceable and production-minded: generation records include
+retrieval and audit metadata, and outputs with retrieved context expose their
+source paths for later review.
 
 ### Technical stack
 
@@ -91,7 +92,26 @@ retrieved evidence and can be audited later.
 - OpenAI-compatible Qwen Cloud adapter (`qwen-cloud`)
 - Angular workbench and engineering workflow APIs
 - SQLite-based audit and eval ledgers
-- Docker + Alibaba Cloud Function Compute custom container deployment
+- Docker-tested + Alibaba Cloud Function Compute custom runtime deployment
+
+### Measured Qwen + DREAM evidence
+
+In a real Qwen Cloud paired run over seven synthetic engineering cases, the
+baseline and DREAM conditions used the same `qwen3.7-plus` model, temperature
+`0`, output contract, and deterministic reference scorer; the changed variable
+was organization evidence absent versus DREAM-retrieved evidence. The mean
+deterministic reference score increased from `25.3` to `48.7` (`+23.4`), and
+DREAM scored higher in `7/7` paired cases (exact paired permutation
+`p=0.0156`). Unsupported references were `0` for the baseline and `0` for
+DREAM.
+
+This is a small synthetic benchmark, not a production-effectiveness claim.
+Exact retrieval Recall@12 was `35.6%`, which remains a bottleneck, and one
+deterministic completion per arm does not estimate sampling variance. Because
+latency/token sidecars are incomplete, no latency or token comparison is made.
+The machine-readable summary is
+`docs/assets/qwen-memory-ab-benchmark-summary.json`; the public methodology and
+per-case table are in `docs/qwen-memory-ab-benchmark.md`.
 
 ### Why this is Track 1
 
@@ -135,11 +155,15 @@ The video covers:
 
 ## Add these links in description or resources section
 
+- Live demo: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/`
+- Judge flow: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo`
+- Runtime proof: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/health`
+- Showcase: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/qwencloud/showcase`
 - Source code: (public GitHub repository)
 - License: Apache-2.0
 - Architecture diagram: `docs/assets/qwencloud-architecture.svg`
 - Architecture PNG upload asset: `docs/assets/qwencloud-architecture.png`
-- Deployment proof: `deploy/alibaba/serverless-devs.yaml`
+- Deployment proof: `deploy/alibaba/serverless-devs-runtime.yaml`
 - Qwen mode entry: `examples/config/dream.qwen.yaml`
 - Optional blog/social draft: `docs/qwencloud-build-journey-post.md`
 
@@ -155,8 +179,9 @@ hackathon.
 - Project start date: `06-21-26`
 - If started/existed before May 26: `Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period.`
 - Track: `Track 1: MemoryAgent`
+- Project link 1: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/`
 - Code repository URL: `https://github.com/zemeng2015/dream-ai-engineering-copilot`
-- Alibaba Cloud deployment proof code file: `https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs.yaml`
+- Alibaba Cloud deployment proof code file: `https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs-runtime.yaml`
 - Architecture diagram upload: `docs/assets/qwencloud-architecture.png`
 - Alibaba deployment screenshot upload: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
   generated with `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "<deployed-backend-url>"`
@@ -204,17 +229,16 @@ change them after a form refresh.
   Vimeo, Facebook Video, or Youku. YouTube or Vimeo are the least ambiguous
   final choices because the public overview and Official Rules list slightly
   different accepted platform sets.
-- `software_urls_attributes_0_url` should be the deployed Alibaba Function
-  Compute backend URL, not the source repository. The repository URL belongs in
-  the required additional-info repository field.
+- `software_urls_attributes_0_url` is ready:
+  `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/`. The repository
+  URL belongs in the required additional-info repository field.
 - `submission_field_file_27544_add_files` needs
   `docs/assets/qwencloud-architecture.png`.
-- `submission_field_file_27832_add_files` needs
-  `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, generated
-  from the real Alibaba Cloud backend.
-- The separate Alibaba backend recording must also exist at
-  `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4` and be available
-  for the proof bundle.
+- `submission_field_file_27832_add_files` is ready at
+  `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`, generated from
+  the real Alibaba Cloud backend.
+- The separate Alibaba backend recording is ready at
+  `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4` for the proof bundle.
 - Browser file upload automation requires Chrome extension file access. If a
   file chooser reports `Not allowed`, open `chrome://extensions`, click Details
   under the Codex extension, and enable `Allow access to file URLs`.

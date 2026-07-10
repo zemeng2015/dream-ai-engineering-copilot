@@ -49,8 +49,8 @@ try {
     $proof.health = $health
     Assert-Equals -Actual $health.llm_provider -Expected "qwen-cloud" -Field "llm_provider"
     Assert-Equals -Actual $health.track -Expected "Track 1: MemoryAgent" -Field "track"
-    if (-not ($health.proof_file -like "deploy/alibaba/serverless-devs.yaml")) {
-        throw "proof_file mismatch: expected deploy/alibaba/serverless-devs.yaml, got $($health.proof_file)."
+    if (-not ($health.proof_file -like "deploy/alibaba/serverless-devs-runtime.yaml")) {
+        throw "proof_file mismatch: expected deploy/alibaba/serverless-devs-runtime.yaml, got $($health.proof_file)."
     }
     $proof.checks.health = "pass"
     Write-Host "Health proof passed."

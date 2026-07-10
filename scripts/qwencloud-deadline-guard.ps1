@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
-    [string]$DeadlineUtc = "2026-07-09T21:00:00Z",
+    [string]$DeadlineUtc = "2026-07-20T21:00:00Z",
     [Parameter(Mandatory = $false)]
     [string]$NowUtc = "",
     [Parameter(Mandatory = $false)]
@@ -61,7 +61,7 @@ else {
     "open"
 }
 
-Add-Check -Name "deadline_utc_configured" -Ok ($deadline.ToString("o") -eq "2026-07-09T21:00:00.0000000+00:00") -Details "deadlineUtc=$($deadline.ToString('o')); expected=2026-07-09T21:00:00Z"
+Add-Check -Name "deadline_utc_configured" -Ok ($deadline.ToString("o") -eq "2026-07-20T21:00:00.0000000+00:00") -Details "deadlineUtc=$($deadline.ToString('o')); expected=2026-07-20T21:00:00Z"
 Add-Check -Name "submission_window_open" -Ok $submissionWindowOpen -Details "nowUtc=$($now.ToString('o')); deadlineUtc=$($deadline.ToString('o')); hoursRemaining=$hoursRemaining"
 Add-Check -Name "deadline_warning_window" -Ok (-not $warningWindow) -Details "urgency=$urgency; warningHours=$WarningHours; hoursRemaining=$hoursRemaining" -Required $false
 
@@ -69,7 +69,7 @@ if (Test-Path -LiteralPath $OfficialRequirementsSnapshotPath) {
     $snapshot = Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw
     Add-Check `
         -Name "official_snapshot_deadline_present" `
-        -Ok (($snapshot -match "July 9, 2026 at 2:00pm PDT") -and ($snapshot -match "2026-07-09T21:00:00Z")) `
+        -Ok (($snapshot -match "July 20, 2026 at 2:00pm PDT") -and ($snapshot -match "2026-07-20T21:00:00Z")) `
         -Details $OfficialRequirementsSnapshotPath
 }
 else {

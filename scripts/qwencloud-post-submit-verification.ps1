@@ -514,7 +514,7 @@ if (Is-HttpUrl $BackendUrl) {
         Add-Check -Name "backend_deployment_target_alibaba" -Ok ([string]$health.deployment_target -match "Alibaba Cloud Function Compute") -Details "deployment_target=$($health.deployment_target)"
         Add-Check -Name "backend_alibaba_region_present" -Ok (-not [string]::IsNullOrWhiteSpace([string]$health.alibaba_cloud_region)) -Details "region=$($health.alibaba_cloud_region)"
         Add-Check -Name "backend_api_key_configured" -Ok ([bool]$health.llm_api_key_configured) -Details "llm_api_key_configured=$($health.llm_api_key_configured)"
-        Add-Check -Name "backend_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details "proof_file=$($health.proof_file)"
+        Add-Check -Name "backend_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml") -Details "proof_file=$($health.proof_file)"
     }
     catch {
         foreach ($name in @(

@@ -45,7 +45,8 @@ class EngineeringMemoryRetriever:
         component: str | None = None,
     ) -> list[ContextEvidence]:
         evidence = []
-        for knowledge_query in self._knowledge_queries(query):
+        for query_index, knowledge_query in enumerate(self._knowledge_queries(query)):
+            query_weight = 1.0 if query_index == 0 else max(0.4, 0.7 - query_index * 0.05)
             evidence.extend(
                 self._search_knowledge(
                     team_id=team_id,
@@ -53,6 +54,7 @@ class EngineeringMemoryRetriever:
                     top_k=top_k,
                     app=app,
                     component=component,
+                    query_weight=query_weight,
                 )
             )
             if app is not None or component is not None:
@@ -63,6 +65,7 @@ class EngineeringMemoryRetriever:
                         top_k=top_k,
                         app=None,
                         component=None,
+                        query_weight=query_weight,
                     )
                 )
         repo_names = [repo_name] if repo_name else self.codebase_repository.list_repo_names(team_id)
@@ -70,15 +73,19 @@ class EngineeringMemoryRetriever:
             if not candidate_repo:
                 continue
             results = []
-            for code_query in self._code_queries(query):
-                results.extend(
-                    self.codebase_retriever.search(
+            for query_index, code_query in enumerate(self._code_queries(query)):
+                query_weight = 1.0 if query_index == 0 else max(
+                    0.4, 0.7 - query_index * 0.05
+                )
+                query_results = self.codebase_retriever.search(
                         team_id=team_id,
                         repo_name=candidate_repo,
                         query=code_query,
                         top_k=top_k,
                     )
-                )
+                for result in query_results:
+                    result.score = int(100 * query_weight + result.score)
+                    results.append(result)
             for result in results:
                 evidence.append(
                     ContextEvidence(
@@ -105,7 +112,7 @@ class EngineeringMemoryRetriever:
         )
         evidence.sort(key=lambda item: (-item.relevance_score, item.source_path, item.title))
         evidence = self._dedupe(evidence)
-        return self._balanced_top_k(evidence, top_k)
+        return self._balanced_top_k(evidence, top_k, query=query)
 
     def _search_graph(
         self,
@@ -137,12 +144,13 @@ class EngineeringMemoryRetriever:
         top_k: int,
         app: str | None,
         component: str | None,
+        query_weight: float,
     ) -> list[ContextEvidence]:
         pack = self.pack_loader.load(team_id)
         pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
-        retrieved = SimpleRetriever(chunks).search(
+        retrieved = SimpleRetriever(chunks).search_scored(
             query,
             team_id=team_id,
             app=app,
@@ -150,7 +158,7 @@ class EngineeringMemoryRetriever:
             top_k=top_k,
         )
         evidence: list[ContextEvidence] = []
-        for chunk in retrieved:
+        for rank, (score, chunk) in enumerate(retrieved):
             evidence.append(
                 ContextEvidence(
                     evidence_id=self._stable_id(f"doc:{chunk.id}:{chunk.source_path}"),
@@ -159,8 +167,11 @@ class EngineeringMemoryRetriever:
                     source_path=chunk.source_path,
                     title=chunk.title,
                     excerpt=" ".join(chunk.content.split())[:500],
-                    relevance_score=10.0,
-                    reason="Knowledge pack chunk matched request keywords.",
+                    relevance_score=100 * query_weight + score - rank * 0.01,
+                    reason=(
+                        "Knowledge pack chunk matched request keywords; rank and original-query "
+                        "priority were preserved."
+                    ),
                 )
             )
         return evidence
@@ -236,10 +247,19 @@ class EngineeringMemoryRetriever:
         cls,
         evidence: list[ContextEvidence],
         top_k: int,
+        *,
+        query: str = "",
     ) -> list[ContextEvidence]:
         if len(evidence) <= top_k:
             return evidence
+        reserved: list[ContextEvidence] = []
+        graph_candidates = [item for item in evidence if item.source_type.startswith("graph_")]
+        if top_k >= 4 and graph_candidates:
+            reserved.append(
+                min(graph_candidates, key=lambda item: cls._candidate_priority(item, query))
+            )
         selected: list[ContextEvidence] = []
+        selection_limit = top_k - len(reserved)
         categories = [
             "incident",
             "historical_jira",
@@ -264,19 +284,23 @@ class EngineeringMemoryRetriever:
             candidates = [
                 item
                 for item in evidence
-                if item not in selected and cls._category(item) == category
+                if item not in selected
+                and item not in reserved
+                and cls._category(item) == category
             ]
-            for item in sorted(candidates, key=cls._status_context_priority):
-                if len(selected) >= top_k:
-                    return selected
+            for item in sorted(
+                candidates, key=lambda candidate: cls._candidate_priority(candidate, query)
+            ):
+                if len(selected) >= selection_limit:
+                    return [*selected, *reserved]
                 selected.append(item)
                 break
         for item in evidence:
-            if len(selected) >= top_k:
+            if len(selected) >= selection_limit:
                 break
-            if item not in selected:
+            if item not in selected and item not in reserved:
                 selected.append(item)
-        return selected
+        return [*selected, *reserved]
 
     @staticmethod
     def _category(item: ContextEvidence) -> str:
@@ -308,8 +332,24 @@ class EngineeringMemoryRetriever:
         return item.source_type
 
     @staticmethod
-    def _status_context_priority(item: ContextEvidence) -> tuple[int, str, str]:
+    def _candidate_priority(
+        item: ContextEvidence,
+        query: str,
+    ) -> tuple[float, str, str]:
         text = f"{item.source_path} {item.title} {item.excerpt}".lower()
+        normalized_query = query.lower()
+        status_focus = any(
+            phrase in normalized_query
+            for phrase in [
+                "async status",
+                "job progress",
+                "live status",
+                "status tracking",
+                "still running",
+                "stuck running",
+                "task progress",
+            ]
+        )
         preferred_terms = [
             "inc-103",
             "dfp-109",
@@ -325,5 +365,7 @@ class EngineeringMemoryRetriever:
             "status transition",
             "polling",
         ]
-        priority = 0 if any(term in text for term in preferred_terms) else 1
-        return priority, item.source_path, item.title
+        focus_bonus = (
+            30.0 if status_focus and any(term in text for term in preferred_terms) else 0.0
+        )
+        return -(item.relevance_score + focus_bonus), item.source_path, item.title

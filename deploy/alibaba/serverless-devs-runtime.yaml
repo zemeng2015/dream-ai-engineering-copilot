@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+
+edition: 3.0.0
+name: dream-qwencloud-memoryagent-runtime
+access: default
+
+vars:
+  region: ${env(ALIBABA_CLOUD_RUNTIME_REGION, "ap-southeast-1")}
+  functionName: dream-api-runtime
+
+resources:
+  dreamApi:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      description: DREAM Track 1 MemoryAgent API backed by Qwen Cloud, deployed in Singapore as an FC Python 3.12 custom runtime code package.
+      runtime: custom.debian11
+      handler: not-used
+      code: ${env(DREAM_FC_CODE_DIR, "../../artifacts/qwencloud-fc-code")}
+      timeout: 120
+      memorySize: 2048
+      cpu: 1
+      diskSize: 512
+      internetAccess: true
+      instanceConcurrency: 4
+      concurrencyConfig:
+        reservedConcurrency: 1
+      customRuntimeConfig:
+        command:
+          - /bin/bash
+        args:
+          - /code/bootstrap
+        port: 9000
+        healthCheckConfig:
+          httpGetUrl: /health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 6
+          successThreshold: 1
+      environmentVariables:
+        PYTHON_BIN: /var/fc/lang/python3.12/bin/python3
+        DREAM_CONFIG_FILE: /code/examples/config/dream.qwen.yaml
+        DREAM_ARTIFACT_ROOT: /tmp/dream-artifacts
+        DREAM_AUDIT_DB_PATH: /tmp/dream.sqlite
+        DASHSCOPE_API_KEY: ${env(DASHSCOPE_API_KEY)}
+        QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+        QWEN_MODEL: ${env(QWEN_MODEL, "qwen3.7-plus")}
+        QWEN_ENABLE_THINKING: "false"
+        QWEN_MAX_COMPLETION_TOKENS: "1200"
+        QWEN_TIMEOUT_SECONDS: "45"
+        QWEN_MAX_PROMPT_CHARS: "24000"
+        DREAM_PUBLIC_QWEN_REQUESTS_PER_MINUTE: "6"
+        ALIBABA_CLOUD_REGION: ${vars.region}
+        ALIBABA_CLOUD_SERVICE: Function Compute custom runtime
+        ALIBABA_CLOUD_PROOF_FILE: deploy/alibaba/serverless-devs-runtime.yaml
+      triggers:
+        - triggerName: dream-http
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - OPTIONS

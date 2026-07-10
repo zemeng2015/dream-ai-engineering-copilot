@@ -187,7 +187,10 @@ function Format-PathOrMissing {
     return $Path
 }
 
-$release = Read-LatestJson -Filter "alibaba-release-*.json"
+$release = Read-LatestJson -Filter "alibaba-runtime-release-*.json"
+if (-not $release.data) {
+    $release = Read-LatestJson -Filter "alibaba-release-*.json"
+}
 $showcase = Read-LatestJson -Filter "showcase-*.json"
 $deployPreflight = Read-LatestJson -Filter "deploy-preflight-*.json"
 $readiness = Read-LatestJson -Filter "final-readiness-*.json"

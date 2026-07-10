@@ -64,3 +64,15 @@ def test_demo_video_captions_are_in_publication_and_bundle_flow() -> None:
     assert "demo_video_transcript" in final_bundle
     assert "demo_video_captions_srt" in devpost_handoff
     assert "docs/qwencloud-demo-video-captions.srt" in handoff_doc
+
+
+def test_demo_video_renderer_uses_timed_tts_narration() -> None:
+    renderer = (ROOT / "scripts" / "qwencloud-render-demo-video.ps1").read_text(
+        encoding="utf-8-sig"
+    )
+
+    assert "NarrationCaptionPath" in renderer
+    assert "Add-TtsNarration" in renderer
+    assert "System.Speech" in renderer
+    assert "narrationGenerated" in renderer
+    assert "audioCodec" in renderer

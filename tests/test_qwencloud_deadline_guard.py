@@ -49,7 +49,7 @@ def _run_deadline_guard(tmp_path: Path, now_utc: str, allow_draft: bool = False)
 
 
 def test_deadline_guard_is_ready_before_submission_deadline(tmp_path) -> None:
-    result, report = _run_deadline_guard(tmp_path, "2026-07-08T20:00:00Z")
+    result, report = _run_deadline_guard(tmp_path, "2026-07-19T20:00:00Z")
 
     assert result.returncode == 0, result.stdout + result.stderr
     checks = {item["name"]: item for item in report["checks"]}
@@ -65,7 +65,7 @@ def test_deadline_guard_is_ready_before_submission_deadline(tmp_path) -> None:
 def test_deadline_guard_reports_draft_after_submission_deadline(tmp_path) -> None:
     result, report = _run_deadline_guard(
         tmp_path,
-        "2026-07-09T21:00:01Z",
+        "2026-07-20T21:00:01Z",
         allow_draft=True,
     )
 

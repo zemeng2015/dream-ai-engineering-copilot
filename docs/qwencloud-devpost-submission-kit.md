@@ -20,7 +20,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `docs/qwencloud-judging-evidence-matrix.md`
   - `docs/qwencloud-testing-and-rights-notes.md`
   - `docs/assets/qwencloud-architecture.png`
-  - `scripts/qwencloud-alibaba-release.ps1`
+  - `scripts/qwencloud-alibaba-runtime-release.ps1`
   - `scripts/qwencloud-run-local-proof.ps1`
   - `scripts/qwencloud-run-local-proof.sh`
   - `scripts/qwencloud_seed_demo_artifact.py`
@@ -42,7 +42,7 @@ Use this checklist to finish Devpost submission end-to-end.
   - `scripts/qwencloud-frontend-build-proof.ps1`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
   - `docs/qwencloud-build-journey-post.md`
-  - `deploy/alibaba/serverless-devs.yaml`
+  - `deploy/alibaba/serverless-devs-runtime.yaml`
   - `deploy/alibaba/README.md`
 
 ## 2) Track and Technical Promise
@@ -148,7 +148,7 @@ Or use the full release orchestrator after credentials, registry login, and
 video URL are ready:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 Required proof artifacts:
@@ -264,7 +264,7 @@ Run helper scripts as needed:
 - `scripts/qwencloud-hackathon-proof.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 - `scripts/qwencloud-hackathon-submission-packet.ps1`
-- `scripts/qwencloud-alibaba-release.ps1`
+- `scripts/qwencloud-alibaba-runtime-release.ps1`
 - `scripts/qwencloud-run-local-proof.ps1`
 - `scripts/qwencloud-run-local-proof.sh`
 - `scripts/qwencloud-capture-alibaba-proof.ps1`

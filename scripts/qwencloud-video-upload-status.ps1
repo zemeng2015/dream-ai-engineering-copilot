@@ -39,6 +39,7 @@ function Get-VideoMetadata([string]$Path) {
     $probeJson = & ffprobe -v error -show_entries format=duration,size,format_name -show_streams -of json $Path
     $probe = $probeJson | ConvertFrom-Json
     $stream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
+    $audioStream = @($probe.streams | Where-Object { $_.codec_type -eq "audio" } | Select-Object -First 1)
     return [pscustomobject]@{
         duration = [double]$probe.format.duration
         size = [int64]$probe.format.size
@@ -46,6 +47,7 @@ function Get-VideoMetadata([string]$Path) {
         width = if ($stream) { [int]$stream.width } else { 0 }
         height = if ($stream) { [int]$stream.height } else { 0 }
         codec = if ($stream) { [string]$stream.codec_name } else { "" }
+        audioCodec = if ($audioStream) { [string]$audioStream.codec_name } else { "" }
     }
 }
 
@@ -96,6 +98,7 @@ else {
         Add-Check -Name "local_demo_video_under_3_minutes" -Ok ($metadata.duration -gt 0 -and $metadata.duration -lt 180) -Details "duration=$($metadata.duration); size=$($metadata.size); resolution=$($metadata.width)x$($metadata.height); codec=$($metadata.codec)"
         Add-Check -Name "local_demo_video_720p" -Ok ($metadata.width -ge 1280 -and $metadata.height -ge 720) -Details "resolution=$($metadata.width)x$($metadata.height)"
         Add-Check -Name "local_demo_video_h264" -Ok ($metadata.codec -eq "h264") -Details "codec=$($metadata.codec)"
+        Add-Check -Name "local_demo_video_audio" -Ok (-not [string]::IsNullOrWhiteSpace($metadata.audioCodec)) -Details "audioCodec=$($metadata.audioCodec)"
     }
     else {
         Add-Check -Name "local_demo_video_metadata" -Ok $false -Details "ffprobe unavailable or video missing"

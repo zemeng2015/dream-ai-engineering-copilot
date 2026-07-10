@@ -18,11 +18,11 @@ param(
         "docs/qwencloud-publish-playbook.md",
         "docs/qwencloud-live-checklist.md",
         "docs/qwencloud-testing-and-rights-notes.md",
-        "deploy/alibaba/serverless-devs.yaml",
+        "deploy/alibaba/serverless-devs-runtime.yaml",
         "deploy/alibaba/README.md",
         "scripts/qwencloud-cloud-credentials-handoff.ps1",
         "scripts/qwencloud-devpost-handoff.ps1",
-        "scripts/qwencloud-alibaba-release.ps1",
+        "scripts/qwencloud-alibaba-runtime-release.ps1",
         "scripts/qwencloud-capture-alibaba-proof.ps1",
         "scripts/qwencloud-deploy-preflight.ps1",
         "scripts/qwencloud-finalize-after-urls.ps1",
@@ -158,7 +158,7 @@ try {
     Add-Check -Name "Health endpoint reachable" -Pass $true -Details "status=$($health.status)"
     Add-Check -Name "Track is MemoryAgent" -Pass ($health.track -eq "Track 1: MemoryAgent") -Details $health.track
     Add-Check -Name "llm provider is qwen-cloud" -Pass ($health.llm_provider -eq "qwen-cloud") -Details $health.llm_provider
-    Add-Check -Name "Proof file declared" -Pass ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details $health.proof_file
+    Add-Check -Name "Proof file declared" -Pass ($health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml") -Details $health.proof_file
 } catch {
     Add-Check -Name "Health endpoint reachable" -Pass $false -Details $_.Exception.Message
     Add-Check -Name "Track is MemoryAgent" -Pass $false -Details "Skipped"

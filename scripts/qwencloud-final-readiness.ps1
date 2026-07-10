@@ -289,6 +289,7 @@ function Invoke-ReleaseConfigAudit {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-release-config-audit.ps1",
         "-OutputDir", $OutputDir,
+        "-UseCodePackage",
         "-AllowDraft"
     )
     if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
@@ -639,9 +640,13 @@ Add-Check -Name "latest_deploy_preflight_build_smoke" -Ok $deployPreflight.ok -D
 $sAccess = Test-ServerlessDevsDefaultAccess
 Add-Check -Name "serverless_devs_default_access" -Ok $sAccess.ok -Details $sAccess.details
 
-foreach ($envName in @("DASHSCOPE_API_KEY", "ALIBABA_CLOUD_REGION", "ALIBABA_CLOUD_CONTAINER_IMAGE")) {
-    Add-Check -Name "env.$envName" -Ok (Has-Env $envName) -Details $(if (Has-Env $envName) { "set" } else { "missing" })
+Add-Check -Name "env.DASHSCOPE_API_KEY" -Ok (Has-Env "DASHSCOPE_API_KEY") -Details $(if (Has-Env "DASHSCOPE_API_KEY") { "set" } else { "missing" })
+$effectiveRuntimeRegion = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION")
+if ([string]::IsNullOrWhiteSpace($effectiveRuntimeRegion)) {
+    $effectiveRuntimeRegion = "ap-southeast-1"
 }
+Add-Check -Name "env.ALIBABA_CLOUD_RUNTIME_REGION.effective" -Ok ($effectiveRuntimeRegion -match "^[a-z0-9-]+$") -Details "effective=$effectiveRuntimeRegion"
+Add-Check -Name "env.ALIBABA_CLOUD_REGION" -Ok (Has-Env "ALIBABA_CLOUD_REGION") -Details $(if (Has-Env "ALIBABA_CLOUD_REGION") { "set" } else { "optional; runtime region defaults to ap-southeast-1" }) -Required $false
 foreach ($envName in @("QWEN_BASE_URL", "QWEN_MODEL")) {
     Add-Check -Name "env.$envName" -Ok (Has-Env $envName) -Details $(if (Has-Env $envName) { "set" } else { "optional default available" }) -Required $false
 }
@@ -665,11 +670,12 @@ foreach ($path in @(
     "scripts/qwencloud-devpost-video-url.ps1",
     "scripts/qwencloud-video-publication-handoff.ps1",
     "scripts/qwencloud-video-upload-status.ps1",
-    "deploy/alibaba/serverless-devs.yaml",
+    "deploy/alibaba/serverless-devs-runtime.yaml",
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
     "scripts/qwencloud-github-secrets-handoff.ps1",
     "scripts/qwencloud-devpost-handoff.ps1",
-    "scripts/qwencloud-alibaba-release.ps1",
+    "scripts/qwencloud-build-fc-code-package.ps1",
+    "scripts/qwencloud-alibaba-runtime-release.ps1",
     "scripts/qwencloud-finalize-after-urls.ps1",
     "scripts/qwencloud-final-sprint.ps1",
     "scripts/qwencloud-final-action-board.ps1",
@@ -790,7 +796,7 @@ $lines += @(
     "## Next Command",
     "",
     '```powershell',
-    'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
+    'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
     '```'
 )
 

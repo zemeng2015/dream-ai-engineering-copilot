@@ -17,6 +17,10 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "function Invoke-ReleaseConfigAudit" in final_bundle
     assert "releaseSummaryPackaging" in final_bundle
     assert "not_bundled_generate_after_zip_hash" in final_bundle
+    assert "function Protect-ManifestText" in final_bundle
+    assert "function Protect-BundledTextFile" in final_bundle
+    assert "Get-PortableManifestPath -Path $dest" in final_bundle
+    assert "portableRedactionApplied" in final_bundle
     assert '"scripts/qwencloud-final-action-board.ps1"' in final_bundle
     assert '"scripts/qwencloud-final-external-handoff.ps1"' in final_bundle
     assert '"-RepoName", $RepoName' in final_bundle
@@ -43,10 +47,8 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
         'Add-Item -Name "final_external_handoff_json" -Path $externalHandoff.json'
         in final_bundle
     )
-    assert (
-        'Add-Item -Name "final_external_handoff_zip" -Path $externalHandoff.zip'
-        in final_bundle
-    )
+    assert 'Add-Item -Name "final_external_handoff_zip"' not in final_bundle
+    assert "latest_seeded_demo_artifact_zip" not in final_bundle
     assert "latest_final_action_board_markdown" not in final_bundle
     assert "latest_final_action_board_json" not in final_bundle
     assert "latest_final_external_handoff_markdown" not in final_bundle
@@ -63,7 +65,4 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     )
     assert final_bundle.index("$externalHandoff = Invoke-ExternalHandoff") < final_bundle.index(
         'Add-Item -Name "final_action_board_json"'
-    )
-    assert final_bundle.index("$externalHandoff = Invoke-ExternalHandoff") < final_bundle.index(
-        'Add-Item -Name "final_external_handoff_zip"'
     )

@@ -25,7 +25,7 @@ def test_bash_local_proof_script_contains_judge_smoke_contract() -> None:
     assert "/health" in text
     assert "Track 1: MemoryAgent" in text
     assert "qwen-cloud" in text
-    assert "deploy/alibaba/serverless-devs.yaml" in text
+    assert "deploy/alibaba/serverless-devs-runtime.yaml" in text
     assert "tests/test_api_health.py tests/test_qwen_cloud_provider.py" in text
     assert "local-proof-bash-" in text
     assert "--skip-draft" in text

@@ -14,7 +14,7 @@
 - Alibaba proof screenshot: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
 - Alibaba proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`
 - Source architecture SVG: `docs/assets/qwencloud-architecture.svg`
-- Demo proof file: `deploy/alibaba/serverless-devs.yaml`
+- Demo proof file: `deploy/alibaba/serverless-devs-runtime.yaml`
 - Blog/social draft: `docs/qwencloud-build-journey-post.md`
 
 ## Command bundle
@@ -22,7 +22,7 @@
 ```powershell
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -38,10 +38,10 @@ scripts/qwencloud-export-architecture-png.ps1
 scripts/qwencloud-export-video-thumbnail.ps1
 Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
-scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage -AllowDraft
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
-scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "https://<function-compute-endpoint>"
 scripts/qwencloud-validate-alibaba-proof.ps1 -BackendUrl "https://<function-compute-endpoint>"
@@ -91,15 +91,16 @@ writes `local-proof-bash-*.json` plus `local-proof-bash-*.md` reports.
 Use `-AllowDirty` only while developing local changes; omit it for the final
 pre-submit proof so the audit enforces a clean pushed worktree.
 
-`qwencloud-deploy-preflight.ps1` checks Alibaba deploy readiness, Docker build,
-and local container smoke before the image is pushed to Container Registry. Use
-`-AllowDraft` before real cloud credentials are present so the report records
-local build/smoke evidence while keeping missing cloud inputs visible.
+`qwencloud-release-config-audit.ps1 -UseCodePackage` checks the ACR-free
+Function Compute runtime configuration. `qwencloud-build-fc-code-package.ps1`
+then creates the Linux code package used by the real release. The older Docker
+container preflight remains available only for the ACR fallback path.
 
-`qwencloud-alibaba-release.ps1` orchestrates the release path: preflight,
-Docker tag/push, Serverless Devs deploy, backend verification, Alibaba proof
+`qwencloud-alibaba-runtime-release.ps1` orchestrates the primary release path:
+code packaging, Serverless Devs deploy, backend verification, Alibaba proof
 screenshot, proof recording, final Devpost packet generation, and Devpost
-materials audit.
+materials audit. It uploads code directly to Function Compute and does not
+require Alibaba Container Registry.
 
 `qwencloud-capture-alibaba-proof.ps1` verifies the deployed `/health` response
 and renders the Devpost-required Alibaba deployment screenshot.
@@ -127,9 +128,8 @@ release config consistency, Alibaba proof integrity, artifact readiness, and
 final Devpost packet readiness.
 
 `qwencloud-release-config-audit.ps1` checks local runtime env presence, Alibaba
-region and container image format, GitHub workflow secret mappings, the GitHub
-secrets handoff script, and the checked-in env template without writing secret
-values into reports.
+runtime region, code-package template, the GitHub secrets handoff script, and
+the checked-in env template without writing secret values into reports.
 
 `qwencloud-final-upload-bundle.ps1` creates a local zip containing upload
 assets, the generated Devpost packet, and a manifest so the final submission
@@ -209,7 +209,7 @@ troubleshooting.
 10. Run the Devpost materials audit and confirm `READY`
 11. Run final readiness and confirm `READY`
 12. Create the final upload bundle and open the generated `devpost-handoff-*.html`
-13. Add deployment proof section with `deploy/alibaba/serverless-devs.yaml` and `deploy/alibaba/README.md`
+13. Add deployment proof section with `deploy/alibaba/serverless-devs-runtime.yaml` and `deploy/alibaba/README.md`
 14. Add optional build journey link if published
 15. Submit and immediately open public project page to confirm links are visible
 16. Run `scripts/qwencloud-post-submit-verification.ps1` with the public Devpost

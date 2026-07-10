@@ -8,8 +8,6 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$Region = "",
     [Parameter(Mandatory = $false)]
-    [string]$ContainerImage = "",
-    [Parameter(Mandatory = $false)]
     [string]$EnvFile = "",
     [switch]$AllowDraft
 )
@@ -69,41 +67,20 @@ function Test-ServerlessDevsDefaultAccess {
     }
 }
 
-function Get-RegistryHost([string]$Image) {
-    if ([string]::IsNullOrWhiteSpace($Image)) {
-        return "<registry-host>"
-    }
-    $first = ($Image -split "/")[0]
-    if ($first -and $first -match "\.") {
-        return $first
-    }
-    return "<registry-host>"
-}
-
 if ([string]::IsNullOrWhiteSpace($Region)) {
-    $Region = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION")
-}
-if ([string]::IsNullOrWhiteSpace($ContainerImage)) {
-    $ContainerImage = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_CONTAINER_IMAGE")
+    $Region = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION")
 }
 if ([string]::IsNullOrWhiteSpace($Region)) {
     $Region = "ap-southeast-1"
 }
-if ([string]::IsNullOrWhiteSpace($ContainerImage)) {
-    $ContainerImage = "<registry>/<namespace>/dream-qwencloud-memoryagent:latest"
-}
-
-$registryHost = Get-RegistryHost -Image $ContainerImage
 $sAccess = Test-ServerlessDevsDefaultAccess
 $envChecks = @(
     Env-State -Name "ALIBABA_CLOUD_ACCESS_KEY_ID" -Required (-not $sAccess.ok)
     Env-State -Name "ALIBABA_CLOUD_ACCESS_KEY_SECRET" -Required (-not $sAccess.ok)
     Env-State -Name "ALIBABA_CLOUD_ACCOUNT_ID" -Required $false
     Env-State -Name "DASHSCOPE_API_KEY"
-    Env-State -Name "ALIBABA_CLOUD_REGION"
-    Env-State -Name "ALIBABA_CLOUD_CONTAINER_IMAGE"
-    Env-State -Name "ALIBABA_CONTAINER_REGISTRY_USERNAME"
-    Env-State -Name "ALIBABA_CONTAINER_REGISTRY_PASSWORD"
+    Env-State -Name "ALIBABA_CLOUD_RUNTIME_REGION" -Required $false
+    Env-State -Name "ALIBABA_CLOUD_REGION" -Required $false
     Env-State -Name "QWEN_BASE_URL" -Required $false
     Env-State -Name "QWEN_MODEL" -Required $false
 )
@@ -133,19 +110,17 @@ $setupCommands = @(
     '$env:ALIBABA_CLOUD_ACCESS_KEY_SECRET="<alibaba-access-key-secret>"',
     '$env:ALIBABA_CLOUD_ACCOUNT_ID="<optional-account-id>"',
     '$env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"',
+    "`$env:ALIBABA_CLOUD_RUNTIME_REGION=`"$Region`"",
     "`$env:ALIBABA_CLOUD_REGION=`"$Region`"",
-    "`$env:ALIBABA_CLOUD_CONTAINER_IMAGE=`"$ContainerImage`"",
-    '$env:ALIBABA_CONTAINER_REGISTRY_USERNAME="<registry-username>"',
-    '$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD="<registry-password>"',
-    '$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"',
+    '$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"',
     '$env:QWEN_MODEL="qwen3.7-plus"',
     '$sConfigArgs = @("config", "add", "-a", "default", "--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID, "--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET, "--force")',
     'if (-not [string]::IsNullOrWhiteSpace($env:ALIBABA_CLOUD_ACCOUNT_ID) -and $env:ALIBABA_CLOUD_ACCOUNT_ID -notmatch "^<.*>$") { $sConfigArgs += @("--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID) }',
     '& s @sConfigArgs',
     's config get -a default',
-    "`$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login $registryHost -u `$env:ALIBABA_CONTAINER_REGISTRY_USERNAME --password-stdin",
-    'scripts/qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer -AllowDraft',
-    "scripts/qwencloud-alibaba-release.ps1 -DemoVideoUrl `"$videoValue`"",
+    'scripts/qwencloud-release-config-audit.ps1 -UseCodePackage',
+    'scripts/qwencloud-build-fc-code-package.ps1',
+    "scripts/qwencloud-alibaba-runtime-release.ps1 -DemoVideoUrl `"$videoValue`"",
     "scripts/qwencloud-final-readiness.ps1 -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`"",
     "scripts/qwencloud-final-upload-bundle.ps1 -DemoVideoUrl `"$videoValue`" -BackendUrl `"$backendValue`""
 )
@@ -167,9 +142,8 @@ $handoff = [ordered]@{
     envFileExists = $envFileExists
     envFileImportIssue = $envFileImportIssue
     envChecks = $envChecks
-    region = $Region
-    containerImage = $ContainerImage
-    registryHost = $registryHost
+    deploymentMode = "custom-runtime-code-package"
+    runtimeRegion = $Region
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
     template = $handoffPs1
@@ -183,9 +157,8 @@ $md = @(
     "",
     "- Status: $status",
     "- Ready for cloud release: $ready",
-    "- Region: $Region",
-    "- Container image: $ContainerImage",
-    "- Registry host: $registryHost",
+    "- Deployment mode: custom runtime code package",
+    "- Runtime region: $Region",
     "- Env file imported: $(if ($EnvFile -and $envFileExists) { $EnvFile } elseif ($EnvFile) { '<missing: ' + $EnvFile + '>' } else { '<none>' })",
     "- Template: $handoffPs1",
     "",

@@ -3,7 +3,32 @@
 # Alibaba Cloud Deployment Proof
 
 This folder is the Devpost proof path for running DREAM as a Qwen Cloud
-MemoryAgent on Alibaba Cloud Function Compute using a custom container.
+MemoryAgent on Alibaba Cloud Function Compute.
+
+The primary hackathon path is the ACR-free custom runtime deployment in
+`serverless-devs-runtime.yaml`. It targets Function Compute in
+`ap-southeast-1` with a Python 3.12 code package on `custom.debian11`, and does
+not require Alibaba Container Registry. Singapore is selected to match the
+Model Studio dedicated workspace region, shortening the cross-region network
+path and reducing timeout risk. The FC template uses Model Studio's official
+Singapore shared endpoint by default because the workspace-dedicated domain
+timed out during FC egress validation. The public runtime does not expose an
+endpoint override that could redirect its bearer token.
+The existing `serverless-devs.yaml`
+custom-container template remains as a fallback when an ACR repository is
+already available.
+
+The anonymous judge demo is deliberately bounded: Function Compute uses a
+function-level reserved concurrency cap of `1` with per-instance concurrency
+`4`, Qwen prompts are capped at `24,000` characters, completions at `1,200`
+tokens, and each runtime process accepts at most `6` Qwen-backed API requests
+per minute. These are hackathon cost-abuse controls, not a substitute for
+production authentication or a shared distributed rate limiter.
+
+Function code remains immutable under `/code`; generated artifacts and the
+SQLite audit ledger use `/tmp`. Function Compute may recycle that ephemeral
+storage, so durable production deployments should replace it with an external
+database and object store.
 
 ## Required Environment
 
@@ -19,14 +44,34 @@ scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage
 Equivalent explicit environment variables:
 
 ```powershell
-$env:ALIBABA_CLOUD_REGION="ap-southeast-1"
-$env:ALIBABA_CLOUD_CONTAINER_IMAGE="<registry>/<namespace>/dream-qwencloud-memoryagent:latest"
+$env:ALIBABA_CLOUD_RUNTIME_REGION="ap-southeast-1"
 $env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 $env:QWEN_MODEL="qwen3.7-plus"
 ```
 
+For a Model Studio key beginning with `sk-ws`, copy the dedicated workspace URL
+from the Singapore API Key page for local validation. Model Studio also permits
+same-region workspace keys on the official shared Singapore domain used by the
+FC template.
+
 ## Build And Deploy
+
+ACR-free custom runtime path:
+
+```powershell
+scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage
+scripts/qwencloud-build-fc-code-package.ps1
+s deploy -t deploy/alibaba/serverless-devs-runtime.yaml -y
+```
+
+Or run the complete local release flow:
+
+```powershell
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
+```
+
+Custom-container fallback:
 
 Run a deploy preflight first. It checks required files, Docker, Serverless Devs,
 required environment variables, and optionally builds and smokes the container

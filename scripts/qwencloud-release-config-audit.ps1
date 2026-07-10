@@ -11,6 +11,11 @@ param(
     [string]$WorkflowPath = ".github/workflows/qwencloud-release.yml",
     [Parameter(Mandatory = $false)]
     [string]$GitHubSecretsHandoffPath = "scripts/qwencloud-github-secrets-handoff.ps1",
+    [Parameter(Mandatory = $false)]
+    [string]$RuntimeServerlessTemplatePath = "deploy/alibaba/serverless-devs-runtime.yaml",
+    [Parameter(Mandatory = $false)]
+    [string]$RuntimePackageScriptPath = "scripts/qwencloud-build-fc-code-package.ps1",
+    [switch]$UseCodePackage,
     [switch]$AllowDraft
 )
 
@@ -23,32 +28,55 @@ $reportJson = Join-Path $OutputDir "release-config-audit-$timestamp.json"
 $reportMd = Join-Path $OutputDir "release-config-audit-$timestamp.md"
 $checks = @()
 $importedEnvNames = @()
+$deploymentMode = if ($UseCodePackage) { "custom-runtime-code-package" } else { "custom-container" }
 
-$requiredRuntimeEnv = @(
-    "DASHSCOPE_API_KEY",
-    "ALIBABA_CLOUD_REGION",
-    "ALIBABA_CLOUD_CONTAINER_IMAGE",
-    "ALIBABA_CONTAINER_REGISTRY_USERNAME",
-    "ALIBABA_CONTAINER_REGISTRY_PASSWORD"
-)
-$optionalRuntimeEnv = @(
-    "QWEN_BASE_URL",
-    "QWEN_MODEL"
-)
-$requiredGitHubSecrets = @(
-    "ALIBABA_CLOUD_ACCESS_KEY_ID",
-    "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
-    "ALIBABA_CLOUD_REGION",
-    "ALIBABA_CLOUD_CONTAINER_IMAGE",
-    "ALIBABA_CONTAINER_REGISTRY_USERNAME",
-    "ALIBABA_CONTAINER_REGISTRY_PASSWORD",
-    "DASHSCOPE_API_KEY"
-)
-$optionalGitHubSecrets = @(
-    "ALIBABA_CLOUD_ACCOUNT_ID",
-    "QWEN_BASE_URL",
-    "QWEN_MODEL"
-)
+if ($UseCodePackage) {
+    $requiredRuntimeEnv = @(
+        "DASHSCOPE_API_KEY",
+        "QWEN_BASE_URL",
+        "QWEN_MODEL"
+    )
+    $optionalRuntimeEnv = @(
+        "ALIBABA_CLOUD_REGION",
+        "ALIBABA_CLOUD_RUNTIME_REGION"
+    )
+    $requiredGitHubSecrets = @(
+        "ALIBABA_CLOUD_ACCESS_KEY_ID",
+        "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
+        "DASHSCOPE_API_KEY",
+        "QWEN_BASE_URL",
+        "QWEN_MODEL"
+    )
+    $optionalGitHubSecrets = @(
+        "ALIBABA_CLOUD_ACCOUNT_ID",
+        "ALIBABA_CLOUD_REGION",
+        "ALIBABA_CLOUD_RUNTIME_REGION"
+    )
+}
+else {
+    $requiredRuntimeEnv = @(
+        "DASHSCOPE_API_KEY",
+        "ALIBABA_CLOUD_REGION",
+        "ALIBABA_CLOUD_CONTAINER_IMAGE",
+        "ALIBABA_CONTAINER_REGISTRY_USERNAME",
+        "ALIBABA_CONTAINER_REGISTRY_PASSWORD",
+        "QWEN_BASE_URL",
+        "QWEN_MODEL"
+    )
+    $optionalRuntimeEnv = @()
+    $requiredGitHubSecrets = @(
+        "ALIBABA_CLOUD_ACCESS_KEY_ID",
+        "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
+        "DASHSCOPE_API_KEY",
+        "QWEN_BASE_URL",
+        "QWEN_MODEL"
+    )
+    $optionalGitHubSecrets = @(
+        "ALIBABA_CLOUD_ACCOUNT_ID",
+        "ALIBABA_CLOUD_REGION",
+        "ALIBABA_CLOUD_RUNTIME_REGION"
+    )
+}
 $allTemplateNames = @($requiredGitHubSecrets + $optionalGitHubSecrets | Select-Object -Unique)
 
 function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
@@ -81,7 +109,7 @@ function Test-RegionFormat([string]$Region) {
     }
 
     return [pscustomobject]@{
-        ok = ($Region -match "^[a-z]+-[a-z]+-\d+$")
+        ok = ($Region -match "^[a-z]+-[a-z0-9]+(?:-[a-z0-9]+)*$")
         details = "region=$Region"
     }
 }
@@ -106,15 +134,81 @@ function Test-ContainerImageFormat([string]$Image) {
     }
 }
 
-function Test-OptionalUrlEnv([string]$Name) {
-    $value = [Environment]::GetEnvironmentVariable($Name)
+function Test-QwenBaseUrl {
+    $value = [Environment]::GetEnvironmentVariable("QWEN_BASE_URL")
+    $apiKey = [Environment]::GetEnvironmentVariable("DASHSCOPE_API_KEY")
     if ([string]::IsNullOrWhiteSpace($value)) {
-        return [pscustomobject]@{ ok = $true; details = "optional default available" }
+        return [pscustomobject]@{ ok = $false; details = "missing" }
+    }
+
+    $validUrl = $value -match "^https://" -and $value -notmatch "[<>]"
+    $workspaceKey = -not [string]::IsNullOrWhiteSpace($apiKey) -and $apiKey.StartsWith("sk-ws")
+    $workspaceDomain = $value -match "^https://[a-z0-9-]+\.ap-southeast-1\.maas\.aliyuncs\.com/compatible-mode/v1/?$"
+    $legacyDomain = $value -match "^https://dashscope(?:-intl)?\.aliyuncs\.com/compatible-mode/v1/?$"
+    $officialDomain = $workspaceDomain -or $legacyDomain
+    return [pscustomobject]@{
+        ok = ($validUrl -and $officialDomain)
+        details = if (-not $validUrl) {
+            "invalid HTTPS URL"
+        }
+        elseif (-not $officialDomain) {
+            "URL must use an allowlisted Alibaba Model Studio compatible-mode endpoint"
+        }
+        elseif ($workspaceKey) {
+            if ($workspaceDomain) {
+                "workspace key and dedicated Singapore URL are aligned"
+            }
+            else {
+                "workspace key uses an official DashScope domain; the FC template selects the Singapore endpoint"
+            }
+        }
+        else {
+            "legacy key URL is valid"
+        }
+    }
+}
+
+function Test-QwenModel {
+    $value = [Environment]::GetEnvironmentVariable("QWEN_MODEL")
+    return [pscustomobject]@{
+        ok = $value -ceq "qwen3.7-plus"
+        details = if ($value -ceq "qwen3.7-plus") {
+            "model=qwen3.7-plus"
+        }
+        elseif ([string]::IsNullOrWhiteSpace($value)) {
+            "missing"
+        }
+        else {
+            "model must be qwen3.7-plus for the submitted benchmark and runtime attestation"
+        }
+    }
+}
+
+function Get-EffectiveRuntimeRegion {
+    $requiredRuntimeRegion = "ap-southeast-1"
+
+    $runtimeRegion = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION")
+    if (-not [string]::IsNullOrWhiteSpace($runtimeRegion) -and -not ($runtimeRegion -match "[<>]")) {
+        return [pscustomobject]@{
+            value = $runtimeRegion
+            source = "ALIBABA_CLOUD_RUNTIME_REGION"
+            requiredRuntimeRegion = $requiredRuntimeRegion
+        }
+    }
+
+    $region = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION")
+    if (-not [string]::IsNullOrWhiteSpace($region) -and -not ($region -match "[<>]")) {
+        return [pscustomobject]@{
+            value = $region
+            source = "ALIBABA_CLOUD_REGION"
+            requiredRuntimeRegion = $requiredRuntimeRegion
+        }
     }
 
     return [pscustomobject]@{
-        ok = ($value -match "^https?://" -and $value -notmatch "[<>]")
-        details = if ($value -match "^https?://" -and $value -notmatch "[<>]") { "set" } else { "invalid optional URL" }
+        value = $requiredRuntimeRegion
+        source = "default"
+        requiredRuntimeRegion = $requiredRuntimeRegion
     }
 }
 
@@ -145,14 +239,29 @@ foreach ($name in $optionalRuntimeEnv) {
     Add-Check -Name "env.$name.optional" -Ok $true -Details $(if (Has-Env $name) { "set" } else { "optional default available" }) -Required $false
 }
 
-$regionCheck = Test-RegionFormat -Region ([Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION"))
-Add-Check -Name "env.ALIBABA_CLOUD_REGION.format" -Ok $regionCheck.ok -Details $regionCheck.details
+if ($UseCodePackage) {
+    $effectiveRuntimeRegion = Get-EffectiveRuntimeRegion
+    $regionCheck = Test-RegionFormat -Region $effectiveRuntimeRegion.value
+    $regionSupported = $effectiveRuntimeRegion.value -ceq $effectiveRuntimeRegion.requiredRuntimeRegion
+    Add-Check -Name "env.ALIBABA_CLOUD_RUNTIME_REGION.effective" -Ok ($regionCheck.ok -and $regionSupported) -Details "effectiveRegion=$($effectiveRuntimeRegion.value); source=$($effectiveRuntimeRegion.source); sameRegionWithQwenWorkspace=$regionSupported; runtime=custom.debian11"
+    Add-Check -Name "env.ALIBABA_CLOUD_CONTAINER_IMAGE.not_required_for_code_package" -Ok $true -Details "custom runtime uses code package, not ACR" -Required $false
+}
+else {
+    $effectiveRuntimeRegion = [pscustomobject]@{
+        value = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION")
+        source = "ALIBABA_CLOUD_REGION"
+    }
+    $regionCheck = Test-RegionFormat -Region ([Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_REGION"))
+    Add-Check -Name "env.ALIBABA_CLOUD_REGION.format" -Ok $regionCheck.ok -Details $regionCheck.details
 
-$imageCheck = Test-ContainerImageFormat -Image ([Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_CONTAINER_IMAGE"))
-Add-Check -Name "env.ALIBABA_CLOUD_CONTAINER_IMAGE.format" -Ok $imageCheck.ok -Details $imageCheck.details
+    $imageCheck = Test-ContainerImageFormat -Image ([Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_CONTAINER_IMAGE"))
+    Add-Check -Name "env.ALIBABA_CLOUD_CONTAINER_IMAGE.format" -Ok $imageCheck.ok -Details $imageCheck.details
+}
 
-$baseUrlCheck = Test-OptionalUrlEnv -Name "QWEN_BASE_URL"
-Add-Check -Name "env.QWEN_BASE_URL.url_or_default" -Ok $baseUrlCheck.ok -Details $baseUrlCheck.details -Required $false
+$baseUrlCheck = Test-QwenBaseUrl
+Add-Check -Name "env.QWEN_BASE_URL.key_url_alignment" -Ok $baseUrlCheck.ok -Details $baseUrlCheck.details
+$modelCheck = Test-QwenModel
+Add-Check -Name "env.QWEN_MODEL.submission_alignment" -Ok $modelCheck.ok -Details $modelCheck.details
 
 $workflowText = Read-TextOrEmpty -Path $WorkflowPath
 Add-Check -Name "workflow_present" -Ok (-not [string]::IsNullOrWhiteSpace($workflowText)) -Details $(if ($workflowText) { $WorkflowPath } else { "missing: $WorkflowPath" })
@@ -180,6 +289,25 @@ foreach ($name in $allTemplateNames) {
     Add-Check -Name "env_example.name.$name" -Ok ($exampleText -match "(?m)^$([regex]::Escape($name))=") -Details "template declaration"
 }
 
+if ($UseCodePackage) {
+    $runtimeTemplateText = Read-TextOrEmpty -Path $RuntimeServerlessTemplatePath
+    Add-Check -Name "serverless_runtime_template_present" -Ok (-not [string]::IsNullOrWhiteSpace($runtimeTemplateText)) -Details $(if ($runtimeTemplateText) { $RuntimeServerlessTemplatePath } else { "missing: $RuntimeServerlessTemplatePath" })
+    Add-Check -Name "serverless_runtime_template.uses_custom_debian11" -Ok ($runtimeTemplateText -match "runtime:\s*custom\.debian11") -Details "Singapore custom runtime provides the required Python 3.12 runtime"
+    Add-Check -Name "serverless_runtime_template.uses_code_package" -Ok ($runtimeTemplateText -match "(?m)^\s*code:\s*") -Details "code package path configured"
+    Add-Check -Name "serverless_runtime_template.has_custom_runtime_config" -Ok ($runtimeTemplateText -match "customRuntimeConfig:") -Details "startup command and port configured"
+    Add-Check -Name "serverless_runtime_template.uses_fc_python312" -Ok ($runtimeTemplateText -match "PYTHON_BIN:\s*/var/fc/lang/python3\.12/bin/python3") -Details "uses the documented Function Compute Python 3.12 binary"
+    Add-Check -Name "serverless_runtime_template.uses_bounded_non_thinking_qwen" -Ok ($runtimeTemplateText -match "QWEN_ENABLE_THINKING:\s*`"false`"" -and $runtimeTemplateText -match "QWEN_MAX_COMPLETION_TOKENS:\s*`"1200`"") -Details "interactive public demo disables default deep thinking and caps completion tokens"
+    Add-Check -Name "serverless_runtime_template.uses_singapore_dashscope_endpoint" -Ok ($runtimeTemplateText -match "QWEN_BASE_URL:.*https://dashscope-intl\.aliyuncs\.com/compatible-mode/v1") -Details "FC uses the official Singapore shared endpoint after dedicated-domain egress validation timed out"
+    Add-Check -Name "serverless_runtime_template.no_unvalidated_endpoint_override" -Ok ($runtimeTemplateText -notmatch "QWEN_RUNTIME_BASE_URL") -Details "public runtime cannot redirect the Qwen bearer token through an unchecked environment override"
+    Add-Check -Name "serverless_runtime_template.no_acr_image_dependency" -Ok ($runtimeTemplateText -notmatch "ALIBABA_CLOUD_CONTAINER_IMAGE") -Details "ACR image env is not referenced"
+    Add-Check -Name "serverless_runtime_template.uses_writable_ephemeral_paths" -Ok ($runtimeTemplateText -match "DREAM_ARTIFACT_ROOT:\s*/tmp/" -and $runtimeTemplateText -match "DREAM_AUDIT_DB_PATH:\s*/tmp/") -Details "generated artifacts and SQLite use writable /tmp paths"
+    Add-Check -Name "serverless_runtime_template.caps_function_concurrency" -Ok ($runtimeTemplateText -match "concurrencyConfig:\s*\r?\n\s*reservedConcurrency:\s*1") -Details "function-level reserved concurrency is capped at one for the anonymous judge demo"
+
+    $runtimePackageScriptText = Read-TextOrEmpty -Path $RuntimePackageScriptPath
+    Add-Check -Name "runtime_package_script_present" -Ok (-not [string]::IsNullOrWhiteSpace($runtimePackageScriptText)) -Details $(if ($runtimePackageScriptText) { $RuntimePackageScriptPath } else { "missing: $RuntimePackageScriptPath" })
+    Add-Check -Name "runtime_package_script.targets_python312_manylinux" -Ok ($runtimePackageScriptText -match "manylinux2014_x86_64" -and $runtimePackageScriptText -match "PythonVersion = `"3\.12`"" -and $runtimePackageScriptText -match "PythonAbi = `"cp312`"") -Details "builds Linux x86_64 Python 3.12 dependencies"
+}
+
 $requiredFailures = @($checks | Where-Object { $_.required -and -not $_.ok })
 $ready = $requiredFailures.Count -eq 0
 $status = if ($ready) { "READY" } else { "DRAFT" }
@@ -189,6 +317,9 @@ $result = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
     status = $status
     readyForReleaseConfig = $ready
+    deploymentMode = $deploymentMode
+    effectiveRuntimeRegion = $effectiveRuntimeRegion.value
+    effectiveRuntimeRegionSource = $effectiveRuntimeRegion.source
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
     requiredRuntimeEnv = $requiredRuntimeEnv
@@ -207,6 +338,8 @@ $lines = @(
     "",
     "- Status: $status",
     "- Ready for release config: $ready",
+    "- Deployment mode: $deploymentMode",
+    "- Effective runtime region: $($effectiveRuntimeRegion.value) ($($effectiveRuntimeRegion.source))",
     "- Env file: $(if ($EnvFile) { $EnvFile } else { '<process environment>' })",
     "- Workflow: $WorkflowPath",
     "- GitHub secrets handoff: $GitHubSecretsHandoffPath",
@@ -236,18 +369,34 @@ if ($missingRequiredChecks.Count -gt 0) {
     }
 }
 
-$lines += @(
-    "",
-    "## Next Commands",
-    "",
-    '```powershell',
-    'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
-    '# Fill .env.qwencloud.local locally; do not commit it.',
-    'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
-    'scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv',
-    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
-    '```'
-)
+if ($UseCodePackage) {
+    $lines += @(
+        "",
+        "## Next Commands",
+        "",
+        '```powershell',
+        'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
+        '# Fill .env.qwencloud.local locally; do not commit it.',
+        'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage -AllowDraft',
+        'scripts/qwencloud-build-fc-code-package.ps1',
+        's deploy -t deploy/alibaba/serverless-devs-runtime.yaml -y',
+        '```'
+    )
+}
+else {
+    $lines += @(
+        "",
+        "## Next Commands",
+        "",
+        '```powershell',
+        'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
+        '# Fill .env.qwencloud.local locally; do not commit it.',
+        'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
+        'scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv',
+        'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
+        '```'
+    )
+}
 Set-Content -Path $reportMd -Value ($lines -join "`r`n") -Encoding UTF8
 
 if ($ready) {

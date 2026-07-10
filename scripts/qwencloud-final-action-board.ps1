@@ -145,6 +145,7 @@ $releaseConfigArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", "scripts/qwencloud-release-config-audit.ps1",
     "-OutputDir", $OutputDir,
+    "-UseCodePackage",
     "-AllowDraft"
 )
 if ($EnvFile) { $releaseConfigArgs += @("-EnvFile", $EnvFile) }
@@ -288,7 +289,7 @@ if (-not $cloudReady) {
         '$sConfigArgs = @("config", "add", "-a", "default", "--AccessKeyID", $env:ALIBABA_CLOUD_ACCESS_KEY_ID, "--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET, "--force")',
         'if (-not [string]::IsNullOrWhiteSpace($env:ALIBABA_CLOUD_ACCOUNT_ID) -and $env:ALIBABA_CLOUD_ACCOUNT_ID -notmatch "^<.*>$") { $sConfigArgs += @("--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID) }',
         '& s @sConfigArgs',
-        'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
+        'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"'
     )
 }
 
@@ -297,7 +298,7 @@ if (-not $releaseConfigReady) {
     Add-Action -Name "Fix release config audit" -Reason "Release config audit is not READY: $configMissing." -RequiresUser $true -Commands @(
         'Copy-Item .env.qwencloud.local.example .env.qwencloud.local',
         "# Fill .env.qwencloud.local locally; do not commit it.",
-        'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft',
+        'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage -AllowDraft',
         'scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -SetFromEnv'
     )
 }
@@ -340,7 +341,7 @@ if (-not ($deployPreflightCheck -and $deployPreflightCheck.ok)) {
 
 if ([string]::IsNullOrWhiteSpace($BackendUrl)) {
     Add-Action -Name "Produce deployed Alibaba backend URL" -Reason "Final packet and proof capture need the live Function Compute endpoint." -RequiresUser $true -Commands @(
-        'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
+        'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
         'gh workflow run "Qwen Cloud Release" --repo zemeng2015/dream-ai-engineering-copilot -f demoVideoUrl="<public-video-url>"',
         "# If using GitHub Actions, after the workflow completes:",
         "# Ingest auto-selects the latest completed successful run and skips active runs.",
@@ -406,7 +407,7 @@ $result = [ordered]@{
     blogPostUrl = $BlogPostUrl
     envFile = $EnvFile
     importedEnvNames = $importedEnvNames
-    deadline = "2026-07-09 14:00 PDT / 17:00 EDT"
+    deadline = "2026-07-20 14:00 PDT / 17:00 EDT"
     reports = [ordered]@{
         videoUploadStatus = $videoReport.file
         videoPublicationHandoff = $videoPublicationReport.file
@@ -453,7 +454,7 @@ $lines = @(
     "",
     "- Status: $status",
     "- Ready for final Devpost submit: $finalReady",
-    "- Deadline: 2026-07-09 14:00 PDT / 17:00 EDT",
+    "- Deadline: 2026-07-20 14:00 PDT / 17:00 EDT",
     "- Repo: $RepoUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",

@@ -66,7 +66,7 @@
   <rect x="1070" y="366" width="140" height="112" class="cloud" rx="8" />
   <text x="1090" y="402" class="label">Function</text>
   <text x="1090" y="426" class="label">Compute</text>
-  <text x="1090" y="452" class="small">Custom container</text>
+  <text x="1090" y="452" class="small">Custom runtime</text>
 
   <path class="arrow" d="M272 240 H400" />
   <path class="arrow" d="M272 372 H400" />

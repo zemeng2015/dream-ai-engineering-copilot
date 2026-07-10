@@ -27,7 +27,7 @@ The `/health` response should prove:
 - `track`: `Track 1: MemoryAgent`
 - `llm_provider`: `qwen-cloud`
 - `deployment_target`: `Alibaba Cloud Function Compute`
-- `proof_file`: `deploy/alibaba/serverless-devs.yaml`
+- `proof_file`: `deploy/alibaba/serverless-devs-runtime.yaml`
 
 ## Local Reproduction
 
@@ -39,7 +39,7 @@ python -m venv .venv
 pip install -e ".[dev]"
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<judge-provided-or-owner-configured-key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 uvicorn dream.api.app:app --host 127.0.0.1 --port 8000
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://127.0.0.1:8000
 ```

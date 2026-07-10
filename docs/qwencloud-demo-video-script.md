@@ -23,7 +23,7 @@ Call out:
 - Track is `Track 1: MemoryAgent`.
 - Provider is `qwen-cloud`.
 - Model is `qwen3.7-plus`.
-- Deployment target is Alibaba Cloud Function Compute custom container.
+- Deployment target is Alibaba Cloud Function Compute custom runtime.
 - `/health` never exposes secrets.
 - `/qwencloud/showcase` exposes the judge-facing flow, evidence paths, and
   scorecard posture without exposing secrets.

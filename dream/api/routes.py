@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import os
+from collections import deque
 from datetime import UTC, datetime
+from threading import Lock
+from time import monotonic
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -38,6 +42,8 @@ from dream.review import PRReviewAssistant, PRReviewRequest, PRReviewResponse
 from dream.testgen import JTestGenAdapter, MockTestGenProvider, TestGenRequest, TestGenResult
 
 router = APIRouter()
+_PUBLIC_QWEN_REQUEST_TIMES: deque[float] = deque()
+_PUBLIC_QWEN_RATE_LOCK = Lock()
 
 
 class HealthResponse(BaseModel):
@@ -51,7 +57,7 @@ class HealthResponse(BaseModel):
     llm_model: str | None = None
     llm_base_url: str | None = None
     llm_api_key_configured: bool = False
-    proof_file: str = "deploy/alibaba/serverless-devs.yaml"
+    proof_file: str = "deploy/alibaba/serverless-devs-runtime.yaml"
 
 
 class QwenCloudShowcaseRuntime(BaseModel):
@@ -93,6 +99,23 @@ class QwenCloudShowcaseScorecard(BaseModel):
     missing_external_inputs: list[str]
 
 
+class QwenCloudShowcaseBenchmark(BaseModel):
+    status: str
+    run_id: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    case_count: int = 0
+    baseline_score: float = 0
+    dream_score: float = 0
+    score_delta: float = 0
+    median_delta: float = 0
+    exact_paired_permutation_p: float | None = None
+    dream_wins: int = 0
+    exact_retrieval_recall_at_12: float = 0
+    report_path: str | None = None
+    limitations: list[str] = Field(default_factory=list)
+
+
 class QwenCloudShowcaseResponse(BaseModel):
     generated_at: str
     project_title: str
@@ -101,6 +124,7 @@ class QwenCloudShowcaseResponse(BaseModel):
     runtime: QwenCloudShowcaseRuntime
     judge_flow: list[QwenCloudShowcaseStep]
     evidence: list[QwenCloudShowcaseEvidenceItem]
+    benchmark: QwenCloudShowcaseBenchmark
     scorecard: QwenCloudShowcaseScorecard
 
 
@@ -201,36 +225,44 @@ class RequirementQuestionWaiveRequest(BaseModel):
 def health() -> HealthResponse:
     config = resolve_config()
     deployment_target = "local"
+    alibaba_service = os.getenv("ALIBABA_CLOUD_SERVICE")
     if (
         config.llm.provider == "qwen-cloud"
-        and (os.getenv("ALIBABA_CLOUD_SERVICE") or os.getenv("ALIBABA_CLOUD_REGION"))
+        and (alibaba_service or os.getenv("ALIBABA_CLOUD_REGION"))
     ):
-        deployment_target = "Alibaba Cloud Function Compute custom container"
+        deployment_target = "Alibaba Cloud " + (
+            alibaba_service or "Function Compute"
+        )
     return HealthResponse(
         status="ok",
         deployment_target=deployment_target,
         alibaba_cloud_region=os.getenv("ALIBABA_CLOUD_REGION"),
-        alibaba_cloud_service=os.getenv("ALIBABA_CLOUD_SERVICE"),
+        alibaba_cloud_service=alibaba_service,
         llm_provider=config.llm.provider,
         llm_model=config.llm.model,
         llm_base_url=config.llm.base_url,
         llm_api_key_configured=config.llm.api_key_configured,
+        proof_file=os.getenv("ALIBABA_CLOUD_PROOF_FILE")
+        or "deploy/alibaba/serverless-devs-runtime.yaml",
     )
 
 
 @router.get("/qwencloud/showcase", response_model=QwenCloudShowcaseResponse)
 def qwencloud_showcase() -> QwenCloudShowcaseResponse:
     health_payload = health()
+    proof_file_ready = (
+        health_payload.proof_file == "deploy/alibaba/serverless-devs-runtime.yaml"
+    )
     qwen_cloud_ready = (
         health_payload.status == "ok"
         and health_payload.track == "Track 1: MemoryAgent"
         and health_payload.llm_provider == "qwen-cloud"
         and health_payload.llm_api_key_configured
-        and health_payload.proof_file == "deploy/alibaba/serverless-devs.yaml"
+        and proof_file_ready
     )
     alibaba_runtime_ready = (
         "Alibaba Cloud Function Compute" in health_payload.deployment_target
-        and health_payload.proof_file == "deploy/alibaba/serverless-devs.yaml"
+        and proof_file_ready
     )
     live_backend_ready = qwen_cloud_ready and alibaba_runtime_ready
     live_backend_points = 30 if live_backend_ready else 0
@@ -348,9 +380,9 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
                 name="Alibaba Function Compute deployment",
                 state="live" if alibaba_runtime_ready else "packaged",
                 proof_paths=[
-                    "deploy/alibaba/serverless-devs.yaml",
-                    "Dockerfile",
-                    "scripts/qwencloud-deploy-preflight.ps1",
+                    "deploy/alibaba/serverless-devs-runtime.yaml",
+                    "scripts/qwencloud-build-fc-code-package.ps1",
+                    "scripts/qwencloud-alibaba-runtime-release.ps1",
                 ],
             ),
             QwenCloudShowcaseEvidenceItem(
@@ -362,13 +394,59 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
                     "docs/qwencloud-demo-video-script.md",
                 ],
             ),
+            QwenCloudShowcaseEvidenceItem(
+                name="Paired Qwen memory benchmark",
+                state="measured",
+                proof_paths=[
+                    "docs/assets/qwen-memory-ab-benchmark-summary.json",
+                    "scripts/qwencloud_memory_ab_benchmark.py",
+                    "tests/test_qwencloud_memory_ab_benchmark.py",
+                ],
+            ),
         ],
+        benchmark=_qwen_benchmark_summary(),
         scorecard=QwenCloudShowcaseScorecard(
             weighted_current_evidence_ready=55 + live_backend_points,
             live_backend_points=live_backend_points,
             missing_external_inputs=missing_external_inputs,
         ),
     )
+
+
+def _qwen_benchmark_summary() -> QwenCloudShowcaseBenchmark:
+    path_value = os.getenv(
+        "QWEN_BENCHMARK_SUMMARY_FILE",
+        "docs/assets/qwen-memory-ab-benchmark-summary.json",
+    )
+    path = resolve_project_path(path_value)
+    if not path.is_file():
+        return QwenCloudShowcaseBenchmark(
+            status="missing",
+            limitations=["Benchmark summary file is not packaged."],
+        )
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        return QwenCloudShowcaseBenchmark(
+            status="ready",
+            run_id=str(data["run_id"]),
+            provider=str(data["provider"]),
+            model=str(data["model"]),
+            case_count=int(data["case_count"]),
+            baseline_score=float(data["baseline_mean"]),
+            dream_score=float(data["dream_mean"]),
+            score_delta=float(data["mean_delta"]),
+            median_delta=float(data["median_delta"]),
+            exact_paired_permutation_p=float(data["exact_paired_permutation_p"]),
+            dream_wins=int(data["dream_wins"]),
+            exact_retrieval_recall_at_12=float(data["exact_retrieval_recall_at_12"]),
+            report_path=str(data["report_path"]),
+            limitations=[str(item) for item in data.get("limitations", [])],
+        )
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return QwenCloudShowcaseBenchmark(
+            status="invalid",
+            limitations=["Benchmark summary file failed schema validation."],
+        )
 
 
 @router.post("/requirements/draft", response_model=RequirementDraftResponse)
@@ -1078,8 +1156,10 @@ def _llm_provider(provider: str) -> LLMProvider:
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
     if provider == "qwen-cloud":
+        _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()
     if provider in {"config", "plugin"}:
+        _enforce_public_qwen_rate_limit()
         return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
 
@@ -1094,7 +1174,39 @@ def _optional_llm_provider(
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
     if provider == "qwen-cloud":
+        _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()
     if provider in {"config", "plugin"}:
+        _enforce_public_qwen_rate_limit()
         return build_llm_provider()
     raise HTTPException(status_code=400, detail=f"Unsupported LLM provider: {provider}")
+
+
+def _enforce_public_qwen_rate_limit() -> None:
+    raw_limit = os.getenv("DREAM_PUBLIC_QWEN_REQUESTS_PER_MINUTE", "").strip()
+    if not raw_limit:
+        return
+    try:
+        limit = int(raw_limit)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Public Qwen rate limit is misconfigured.",
+        ) from exc
+    if limit <= 0:
+        raise HTTPException(
+            status_code=503,
+            detail="Public Qwen rate limit is misconfigured.",
+        )
+
+    now = monotonic()
+    cutoff = now - 60.0
+    with _PUBLIC_QWEN_RATE_LOCK:
+        while _PUBLIC_QWEN_REQUEST_TIMES and _PUBLIC_QWEN_REQUEST_TIMES[0] <= cutoff:
+            _PUBLIC_QWEN_REQUEST_TIMES.popleft()
+        if len(_PUBLIC_QWEN_REQUEST_TIMES) >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Public Qwen demo rate limit reached; retry in one minute.",
+            )
+        _PUBLIC_QWEN_REQUEST_TIMES.append(now)

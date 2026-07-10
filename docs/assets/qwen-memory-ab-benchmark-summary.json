@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260709T215947Z",
+  "provider": "qwen-cloud",
+  "model": "qwen3.7-plus",
+  "case_count": 7,
+  "score_label": "deterministic_reference_score",
+  "baseline_mean": 25.3,
+  "dream_mean": 48.7,
+  "mean_delta": 23.4,
+  "median_delta": 23.2,
+  "exact_paired_permutation_p": 0.0156,
+  "dream_wins": 7,
+  "ties": 0,
+  "baseline_wins": 0,
+  "exact_retrieval_recall_at_12": 0.356,
+  "baseline_unsupported_references": 0,
+  "dream_unsupported_references": 0,
+  "report_path": "docs/qwen-memory-ab-benchmark.md",
+  "limitations": [
+    "Seven synthetic engineering cases; this is not a production benchmark.",
+    "One deterministic completion per arm does not estimate sampling variance.",
+    "Exact-term scoring does not measure semantic equivalence.",
+    "Exact retrieval Recall@12 remains a known bottleneck.",
+    "Eleven recovered arm outputs lack latency and token sidecars, so those metrics are not comparative claims."
+  ]
+}

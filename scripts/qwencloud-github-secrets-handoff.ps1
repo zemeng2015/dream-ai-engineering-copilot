@@ -25,17 +25,15 @@ $templateEnv = Join-Path $OutputDir "github-secrets-template-$timestamp.env"
 $requiredSecrets = @(
     "ALIBABA_CLOUD_ACCESS_KEY_ID",
     "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
-    "ALIBABA_CLOUD_REGION",
-    "ALIBABA_CLOUD_CONTAINER_IMAGE",
-    "ALIBABA_CONTAINER_REGISTRY_USERNAME",
-    "ALIBABA_CONTAINER_REGISTRY_PASSWORD",
-    "DASHSCOPE_API_KEY"
+    "DASHSCOPE_API_KEY",
+    "QWEN_BASE_URL",
+    "QWEN_MODEL"
 )
 
 $optionalSecrets = @(
     "ALIBABA_CLOUD_ACCOUNT_ID",
-    "QWEN_BASE_URL",
-    "QWEN_MODEL"
+    "ALIBABA_CLOUD_REGION",
+    "ALIBABA_CLOUD_RUNTIME_REGION"
 )
 
 function Has-Command([string]$Name) {
@@ -92,12 +90,10 @@ $templateLines = @(
     "ALIBABA_CLOUD_ACCESS_KEY_ID=<alibaba-access-key-id>",
     "ALIBABA_CLOUD_ACCESS_KEY_SECRET=<alibaba-access-key-secret>",
     "ALIBABA_CLOUD_REGION=ap-southeast-1",
-    "ALIBABA_CLOUD_CONTAINER_IMAGE=<registry-host>/<namespace>/dream-qwencloud-memoryagent:latest",
-    "ALIBABA_CONTAINER_REGISTRY_USERNAME=<registry-username>",
-    "ALIBABA_CONTAINER_REGISTRY_PASSWORD=<registry-password>",
+    "ALIBABA_CLOUD_RUNTIME_REGION=ap-southeast-1",
     "DASHSCOPE_API_KEY=<qwen-cloud-api-key>",
     "ALIBABA_CLOUD_ACCOUNT_ID=<optional-account-id>",
-    "QWEN_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "QWEN_BASE_URL=https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
     "QWEN_MODEL=qwen3.7-plus"
 )
 Set-Content -Path $templateEnv -Value ($templateLines -join "`r`n") -Encoding UTF8

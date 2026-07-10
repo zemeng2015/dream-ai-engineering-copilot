@@ -33,7 +33,7 @@ New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 $reportJson = Join-Path $OutputDir "official-rules-gate-$timestamp.json"
 $reportMd = Join-Path $OutputDir "official-rules-gate-$timestamp.md"
 $officialRulesUrl = "https://qwencloud-hackathon.devpost.com/rules"
-$submissionDeadlineUtc = [DateTimeOffset]::Parse("2026-07-09T14:00:00-07:00").UtcDateTime
+$submissionDeadlineUtc = [DateTimeOffset]::Parse("2026-07-20T14:00:00-07:00").UtcDateTime
 $requirements = @()
 
 function Add-Requirement {
@@ -213,12 +213,12 @@ $runtimeTrackOk = if ($null -ne $health) { $health.track -eq "Track 1: MemoryAge
 Add-Requirement `
     -Id "official_requirements_snapshot" `
     -OfficialRequirement "Keep a local snapshot of the current public Devpost requirements used by readiness gates." `
-    -Ok ($requirementsSnapshot.ok -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "July 9, 2026") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Facebook Video") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Youku")) `
+    -Ok ($requirementsSnapshot.ok -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "July 20, 2026") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Facebook Video") -and ((Get-Content -LiteralPath $OfficialRequirementsSnapshotPath -Raw) -match "YouTube, Vimeo, or Youku")) `
     -Evidence $requirementsSnapshot.details
 
 Add-Requirement `
     -Id "submission_period_open" `
-    -OfficialRequirement "Submission must be completed during the Submission Period ending Jul 9, 2026 at 2:00pm Pacific Time." `
+    -OfficialRequirement "Submission must be completed during the Submission Period ending Jul 20, 2026 at 2:00pm Pacific Time." `
     -Ok ($nowUtc -lt $submissionDeadlineUtc) `
     -Evidence "nowUtc=$($nowUtc.ToString('o')); deadlineUtc=$($submissionDeadlineUtc.ToString('o'))"
 
@@ -240,17 +240,17 @@ Add-Requirement `
     -Ok ((Test-Path "docs/qwencloud-submission.md") -and ((Get-Content "docs/qwencloud-submission.md" -Raw) -match "Track 1: MemoryAgent") -and $runtimeTrackOk) `
     -Evidence "doc=docs/qwencloud-submission.md; runtimeTrack=$(if ($health) { $health.track } else { '<not deployed>' })"
 
-$proofCode = Test-File -Path "deploy/alibaba/serverless-devs.yaml"
+$proofCode = Test-File -Path "deploy/alibaba/serverless-devs-runtime.yaml"
 Add-Requirement `
     -Id "alibaba_deployment_proof_code" `
     -OfficialRequirement "Include proof of Alibaba Cloud deployment as a link to a code file demonstrating Alibaba Cloud services and APIs." `
     -Ok $proofCode.ok `
-    -Evidence "$($proofCode.details); url=$($repo.normalized)/blob/main/deploy/alibaba/serverless-devs.yaml"
+    -Evidence "$($proofCode.details); url=$($repo.normalized)/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
 
 Add-Requirement `
     -Id "backend_running_on_alibaba_cloud" `
     -OfficialRequirement "Demonstrate that the backend is running on Alibaba Cloud and functions as depicted." `
-    -Ok ($backend.ok -and $health -and ([string]$health.deployment_target -match "Alibaba Cloud Function Compute") -and ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml")) `
+    -Ok ($backend.ok -and $health -and ([string]$health.deployment_target -match "Alibaba Cloud Function Compute") -and ($health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml")) `
     -Evidence "backend=$BackendUrl; $($backend.details); proofFile=$(if ($health) { $health.proof_file } else { '<missing>' })"
 
 $backendShowcase = Test-BackendShowcase -Url $BackendUrl

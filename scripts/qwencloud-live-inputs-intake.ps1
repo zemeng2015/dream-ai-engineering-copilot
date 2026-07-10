@@ -145,9 +145,13 @@ if ($envFileExists) {
 }
 
 Add-Check -Name "env_file_present" -Ok $envFileExists -Details $(if ($envFileExists) { $EnvFile } else { "missing: $EnvFile" })
-foreach ($envName in @("DASHSCOPE_API_KEY", "ALIBABA_CLOUD_REGION", "ALIBABA_CLOUD_CONTAINER_IMAGE")) {
-    Add-Check -Name "env.$envName" -Ok (Has-Env $envName) -Details $(if (Has-Env $envName) { "set" } else { "missing" })
+Add-Check -Name "env.DASHSCOPE_API_KEY" -Ok (Has-Env "DASHSCOPE_API_KEY") -Details $(if (Has-Env "DASHSCOPE_API_KEY") { "set" } else { "missing" })
+$effectiveRuntimeRegion = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION")
+if ([string]::IsNullOrWhiteSpace($effectiveRuntimeRegion)) {
+    $effectiveRuntimeRegion = "ap-southeast-1"
 }
+Add-Check -Name "env.ALIBABA_CLOUD_RUNTIME_REGION.effective" -Ok ($effectiveRuntimeRegion -match "^[a-z0-9-]+$") -Details "effective=$effectiveRuntimeRegion"
+Add-Check -Name "env.ALIBABA_CLOUD_REGION" -Ok (Has-Env "ALIBABA_CLOUD_REGION") -Details $(if (Has-Env "ALIBABA_CLOUD_REGION") { "set" } else { "optional; runtime region defaults to ap-southeast-1" }) -Required $false
 
 Add-Check -Name "demo_video_url_present" -Ok (-not [string]::IsNullOrWhiteSpace($DemoVideoUrl)) -Details $(if ($DemoVideoUrl) { $DemoVideoUrl } else { "missing" })
 $demoVideoPlatformOk = Test-QwenCloudDevpostVideoUrl -Url $DemoVideoUrl
@@ -168,7 +172,7 @@ if ((Is-HttpUrl $BackendUrl) -and -not $SkipBackendChecks) {
     Add-Check -Name "backend_deployment_target_alibaba" -Ok ($backend.ok -and $health -and ([string]$health.deployment_target -match "Alibaba Cloud Function Compute")) -Details $(if ($health) { [string]$health.deployment_target } else { "health missing" })
     Add-Check -Name "backend_provider_qwen_cloud" -Ok ($backend.ok -and $health -and $health.llm_provider -eq "qwen-cloud") -Details $(if ($health) { [string]$health.llm_provider } else { "health missing" })
     Add-Check -Name "backend_track_memoryagent" -Ok ($backend.ok -and $health -and $health.track -eq "Track 1: MemoryAgent") -Details $(if ($health) { [string]$health.track } else { "health missing" })
-    Add-Check -Name "backend_proof_file_alibaba" -Ok ($backend.ok -and $health -and $health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details $(if ($health) { [string]$health.proof_file } else { "health missing" })
+    Add-Check -Name "backend_proof_file_alibaba" -Ok ($backend.ok -and $health -and $health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml") -Details $(if ($health) { [string]$health.proof_file } else { "health missing" })
     $showcaseResult = Get-BackendShowcase -Url $BackendUrl
     $showcase = $showcaseResult.showcase
     Add-Check -Name "backend_showcase_reachable" -Ok $showcaseResult.ok -Details $showcaseResult.details

@@ -76,9 +76,11 @@ def resolve_config(
             or QWEN_CLOUD_BASE_URL
         )
         default_model = os.getenv("QWEN_MODEL") or QWEN_CLOUD_DEFAULT_MODEL
+        resolved_model = os.getenv("QWEN_MODEL") or loaded.llm.model or default_model
     else:
         default_base_url = os.getenv("OPENAI_COMPATIBLE_BASE_URL") or "https://api.openai.com/v1"
         default_model = os.getenv("OPENAI_COMPATIBLE_MODEL")
+        resolved_model = loaded.llm.model or default_model
     base_url, base_url_source = _value_from_config_or_env(
         value=loaded.llm.base_url,
         env_name=loaded.llm.base_url_env,
@@ -97,7 +99,7 @@ def resolve_config(
         source_file=source_file,
         llm=ResolvedLLMConfig(
             provider=loaded.llm.provider,
-            model=loaded.llm.model or default_model,
+            model=resolved_model,
             base_url=base_url,
             base_url_env=resolved_base_url_env,
             api_key_env=api_key_env,

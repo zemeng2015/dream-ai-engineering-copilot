@@ -102,7 +102,7 @@ Add-Row -Name "track_memoryagent" -Pass $true -Details $health.track
 Assert-Equals -Actual $health.llm_provider -Expected "qwen-cloud" -Field "llm_provider"
 Add-Row -Name "provider_qwen_cloud" -Pass $true -Details $health.llm_provider
 
-Assert-Equals -Actual $health.proof_file -Expected "deploy/alibaba/serverless-devs.yaml" -Field "proof_file"
+Assert-Equals -Actual $health.proof_file -Expected "deploy/alibaba/serverless-devs-runtime.yaml" -Field "proof_file"
 Add-Row -Name "proof_file" -Pass $true -Details $health.proof_file
 
 if ($AllowLocal) {

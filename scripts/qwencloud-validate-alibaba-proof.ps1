@@ -123,7 +123,7 @@ if ($capture) {
     Add-Check -Name "health_status_ok" -Ok ($health.status -eq "ok") -Details "status=$($health.status)"
     Add-Check -Name "health_track_memoryagent" -Ok ($health.track -eq "Track 1: MemoryAgent") -Details "track=$($health.track)"
     Add-Check -Name "health_provider_qwen_cloud" -Ok ($health.llm_provider -eq "qwen-cloud") -Details "llm_provider=$($health.llm_provider)"
-    Add-Check -Name "health_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details "proof_file=$($health.proof_file)"
+    Add-Check -Name "health_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml") -Details "proof_file=$($health.proof_file)"
     Add-Check -Name "health_deployment_target_alibaba" -Ok ([string]$health.deployment_target -match "Alibaba Cloud Function Compute") -Details "deployment_target=$($health.deployment_target)"
     Add-Check -Name "health_alibaba_region_present" -Ok (-not [string]::IsNullOrWhiteSpace([string]$health.alibaba_cloud_region)) -Details "region=$($health.alibaba_cloud_region)"
     Add-Check -Name "health_alibaba_service_present" -Ok (-not [string]::IsNullOrWhiteSpace([string]$health.alibaba_cloud_service)) -Details "service=$($health.alibaba_cloud_service)" -Required $false

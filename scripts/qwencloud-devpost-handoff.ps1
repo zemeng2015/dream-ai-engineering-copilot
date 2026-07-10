@@ -37,13 +37,13 @@ $handoffHtml = Join-Path $OutputDir "devpost-handoff-$timestamp.html"
 
 $projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence"
 $track = "Track 1: MemoryAgent"
-$deadline = "July 9, 2026 at 2:00pm PDT / 5:00pm EDT"
+$deadline = "July 20, 2026 at 2:00pm PDT / 5:00pm EDT"
 $devpostUrl = "https://qwencloud-hackathon.devpost.com/"
 $devpostPreviewUrl = "https://devpost.com/software/dream-qwen-cloud-memoryagent"
 $devpostProjectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit"
 $devpostAdditionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
 $devpostFinalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
-$deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs.yaml"
+$deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
 $licenseUrl = "$RepoUrl/blob/main/LICENSE"
 
 function Has-Env([string]$Name) {
@@ -163,7 +163,7 @@ $shortPitch = "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering i
 $nextCommands = @(
     'scripts/qwencloud-render-demo-video.ps1',
     'scripts/qwencloud-video-publication-handoff.ps1',
-    'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
+    'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
     'scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
     'scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
     'scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"'

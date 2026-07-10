@@ -20,8 +20,14 @@ Regenerate it with `scripts/qwencloud-export-architecture-png.ps1`.
 
 ## Deployment Path
 
-The backend container runs on Alibaba Cloud Function Compute. Runtime secrets
-are provided through environment variables:
+The submission deployment target is Alibaba Cloud Function Compute in
+`ap-southeast-1`, using an ACR-free Python 3.12 code package on
+`custom.debian11`. Singapore matches the Model Studio dedicated workspace
+region, shortening the cross-region network path and reducing timeout risk.
+The runtime defaults to Model Studio's official Singapore shared endpoint after
+the workspace-dedicated domain timed out in FC egress validation; local and
+benchmark flows can continue using the dedicated workspace URL. Runtime secrets
+and model settings are provided through environment variables:
 
 - `DASHSCOPE_API_KEY`
 - `QWEN_BASE_URL`

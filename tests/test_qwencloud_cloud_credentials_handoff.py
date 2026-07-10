@@ -56,12 +56,14 @@ def test_cloud_credentials_template_does_not_shadow_process_env(tmp_path: Path) 
     assert '"--AccessKeySecret", $env:ALIBABA_CLOUD_ACCESS_KEY_SECRET' in template
     assert '"--AccountID", $env:ALIBABA_CLOUD_ACCOUNT_ID' in template
     assert "s config add -a default --AccessKeyID" not in template
-    assert "$env:ALIBABA_CONTAINER_REGISTRY_USERNAME" in template
-    assert "$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD" in template
-    assert "--password-stdin" in template
+    assert '$env:ALIBABA_CLOUD_RUNTIME_REGION="ap-southeast-1"' in template
+    assert "$env:ALIBABA_CONTAINER_REGISTRY_USERNAME" not in template
+    assert "$env:ALIBABA_CONTAINER_REGISTRY_PASSWORD" not in template
+    assert "--password-stdin" not in template
     assert "intentionally omits -EnvFile" in template
-    assert "qwencloud-deploy-preflight.ps1 -BuildImage -SmokeContainer" in template
-    assert "qwencloud-alibaba-release.ps1 -DemoVideoUrl" in template
+    assert "qwencloud-release-config-audit.ps1 -UseCodePackage" in template
+    assert "qwencloud-build-fc-code-package.ps1" in template
+    assert "qwencloud-alibaba-runtime-release.ps1 -DemoVideoUrl" in template
     assert "-EnvFile .env.qwencloud.local" not in template
     assert all("-EnvFile .env.qwencloud.local" not in item for item in report["nextCommands"])
     assert "placeholder .env.qwencloud.local values cannot override" in markdown

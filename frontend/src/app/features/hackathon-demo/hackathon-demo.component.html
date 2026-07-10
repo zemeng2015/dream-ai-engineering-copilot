@@ -4,10 +4,10 @@
   <header class="demo-hero">
     <div class="hero-copy">
       <span class="eyebrow">Qwen Cloud Hackathon</span>
-      <h1>Hackathon Demo</h1>
+      <h1>DREAM MemoryAgent</h1>
       <p>
-        A judge-facing route through DREAM's MemoryAgent story: approved memory,
-        source-grounded generation, context trail, codebase evidence, and audit proof.
+        Engineering intelligence that remembers approved context, traces every source,
+        and turns rough requests into reviewable delivery artifacts with Qwen Cloud.
       </p>
     </div>
     <div class="hero-actions" aria-label="Hackathon demo shortcuts">
@@ -15,13 +15,19 @@
         <app-ui-icon name="database" />
         Start Memory
       </a>
-      <a class="secondary-button" routerLink="/requirements">Draft Jira</a>
-      <a class="secondary-button" routerLink="/audit">Audit Proof</a>
+      <a class="secondary-button" routerLink="/requirements">
+        <app-ui-icon name="clipboard" />
+        Draft Jira
+      </a>
+      <a class="secondary-button" routerLink="/audit">
+        <app-ui-icon name="shield" />
+        Audit Proof
+      </a>
     </div>
   </header>
 
   <section class="runtime-strip" aria-label="Qwen Cloud runtime proof">
-    @for (signal of runtimeSignals; track signal.label) {
+    @for (signal of runtimeSignals(); track signal.label) {
       <article class="runtime-signal" [attr.data-tone]="signal.tone">
         <span>{{ signal.label }}</span>
         <strong>{{ signal.value }}</strong>
@@ -50,6 +56,28 @@
         </div>
       }
     </div>
+  </section>
+
+  <section class="panel benchmark-panel" aria-label="Measured Qwen memory benchmark">
+    <div class="panel-header">
+      <div>
+        <span class="eyebrow">Paired Qwen A/B</span>
+        <h2>Measured Qwen memory lift</h2>
+        <p>
+          Same Qwen model and output contract; the only changed variable is DREAM's retrieved
+          organization evidence.
+        </p>
+      </div>
+    </div>
+    <div class="submit-grid benchmark-fact-grid">
+      @for (fact of benchmarkFacts(); track fact.label) {
+        <div>
+          <span>{{ fact.label }}</span>
+          <strong>{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+    <p class="benchmark-caveat">{{ benchmarkCaveat() }}</p>
   </section>
 
   <section class="demo-layout" aria-label="Guided hackathon demo">
@@ -82,13 +110,13 @@
     <aside class="panel evidence-panel">
       <div class="panel-header">
         <div>
-          <h2>Submission Evidence</h2>
-          <p>Ready signals stay separate from action-time external requirements.</p>
+          <h2>Live Evidence</h2>
+          <p>Runtime identity, provenance, governance, and reproducibility in one view.</p>
         </div>
       </div>
 
       <div class="evidence-list">
-        @for (item of submissionEvidence; track item.name) {
+        @for (item of submissionEvidence(); track item.name) {
           <article class="evidence-row" [attr.data-tone]="item.tone">
             <div>
               <strong>{{ item.name }}</strong>
@@ -101,28 +129,16 @@
     </aside>
   </section>
 
-  <section class="proof-layout" aria-label="Local proof commands and Devpost status">
+  <section class="proof-layout" aria-label="Judging criteria alignment">
     <article class="panel scorecard-panel">
       <div class="panel-header">
         <div>
           <h2>Judging Scorecard Alignment</h2>
-          <p>Weighted evidence split used by the final bundle and judge rehearsal.</p>
-        </div>
-      </div>
-      <div class="submit-grid scorecard-summary" aria-label="Current judging evidence score">
-        <div data-tone="watch">
-          <span>Current evidence</span>
-          <strong>{{ scorecardCurrentEvidence() }}</strong>
-          <small>ready before external URLs</small>
-        </div>
-        <div data-tone="blocked">
-          <span>External gap</span>
-          <strong>{{ externalEvidenceGap() }}</strong>
-          <small>public video and Alibaba proof</small>
+          <p>Where the live product demonstrates each official judging dimension.</p>
         </div>
       </div>
       <div class="evidence-list">
-        @for (item of scorecardItems; track item.criterion) {
+        @for (item of scorecardItems(); track item.criterion) {
           <article class="evidence-row scorecard-row" [attr.data-tone]="item.tone">
             <div>
               <span>{{ item.weight }}</span>
@@ -131,38 +147,6 @@
             </div>
             <em>{{ item.state }}</em>
           </article>
-        }
-      </div>
-    </article>
-
-    <article class="panel proof-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Local Proof Commands</h2>
-          <p>Cross-platform checks used by CI and the final upload bundle.</p>
-        </div>
-      </div>
-      <div class="command-list">
-        @for (command of quickProofCommands; track command) {
-          <code>{{ command }}</code>
-        }
-      </div>
-    </article>
-
-    <article class="panel submit-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Final Submit Gate</h2>
-          <p>Current local evidence is reproducible; external proof remains explicit.</p>
-        </div>
-      </div>
-      <div class="submit-grid">
-        @for (gate of submitGates(); track gate.label) {
-          <div [attr.data-tone]="gate.tone">
-            <span>{{ gate.label }}</span>
-            <strong>{{ gate.value }}</strong>
-            <small>{{ gate.detail }}</small>
-          </div>
         }
       </div>
     </article>

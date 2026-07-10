@@ -84,6 +84,21 @@ def test_qwen_cloud_config_uses_dashscope_env(monkeypatch) -> None:
     assert resolved.llm.model == "qwen3.7-plus"
 
 
+def test_qwen_cloud_model_env_overrides_file_for_runtime_attestation(
+    monkeypatch, tmp_path
+) -> None:
+    config_path = _config_file(
+        tmp_path,
+        {"llm": {"provider": "qwen-cloud", "model": "qwen3.7-plus"}},
+    )
+    monkeypatch.setenv("DREAM_CONFIG_FILE", str(config_path))
+    monkeypatch.setenv("QWEN_MODEL", "qwen-runtime-override")
+
+    resolved = resolve_config()
+
+    assert resolved.llm.model == "qwen-runtime-override"
+
+
 def test_qwen_cloud_validation_reports_base_url_env_warning(monkeypatch, tmp_path) -> None:
     config_path = _config_file(
         tmp_path,

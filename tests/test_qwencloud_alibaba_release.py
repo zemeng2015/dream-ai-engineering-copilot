@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_local_alibaba_release_logs_in_before_push_without_leaking_password() -> None:
+def test_container_fallback_login_is_isolated_from_primary_runtime_workflow() -> None:
     release = (ROOT / "scripts" / "qwencloud-alibaba-release.ps1").read_text(
         encoding="utf-8-sig"
     )
@@ -25,4 +25,7 @@ def test_local_alibaba_release_logs_in_before_push_without_leaking_password() ->
     assert "docker login $RegistryHost with ALIBABA_CONTAINER_REGISTRY_USERNAME" in release
     assert "docker login $registryHost -u $env:ALIBABA_CONTAINER_REGISTRY_USERNAME" not in release
 
-    assert "ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login" in workflow
+    assert "ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login" not in workflow
+    assert "qwencloud-alibaba-runtime-release.ps1" in workflow
+    assert "qwencloud-alibaba-release.ps1" not in workflow
+    assert 'python-version: "3.12"' in workflow

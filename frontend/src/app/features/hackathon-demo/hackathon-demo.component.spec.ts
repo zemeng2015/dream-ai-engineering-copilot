@@ -34,14 +34,14 @@ describe('HackathonDemoComponent', () => {
       status: 'ok',
       service: 'dream-memoryagent-api',
       track: 'Track 1: MemoryAgent',
-      deployment_target: 'Alibaba Cloud Function Compute custom container',
+      deployment_target: 'Alibaba Cloud Function Compute custom runtime',
       alibaba_cloud_region: 'ap-southeast-1',
-      alibaba_cloud_service: 'Function Compute custom container',
+      alibaba_cloud_service: 'Function Compute custom runtime',
       llm_provider: 'qwen-cloud',
       llm_model: 'qwen3.7-plus',
       llm_base_url: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
       llm_api_key_configured: true,
-      proof_file: 'deploy/alibaba/serverless-devs.yaml',
+      proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
     });
     const showcaseRequest = httpTesting.expectOne('http://127.0.0.1:8000/qwencloud/showcase');
 
@@ -56,19 +56,36 @@ describe('HackathonDemoComponent', () => {
         status: 'ok',
         service: 'dream-memoryagent-api',
         track: 'Track 1: MemoryAgent',
-        deployment_target: 'Alibaba Cloud Function Compute custom container',
+        deployment_target: 'Alibaba Cloud Function Compute custom runtime',
         alibaba_cloud_region: 'ap-southeast-1',
-        alibaba_cloud_service: 'Function Compute custom container',
+        alibaba_cloud_service: 'Function Compute custom runtime',
         llm_provider: 'qwen-cloud',
         llm_model: 'qwen3.7-plus',
         llm_api_key_configured: true,
-        proof_file: 'deploy/alibaba/serverless-devs.yaml',
+        proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
         qwen_cloud_ready: true,
         alibaba_runtime_ready: true,
         live_backend_ready: true,
       },
       judge_flow: [],
       evidence: [],
+      benchmark: {
+        status: 'ready',
+        run_id: '20260709T215947Z',
+        provider: 'qwen-cloud',
+        model: 'qwen3.7-plus',
+        case_count: 7,
+        baseline_score: 25.3,
+        dream_score: 48.7,
+        score_delta: 23.4,
+        median_delta: 23.2,
+        exact_paired_permutation_p: 0.0156,
+        dream_wins: 7,
+        exact_retrieval_recall_at_12: 0.356,
+        report_path:
+          'artifacts/qwencloud-proof/qwen-memory-ab-benchmark-20260709T215947Z.json',
+        limitations: ['Seven synthetic engineering cases.'],
+      },
       scorecard: {
         weighted_current_evidence_ready: 85,
         weighted_static_evidence_ready: 100,
@@ -86,20 +103,28 @@ describe('HackathonDemoComponent', () => {
     expect(text).toContain('qwen-cloud');
     expect(text).toContain('qwen3.7-plus');
     expect(text).toContain('Live Qwen proof ready');
-    expect(text).toContain('Alibaba Cloud Function Compute custom container');
+    expect(text).toContain('Alibaba Cloud Function Compute custom runtime');
     expect(text).toContain('ap-southeast-1');
     expect(text).toContain('API key configured');
-    expect(text).toContain('deploy/alibaba/serverless-devs.yaml');
-    expect(text).toContain('Public video URL');
-    expect(text).toContain('Alibaba deployment proof');
+    expect(text).toContain('deploy/alibaba/serverless-devs-runtime.yaml');
+    expect(text).toContain('Live Evidence');
+    expect(text).toContain('Qwen Cloud execution');
+    expect(text).toContain('Alibaba Function Compute');
+    expect(text).toContain('Measured Qwen memory lift');
+    expect(text).toContain('25.3 to 48.7');
+    expect(text).toContain('+23.4');
+    expect(text).toContain('7/7');
+    expect(text).toContain('0.0156');
+    expect(text).toContain('35.6%');
+    expect(text).toContain('synthetic engineering cases');
     expect(text).toContain('Judging Scorecard Alignment');
-    expect(text).toContain('85/100');
-    expect(text).toContain('15 pts');
-    expect(text).toContain('public_demo_video_url');
     expect(text).toContain('Innovation and AI Creativity');
     expect(text).toContain('Technical Depth and Engineering');
     expect(text).toContain('Presentation and Documentation');
-    expect(text).toContain('Live inputs');
+    expect(text).toContain('Live proof ready');
+    expect(text).not.toContain('Public video URL');
+    expect(text).not.toContain('Local Proof Commands');
+    expect(text).not.toContain('Final Submit Gate');
   });
 
   it('keeps the judge route usable when the backend is offline', () => {

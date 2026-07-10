@@ -30,6 +30,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+$manifestBasePath = [System.IO.Path]::GetFullPath((Get-Location).Path)
+$userProfilePath = [Environment]::GetFolderPath("UserProfile")
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-env.ps1")
 $importedEnvNames = @()
@@ -55,6 +57,77 @@ function Get-FileSha256([string]$Path) {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
 }
 
+function Protect-ManifestText([string]$Text) {
+    if ([string]::IsNullOrEmpty($Text)) {
+        return $Text
+    }
+
+    $protected = $Text
+    foreach ($entry in @(
+        [pscustomobject]@{ path = $manifestBasePath; replacement = "." },
+        [pscustomobject]@{ path = $userProfilePath; replacement = "<user-profile>" }
+    )) {
+        if ([string]::IsNullOrWhiteSpace($entry.path)) {
+            continue
+        }
+        foreach ($variant in @(
+            $entry.path,
+            $entry.path.Replace("\", "/"),
+            $entry.path.Replace("\", "\\")
+        ) | Select-Object -Unique) {
+            $protected = [regex]::Replace(
+                $protected,
+                [regex]::Escape($variant),
+                $entry.replacement,
+                [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+            )
+        }
+    }
+    return $protected
+}
+
+function Get-PortableManifestPath([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return ""
+    }
+    try {
+        $full = [System.IO.Path]::GetFullPath($Path)
+        $comparison = [System.StringComparison]::OrdinalIgnoreCase
+        if ($full.Equals($manifestBasePath, $comparison)) {
+            return "."
+        }
+        if ($full.StartsWith($manifestBasePath + [System.IO.Path]::DirectorySeparatorChar, $comparison)) {
+            return $full.Substring($manifestBasePath.Length + 1).Replace("\", "/")
+        }
+        return [System.IO.Path]::GetFileName($full)
+    }
+    catch {
+        return [System.IO.Path]::GetFileName($Path)
+    }
+}
+
+function Protect-BundledTextFile([string]$Path) {
+    $textExtensions = @(
+        ".csv", ".env", ".err", ".html", ".json", ".md", ".out",
+        ".ps1", ".sh", ".srt", ".tsv", ".txt", ".yaml", ".yml"
+    )
+    if ($textExtensions -notcontains [System.IO.Path]::GetExtension($Path).ToLowerInvariant()) {
+        return $false
+    }
+
+    $original = [System.IO.File]::ReadAllText($Path)
+    $protected = Protect-ManifestText -Text $original
+    if ($protected -ceq $original) {
+        return $false
+    }
+    [System.IO.File]::WriteAllText(
+        $Path,
+        $protected,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    return $true
+}
+
 function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
     $exists = (-not [string]::IsNullOrWhiteSpace($Path)) -and (Test-Path $Path)
     $dest = $null
@@ -62,6 +135,7 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
     $sourceSha256 = ""
     $bundledSha256 = ""
     $size = 0
+    $portableRedactionApplied = $false
 
     if ($exists) {
         $source = Get-Item -LiteralPath $Path
@@ -69,11 +143,13 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
         $sourceSha256 = Get-FileSha256 -Path $source.FullName
         $dest = Join-Path $script:uploadsDir $source.Name
         Copy-Item -LiteralPath $source.FullName -Destination $dest -Force
+        $portableRedactionApplied = Protect-BundledTextFile -Path $dest
+        $size = (Get-Item -LiteralPath $dest).Length
         $bundledSha256 = Get-FileSha256 -Path $dest
-        $details = "copied=$dest; size=$size; sha256=$sourceSha256"
+        $details = "copied=$(Get-PortableManifestPath -Path $dest); size=$size; sha256=$bundledSha256"
     }
     else {
-        $details = "missing=$(if ([string]::IsNullOrWhiteSpace($Path)) { '<empty path>' } else { $Path })"
+        $details = "missing=$(if ([string]::IsNullOrWhiteSpace($Path)) { '<empty path>' } else { Get-PortableManifestPath -Path $Path })"
         if ($Required) {
             $script:missing += $Name
         }
@@ -81,14 +157,15 @@ function Add-Item([string]$Name, [string]$Path, [bool]$Required = $true) {
 
     $script:items += [ordered]@{
         name = $Name
-        source = $Path
+        source = Get-PortableManifestPath -Path $Path
         required = $Required
         exists = $exists
-        bundledPath = $dest
+        bundledPath = Get-PortableManifestPath -Path $dest
         sizeBytes = $size
         sourceSha256 = $sourceSha256
         bundledSha256 = $bundledSha256
         hashMatches = ($exists -and $sourceSha256 -eq $bundledSha256)
+        portableRedactionApplied = $portableRedactionApplied
         details = $details
     }
 }
@@ -112,11 +189,11 @@ function Add-ExternalRequirement([string]$Name, [bool]$Ok, [string]$Details, [bo
 
     $script:items += [ordered]@{
         name = $Name
-        source = $Details
+        source = Protect-ManifestText -Text $Details
         required = $Required
         exists = $Ok
         bundledPath = $null
-        details = $Details
+        details = Protect-ManifestText -Text $Details
     }
 }
 
@@ -253,6 +330,7 @@ function Invoke-ReleaseConfigAudit {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-release-config-audit.ps1",
         "-OutputDir", $OutputDir,
+        "-UseCodePackage",
         "-AllowDraft"
     )
     if ($EnvFile) { $args += @("-EnvFile", $EnvFile) }
@@ -1001,7 +1079,6 @@ Add-Item -Name "hackathon_demo_route_template" -Path "frontend/src/app/features/
 Add-Item -Name "hackathon_demo_route_styles" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.scss" -Required $false
 Add-Item -Name "hackathon_demo_route_tests" -Path "frontend/src/app/features/hackathon-demo/hackathon-demo.component.spec.ts" -Required $false
 Add-Item -Name "seeded_demo_artifact_script" -Path "scripts/qwencloud_seed_demo_artifact.py" -Required $false
-Add-LatestItem -Name "latest_seeded_demo_artifact_zip" -Filter "seeded-demo-artifact-*.zip"
 Add-Item -Name "judge_rehearsal_script" -Path "scripts/qwencloud-judge-rehearsal.ps1" -Required $false
 Add-LatestItem -Name "latest_judge_rehearsal_markdown" -Filter "judge-rehearsal-*.md"
 Add-LatestItem -Name "latest_judge_rehearsal_json" -Filter "judge-rehearsal-*.json"
@@ -1032,7 +1109,6 @@ Add-Item -Name "final_action_board_markdown" -Path $actionBoard.markdown -Requir
 Add-Item -Name "final_action_board_json" -Path $actionBoard.json -Required $false
 Add-Item -Name "final_external_handoff_markdown" -Path $externalHandoff.markdown -Required $false
 Add-Item -Name "final_external_handoff_json" -Path $externalHandoff.json -Required $false
-Add-Item -Name "final_external_handoff_zip" -Path $externalHandoff.zip -Required $false
 Add-LatestItem -Name "latest_final_sprint_markdown" -Filter "final-sprint-*.md"
 Add-LatestItem -Name "latest_final_sprint_json" -Filter "final-sprint-*.json"
 Add-Item -Name "local_demo_video_for_public_upload" -Path $LocalDemoVideoPath -Required ([string]::IsNullOrWhiteSpace($DemoVideoUrl))
@@ -1117,12 +1193,12 @@ $manifest = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
-    envFile = $EnvFile
+    envFile = Get-PortableManifestPath -Path $EnvFile
     importedEnvNames = $importedEnvNames
     officialSourceFingerprints = $officialSourceRefresh.sourceFingerprints
     releaseSummaryPackaging = "not_bundled_generate_after_zip_hash"
-    bundleRoot = $bundleRoot
-    zipPath = $zipPath
+    bundleRoot = Get-PortableManifestPath -Path $bundleRoot
+    zipPath = Get-PortableManifestPath -Path $zipPath
     missingRequiredItems = $missing
     items = $items
 }
@@ -1139,8 +1215,8 @@ $lines = @(
     "- Git remote synced: $gitRemoteSynced",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
-    "- Env file imported: $(if ($EnvFile) { $EnvFile } else { '<none>' })",
-    "- Bundle zip: $zipPath",
+    "- Env file imported: $(if ($EnvFile) { Get-PortableManifestPath -Path $EnvFile } else { '<none>' })",
+    "- Bundle zip: $(Get-PortableManifestPath -Path $zipPath)",
     "- Release summary: generate after this bundle; it is intentionally not bundled because it records the bundle ZIP SHA256.",
     "",
     "## Items",
@@ -1151,11 +1227,11 @@ $lines = @(
 foreach ($item in $items) {
     $required = if ($item.required) { "yes" } else { "no" }
     $exists = if ($item.exists) { "yes" } else { "no" }
-    $sha256 = if ($item.sourceSha256) { $item.sourceSha256 } else { "" }
+    $sha256 = if ($item.bundledSha256) { $item.bundledSha256 } else { "" }
     $lines += "| $($item.name) | $required | $exists | $sha256 | $($item.details -replace '\|', '/') |"
 }
 
-$hashedUploadItems = @($items | Where-Object { $_.exists -and $_.bundledPath -and $_.sourceSha256 })
+$hashedUploadItems = @($items | Where-Object { $_.exists -and $_.bundledPath -and $_.bundledSha256 })
 if ($hashedUploadItems.Count -gt 0) {
     $lines += @(
         "",
@@ -1167,7 +1243,7 @@ if ($hashedUploadItems.Count -gt 0) {
         "|---|---:|---|"
     )
     foreach ($item in $hashedUploadItems) {
-        $lines += "| $($item.name) | $($item.sizeBytes) | $($item.sourceSha256) |"
+        $lines += "| $($item.name) | $($item.sizeBytes) | $($item.bundledSha256) |"
     }
 }
 

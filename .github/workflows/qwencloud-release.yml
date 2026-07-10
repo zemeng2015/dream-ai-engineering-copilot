@@ -21,16 +21,6 @@ on:
         description: Optional public blog or social journey URL
         required: false
         type: string
-      imageTag:
-        description: Local Docker tag used before pushing to Alibaba Container Registry
-        required: false
-        default: dream-qwencloud-memoryagent:ci
-        type: string
-      skipPush:
-        description: Skip docker tag/push. Use only when ALIBABA_CLOUD_CONTAINER_IMAGE already exists.
-        required: false
-        default: false
-        type: boolean
       skipDeploy:
         description: Skip Serverless Devs deploy. Requires backendUrl.
         required: false
@@ -55,9 +45,7 @@ jobs:
       ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
       ALIBABA_CLOUD_REGION: ${{ secrets.ALIBABA_CLOUD_REGION }}
-      ALIBABA_CLOUD_CONTAINER_IMAGE: ${{ secrets.ALIBABA_CLOUD_CONTAINER_IMAGE }}
-      ALIBABA_CONTAINER_REGISTRY_USERNAME: ${{ secrets.ALIBABA_CONTAINER_REGISTRY_USERNAME }}
-      ALIBABA_CONTAINER_REGISTRY_PASSWORD: ${{ secrets.ALIBABA_CONTAINER_REGISTRY_PASSWORD }}
+      ALIBABA_CLOUD_RUNTIME_REGION: ${{ secrets.ALIBABA_CLOUD_RUNTIME_REGION }}
       DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
       QWEN_BASE_URL: ${{ secrets.QWEN_BASE_URL }}
       QWEN_MODEL: ${{ secrets.QWEN_MODEL }}
@@ -69,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -110,23 +98,12 @@ jobs:
           foreach ($name in @(
             "ALIBABA_CLOUD_ACCESS_KEY_ID",
             "ALIBABA_CLOUD_ACCESS_KEY_SECRET",
-            "ALIBABA_CLOUD_REGION",
-            "ALIBABA_CLOUD_CONTAINER_IMAGE",
-            "DASHSCOPE_API_KEY"
+            "DASHSCOPE_API_KEY",
+            "QWEN_BASE_URL",
+            "QWEN_MODEL"
           )) {
             if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
               $missing += $name
-            }
-          }
-
-          if ("${{ inputs.skipPush }}" -ne "true") {
-            foreach ($name in @(
-              "ALIBABA_CONTAINER_REGISTRY_USERNAME",
-              "ALIBABA_CONTAINER_REGISTRY_PASSWORD"
-            )) {
-              if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
-                $missing += $name
-              }
             }
           }
 
@@ -158,34 +135,20 @@ jobs:
           & s @args
           "Serverless Devs default access configured."
 
-      - name: Log in to Alibaba Container Registry
-        if: ${{ inputs.skipPush != true }}
-        shell: pwsh
-        run: |
-          $registryHost = ($env:ALIBABA_CLOUD_CONTAINER_IMAGE -split "/")[0]
-          if ([string]::IsNullOrWhiteSpace($registryHost) -or $registryHost -eq $env:ALIBABA_CLOUD_CONTAINER_IMAGE) {
-            throw "ALIBABA_CLOUD_CONTAINER_IMAGE must include a registry host, for example registry-intl.ap-southeast-1.aliyuncs.com/namespace/repo:tag"
-          }
-          $env:ALIBABA_CONTAINER_REGISTRY_PASSWORD | docker login $registryHost -u $env:ALIBABA_CONTAINER_REGISTRY_USERNAME --password-stdin
-
       - name: Run Alibaba release flow
         shell: pwsh
         run: |
-          $args = @(
-            "-DemoVideoUrl", "${{ inputs.demoVideoUrl }}",
-            "-ImageTag", "${{ inputs.imageTag }}"
-          )
+          $args = @("-DemoVideoUrl", "${{ inputs.demoVideoUrl }}")
           if (-not [string]::IsNullOrWhiteSpace("${{ inputs.backendUrl }}")) {
             $args += @("-BackendUrl", "${{ inputs.backendUrl }}")
           }
           if (-not [string]::IsNullOrWhiteSpace("${{ inputs.blogPostUrl }}")) {
             $args += @("-BlogPostUrl", "${{ inputs.blogPostUrl }}")
           }
-          if ("${{ inputs.skipPush }}" -eq "true") { $args += "-SkipPush" }
           if ("${{ inputs.skipDeploy }}" -eq "true") { $args += "-SkipDeploy" }
           if ("${{ inputs.skipDraft }}" -eq "true") { $args += "-SkipDraft" }
           if ("${{ inputs.allowDraftPacket }}" -eq "true") { $args += "-AllowDraftPacket" }
-          ./scripts/qwencloud-alibaba-release.ps1 @args
+          ./scripts/qwencloud-alibaba-runtime-release.ps1 @args
 
       - name: Generate final readiness and upload bundle
         if: always()
@@ -194,7 +157,7 @@ jobs:
           $common = @("-DemoVideoUrl", "${{ inputs.demoVideoUrl }}")
           $backendUrl = "${{ inputs.backendUrl }}"
           if ([string]::IsNullOrWhiteSpace($backendUrl)) {
-            $releaseJson = Get-ChildItem -LiteralPath "artifacts/qwencloud-proof" -Filter "alibaba-release-*.json" -ErrorAction SilentlyContinue |
+            $releaseJson = Get-ChildItem -LiteralPath "artifacts/qwencloud-proof" -Filter "alibaba-runtime-release-*.json" -ErrorAction SilentlyContinue |
               Sort-Object LastWriteTime -Descending |
               Select-Object -First 1
             if ($releaseJson) {

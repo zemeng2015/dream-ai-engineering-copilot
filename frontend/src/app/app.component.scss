@@ -258,12 +258,18 @@
 
   .nav-list {
     display: flex;
-    flex-wrap: wrap;
-    overflow-x: hidden;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     padding: 0 12px 12px;
   }
 
+  .nav-list::-webkit-scrollbar {
+    display: none;
+  }
+
   .nav-link {
+    flex: 0 0 auto;
     min-width: 0;
     min-height: 42px;
     border-left: 0;
@@ -284,9 +290,10 @@
 
   .topbar {
     position: static;
-    grid-template-columns: 1fr;
-    align-items: start;
-    padding: 16px;
+    min-height: 58px;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 10px 16px;
   }
 
   .sidebar-toggle {
@@ -294,7 +301,7 @@
   }
 
   .topbar-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .content {
@@ -303,6 +310,46 @@
 }
 
 @media (width <= 680px) {
+  .sidebar-head {
+    padding: 10px 14px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .brand strong {
+    font-size: 20px;
+  }
+
+  .nav-list {
+    padding-bottom: 10px;
+  }
+
+  .nav-link {
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-title,
+  .topbar .ghost-button {
+    display: none;
+  }
+
+  .topbar-actions {
+    justify-content: space-between;
+  }
+
   .mode-chip {
     min-height: 30px;
     font-size: 12px;

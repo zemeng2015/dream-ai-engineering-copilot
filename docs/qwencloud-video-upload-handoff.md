@@ -135,7 +135,7 @@ Then pass the public URL into the release and final readiness commands:
 ```powershell
 scripts/qwencloud-video-upload-status.ps1 -DemoVideoUrl "<public-video-url>"
 
-scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"
 
 scripts/qwencloud-hackathon-submission-packet.ps1 `
   -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" `

@@ -56,6 +56,7 @@ class OpenAICompatibleProvider:
             ],
             "temperature": 0,
         }
+        payload.update(self._completion_parameters())
         data = self._post_json("/chat/completions", payload)
         try:
             text = data["choices"][0]["message"]["content"]
@@ -71,6 +72,9 @@ class OpenAICompatibleProvider:
             provider_name=self.provider_name,
             token_usage=token_usage,
         )
+
+    def _completion_parameters(self) -> dict[str, object]:
+        return {}
 
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
@@ -94,6 +98,10 @@ class OpenAICompatibleProvider:
         except URLError as exc:
             raise ProviderRequestError(
                 f"OpenAI-compatible request failed: {exc.reason}"
+            ) from exc
+        except TimeoutError as exc:
+            raise ProviderRequestError(
+                f"OpenAI-compatible request timed out after {self.timeout_seconds:g} seconds."
             ) from exc
 
         try:

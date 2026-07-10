@@ -12,6 +12,7 @@ external proof that must be added at action time.
 |---|---|---|
 | Stage One and Qwen Cloud fit | Qwen provider, Qwen config, Track 1 submission brief, Alibaba deployment template | Deployed Alibaba backend URL |
 | Innovation and AI Creativity | Memory distillation, context intelligence, knowledge packs, codebase retrieval, requirement generation, audit/eval | None |
+| Measured Qwen + DREAM evidence | Real Qwen Cloud paired run, machine-readable summary, detailed report, benchmark runner, and tests | None; cases are synthetic and claims remain bounded to this benchmark |
 | Technical Depth and Engineering | FastAPI, config/provider abstraction, Docker, CI, Alibaba release workflow, readiness and bundle gates | Deployed Alibaba backend URL |
 | Problem Value and Impact | Devpost copy, requirement intelligence docs, PR review docs, open-core strategy, workflow tests | None |
 | Presentation and Documentation | Architecture assets, demo script, captions, transcript, thumbnail, video renderer, judge rehearsal, Devpost payload tooling | Public demo video URL |
@@ -35,7 +36,7 @@ Static evidence:
 - `dream/api/routes.py`
 - `dream/llm/qwen_cloud.py`
 - `tests/test_qwen_cloud_provider.py`
-- `deploy/alibaba/serverless-devs.yaml`
+- `deploy/alibaba/serverless-devs-runtime.yaml`
 - `docs/qwencloud-submission.md`
 
 External proof required:
@@ -67,11 +68,45 @@ External proof required:
 
 - None beyond final public repo availability.
 
+### Measured Qwen + DREAM paired benchmark
+
+Claim: In one real Qwen Cloud run over seven synthetic engineering cases,
+adding DREAM-retrieved organization evidence improved the deterministic
+reference score under the benchmark's exact-term rubric. Both arms used the
+same `qwen3.7-plus` model, temperature `0`, output contract, and deterministic
+scorer; organization evidence absent versus DREAM-retrieved evidence was the
+changed variable.
+
+| Result | Baseline | Qwen + DREAM | Paired result |
+|---|---:|---:|---:|
+| Mean deterministic reference score | 25.3 | 48.7 | +23.4 |
+| Unsupported references | 0 | 0 | 0 |
+
+- DREAM scored higher in `7/7` paired cases; exact paired permutation
+  `p=0.0156`.
+- Exact retrieval Recall@12 was `35.6%` and remains a bottleneck.
+- These are synthetic cases, not production data or a production-effectiveness
+  claim. One deterministic completion per arm does not estimate sampling
+  variance, and exact-term scoring does not measure semantic equivalence.
+- Latency/token sidecars are incomplete, so no latency or token comparison is
+  made.
+
+Static evidence:
+
+- `docs/assets/qwen-memory-ab-benchmark-summary.json`
+- `docs/qwen-memory-ab-benchmark.md`
+- `scripts/qwencloud_memory_ab_benchmark.py`
+- `tests/test_qwencloud_memory_ab_benchmark.py`
+
+External proof required:
+
+- None beyond final public repo availability.
+
 ### Technical Depth and Engineering
 
-Claim: DREAM includes provider abstraction, API/CLI surfaces, Docker packaging,
-Alibaba custom container deployment, CI, proof automation, final readiness
-gates, and deterministic local verification.
+Claim: DREAM includes provider abstraction, API/CLI surfaces, reproducible
+runtime packaging, ACR-free Alibaba Function Compute deployment, CI, proof
+automation, final readiness gates, and deterministic local verification.
 
 Static evidence:
 

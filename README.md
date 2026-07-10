@@ -127,12 +127,25 @@ memory core, governed memory distillation, audit ledger, context trail, and
 human review flow, then swaps live generation to Qwen Cloud through the
 OpenAI-compatible API.
 
+Live Alibaba Cloud deployment:
+
+- Workbench: <https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/>
+- Judge flow: <https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo>
+- Runtime proof: <https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/health>
+- Showcase evidence: <https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/qwencloud/showcase>
+
+New Model Studio keys beginning with `sk-ws` work with the dedicated Singapore
+workspace URL and, in the same region, Alibaba's official shared
+`dashscope-intl.aliyuncs.com` endpoint. The deployed Function Compute runtime
+uses the shared Singapore endpoint after its dedicated-domain egress check timed
+out; local benchmark configuration keeps the dedicated workspace URL private.
+
 Run a live Qwen Cloud smoke test:
 
 ```powershell
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<your-qwen-cloud-api-key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 dream llm smoke --provider qwen-cloud --prompt "Return DREAM_QWEN_OK and one sentence about persistent engineering memory."
 ```
 
@@ -141,7 +154,7 @@ Run the API in Qwen mode:
 ```powershell
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<your-qwen-cloud-api-key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 curl http://localhost:8000/health
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://localhost:8000
@@ -222,7 +235,7 @@ Run the end-to-end Alibaba release flow after credentials and the container
 registry image are configured:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 After deployment, capture the Devpost-ready Alibaba proof screenshot:

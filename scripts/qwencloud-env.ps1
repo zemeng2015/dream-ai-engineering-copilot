@@ -67,6 +67,7 @@ function Test-QwenCloudEnvValuePresent {
         "<alibaba-access-key-secret>",
         "<optional-account-id>",
         "<qwen-cloud-api-key>",
+        "<workspace-id>",
         "<registry-host>",
         "<registry-password>",
         "<registry-username>",

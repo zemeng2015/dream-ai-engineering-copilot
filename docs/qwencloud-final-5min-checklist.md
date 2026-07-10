@@ -9,7 +9,7 @@
 ```powershell
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 python -m dream.cli.main llm smoke --provider qwen-cloud
 uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
@@ -30,7 +30,7 @@ scripts/qwencloud-run-local-proof.ps1
 - Confirm output includes:
   - `llm_provider: qwen-cloud`
   - `track: Track 1: MemoryAgent`
-  - `proof_file: deploy/alibaba/serverless-devs.yaml`
+  - `proof_file: deploy/alibaba/serverless-devs-runtime.yaml`
 
 ## Step 2 - Artifact evidence (about 1 minute)
 
@@ -45,7 +45,7 @@ scripts/qwencloud-run-local-proof.ps1
   - `docs/qwencloud-video-upload-handoff.md`
   - `docs/qwencloud-judging-evidence-matrix.md`
   - `docs/qwencloud-build-journey-post.md`
-  - `deploy/alibaba/serverless-devs.yaml`
+  - `deploy/alibaba/serverless-devs-runtime.yaml`
   - `deploy/alibaba/README.md`
   - `docs/qwencloud-devpost-form-fields.md`
   - `frontend/src/app/features/hackathon-demo/hackathon-demo.component.ts`
@@ -100,7 +100,7 @@ scripts/qwencloud-judge-rehearsal.ps1 -AllowDraft
 ```powershell
 Copy-Item .env.qwencloud.local.example .env.qwencloud.local
 # Fill .env.qwencloud.local locally. It is ignored by git.
-scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -AllowDraft
+scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage -AllowDraft
 scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-github-secrets-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft
@@ -109,7 +109,7 @@ scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage
 Optional one-command release after credentials and video URL are available:
 
 ```powershell
-scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
+scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "https://www.youtube.com/..."
 ```
 
 One-command final sprint dashboard before doing any external action:
@@ -119,7 +119,7 @@ scripts/qwencloud-final-sprint.ps1 -EnvFile .env.qwencloud.local -AllowDraft
 ```
 
 - Confirm the final deployed `/health` URL returns the Qwen provider, Track 1,
-  model, region, and `deploy/alibaba/serverless-devs.yaml` proof file.
+  model, region, and `deploy/alibaba/serverless-devs-runtime.yaml` proof file.
 - Capture the required Devpost screenshot from the deployed `/health` proof:
 
 ```powershell

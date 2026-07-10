@@ -279,7 +279,7 @@ expected = {
     "status": "ok",
     "track": "Track 1: MemoryAgent",
     "llm_provider": "qwen-cloud",
-    "proof_file": "deploy/alibaba/serverless-devs.yaml",
+    "proof_file": "deploy/alibaba/serverless-devs-runtime.yaml",
 }
 for key, value in expected.items():
     if payload.get(key) != value:
@@ -326,7 +326,7 @@ add_step "tool.python" "pass" "$("$PYTHON_BIN" --version 2>&1)"
 
 required_files=(
   "$CONFIG_PATH"
-  "deploy/alibaba/serverless-devs.yaml"
+  "deploy/alibaba/serverless-devs-runtime.yaml"
   "dream/llm/qwen_cloud.py"
   "tests/test_api_health.py"
   "tests/test_qwen_cloud_provider.py"
@@ -392,7 +392,7 @@ done
 if [[ "$health_ok" -ne 1 ]]; then
   fail "Local API did not return Qwen Cloud hackathon health proof at $BASE_URL/health."
 fi
-add_step "health_wait" "pass" "track=Track 1: MemoryAgent; provider=qwen-cloud; proof_file=deploy/alibaba/serverless-devs.yaml"
+add_step "health_wait" "pass" "track=Track 1: MemoryAgent; provider=qwen-cloud; proof_file=deploy/alibaba/serverless-devs-runtime.yaml"
 
 if "$PYTHON_BIN" -m pytest tests/test_api_health.py tests/test_qwen_cloud_provider.py >"$PYTEST_OUT" 2>"$PYTEST_ERR"; then
   add_step "pytest_smoke" "pass" "tests/test_api_health.py tests/test_qwen_cloud_provider.py"

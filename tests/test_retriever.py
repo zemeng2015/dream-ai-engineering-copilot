@@ -52,3 +52,21 @@ def test_dfp_dataset_searches_return_expected_memory() -> None:
         "Partial completion" in chunk.content or "Partial" in chunk.title
         for chunk in partial_results
     )
+
+
+def test_scored_search_preserves_domain_relevance_over_common_words() -> None:
+    pack = KnowledgePackLoader().load("demo_team")
+    documents = MarkdownDocumentLoader().load_for_pack(
+        pack, KNOWLEDGE_PACKS_DIR / "demo_team"
+    )
+    chunks = Chunker().chunk_all(documents)
+
+    results = SimpleRetriever(chunks).search_scored(
+        "Reject invalid task configuration before execution and show validation errors to users",
+        team_id="demo_team",
+        top_k=5,
+    )
+
+    assert results
+    assert any("INC-106" in chunk.source_path for _, chunk in results[:3])
+    assert results == sorted(results, key=lambda item: -item[0])

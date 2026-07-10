@@ -20,7 +20,7 @@
   `https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit`.
 - [ ] Chrome extension file upload permission enabled if using browser automation
   for YouTube/Devpost uploads.
-- [ ] One-command release script present: `scripts/qwencloud-alibaba-release.ps1`.
+- [ ] One-command release script present: `scripts/qwencloud-alibaba-runtime-release.ps1`.
 - [ ] Devpost materials audit present:
   `scripts/qwencloud-devpost-materials-audit.ps1`.
 - [ ] Final sprint dashboard present: `scripts/qwencloud-final-sprint.ps1`.
@@ -69,7 +69,7 @@ Invoke-RestMethod -Method Post `
 - `docs/qwencloud-demo-video-transcript.md`
 - `docs/qwencloud-video-upload-handoff.md`
 - `docs/qwencloud-build-journey-post.md`
-- `deploy/alibaba/serverless-devs.yaml`
+- `deploy/alibaba/serverless-devs-runtime.yaml`
 - `deploy/alibaba/README.md`
 - `docs/qwencloud-devpost-form-fields.md`
 - `docs/qwencloud-final-5min-checklist.md`
@@ -82,10 +82,10 @@ Invoke-RestMethod -Method Post `
   ```
 - Or run the full release script after video URL is available:
   ```powershell
-  scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"
+  scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"
   ```
 - Build and push image to `$env:ALIBABA_CLOUD_CONTAINER_IMAGE`.
-- Run Serverless Devs deployment using `deploy/alibaba/serverless-devs.yaml`.
+- Run Serverless Devs deployment using `deploy/alibaba/serverless-devs-runtime.yaml`.
 - Re-test deployed URL `.../health`.
 - Capture Devpost proof screenshot:
   ```powershell

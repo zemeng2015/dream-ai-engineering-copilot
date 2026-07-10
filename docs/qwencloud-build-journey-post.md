@@ -17,8 +17,8 @@ runbooks, Jira history, PR reviews, and human-approved memory claims.
 DREAM uses Qwen Cloud through an OpenAI-compatible provider, then wraps
 generation with deterministic retrieval, memory governance, audit logs,
 scorecards, and human review. The backend is packaged for Alibaba Cloud Function
-Compute as a custom container, with a reproducible deploy preflight and public
-architecture proof.
+Compute as an ACR-free custom runtime code package, with reproducible release
+checks and public architecture proof.
 
 Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot
 Demo video: <public video URL>
@@ -68,7 +68,7 @@ local behavior for tests and demos, then switch to Qwen-backed generation with:
 ```powershell
 $env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
 $env:DASHSCOPE_API_KEY="<qwen-cloud-key>"
-$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 uvicorn dream.api.app:app --host 127.0.0.1 --port 8000
 ```
 
@@ -77,17 +77,17 @@ target, region, and the Alibaba Cloud proof file path without exposing secrets.
 
 ## Deployment Proof
 
-The backend is packaged for Alibaba Cloud Function Compute as a custom
-container. The repo includes:
+The backend is packaged for Alibaba Cloud Function Compute as an ACR-free
+Python 3.12 code package on `custom.debian11`. The repo includes:
 
-- `deploy/alibaba/serverless-devs.yaml`
+- `deploy/alibaba/serverless-devs-runtime.yaml`
 - `deploy/alibaba/README.md`
 - `scripts/qwencloud-deploy-preflight.ps1`
 - `scripts/qwencloud-hackathon-submit-gate.ps1`
 
-The preflight script checks local files, Serverless Devs config, required
-environment variables, Docker build, and a local container smoke test before the
-image is pushed to Alibaba Cloud Container Registry.
+The release audit checks local files, Serverless Devs config, required
+environment variables, the Linux code package, and a local runtime smoke test
+before the package is uploaded directly to Function Compute.
 
 ## What I Learned
 
@@ -110,7 +110,6 @@ and engineering workflow shell around it.
 - Repository: https://github.com/zemeng2015/dream-ai-engineering-copilot
 - Architecture: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/docs/assets/qwencloud-architecture.svg
 - Architecture PNG: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/docs/assets/qwencloud-architecture.png
-- Deployment proof: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs.yaml
+- Deployment proof: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs-runtime.yaml
 - Demo video: <public video URL>
-- Live backend: <deployed backend URL>
-
+- Live backend: https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/

@@ -23,10 +23,10 @@ llm:
   api_key_env: DASHSCOPE_API_KEY
 ```
 
-The default Qwen Cloud base URL is
-`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, matching the hackathon
-resource page. Production deployments can override `QWEN_BASE_URL` with a
-workspace-specific Alibaba Cloud Model Studio endpoint.
+Legacy Qwen Cloud keys can use the generic international DashScope endpoint. New
+Model Studio keys beginning with `sk-ws` must set `QWEN_BASE_URL` to the dedicated
+OpenAI-compatible workspace URL shown on the Singapore API Key page, for example
+`https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1`.
 
 Private extension config:
 

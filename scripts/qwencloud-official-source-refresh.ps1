@@ -140,17 +140,17 @@ Add-Check `
     -Details "overviewSha256=$($sourceFingerprints.overviewNormalizedSha256); rulesSha256=$($sourceFingerprints.rulesNormalizedSha256); combinedSha256=$($sourceFingerprints.combinedNormalizedSha256)"
 Add-Check `
     -Name "deadline_official_sources_present" `
-    -Ok (Test-Text -Text $combined -Pattern "Jul\s+9,\s+2026\s*\(?2:00\s*pm\s+(Pacific\s+Time|PDT)") `
-    -Details (Get-MatchSnippet -Text $combined -Pattern "Jul\s+9,\s+2026\s*\(?2:00\s*pm\s+(Pacific\s+Time|PDT)")
+    -Ok (Test-Text -Text $combined -Pattern "Jul\s+20,\s+2026\s*\(?2:00\s*pm\s+(Pacific\s+Time|PDT)") `
+    -Details (Get-MatchSnippet -Text $combined -Pattern "Jul\s+20,\s+2026\s*\(?2:00\s*pm\s+(Pacific\s+Time|PDT)")
 Add-Check `
     -Name "deadline_overview_present" `
-    -Ok (Test-Text -Text $overview.text -Pattern "Deadline:\s*Jul\s+9,\s+2026\s+@\s+2:00pm\s+PDT") `
-    -Details (Get-MatchSnippet -Text $overview.text -Pattern "Deadline:\s*Jul\s+9,\s+2026\s+@\s+2:00pm\s+PDT") `
+    -Ok (Test-Text -Text $overview.text -Pattern "Deadline:\s*Jul\s+20,\s+2026\s+@\s+2:00pm\s+PDT") `
+    -Details (Get-MatchSnippet -Text $overview.text -Pattern "Deadline:\s*Jul\s+20,\s+2026\s+@\s+2:00pm\s+PDT") `
     -Required $false
 Add-Check `
     -Name "deadline_rules_present" `
-    -Ok (Test-Text -Text $rules.text -Pattern "Jul\s+9,\s+2026\s*\(?2:00\s*pm\s+Pacific\s+Time") `
-    -Details (Get-MatchSnippet -Text $rules.text -Pattern "Submission Period:.{0,180}Jul\s+9,\s+2026")
+    -Ok (Test-Text -Text $rules.text -Pattern "Jul\s+20,\s+2026\s*\(?2:00\s*pm\s+Pacific\s+Time") `
+    -Details (Get-MatchSnippet -Text $rules.text -Pattern "Submission Period:.{0,180}Jul\s+20,\s+2026")
 Add-Check `
     -Name "track1_memoryagent_present" `
     -Ok ((Test-Text -Text $combined -Pattern "Track\s+1:\s*MemoryAgent") -and (Test-Text -Text $combined -Pattern "persistent memory")) `

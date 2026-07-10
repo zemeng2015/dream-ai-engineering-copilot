@@ -2,7 +2,7 @@
 
 # Qwen Cloud Hackathon Official Requirements Snapshot
 
-Checked date: 2026-07-07
+Checked date: 2026-07-09
 
 Source URL: `https://qwencloud-hackathon.devpost.com/`
 
@@ -11,8 +11,8 @@ readiness gates. Re-check the source URL before final submit.
 
 ## Deadline
 
-- Public Devpost page deadline: July 9, 2026 at 2:00pm PDT.
-- Equivalent deadline used by local scripts: `2026-07-09T21:00:00Z`.
+- Public Devpost page deadline: July 20, 2026 at 2:00pm PDT.
+- Equivalent deadline used by local scripts: `2026-07-20T21:00:00Z`.
 
 ## Selected Track
 
@@ -48,7 +48,7 @@ readiness gates. Re-check the source URL before final submit.
 - Track brief: `docs/qwencloud-submission.md`
 - Qwen Cloud provider: `dream/llm/qwen_cloud.py`
 - Qwen Cloud config: `examples/config/dream.qwen.yaml`
-- Alibaba deployment proof file: `deploy/alibaba/serverless-devs.yaml`
+- Alibaba deployment proof file: `deploy/alibaba/serverless-devs-runtime.yaml`
 - Architecture diagram: `docs/assets/qwencloud-architecture.png`
 - Demo video handoff: `docs/qwencloud-video-upload-handoff.md`
 - Demo video captions: `docs/qwencloud-demo-video-captions.srt`

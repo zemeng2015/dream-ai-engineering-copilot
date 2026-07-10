@@ -85,6 +85,23 @@ interface ApiQwenCloudShowcaseScorecard {
   missing_external_inputs: string[];
 }
 
+interface ApiQwenCloudShowcaseBenchmark {
+  status: string;
+  run_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  case_count: number;
+  baseline_score: number;
+  dream_score: number;
+  score_delta: number;
+  median_delta: number;
+  exact_paired_permutation_p?: number | null;
+  dream_wins: number;
+  exact_retrieval_recall_at_12: number;
+  report_path?: string | null;
+  limitations: string[];
+}
+
 interface ApiQwenCloudShowcaseResponse {
   generated_at: string;
   project_title: string;
@@ -93,6 +110,7 @@ interface ApiQwenCloudShowcaseResponse {
   runtime: ApiQwenCloudShowcaseRuntime;
   judge_flow: ApiQwenCloudShowcaseStep[];
   evidence: ApiQwenCloudShowcaseEvidenceItem[];
+  benchmark: ApiQwenCloudShowcaseBenchmark;
   scorecard: ApiQwenCloudShowcaseScorecard;
 }
 
@@ -1347,6 +1365,23 @@ export interface QwenCloudShowcaseScorecard {
   missingExternalInputs: string[];
 }
 
+export interface QwenCloudShowcaseBenchmark {
+  status: string;
+  runId: string | null;
+  provider: string | null;
+  model: string | null;
+  caseCount: number;
+  baselineScore: number;
+  dreamScore: number;
+  scoreDelta: number;
+  medianDelta: number;
+  exactPairedPermutationP: number | null;
+  dreamWins: number;
+  exactRetrievalRecallAt12: number;
+  reportPath: string | null;
+  limitations: string[];
+}
+
 export interface QwenCloudShowcase {
   generatedAt: string;
   projectTitle: string;
@@ -1355,13 +1390,31 @@ export interface QwenCloudShowcase {
   runtime: QwenCloudShowcaseRuntime;
   judgeFlow: QwenCloudShowcaseStep[];
   evidence: QwenCloudShowcaseEvidenceItem[];
+  benchmark: QwenCloudShowcaseBenchmark;
   scorecard: QwenCloudShowcaseScorecard;
+}
+
+function resolveApiBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return 'http://127.0.0.1:8000';
+  }
+
+  const runtimeWindow = window as Window & { __DREAM_API_BASE_URL__?: string };
+  const configured = runtimeWindow.__DREAM_API_BASE_URL__?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+  return localHosts.has(window.location.hostname)
+    ? 'http://127.0.0.1:8000'
+    : window.location.origin;
 }
 
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://127.0.0.1:8000';
+  private readonly baseUrl = resolveApiBaseUrl();
 
   getHealth(): Observable<DreamHealth> {
     return this.http.get<ApiHealthResponse>(`${this.baseUrl}/health`).pipe(map(mapHealth));
@@ -1792,7 +1845,7 @@ export class DreamApiService {
         app: input.app,
         component: input.component,
         top_k: input.topK,
-        llm_provider: 'openai-compatible',
+        llm_provider: 'qwen-cloud',
       })
       .pipe(
         switchMap((response) =>
@@ -1883,7 +1936,7 @@ export class DreamApiService {
           this.trackRequirementStep(
             'draft_jira',
             this.http.get<ApiJiraDraft>(
-              `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=openai-compatible`,
+              `${this.baseUrl}/requirement-cases/${caseId}/jira-draft?llm_provider=qwen-cloud`,
             ),
             onProgress,
           ),
@@ -1916,7 +1969,7 @@ export class DreamApiService {
             this.http
               .post<ApiEvaluationResult>(
                 `${this.baseUrl}/eval/runs/${evaluation.scorecard.evaluation_id}/judge`,
-                { judge_provider: 'openai-compatible' },
+                { judge_provider: 'qwen-cloud' },
               )
               .pipe(catchError(() => of(evaluation))),
             onProgress,
@@ -2057,6 +2110,22 @@ function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloud
       state: item.state,
       proofPaths: item.proof_paths,
     })),
+    benchmark: {
+      status: response.benchmark.status,
+      runId: response.benchmark.run_id ?? null,
+      provider: response.benchmark.provider ?? null,
+      model: response.benchmark.model ?? null,
+      caseCount: response.benchmark.case_count,
+      baselineScore: response.benchmark.baseline_score,
+      dreamScore: response.benchmark.dream_score,
+      scoreDelta: response.benchmark.score_delta,
+      medianDelta: response.benchmark.median_delta,
+      exactPairedPermutationP: response.benchmark.exact_paired_permutation_p ?? null,
+      dreamWins: response.benchmark.dream_wins,
+      exactRetrievalRecallAt12: response.benchmark.exact_retrieval_recall_at_12,
+      reportPath: response.benchmark.report_path ?? null,
+      limitations: response.benchmark.limitations,
+    },
     scorecard: {
       weightedCurrentEvidenceReady: response.scorecard.weighted_current_evidence_ready,
       weightedStaticEvidenceReady: response.scorecard.weighted_static_evidence_ready,
@@ -2884,7 +2953,7 @@ function buildSyntheticRun(input: {
     status: input.status,
     startedAt: new Date().toISOString(),
     duration: 'recorded',
-    modelProvider: 'openai-compatible',
+    modelProvider: 'qwen-cloud',
     modelName: 'server-configured',
     outputPath: input.outputPath,
     warnings: [],

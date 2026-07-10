@@ -62,6 +62,23 @@
   background: var(--dream-warning-bg);
 }
 
+.benchmark-panel {
+  border-left: 5px solid #376d9f;
+  background: #f8fbfd;
+}
+
+.benchmark-fact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.benchmark-caveat {
+  margin: 0;
+  color: #5c6770;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0 16px 16px;
+}
+
 .health-fact-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -122,9 +139,12 @@
   align-items: start;
 }
 
+.proof-layout {
+  grid-template-columns: 1fr;
+}
+
 .flow-list,
-.evidence-list,
-.command-list {
+.evidence-list {
   display: grid;
 }
 
@@ -204,23 +224,6 @@
   white-space: nowrap;
 }
 
-.command-list {
-  gap: 10px;
-  padding: 16px;
-}
-
-.command-list code {
-  display: block;
-  overflow-wrap: anywhere;
-  border: 1px solid var(--dream-border);
-  border-radius: 8px;
-  background: #f8fbfd;
-  color: var(--dream-navy);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 12px;
-}
-
 .submit-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -242,12 +245,15 @@
 
 @media (width <= 1160px) {
   .runtime-strip,
-  .demo-layout,
-  .proof-layout {
+  .demo-layout {
     grid-template-columns: 1fr 1fr;
   }
 
   .health-fact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .benchmark-fact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -264,7 +270,8 @@
 @media (width <= 780px) {
   .demo-hero,
   .runtime-strip,
-  .health-fact-grid,
+    .health-fact-grid,
+    .benchmark-fact-grid,
   .demo-layout,
   .proof-layout,
   .submit-grid {

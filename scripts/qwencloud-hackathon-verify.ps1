@@ -29,7 +29,7 @@ if ($health.track -ne "Track 1: MemoryAgent") {
     exit 1
 }
 
-if ($health.proof_file -notmatch "deploy/alibaba/serverless-devs.yaml") {
+if ($health.proof_file -notmatch "deploy/alibaba/serverless-devs-runtime.yaml") {
     Write-Warning "proof_file not expected: $($health.proof_file)"
     exit 1
 }

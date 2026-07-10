@@ -77,7 +77,7 @@ Add-Criterion `
         "dream/llm/qwen_cloud.py",
         "tests/test_api_health.py",
         "tests/test_qwen_cloud_provider.py",
-        "deploy/alibaba/serverless-devs.yaml",
+        "deploy/alibaba/serverless-devs-runtime.yaml",
         "docs/qwencloud-submission.md",
         "docs/qwencloud-judging-evidence-matrix.md"
     ) `
@@ -104,7 +104,7 @@ Add-Criterion `
     -Name "Technical Depth and Engineering" `
     -Weight 30 `
     -OfficialFocus "Architecture quality, modularity, scalability, error handling, clean code, non-trivial logic, and thoughtful stack adoption." `
-    -DREAMClaim "The project includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba custom container deployment, CI, proof automation, final readiness gates, and deterministic local verification." `
+    -DREAMClaim "The project includes provider abstraction, API/CLI surfaces, reproducible runtime packaging, ACR-free Alibaba Function Compute deployment, CI, proof automation, final readiness gates, and deterministic local verification." `
     -EvidencePaths @(
         "dream/api/app.py",
         "dream/api/routes.py",

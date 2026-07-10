@@ -30,7 +30,7 @@ def test_official_source_refresh_detects_current_devpost_requirements(tmp_path) 
 
     overview.write_text(
         """
-        Deadline: Jul 9, 2026 @ 2:00pm PDT
+        Deadline: Jul 20, 2026 @ 2:00pm PDT
         Requirements: Build a project using Qwen models available on Qwen Cloud.
         Track 1: MemoryAgent Build an Agent with persistent memory that recalls
         critical memories within limited context windows.
@@ -48,7 +48,7 @@ def test_official_source_refresh_detects_current_devpost_requirements(tmp_path) 
     )
     rules.write_text(
         """
-        Submission Period: May 26, 2026 (8:00 am Pacific Time) - Jul 9, 2026(2:00 pm Pacific Time).
+        Submission Period: May 26, 2026 (8:00 am Pacific Time) - Jul 20, 2026(2:00 pm Pacific Time).
         Project Requirements: Entrants must build a project using Qwen models
         available on Qwen Cloud.
         Track 1: MemoryAgent Build an Agent with persistent memory.
@@ -178,7 +178,7 @@ def test_official_source_refresh_accepts_deadline_from_rules_page(tmp_path) -> N
     )
     rules.write_text(
         """
-        Submission Period: May 26, 2026 (8:00 am Pacific Time) - Jul 9, 2026(2:00 pm Pacific Time).
+        Submission Period: May 26, 2026 (8:00 am Pacific Time) - Jul 20, 2026(2:00 pm Pacific Time).
         Project Requirements: Entrants must build a project using Qwen models
         available on Qwen Cloud.
         Track 1: MemoryAgent Build an Agent with persistent memory.

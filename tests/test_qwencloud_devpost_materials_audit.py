@@ -76,7 +76,9 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
         "devpostAdditionalInfo": {
             "selectedTrack": "Track 1: MemoryAgent",
             "repositoryUrl": REPO_URL,
-            "alibabaProofCodeFile": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs.yaml",
+            "alibabaProofCodeFile": (
+                f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
+            ),
             "aiToolsUsed": "Qwen Cloud, Alibaba Cloud, and local audit automation.",
             "learningLevel": "Significant",
         },
@@ -84,7 +86,7 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
             "testingAndRightsNotes": (
                 f"{REPO_URL}/blob/main/docs/qwencloud-testing-and-rights-notes.md"
             ),
-            "deploymentProof": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs.yaml",
+            "deploymentProof": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs-runtime.yaml",
         },
         "checks": [],
     }
@@ -150,7 +152,7 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
                 "attributes_8_value"
             ),
             "label": "Alibaba deployment proof code URL",
-            "value": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs.yaml",
+            "value": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs-runtime.yaml",
             "inputKind": "text",
             "required": True,
             "safeForNonLegalDraftSave": True,
@@ -220,7 +222,9 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
             "repoUrl": REPO_URL,
             "demoVideoUrl": demo_url,
             "backendUrl": backend_url,
-            "deploymentProofCodeFile": f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs.yaml",
+            "deploymentProofCodeFile": (
+                f"{REPO_URL}/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
+            ),
         },
         "actionTimeConfirmations": [
             "Confirm age.",
@@ -357,7 +361,7 @@ def test_devpost_materials_audit_registered_in_final_flow() -> None:
         encoding="utf-8-sig"
     )
     alibaba_release = (
-        ROOT / "scripts" / "qwencloud-alibaba-release.ps1"
+        ROOT / "scripts" / "qwencloud-alibaba-runtime-release.ps1"
     ).read_text(encoding="utf-8-sig")
     github_release_docs = (
         ROOT / "docs" / "qwencloud-github-release-workflow.md"

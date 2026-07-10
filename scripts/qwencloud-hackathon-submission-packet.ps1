@@ -267,7 +267,7 @@ $repoUsed = Normalize-RepoUrl -Url $RepoUrl
 $licenseUrl = Get-FileUrl -Repo $repoUsed -Path "LICENSE"
 $architectureSvgUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.svg"
 $architecturePngUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.png"
-$deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverless-devs.yaml"
+$deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverless-devs-runtime.yaml"
 $deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deploy-preflight.ps1"
 $qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
 $buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
@@ -296,12 +296,12 @@ $requiredPaths = @(
     "docs/qwencloud-demo-video-transcript.md",
     "docs/qwencloud-official-requirements-snapshot.md",
     "docs/qwencloud-build-journey-post.md",
-    "deploy/alibaba/serverless-devs.yaml",
+    "deploy/alibaba/serverless-devs-runtime.yaml",
     "deploy/alibaba/README.md",
     "examples/config/dream.qwen.yaml",
     "scripts/qwencloud-cloud-credentials-handoff.ps1",
     "scripts/qwencloud-devpost-handoff.ps1",
-    "scripts/qwencloud-alibaba-release.ps1",
+    "scripts/qwencloud-alibaba-runtime-release.ps1",
     "scripts/qwencloud-capture-alibaba-proof.ps1",
     "scripts/qwencloud-render-alibaba-proof-video.ps1",
     "scripts/qwencloud-validate-alibaba-proof.ps1",
@@ -406,7 +406,7 @@ if (Is-HttpUrl $BackendUrl) {
         Add-Check -Name "backend_health_reachable" -Ok ($health.status -eq "ok") -Details "status=$($health.status)"
         Add-Check -Name "backend_track" -Ok ($health.track -eq $track) -Details "track=$($health.track)"
         Add-Check -Name "backend_provider" -Ok ($health.llm_provider -eq "qwen-cloud") -Details "llm_provider=$($health.llm_provider)"
-        Add-Check -Name "backend_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs.yaml") -Details "proof_file=$($health.proof_file)"
+        Add-Check -Name "backend_proof_file" -Ok ($health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml") -Details "proof_file=$($health.proof_file)"
 
         if ($SkipBackendDraft) {
             Add-Check -Name "backend_draft_response" -Ok $true -Details "skipped" -Required $false
@@ -588,7 +588,7 @@ $md = @(
     'pip install -e ".[dev]"',
     '$env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"',
     '$env:DASHSCOPE_API_KEY="<judge-provided-or-owner-configured-key>"',
-    '$env:QWEN_BASE_URL="https://dashscope-intl.aliyuncs.com/compatible-mode/v1"',
+    '$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"',
     'uvicorn dream.api.app:app --host 127.0.0.1 --port 8000',
     'scripts/qwencloud-hackathon-verify.ps1 -BaseUrl http://127.0.0.1:8000',
     '```',
@@ -601,10 +601,10 @@ $md = @(
     "",
     "### Deployment proof",
     "",
-    "The backend is packaged for Alibaba Cloud Function Compute as a custom container. The proof file is $deploymentProofUrl, and deploy readiness can be reproduced with:",
+    "The backend is packaged for Alibaba Cloud Function Compute as an ACR-free custom runtime code package. The proof file is $deploymentProofUrl, and deploy readiness can be reproduced with:",
     "",
     '```powershell',
-    'scripts/qwencloud-deploy-preflight.ps1 -EnvFile .env.qwencloud.local -BuildImage -SmokeContainer -AllowDraft',
+    'scripts/qwencloud-release-config-audit.ps1 -EnvFile .env.qwencloud.local -UseCodePackage',
     '```',
     "",
     "## Packet Checks",
@@ -626,8 +626,8 @@ $md += @(
     "",
     "- Configure Alibaba access with `s config add`.",
     "- Generate `scripts/qwencloud-cloud-credentials-handoff.ps1 -EnvFile .env.qwencloud.local -AllowDraft` for the local credential/setup template.",
-    "- Fill `.env.qwencloud.local` with `DASHSCOPE_API_KEY`, `ALIBABA_CLOUD_REGION`, and `ALIBABA_CLOUD_CONTAINER_IMAGE`.",
-    "- Push the container image and run `s deploy -t deploy/alibaba/serverless-devs.yaml -y`.",
+    "- Fill `.env.qwencloud.local` with `DASHSCOPE_API_KEY` and `ALIBABA_CLOUD_RUNTIME_REGION=ap-southeast-1`.",
+    "- Run `scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local` to package and deploy the code directly to Function Compute.",
     "- Capture and save the required Alibaba deployment screenshot as `$AlibabaScreenshotPath`.",
     "- Render the separate Alibaba deployment proof recording as `$AlibabaProofVideoPath`.",
     "- Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4` using `docs/qwencloud-video-upload-handoff.md`, then paste the public YouTube, Vimeo, Facebook Video, or Youku URL.",

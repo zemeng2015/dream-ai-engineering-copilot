@@ -6,7 +6,12 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$WorkDir = "artifacts/qwencloud-proof/video-render",
     [Parameter(Mandatory = $false)]
-    [string]$ReportDir = "artifacts/qwencloud-proof"
+    [string]$ReportDir = "artifacts/qwencloud-proof",
+    [Parameter(Mandatory = $false)]
+    [string]$NarrationCaptionPath = "docs/qwencloud-demo-video-captions.srt",
+    [Parameter(Mandatory = $false)]
+    [string]$NarrationVoice = "Microsoft Zira Desktop",
+    [switch]$SkipNarration
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +28,117 @@ function Get-AssetRecord([string]$Name, [string]$Path) {
         path = $Path
         exists = Test-Path $Path
         sha256 = Get-FileSha256 -Path $Path
+    }
+}
+
+function Convert-SrtTimeToMilliseconds([string]$Value) {
+    $normalized = $Value.Trim().Replace(",", ".")
+    $time = [TimeSpan]::ParseExact(
+        $normalized,
+        "hh\:mm\:ss\.fff",
+        [System.Globalization.CultureInfo]::InvariantCulture
+    )
+    return [int][Math]::Round($time.TotalMilliseconds)
+}
+
+function Get-NarrationCues([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Narration caption file was not found: $Path"
+    }
+
+    $cues = @()
+    $blocks = (Get-Content -LiteralPath $Path -Raw) -split "\r?\n\r?\n"
+    foreach ($block in $blocks) {
+        $lines = @($block -split "\r?\n")
+        if ($lines.Count -lt 3) { continue }
+        if ($lines[1] -notmatch "^(?<start>\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(?<end>\d{2}:\d{2}:\d{2},\d{3})$") {
+            continue
+        }
+        $text = (($lines[2..($lines.Count - 1)] -join " ") -replace "\s+", " ").Trim()
+        if ([string]::IsNullOrWhiteSpace($text)) { continue }
+        $cues += [pscustomobject]@{
+            startMs = Convert-SrtTimeToMilliseconds -Value $matches.start
+            endMs = Convert-SrtTimeToMilliseconds -Value $matches.end
+            text = $text
+        }
+    }
+    return $cues
+}
+
+function Add-TtsNarration {
+    param(
+        [Parameter(Mandatory = $true)][string]$InputPath,
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][double]$Duration,
+        [Parameter(Mandatory = $true)][string]$CaptionPath,
+        [Parameter(Mandatory = $true)][string]$VoiceName
+    )
+
+    Add-Type -AssemblyName System.Speech
+    $cues = @(Get-NarrationCues -Path $CaptionPath)
+    if ($cues.Count -eq 0) {
+        throw "No narration cues were parsed from $CaptionPath"
+    }
+
+    $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+    $clipPaths = @()
+    $voiceUsed = $synth.Voice.Name
+    try {
+        $installedVoices = @($synth.GetInstalledVoices() | ForEach-Object { $_.VoiceInfo.Name })
+        if ($installedVoices -contains $VoiceName) {
+            $synth.SelectVoice($VoiceName)
+            $voiceUsed = $VoiceName
+        }
+        $synth.Rate = 1
+        $synth.Volume = 100
+        for ($index = 0; $index -lt $cues.Count; $index++) {
+            $clipPath = Join-Path $WorkDir ("narration-{0:D2}.wav" -f ($index + 1))
+            $synth.SetOutputToWaveFile($clipPath)
+            $synth.Speak($cues[$index].text)
+            $synth.SetOutputToNull()
+            $clipPaths += $clipPath
+        }
+    }
+    finally {
+        $synth.Dispose()
+    }
+
+    $ffmpegArgs = @("-hide_banner", "-loglevel", "error", "-y", "-i", $InputPath)
+    foreach ($clipPath in $clipPaths) {
+        $ffmpegArgs += @("-i", $clipPath)
+    }
+
+    $filters = @()
+    $mixInputs = ""
+    for ($index = 0; $index -lt $clipPaths.Count; $index++) {
+        $inputIndex = $index + 1
+        $label = "voice$index"
+        $delay = $cues[$index].startMs
+        $filters += "[$($inputIndex):a]adelay=$delay|$delay,volume=1.0[$label]"
+        $mixInputs += "[$label]"
+    }
+    $filters += "$mixInputs" + "amix=inputs=$($clipPaths.Count):duration=longest:normalize=0,apad[aout]"
+    $ffmpegArgs += @(
+        "-filter_complex", ($filters -join ";"),
+        "-map", "0:v:0",
+        "-map", "[aout]",
+        "-c:v", "copy",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-t", ([string]$Duration),
+        "-movflags", "+faststart",
+        $OutputPath
+    )
+    & ffmpeg @ffmpegArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to add TTS narration to $OutputPath"
+    }
+
+    return [pscustomobject]@{
+        generated = $true
+        cueCount = $cues.Count
+        voice = $voiceUsed
+        issue = ""
     }
 }
 
@@ -51,6 +167,7 @@ $evalAudit = Join-Path $WorkDir "eval-audit.mp4"
 $main = Join-Path $WorkDir "main-captioned.mp4"
 $proof = Join-Path $WorkDir "proof.mp4"
 $outro = Join-Path $WorkDir "outro.mp4"
+$silentOutput = Join-Path $WorkDir "final-silent.mp4"
 $concatFile = Join-Path $WorkDir "concat.txt"
 $introAss = Join-Path $WorkDir "intro.ass"
 $problemAss = Join-Path $WorkDir "problem.ass"
@@ -125,10 +242,7 @@ Write-AssFile -Path $problemAss -Dialogues @(
     "Dialogue: 0,0:00:00.00,0:00:12.00,Body,,0,0,0,,{\pos(640,370)}Every generated output can point back to source-backed context."
 )
 
-Write-AssFile -Path $architectureAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:14.00,TopBar,,0,0,0,,DREAM architecture: Qwen Cloud provider + governed memory + deployable API",
-    "Dialogue: 0,0:00:00.00,0:00:14.00,LowerThird,,0,0,0,,Config selects qwen-cloud; FastAPI exposes proof; Alibaba Function Compute runs the custom container"
-)
+Write-AssFile -Path $architectureAss -Dialogues @()
 
 Write-AssFile -Path $memoryHubAss -Dialogues @(
     "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,Governed memory workspace",
@@ -167,7 +281,7 @@ Write-AssFile -Path $mainAss -Dialogues @(
 Write-AssFile -Path $proofAss -Dialogues @(
     "Dialogue: 0,0:00:00.00,0:00:13.00,Title,,0,0,0,,{\pos(640,150)}Hackathon proof chain",
     "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,245)}Qwen config: examples/config/dream.qwen.yaml",
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,295)}Alibaba deployment file: deploy/alibaba/serverless-devs.yaml",
+    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,295)}Alibaba deployment file: deploy/alibaba/serverless-devs-runtime.yaml",
     "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,345)}Final readiness gates validate CI, video, backend health, proof screenshot, and proof recording",
     "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,430)}Judging alignment: innovation, technical depth, problem value, presentation"
 )
@@ -213,8 +327,40 @@ $concatLines = @(
 )
 Set-Content -Path $concatFile -Value ($concatLines -join "`n") -Encoding ASCII
 
-& ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i $concatFile -c copy -movflags +faststart $OutputVideo
+& ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i $concatFile -c copy -movflags +faststart $silentOutput
 if ($LASTEXITCODE -ne 0) { throw "Failed to concatenate final video." }
+
+$silentProbeJson = & ffprobe -v error -show_entries format=duration -of json $silentOutput
+$silentProbe = $silentProbeJson | ConvertFrom-Json
+$narration = [pscustomobject]@{
+    generated = $false
+    cueCount = 0
+    voice = ""
+    issue = if ($SkipNarration) { "skipped by -SkipNarration" } else { "" }
+}
+if ($SkipNarration) {
+    Copy-Item -LiteralPath $silentOutput -Destination $OutputVideo -Force
+}
+else {
+    try {
+        $narration = Add-TtsNarration `
+            -InputPath $silentOutput `
+            -OutputPath $OutputVideo `
+            -Duration ([double]$silentProbe.format.duration) `
+            -CaptionPath $NarrationCaptionPath `
+            -VoiceName $NarrationVoice
+    }
+    catch {
+        $narration = [pscustomobject]@{
+            generated = $false
+            cueCount = 0
+            voice = ""
+            issue = $_.Exception.Message
+        }
+        Write-Warning "Narration unavailable; keeping the captioned silent video. $($narration.issue)"
+        Copy-Item -LiteralPath $silentOutput -Destination $OutputVideo -Force
+    }
+}
 
 $probeJson = & ffprobe -v error -show_entries format=duration,size,format_name -show_streams -of json $OutputVideo
 $probe = $probeJson | ConvertFrom-Json
@@ -223,6 +369,7 @@ if ([double]$probe.format.duration -ge 180) {
 }
 
 $videoStream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
+$audioStream = @($probe.streams | Where-Object { $_.codec_type -eq "audio" } | Select-Object -First 1)
 $sourceAssets = @(
     Get-AssetRecord -Name "input_walkthrough_video" -Path $InputVideo
     Get-AssetRecord -Name "architecture_diagram" -Path $architecturePng
@@ -231,6 +378,7 @@ $sourceAssets = @(
     Get-AssetRecord -Name "retrieval_trace_screenshot" -Path $retrievalTracePng
     Get-AssetRecord -Name "jira_draft_screenshot" -Path $jiraDraftPng
     Get-AssetRecord -Name "eval_audit_screenshot" -Path $evalAuditPng
+    Get-AssetRecord -Name "narration_captions" -Path $NarrationCaptionPath
 )
 
 $reportJson = Join-Path $ReportDir "demo-video-render-$timestamp.json"
@@ -246,6 +394,11 @@ $result = [ordered]@{
     width = if ($videoStream) { [int]$videoStream.width } else { 0 }
     height = if ($videoStream) { [int]$videoStream.height } else { 0 }
     codec = if ($videoStream) { [string]$videoStream.codec_name } else { "" }
+    audioCodec = if ($audioStream) { [string]$audioStream.codec_name } else { "" }
+    narrationGenerated = [bool]$narration.generated
+    narrationCueCount = [int]$narration.cueCount
+    narrationVoice = [string]$narration.voice
+    narrationIssue = [string]$narration.issue
     underDevpostLimit = ([double]$probe.format.duration -lt 180)
     sourceAssets = $sourceAssets
     reportJson = $reportJson
@@ -261,6 +414,11 @@ $lines = @(
     "- Duration: $($result.durationSeconds) seconds",
     "- Resolution: $($result.width)x$($result.height)",
     "- Codec: $($result.codec)",
+    "- Audio codec: $(if ($result.audioCodec) { $result.audioCodec } else { '<none>' })",
+    "- TTS narration: $(if ($result.narrationGenerated) { 'yes' } else { 'no' })",
+    "- Narration cues: $($result.narrationCueCount)",
+    "- Narration voice: $(if ($result.narrationVoice) { $result.narrationVoice } else { '<none>' })",
+    "- Narration issue: $(if ($result.narrationIssue) { $result.narrationIssue } else { '<none>' })",
     "- Devpost limit: $(if ($result.underDevpostLimit) { 'PASS (< 180 seconds)' } else { 'FAIL' })",
     "",
     "## Source Assets",

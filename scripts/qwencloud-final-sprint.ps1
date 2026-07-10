@@ -265,7 +265,7 @@ if ($RunLocalRelease) {
     $releaseArgs = @(
         "-NoProfile",
         "-ExecutionPolicy", "Bypass",
-        "-File", "scripts/qwencloud-alibaba-release.ps1",
+        "-File", "scripts/qwencloud-alibaba-runtime-release.ps1",
         "-RepoUrl", $RepoUrl,
         "-OutputDir", $OutputDir
     )
@@ -279,7 +279,7 @@ else {
     $releaseArgs = @(
         "-NoProfile",
         "-ExecutionPolicy", "Bypass",
-        "-File", "scripts/qwencloud-alibaba-release.ps1",
+        "-File", "scripts/qwencloud-alibaba-runtime-release.ps1",
         "-RepoUrl", $RepoUrl,
         "-OutputDir", $OutputDir,
         "-PlanOnly"
@@ -291,7 +291,7 @@ else {
     Invoke-SprintStep -Name "final-sprint-release-plan" -Arguments $releaseArgs | Out-Null
 }
 
-$releaseAfterDeploy = Read-LatestJson -Filter "alibaba-release-*.json"
+$releaseAfterDeploy = Read-LatestJson -Filter "alibaba-runtime-release-*.json"
 $backendForFinalize = if ($BackendUrl) {
     $BackendUrl
 }
@@ -363,7 +363,7 @@ $materialsAudit = Read-LatestJson -Filter "devpost-materials-audit-*.json"
 $scorecard = Read-LatestJson -Filter "judging-scorecard-*.json"
 $github = Read-LatestJson -Filter "github-secrets-handoff-*.json"
 $releaseArtifactIngest = Read-LatestJson -Filter "github-release-artifact-ingest-*.json"
-$release = Read-LatestJson -Filter "alibaba-release-*.json"
+$release = Read-LatestJson -Filter "alibaba-runtime-release-*.json"
 $releaseSummary = Read-LatestJson -Filter "release-summary-*.json"
 $finalize = if ($finalizeSkippedForDraft) {
     [pscustomobject]@{
@@ -514,7 +514,7 @@ if ($signals.cloudReleaseReady -and -not $signals.deployedBackendUrlPresent) {
     Add-NextAction `
         -Name "Deploy Alibaba backend" `
         -Reason "A deployed Function Compute backend URL is required for Stage One, Technical Depth, and Alibaba proof." `
-        -Command 'scripts/qwencloud-alibaba-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"' `
+        -Command 'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"' `
         -RequiresZackConfirmation $true
 }
 

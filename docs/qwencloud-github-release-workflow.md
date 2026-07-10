@@ -3,8 +3,8 @@
 # Qwen Cloud GitHub Release Workflow
 
 Use the manual `Qwen Cloud Release` GitHub Actions workflow when local Alibaba
-Cloud credentials or Docker registry state are easier to manage through GitHub
-secrets than the desktop shell.
+Cloud credentials are easier to manage through GitHub secrets than the desktop
+shell.
 
 ## Required GitHub Secrets
 
@@ -12,17 +12,15 @@ Add these repository secrets before running the workflow:
 
 - `ALIBABA_CLOUD_ACCESS_KEY_ID`
 - `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-- `ALIBABA_CLOUD_REGION`
-- `ALIBABA_CLOUD_CONTAINER_IMAGE`
-- `ALIBABA_CONTAINER_REGISTRY_USERNAME`
-- `ALIBABA_CONTAINER_REGISTRY_PASSWORD`
 - `DASHSCOPE_API_KEY`
+- `QWEN_BASE_URL`
+- `QWEN_MODEL`
 
 Optional:
 
 - `ALIBABA_CLOUD_ACCOUNT_ID`
-- `QWEN_BASE_URL`
-- `QWEN_MODEL`
+- `ALIBABA_CLOUD_REGION`
+- `ALIBABA_CLOUD_RUNTIME_REGION`
 
 The workflow validates secret presence by name only and never writes secret
 values into repo files.
@@ -60,9 +58,9 @@ secret values into its JSON or Markdown reports. `-EnvFile` imports values into
 the current PowerShell process only.
 
 `scripts/qwencloud-release-config-audit.ps1` should pass before setting secrets
-or running the workflow; it verifies local env presence, Alibaba region/image
-format, workflow secret mappings, and checked-in templates without printing
-secret values.
+or running the workflow; it verifies local env presence, the Singapore runtime
+region, workflow secret mappings, and checked-in code-package templates without
+printing secret values.
 
 ## Manual Run
 
@@ -101,8 +99,8 @@ The workflow runs:
 - Public demo video URL validation without requiring the local MP4 on the
   GitHub runner.
 - Serverless Devs configuration from GitHub secrets.
-- Docker login to Alibaba Container Registry.
-- `scripts/qwencloud-alibaba-release.ps1`, including the release-side Devpost
+- ACR-free Python 3.12 Function Compute code-package build and deployment.
+- `scripts/qwencloud-alibaba-runtime-release.ps1`, including the release-side Devpost
   materials audit after packet and handoff generation.
 - Final readiness and final upload bundle generation.
 - Final action board generation when local diagnostics are needed.
