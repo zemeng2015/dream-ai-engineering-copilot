@@ -299,6 +299,11 @@ Render the final under-3-minute Devpost upload video:
 scripts/qwencloud-render-demo-video.ps1
 ```
 
+The renderer uses the real three-session Judge Arena result, the 24/24 Qwen
+lifecycle benchmark, governed source-memory flows, and the verified Alibaba
+Function Compute proof screen. It emits a 160-second H.264/AAC video with timed
+narration and a SHA256 manifest.
+
 Generate the upload publication handoff with the final MP4 hash, thumbnail
 hash, title, description, tags, and action-time confirmation boundary:
 

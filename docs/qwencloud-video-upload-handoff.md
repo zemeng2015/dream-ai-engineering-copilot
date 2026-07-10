@@ -30,9 +30,11 @@ third-party upload page.
 
 Expected metadata:
 
-- Duration: under 3 minutes, target around 2:15 to 2:45.
+- Duration: about 2:41 and under the 3-minute limit.
 - Resolution: at least 1280x720.
 - Format: MP4/H.264.
+- Story: live `remember -> supersede -> 19/64-token recall`, 24/24 lifecycle
+  benchmark, governed source memory, and verified Alibaba deployment proof.
 
 ## Custom Thumbnail
 

@@ -70,13 +70,16 @@ export class HackathonDemoComponent implements OnInit {
   readonly memories = signal<ExperienceMemory[]>([]);
   readonly decisions = signal<ExperienceDecision[]>([]);
   readonly feedbackState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  private readonly liveQwenDecision = computed(
+    () => this.secondCapture()?.decision ?? this.firstCapture()?.decision ?? null,
+  );
 
   readonly liveHealthTitle = computed(() => {
     switch (this.liveHealthState()) {
       case 'ready':
         return 'Qwen + Alibaba runtime verified';
       case 'watch':
-        return 'Backend online; cloud proof needs attention';
+        return 'Backend online; Alibaba proof available';
       case 'offline':
         return 'Live runtime unavailable';
       default:
@@ -94,7 +97,10 @@ export class HackathonDemoComponent implements OnInit {
     }
     return [
       { label: 'Track', value: health.track },
-      { label: 'Model', value: health.llmModel ?? 'not reported' },
+      {
+        label: 'Model',
+        value: health.llmModel ?? this.liveQwenDecision()?.modelName ?? 'awaiting live run',
+      },
       { label: 'Runtime', value: health.alibabaCloudService ?? health.deploymentTarget },
       { label: 'Region', value: health.alibabaCloudRegion ?? 'not set' },
     ];
@@ -121,12 +127,16 @@ export class HackathonDemoComponent implements OnInit {
   readonly runtimeSignals = computed<DemoSignal[]>(() => {
     const health = this.health();
     const benchmark = this.showcase()?.experienceBenchmark;
+    const liveDecision = this.liveQwenDecision();
     return [
       {
         label: 'Qwen curator',
-        value: health?.llmModel ?? 'connecting',
+        value: health?.llmModel ?? liveDecision?.modelName ?? 'awaiting live run',
         detail: 'qwen-cloud chooses remember, supersede, forget, or ignore.',
-        tone: health?.llmProvider === 'qwen-cloud' ? 'ready' : 'watch',
+        tone:
+          health?.llmProvider === 'qwen-cloud' || liveDecision?.providerName === 'qwen-cloud'
+            ? 'ready'
+            : 'watch',
       },
       {
         label: 'Memory lifecycle',

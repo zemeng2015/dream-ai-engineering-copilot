@@ -24,6 +24,11 @@ def test_video_thumbnail_asset_is_devpost_ready() -> None:
     assert png.exists()
     assert exporter.exists()
     assert _png_dimensions(png) == (1280, 720)
+    svg_text = svg.read_text(encoding="utf-8-sig")
+    assert "ONE CURRENT TRUTH" in svg_text
+    assert "24 / 24" in svg_text
+    assert "0% LEAK" in svg_text
+    assert "qwen3.7-plus" in svg_text
 
 
 def test_video_thumbnail_is_in_publication_and_bundle_flow() -> None:

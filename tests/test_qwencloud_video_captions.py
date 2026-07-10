@@ -58,6 +58,9 @@ def test_demo_video_captions_are_in_publication_and_bundle_flow() -> None:
     handoff_doc = (ROOT / "docs" / "qwencloud-video-upload-handoff.md").read_text()
 
     assert "CaptionPath = \"docs/qwencloud-demo-video-captions.srt\"" in publication
+    assert "One Current Truth Across Qwen Sessions" in publication
+    assert "24/24 passed" in publication
+    assert "19 of 64 tokens" in publication
     assert "captionSha256" in publication
     assert "caption/subtitle file transmits" in publication
     assert "demo_video_captions_srt" in final_bundle
@@ -76,3 +79,7 @@ def test_demo_video_renderer_uses_timed_tts_narration() -> None:
     assert "System.Speech" in renderer
     assert "narrationGenerated" in renderer
     assert "audioCodec" in renderer
+    assert "docs/assets/qwencloud-arena-success-detail.png" in renderer
+    assert "docs/assets/qwencloud-arena-benchmark.png" in renderer
+    assert "alibaba-deployment-screenshot.png" in renderer
+    assert "37 real Qwen decisions across 24 lifecycle cases" in renderer

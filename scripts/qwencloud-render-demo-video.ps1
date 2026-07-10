@@ -1,6 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
 param(
     [Parameter(Mandatory = $false)]
-    [string]$InputVideo = "docs/frontend-runbook/regression-20260703-memory-ui/dream-ui-demo.mp4",
+    [string]$ArenaInitialPath = "docs/assets/qwencloud-arena-initial.png",
+    [Parameter(Mandatory = $false)]
+    [string]$ArenaSuccessTopPath = "docs/assets/qwencloud-arena-success-top.png",
+    [Parameter(Mandatory = $false)]
+    [string]$ArenaSuccessDetailPath = "docs/assets/qwencloud-arena-success-detail.png",
+    [Parameter(Mandatory = $false)]
+    [string]$ArenaBenchmarkPath = "docs/assets/qwencloud-arena-benchmark.png",
+    [Parameter(Mandatory = $false)]
+    [string]$ArchitecturePath = "docs/assets/qwencloud-architecture.png",
+    [Parameter(Mandatory = $false)]
+    [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
     [Parameter(Mandatory = $false)]
     [string]$OutputVideo = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
@@ -16,6 +28,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+$memoryHubPath = "docs/frontend-runbook/regression-20260703-memory-ui/screenshots/02-memory-management.png"
+$retrievalTracePath = "docs/frontend-runbook/regression-20260703-memory-ui/screenshots/07-retrieval-trace.png"
+$jiraDraftPath = "docs/frontend-runbook/regression-20260703-memory-ui/screenshots/10-jira-draft.png"
 
 function Get-FileSha256([string]$Path) {
     if (-not (Test-Path $Path)) { return "" }
@@ -142,59 +157,6 @@ function Add-TtsNarration {
     }
 }
 
-if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
-    throw "ffmpeg is required to render the final Devpost demo video."
-}
-
-if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
-    throw "ffprobe is required to verify the final Devpost demo video."
-}
-
-if (-not (Test-Path $InputVideo)) {
-    throw "Input video was not found: $InputVideo"
-}
-
-New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
-New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
-$intro = Join-Path $WorkDir "intro.mp4"
-$problem = Join-Path $WorkDir "problem.mp4"
-$architecture = Join-Path $WorkDir "architecture.mp4"
-$memoryHub = Join-Path $WorkDir "memory-hub.mp4"
-$knowledgeIntake = Join-Path $WorkDir "knowledge-intake.mp4"
-$retrievalTrace = Join-Path $WorkDir "retrieval-trace.mp4"
-$jiraDraft = Join-Path $WorkDir "jira-draft.mp4"
-$evalAudit = Join-Path $WorkDir "eval-audit.mp4"
-$main = Join-Path $WorkDir "main-captioned.mp4"
-$proof = Join-Path $WorkDir "proof.mp4"
-$outro = Join-Path $WorkDir "outro.mp4"
-$silentOutput = Join-Path $WorkDir "final-silent.mp4"
-$concatFile = Join-Path $WorkDir "concat.txt"
-$introAss = Join-Path $WorkDir "intro.ass"
-$problemAss = Join-Path $WorkDir "problem.ass"
-$architectureAss = Join-Path $WorkDir "architecture.ass"
-$memoryHubAss = Join-Path $WorkDir "memory-hub.ass"
-$knowledgeIntakeAss = Join-Path $WorkDir "knowledge-intake.ass"
-$retrievalTraceAss = Join-Path $WorkDir "retrieval-trace.ass"
-$jiraDraftAss = Join-Path $WorkDir "jira-draft.ass"
-$evalAuditAss = Join-Path $WorkDir "eval-audit.ass"
-$mainAss = Join-Path $WorkDir "main.ass"
-$proofAss = Join-Path $WorkDir "proof.ass"
-$outroAss = Join-Path $WorkDir "outro.ass"
-
-$architecturePng = "docs/assets/qwencloud-architecture.png"
-$screenshotsDir = "docs/frontend-runbook/regression-20260703-memory-ui/screenshots"
-$memoryHubPng = Join-Path $screenshotsDir "02-memory-management.png"
-$knowledgeIntakePng = Join-Path $screenshotsDir "04-knowledge-intake.png"
-$retrievalTracePng = Join-Path $screenshotsDir "07-retrieval-trace.png"
-$jiraDraftPng = Join-Path $screenshotsDir "10-jira-draft.png"
-$evalAuditPng = Join-Path $screenshotsDir "13-eval-detail.png"
-
-foreach ($asset in @($architecturePng, $memoryHubPng, $knowledgeIntakePng, $retrievalTracePng, $jiraDraftPng, $evalAuditPng)) {
-    if (-not (Test-Path $asset)) {
-        throw "Required demo video visual asset was not found: $asset"
-    }
-}
-
 function Write-AssFile([string]$Path, [string[]]$Dialogues) {
     $header = @(
         "[Script Info]",
@@ -204,11 +166,10 @@ function Write-AssFile([string]$Path, [string[]]$Dialogues) {
         "",
         "[V4+ Styles]",
         "Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding",
-        "Style: Title,Arial,42,&H00F5F9FC,&H000000FF,&H0002384B,&HE602384B,-1,0,0,0,100,100,0,0,3,2,0,5,48,48,48,1",
-        "Style: Body,Arial,25,&H00F5F9FC,&H000000FF,&H0002384B,&HE602384B,0,0,0,0,100,100,0,0,3,2,0,5,54,54,54,1",
-        "Style: Caption,Arial,24,&H00FFFFFF,&H000000FF,&H0002384B,&HE602384B,0,0,0,0,100,100,0,0,3,2,0,2,72,72,48,1",
-        "Style: TopBar,Arial,27,&H00FFFFFF,&H000000FF,&H000B2538,&HE60B2538,-1,0,0,0,100,100,0,0,3,2,0,8,48,48,36,1",
-        "Style: LowerThird,Arial,25,&H00FFFFFF,&H000000FF,&H0002384B,&HE602384B,-1,0,0,0,100,100,0,0,3,2,0,2,54,54,42,1",
+        "Style: Title,Arial,44,&H00F5F9FC,&H000000FF,&H0002384B,&HE602384B,-1,0,0,0,100,100,0,0,3,2,0,5,48,48,48,1",
+        "Style: Body,Arial,27,&H00F5F9FC,&H000000FF,&H0002384B,&HE602384B,0,0,0,0,100,100,0,0,3,2,0,5,54,54,54,1",
+        "Style: TopBar,Arial,28,&H00FFFFFF,&H000000FF,&H000B2538,&HE60B2538,-1,0,0,0,100,100,0,0,3,2,0,8,44,44,34,1",
+        "Style: LowerThird,Arial,26,&H00FFFFFF,&H000000FF,&H0002384B,&HE602384B,-1,0,0,0,100,100,0,0,3,2,0,2,50,50,38,1",
         "",
         "[Events]",
         "Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text"
@@ -222,111 +183,134 @@ function Render-ColorSegment([string]$OutputPath, [double]$Duration, [string]$As
     if ($LASTEXITCODE -ne 0) { throw "Failed to render color segment: $OutputPath" }
 }
 
-function Render-ImageSegment([string]$InputPath, [string]$OutputPath, [double]$Duration, [string]$AssPath) {
+function Render-ImageSegment {
+    param(
+        [Parameter(Mandatory = $true)][string]$InputPath,
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][double]$Duration,
+        [Parameter(Mandatory = $true)][string]$AssPath,
+        [string]$Crop = ""
+    )
     $assFilterPath = $AssPath.Replace("\", "/")
-    & ffmpeg -hide_banner -loglevel error -y -loop 1 -t $Duration -i $InputPath -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=0x062b3a,subtitles='$assFilterPath'" -r 24 -c:v libx264 -pix_fmt yuv420p -an $OutputPath
+    $filters = @()
+    if (-not [string]::IsNullOrWhiteSpace($Crop)) { $filters += $Crop }
+    $filters += "scale=1280:720:force_original_aspect_ratio=decrease"
+    $filters += "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=0x062b3a"
+    $filters += "subtitles='$assFilterPath'"
+    & ffmpeg -hide_banner -loglevel error -y -loop 1 -t $Duration -i $InputPath -vf ($filters -join ",") -r 24 -c:v libx264 -pix_fmt yuv420p -an $OutputPath
     if ($LASTEXITCODE -ne 0) { throw "Failed to render image segment: $OutputPath" }
 }
 
-Write-AssFile -Path $introAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:08.00,Title,,0,0,0,,{\pos(640,230)}DREAM Qwen Cloud MemoryAgent",
-    "Dialogue: 0,0:00:00.00,0:00:08.00,Body,,0,0,0,,{\pos(640,305)}Track 1 source-backed memory for engineering teams",
-    "Dialogue: 0,0:00:00.00,0:00:08.00,Body,,0,0,0,,{\pos(640,350)}Qwen Cloud generation plus governed retrieval, audit, and human review",
-    "Dialogue: 0,0:00:00.00,0:00:08.00,Body,,0,0,0,,{\pos(640,430)}Public repo, Alibaba packaging, final proof gates, and Devpost-ready evidence"
+if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+    throw "ffmpeg is required to render the final Devpost demo video."
+}
+if (-not (Get-Command ffprobe -ErrorAction SilentlyContinue)) {
+    throw "ffprobe is required to verify the final Devpost demo video."
+}
+
+$sourceAssets = @(
+    Get-AssetRecord -Name "arena_initial" -Path $ArenaInitialPath
+    Get-AssetRecord -Name "arena_success_top" -Path $ArenaSuccessTopPath
+    Get-AssetRecord -Name "arena_success_detail" -Path $ArenaSuccessDetailPath
+    Get-AssetRecord -Name "arena_benchmark" -Path $ArenaBenchmarkPath
+    Get-AssetRecord -Name "architecture_diagram" -Path $ArchitecturePath
+    Get-AssetRecord -Name "memory_hub" -Path $memoryHubPath
+    Get-AssetRecord -Name "retrieval_trace" -Path $retrievalTracePath
+    Get-AssetRecord -Name "jira_draft" -Path $jiraDraftPath
+    Get-AssetRecord -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
+    Get-AssetRecord -Name "narration_captions" -Path $NarrationCaptionPath
+)
+$missingAssets = @($sourceAssets | Where-Object { -not $_.exists })
+if ($missingAssets.Count -gt 0) {
+    throw "Required demo video assets are missing: $(@($missingAssets | ForEach-Object { $_.path }) -join ', ')"
+}
+
+New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
+New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
+
+$segments = @(
+    [ordered]@{ name = "intro"; duration = 7; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:07.00,Title,,0,0,0,,{\pos(640,215)}DREAM Qwen Cloud MemoryAgent",
+        "Dialogue: 0,0:00:00.00,0:00:07.00,Body,,0,0,0,,{\pos(640,300)}Most agents forget. Stale guidance survives. Context budgets overflow.",
+        "Dialogue: 0,0:00:00.00,0:00:07.00,Body,,0,0,0,,{\pos(640,370)}DREAM keeps one governed truth across sessions.",
+        "Dialogue: 0,0:00:00.00,0:00:07.00,Body,,0,0,0,,{\pos(640,455)}Track 1 MemoryAgent | Qwen Cloud | Alibaba Function Compute"
+    ) }
+    [ordered]@{ name = "architecture"; duration = 9; kind = "image"; asset = $ArchitecturePath; crop = ""; dialogues = @() }
+    [ordered]@{ name = "arena-initial"; duration = 10; kind = "image"; asset = $ArenaInitialPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:10.00,TopBar,,0,0,0,,Session 1 | Qwen recognizes a durable preference and returns remember"
+    ) }
+    [ordered]@{ name = "arena-supersede"; duration = 12; kind = "image"; asset = $ArenaSuccessTopPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:12.00,TopBar,,0,0,0,,Session 2 | Qwen returns supersede and DREAM retires the stale truth"
+    ) }
+    [ordered]@{ name = "arena-budget"; duration = 10; kind = "image"; asset = $ArenaSuccessDetailPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:10.00,LowerThird,,0,0,0,,Session 3 | No prompt history | hard recall budget: 64 tokens"
+    ) }
+    [ordered]@{ name = "arena-recall"; duration = 11; kind = "image"; asset = $ArenaSuccessDetailPath; crop = "crop=430:565:835:65"; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:11.00,TopBar,,0,0,0,,Current truth recalled in 19 / 64 tokens",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,LowerThird,,0,0,0,,20% canary for 45 minutes | old value leaked: no"
+    ) }
+    [ordered]@{ name = "feedback"; duration = 7; kind = "image"; asset = $ArenaSuccessDetailPath; crop = "crop=430:565:835:65"; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:07.00,TopBar,,0,0,0,,Helpful + correct feedback returns to future ranking"
+    ) }
+    [ordered]@{ name = "benchmark"; duration = 18; kind = "image"; asset = $ArenaBenchmarkPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:18.00,TopBar,,0,0,0,,37 real Qwen decisions across 24 lifecycle cases"
+    ) }
+    [ordered]@{ name = "benchmark-proof"; duration = 16; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Title,,0,0,0,,{\pos(640,155)}Reproducible lifecycle proof",
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(360,270)}24 / 24 cases passed",
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(920,270)}100% critical recall",
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(360,365)}0% forbidden leak",
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(920,365)}100% budget compliance",
+        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(640,485)}Conflict | TTL | explicit forgetting | duplicates | limited context"
+    ) }
+    [ordered]@{ name = "memory-hub"; duration = 8; kind = "image"; asset = $memoryHubPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:08.00,TopBar,,0,0,0,,Organizational claims retain source proof and human approval"
+    ) }
+    [ordered]@{ name = "retrieval-trace"; duration = 8; kind = "image"; asset = $retrievalTracePath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:08.00,TopBar,,0,0,0,,Unresolved conflicts are blocked before retrieval"
+    ) }
+    [ordered]@{ name = "jira-draft"; duration = 12; kind = "image"; asset = $jiraDraftPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:12.00,TopBar,,0,0,0,,Approved truth enters requirements, impact maps, briefs, and Jira drafts",
+        "Dialogue: 0,0:00:00.00,0:00:12.00,LowerThird,,0,0,0,,Reviewer and source provenance stay attached"
+    ) }
+    [ordered]@{ name = "alibaba-proof"; duration = 12; kind = "image"; asset = $AlibabaScreenshotPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:12.00,TopBar,,0,0,0,,Alibaba Function Compute | Singapore | qwen3.7-plus",
+        "Dialogue: 0,0:00:00.00,0:00:12.00,LowerThird,,0,0,0,,Public runtime verification: all checks passed"
+    ) }
+    [ordered]@{ name = "repo-proof"; duration = 9; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:09.00,Title,,0,0,0,,{\pos(640,170)}Everything is reproducible",
+        "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,275)}Benchmark summary + full report + test suite",
+        "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,335)}Alibaba deployment template + proof capture",
+        "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,420)}github.com/zemeng2015/dream-ai-engineering-copilot",
+        "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,475)}branch: codex/champion-memory-loop"
+    ) }
+    [ordered]@{ name = "outro"; duration = 11; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Title,,0,0,0,,{\pos(640,175)}DREAM remembers the right experience",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,280)}Replace old truth",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,335)}Forget safely",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,390)}Recall under a hard budget",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,445)}Explain every selected memory",
+        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,525)}Qwen Cloud Track 1 MemoryAgent"
+    ) }
 )
 
-Write-AssFile -Path $problemAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:12.00,Title,,0,0,0,,{\pos(640,180)}The problem",
-    "Dialogue: 0,0:00:00.00,0:00:12.00,Body,,0,0,0,,{\pos(640,270)}AI engineering tools forget the evidence behind prior decisions.",
-    "Dialogue: 0,0:00:00.00,0:00:12.00,Body,,0,0,0,,{\pos(640,320)}DREAM turns tickets, incidents, runbooks, code, PRs, and reviews into governed memory.",
-    "Dialogue: 0,0:00:00.00,0:00:12.00,Body,,0,0,0,,{\pos(640,370)}Every generated output can point back to source-backed context."
-)
+$concatLines = @()
+foreach ($segment in $segments) {
+    $assPath = Join-Path $WorkDir "$($segment.name).ass"
+    $videoPath = Join-Path $WorkDir "$($segment.name).mp4"
+    Write-AssFile -Path $assPath -Dialogues $segment.dialogues
+    if ($segment.kind -eq "color") {
+        Render-ColorSegment -OutputPath $videoPath -Duration $segment.duration -AssPath $assPath
+    }
+    else {
+        Render-ImageSegment -InputPath $segment.asset -OutputPath $videoPath -Duration $segment.duration -AssPath $assPath -Crop $segment.crop
+    }
+    $concatLines += "file '$($segment.name).mp4'"
+}
 
-Write-AssFile -Path $architectureAss -Dialogues @()
-
-Write-AssFile -Path $memoryHubAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,Governed memory workspace",
-    "Dialogue: 0,0:00:00.00,0:00:09.00,LowerThird,,0,0,0,,Teams can inspect source intake, memory status, evidence coverage, and review state before reusing context"
-)
-
-Write-AssFile -Path $knowledgeIntakeAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,Knowledge intake with review control",
-    "Dialogue: 0,0:00:00.00,0:00:09.00,LowerThird,,0,0,0,,Raw docs become parsed source cards; stale or unreviewed claims can be quarantined instead of trusted blindly"
-)
-
-Write-AssFile -Path $retrievalTraceAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,Retrieval traces make Qwen outputs inspectable",
-    "Dialogue: 0,0:00:00.00,0:00:09.00,LowerThird,,0,0,0,,Requirement context shows which docs, incidents, code, tests, Jira items, and PRs influenced the answer"
-)
-
-Write-AssFile -Path $jiraDraftAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,From memory to review-ready engineering work",
-    "Dialogue: 0,0:00:00.00,0:00:09.00,LowerThird,,0,0,0,,DREAM turns retrieved evidence into questions, impact maps, engineering briefs, and Jira-ready drafts"
-)
-
-Write-AssFile -Path $evalAuditAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:09.00,TopBar,,0,0,0,,Audit and evaluation loops",
-    "Dialogue: 0,0:00:00.00,0:00:09.00,LowerThird,,0,0,0,,Every run can carry scores, source coverage, warnings, and human ratings so future memory improves"
-)
-
-Write-AssFile -Path $mainAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:06.00,Caption,,0,0,0,,DREAM turns scattered engineering context into persistent memory",
-    "Dialogue: 0,0:00:06.00,0:00:13.00,Caption,,0,0,0,,Memory Hub keeps source intake, parsed sections, review state, and evidence visible",
-    "Dialogue: 0,0:00:13.00,0:00:21.00,Caption,,0,0,0,,Knowledge intake promotes only reviewed source cards into reusable memory",
-    "Dialogue: 0,0:00:21.00,0:00:30.00,Caption,,0,0,0,,Retrieval paths explain why docs, incidents, code, tests, Jira, and PRs were selected",
-    "Dialogue: 0,0:00:30.00,0:00:39.00,Caption,,0,0,0,,Requirement workflows turn retrieved memory into review-ready Jira drafts",
-    "Dialogue: 0,0:00:39.00,0:00:49.00,Caption,,0,0,0,,Runtime settings expose backend mode before local or Alibaba Cloud execution"
-)
-
-Write-AssFile -Path $proofAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Title,,0,0,0,,{\pos(640,150)}Hackathon proof chain",
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,245)}Qwen config: examples/config/dream.qwen.yaml",
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,295)}Alibaba deployment file: deploy/alibaba/serverless-devs-runtime.yaml",
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,345)}Final readiness gates validate CI, video, backend health, proof screenshot, and proof recording",
-    "Dialogue: 0,0:00:00.00,0:00:13.00,Body,,0,0,0,,{\pos(640,430)}Judging alignment: innovation, technical depth, problem value, presentation"
-)
-
-Write-AssFile -Path $outroAss -Dialogues @(
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Title,,0,0,0,,{\pos(640,205)}DREAM makes engineering AI accountable",
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,285)}Remember source truth",
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,330)}Retrieve the right evidence",
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,375)}Generate with Qwen Cloud",
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,420)}Deploy and prove it on Alibaba Cloud",
-    "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,500)}github.com/zemeng2015/dream-ai-engineering-copilot"
-)
-
-$mainAssPath = $mainAss.Replace("\", "/")
-
-Render-ColorSegment -OutputPath $intro -Duration 8 -AssPath $introAss
-Render-ColorSegment -OutputPath $problem -Duration 12 -AssPath $problemAss
-Render-ImageSegment -InputPath $architecturePng -OutputPath $architecture -Duration 14 -AssPath $architectureAss
-Render-ImageSegment -InputPath $memoryHubPng -OutputPath $memoryHub -Duration 9 -AssPath $memoryHubAss
-Render-ImageSegment -InputPath $knowledgeIntakePng -OutputPath $knowledgeIntake -Duration 9 -AssPath $knowledgeIntakeAss
-Render-ImageSegment -InputPath $retrievalTracePng -OutputPath $retrievalTrace -Duration 9 -AssPath $retrievalTraceAss
-Render-ImageSegment -InputPath $jiraDraftPng -OutputPath $jiraDraft -Duration 9 -AssPath $jiraDraftAss
-Render-ImageSegment -InputPath $evalAuditPng -OutputPath $evalAudit -Duration 9 -AssPath $evalAuditAss
-
-& ffmpeg -hide_banner -loglevel error -y -i $InputVideo -vf "subtitles='$mainAssPath'" -r 24 -c:v libx264 -pix_fmt yuv420p -an $main
-if ($LASTEXITCODE -ne 0) { throw "Failed to render captioned main segment." }
-
-Render-ColorSegment -OutputPath $proof -Duration 13 -AssPath $proofAss
-Render-ColorSegment -OutputPath $outro -Duration 10 -AssPath $outroAss
-
-$concatLines = @(
-    "file 'intro.mp4'",
-    "file 'problem.mp4'",
-    "file 'architecture.mp4'",
-    "file 'memory-hub.mp4'",
-    "file 'knowledge-intake.mp4'",
-    "file 'retrieval-trace.mp4'",
-    "file 'jira-draft.mp4'",
-    "file 'eval-audit.mp4'",
-    "file 'main-captioned.mp4'",
-    "file 'proof.mp4'",
-    "file 'outro.mp4'"
-)
+$concatFile = Join-Path $WorkDir "concat.txt"
+$silentOutput = Join-Path $WorkDir "final-silent.mp4"
 Set-Content -Path $concatFile -Value ($concatLines -join "`n") -Encoding ASCII
-
 & ffmpeg -hide_banner -loglevel error -y -f concat -safe 0 -i $concatFile -c copy -movflags +faststart $silentOutput
 if ($LASTEXITCODE -ne 0) { throw "Failed to concatenate final video." }
 
@@ -370,17 +354,6 @@ if ([double]$probe.format.duration -ge 180) {
 
 $videoStream = @($probe.streams | Where-Object { $_.codec_type -eq "video" } | Select-Object -First 1)
 $audioStream = @($probe.streams | Where-Object { $_.codec_type -eq "audio" } | Select-Object -First 1)
-$sourceAssets = @(
-    Get-AssetRecord -Name "input_walkthrough_video" -Path $InputVideo
-    Get-AssetRecord -Name "architecture_diagram" -Path $architecturePng
-    Get-AssetRecord -Name "memory_hub_screenshot" -Path $memoryHubPng
-    Get-AssetRecord -Name "knowledge_intake_screenshot" -Path $knowledgeIntakePng
-    Get-AssetRecord -Name "retrieval_trace_screenshot" -Path $retrievalTracePng
-    Get-AssetRecord -Name "jira_draft_screenshot" -Path $jiraDraftPng
-    Get-AssetRecord -Name "eval_audit_screenshot" -Path $evalAuditPng
-    Get-AssetRecord -Name "narration_captions" -Path $NarrationCaptionPath
-)
-
 $reportJson = Join-Path $ReportDir "demo-video-render-$timestamp.json"
 $reportMd = Join-Path $ReportDir "demo-video-render-$timestamp.md"
 $outputHash = Get-FileSha256 -Path $OutputVideo
@@ -401,6 +374,7 @@ $result = [ordered]@{
     narrationIssue = [string]$narration.issue
     underDevpostLimit = ([double]$probe.format.duration -lt 180)
     sourceAssets = $sourceAssets
+    segmentCount = $segments.Count
     reportJson = $reportJson
     reportMarkdown = $reportMd
 }

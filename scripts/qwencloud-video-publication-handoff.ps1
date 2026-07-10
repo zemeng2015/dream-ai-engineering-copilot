@@ -18,7 +18,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$CaptionPath = "docs/qwencloud-demo-video-captions.srt",
     [Parameter(Mandatory = $false)]
-    [string]$Title = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence",
+    [string]$Title = "DREAM MemoryAgent: One Current Truth Across Qwen Sessions | Qwen Cloud",
     [Parameter(Mandatory = $false)]
     [string]$Description = "",
     [switch]$AllowDraft
@@ -35,7 +35,11 @@ $checks = @()
 
 if ([string]::IsNullOrWhiteSpace($Description)) {
     $Description = @"
-DREAM is a Qwen Cloud Track 1 MemoryAgent for source-backed engineering intelligence. It uses persistent, governed engineering memory, Qwen Cloud generation, and Alibaba Cloud deployment proof to turn codebase docs, incidents, and review context into auditable requirement and review outputs.
+DREAM gives Qwen governed cross-session experience. In three live sessions, Qwen remembers a durable preference, supersedes stale guidance, and recalls only the current truth in 19 of 64 tokens without leaking the old value.
+
+The reproducible benchmark runs 37 real Qwen curator decisions across 24 lifecycle cases: 24/24 passed, critical recall is 100%, forbidden leak is 0%, and token-budget compliance is 100%. Approved organizational claims retain reviewer and source provenance before entering requirement and Jira workflows.
+
+Runtime: Alibaba Cloud Function Compute, qwen3.7-plus, ap-southeast-1.
 
 Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
 Track: Track 1: MemoryAgent
@@ -144,8 +148,9 @@ $tags = @(
     "Qwen Cloud",
     "Alibaba Cloud",
     "MemoryAgent",
-    "AI engineering",
-    "source-backed memory",
+    "experience memory",
+    "cross-session memory",
+    "context engineering",
     "hackathon"
 )
 

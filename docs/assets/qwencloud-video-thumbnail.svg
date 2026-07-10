@@ -1,97 +1,72 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
   <title id="title">DREAM Qwen Cloud MemoryAgent video thumbnail</title>
-  <desc id="desc">A polished hackathon video thumbnail for DREAM, a Qwen Cloud MemoryAgent for source-backed engineering intelligence.</desc>
+  <desc id="desc">DREAM proves one current truth across three Qwen-powered sessions with constrained recall and Alibaba deployment.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#101820"/>
-      <stop offset="0.48" stop-color="#16313a"/>
-      <stop offset="1" stop-color="#281e3a"/>
-    </linearGradient>
-    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f8fbff"/>
-      <stop offset="1" stop-color="#e6eef7"/>
-    </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#ffd166"/>
-      <stop offset="1" stop-color="#f4a261"/>
-    </linearGradient>
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.28"/>
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#00151f" flood-opacity="0.32"/>
     </filter>
     <style>
-      .sans { font-family: Inter, Segoe UI, Arial, sans-serif; }
-      .mono { font-family: Consolas, SFMono-Regular, Menlo, monospace; }
-      .small { font-size: 26px; font-weight: 700; letter-spacing: 0; }
-      .label { font-size: 25px; font-weight: 800; letter-spacing: 0; }
-      .code { font-size: 23px; font-weight: 700; letter-spacing: 0; }
+      .sans { font-family: Inter, Segoe UI, Arial, sans-serif; letter-spacing: 0; }
+      .mono { font-family: Consolas, SFMono-Regular, Menlo, monospace; letter-spacing: 0; }
     </style>
   </defs>
 
-  <rect width="1280" height="720" fill="url(#bg)"/>
-  <g opacity="0.12" stroke="#ffffff" stroke-width="1">
+  <rect width="1280" height="720" fill="#082f3f"/>
+  <rect x="0" y="0" width="1280" height="10" fill="#f6c85f"/>
+  <g opacity="0.09" stroke="#dff8f4" stroke-width="1">
     <path d="M0 120H1280M0 240H1280M0 360H1280M0 480H1280M0 600H1280"/>
     <path d="M160 0V720M320 0V720M480 0V720M640 0V720M800 0V720M960 0V720M1120 0V720"/>
   </g>
 
-  <g transform="translate(76 70)">
-    <rect x="0" y="0" width="1128" height="580" rx="28" fill="#ffffff" opacity="0.08"/>
-    <rect x="18" y="18" width="1092" height="544" rx="22" fill="#071017" opacity="0.36"/>
+  <g transform="translate(76 62)">
+    <rect x="0" y="0" width="1128" height="596" rx="20" fill="#ffffff" opacity="0.06"/>
+    <rect x="20" y="20" width="1088" height="556" rx="14" fill="#062631" opacity="0.78"/>
   </g>
 
-  <g transform="translate(112 106)">
-    <text class="sans" x="0" y="66" fill="#ffffff" font-size="82" font-weight="900" letter-spacing="0">DREAM</text>
-    <rect x="0" y="92" width="505" height="8" rx="4" fill="url(#gold)"/>
-    <text class="sans" x="0" y="151" fill="#d9f7f2" font-size="35" font-weight="800" letter-spacing="0">Qwen Cloud MemoryAgent</text>
-    <text class="sans" x="0" y="199" fill="#f2f7fb" font-size="31" font-weight="650" letter-spacing="0">Source-backed engineering intelligence</text>
-    <text class="sans" x="0" y="250" fill="#a8c8d4" font-size="24" font-weight="650" letter-spacing="0">Persistent memory + evidence traces + Alibaba deployment proof</text>
+  <g transform="translate(112 96)">
+    <text class="sans" x="0" y="54" fill="#ffffff" font-size="66" font-weight="900">DREAM</text>
+    <rect x="0" y="72" width="318" height="7" rx="3.5" fill="#f6c85f"/>
+    <text class="sans" x="0" y="126" fill="#9de6db" font-size="28" font-weight="800">QWEN CLOUD TRACK 1 MEMORYAGENT</text>
   </g>
 
-  <g transform="translate(112 405)">
-    <rect x="0" y="0" width="308" height="128" rx="18" fill="url(#panel)" filter="url(#shadow)"/>
-    <rect x="24" y="26" width="54" height="54" rx="12" fill="#2a9d8f"/>
-    <path d="M39 53h24M51 41v24" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
-    <text class="sans label" x="96" y="52" fill="#10212b">Memory</text>
-    <text class="mono code" x="96" y="88" fill="#38515c">reviewed claims</text>
+  <g transform="translate(112 286)">
+    <text class="sans" x="0" y="0" fill="#ffffff" font-size="58" font-weight="900">ONE CURRENT TRUTH</text>
+    <text class="sans" x="0" y="50" fill="#dceef3" font-size="25" font-weight="700">Remember durable experience. Replace stale guidance.</text>
+    <text class="sans" x="0" y="90" fill="#dceef3" font-size="25" font-weight="700">Recall only the current truth under a hard context budget.</text>
   </g>
 
-  <g transform="translate(486 405)">
-    <rect x="0" y="0" width="308" height="128" rx="18" fill="url(#panel)" filter="url(#shadow)"/>
-    <rect x="24" y="26" width="54" height="54" rx="12" fill="#457b9d"/>
-    <path d="M37 57l15 14 26-34" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <text class="sans label" x="96" y="52" fill="#10212b">Evidence</text>
-    <text class="mono code" x="96" y="88" fill="#38515c">source traces</text>
+  <g transform="translate(112 438)">
+    <rect x="0" y="0" width="300" height="112" rx="10" fill="#f5fbfc" filter="url(#shadow)"/>
+    <text class="sans" x="24" y="35" fill="#49616b" font-size="18" font-weight="800">SESSION 1</text>
+    <text class="sans" x="24" y="78" fill="#13705e" font-size="31" font-weight="900">REMEMBER</text>
+    <path d="M236 57h34M258 43l14 14-14 14" fill="none" stroke="#2a9d8f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(432 438)">
+    <rect x="0" y="0" width="300" height="112" rx="10" fill="#f5fbfc" filter="url(#shadow)"/>
+    <text class="sans" x="24" y="35" fill="#49616b" font-size="18" font-weight="800">SESSION 2</text>
+    <text class="sans" x="24" y="78" fill="#b75b31" font-size="31" font-weight="900">SUPERSEDE</text>
+    <path d="M236 57h34M258 43l14 14-14 14" fill="none" stroke="#e76f51" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(752 438)">
+    <rect x="0" y="0" width="340" height="112" rx="10" fill="#f5fbfc" filter="url(#shadow)"/>
+    <text class="sans" x="24" y="35" fill="#49616b" font-size="18" font-weight="800">SESSION 3</text>
+    <text class="sans" x="24" y="78" fill="#245f8a" font-size="31" font-weight="900">RECALL 19 / 64</text>
   </g>
 
-  <g transform="translate(860 405)">
-    <rect x="0" y="0" width="308" height="128" rx="18" fill="url(#panel)" filter="url(#shadow)"/>
-    <rect x="24" y="26" width="54" height="54" rx="12" fill="#e76f51"/>
-    <path d="M40 65h23l11-21" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="40" cy="65" r="5" fill="#ffffff"/>
-    <circle cx="63" cy="65" r="5" fill="#ffffff"/>
-    <circle cx="74" cy="44" r="5" fill="#ffffff"/>
-    <text class="sans label" x="96" y="52" fill="#10212b">Deploy</text>
-    <text class="mono code" x="96" y="88" fill="#38515c">Function Compute</text>
+  <g transform="translate(824 104)">
+    <rect x="0" y="0" width="268" height="258" rx="16" fill="#f5fbfc" filter="url(#shadow)"/>
+    <text class="sans" x="24" y="42" fill="#49616b" font-size="17" font-weight="800">REAL QWEN BENCHMARK</text>
+    <text class="sans" x="24" y="104" fill="#13705e" font-size="47" font-weight="900">24 / 24</text>
+    <text class="sans" x="24" y="137" fill="#49616b" font-size="20" font-weight="700">lifecycle cases passed</text>
+    <rect x="24" y="166" width="220" height="1" fill="#c4d6dc"/>
+    <text class="sans" x="24" y="207" fill="#b75b31" font-size="30" font-weight="900">0% LEAK</text>
+    <text class="sans" x="24" y="235" fill="#49616b" font-size="18" font-weight="700">37 curator decisions</text>
   </g>
 
-  <g transform="translate(392 548)" fill="none" stroke="#ffd166" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0 0H70"/>
-    <path d="M50 -18l20 18-20 18"/>
-    <path d="M374 0h70"/>
-    <path d="M424 -18l20 18-20 18"/>
+  <g transform="translate(112 608)">
+    <rect x="0" y="-30" width="386" height="44" rx="22" fill="#2a9d8f"/>
+    <text class="sans" x="22" y="0" fill="#ffffff" font-size="22" font-weight="800">ALIBABA FUNCTION COMPUTE</text>
+    <text class="mono" x="430" y="0" fill="#f6c85f" font-size="22" font-weight="800">qwen3.7-plus</text>
+    <text class="sans" x="776" y="0" fill="#dceef3" font-size="20" font-weight="800">100.0 / 100</text>
   </g>
-
-  <g transform="translate(826 104)">
-    <rect x="0" y="0" width="342" height="214" rx="22" fill="#f8fbff" filter="url(#shadow)"/>
-    <rect x="28" y="32" width="286" height="38" rx="10" fill="#d8e6ee"/>
-    <rect x="28" y="91" width="218" height="22" rx="8" fill="#2a9d8f"/>
-    <rect x="28" y="128" width="254" height="22" rx="8" fill="#457b9d"/>
-    <rect x="28" y="165" width="176" height="22" rx="8" fill="#e76f51"/>
-    <text class="mono" x="44" y="57" fill="#10212b" font-size="20" font-weight="800" letter-spacing="0">/health proof</text>
-  </g>
-
-  <g transform="translate(112 628)">
-    <rect x="0" y="-35" width="310" height="50" rx="25" fill="#ffffff" opacity="0.12"/>
-    <text class="sans small" x="26" y="0" fill="#ffffff">Track 1: MemoryAgent</text>
-  </g>
-  <text class="sans" x="875" y="633" fill="#d9f7f2" font-size="24" font-weight="800" letter-spacing="0">Qwen Cloud + Alibaba Cloud</text>
 </svg>
