@@ -105,6 +105,11 @@ function Get-PowerShellExe {
     throw "PowerShell executable not found."
 }
 
+function Quote-ProcessArg([string]$Value) {
+    if ($null -eq $Value) { return '""' }
+    return '"' + ($Value -replace '"', '\"') + '"'
+}
+
 function Get-ArgumentPath([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path)) { return $Path }
     try {
@@ -131,7 +136,8 @@ function Invoke-MaterialProducer {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter $Filter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $stdout = Join-Path $OutputDir "devpost-materials-audit-$Name-$timestamp.out"
     $stderr = Join-Path $OutputDir "devpost-materials-audit-$Name-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $Arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $startArguments = @($Arguments | ForEach-Object { Quote-ProcessArg $_ })
+    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $startArguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
     $script:generatedArtifacts += [ordered]@{
         name = $Name
         exitCode = $proc.ExitCode

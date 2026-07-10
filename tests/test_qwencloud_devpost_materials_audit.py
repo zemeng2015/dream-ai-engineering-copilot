@@ -341,6 +341,56 @@ def test_devpost_materials_audit_rejects_placeholders_and_secret_like_values(
     assert "dashscope_sk_testleakyvalue123" not in raw_report
 
 
+def test_devpost_materials_audit_quotes_producer_paths_with_spaces(tmp_path: Path) -> None:
+    paths = _base_materials(tmp_path)
+    env_dir = tmp_path / "env folder"
+    env_dir.mkdir()
+    env_file = env_dir / "qwen local.env"
+    env_file.write_text("# Intentionally empty draft environment.\n", encoding="utf-8")
+
+    result = subprocess.run(
+        _powershell_command()
+        + [
+            "-File",
+            str(SCRIPT),
+            "-RepoUrl",
+            REPO_URL,
+            "-DemoVideoUrl",
+            DEMO_URL,
+            "-BackendUrl",
+            BACKEND_URL,
+            "-OutputDir",
+            str(paths["output_dir"]),
+            "-EnvFile",
+            str(env_file),
+            "-ArchitectureUploadPath",
+            str(tmp_path / "architecture.png"),
+            "-LocalDemoVideoPath",
+            str(tmp_path / "demo.mp4"),
+            "-AlibabaScreenshotPath",
+            str(tmp_path / "alibaba.png"),
+            "-AlibabaProofVideoPath",
+            str(tmp_path / "alibaba-proof.mp4"),
+            "-SkipBackendDraft",
+            "-SkipExternalUrlChecks",
+            "-AllowDraft",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report_path = max(
+        paths["output_dir"].glob("devpost-materials-audit-*.json"),
+        key=lambda path: path.stat().st_mtime_ns,
+    )
+    report = json.loads(report_path.read_text(encoding="utf-8-sig"))
+    assert _check(report, "generate.handoff")["ok"] is True
+    assert report["handoffJson"]
+
+
 def test_devpost_materials_audit_registered_in_final_flow() -> None:
     script_name = "scripts/qwencloud-devpost-materials-audit.ps1"
     assert SCRIPT.exists()
