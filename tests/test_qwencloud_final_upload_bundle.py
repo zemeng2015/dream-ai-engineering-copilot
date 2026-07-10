@@ -19,6 +19,9 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "function Invoke-ActionBoard" in final_bundle
     assert "function Invoke-ExternalHandoff" in final_bundle
     assert "function Invoke-ReleaseConfigAudit" in final_bundle
+    assert "function Invoke-VideoUploadStatus" in final_bundle
+    assert 'Add-ExternalRequirement -Name "current_public_demo_video_ready"' in final_bundle
+    assert 'Add-Item -Name "video_upload_status_json"' in final_bundle
     assert "releaseSummaryPackaging" in final_bundle
     assert "not_bundled_generate_after_zip_hash" in final_bundle
     assert "function Protect-ManifestText" in final_bundle

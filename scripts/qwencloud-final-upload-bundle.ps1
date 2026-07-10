@@ -978,6 +978,41 @@ function Invoke-VideoPublicationHandoff {
     }
 }
 
+function Invoke-VideoUploadStatus {
+    $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-upload-status-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/qwencloud-video-upload-status.ps1",
+        "-OutputDir", $OutputDir,
+        "-LocalVideoPath", $LocalDemoVideoPath,
+        "-AllowDraft"
+    )
+    if ($DemoVideoUrl) { $args += @("-DemoVideoUrl", $DemoVideoUrl) }
+    if ($SkipExternalUrlChecks) { $args += "-SkipExternalUrlChecks" }
+    if ($SkipLocalVideoChecks) { $args += "-SkipLocalVideoChecks" }
+
+    $stdout = Join-Path $OutputDir "final-upload-bundle-video-upload-status-$timestamp.out"
+    $stderr = Join-Path $OutputDir "final-upload-bundle-video-upload-status-$timestamp.err"
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
+    if ($proc.ExitCode -ne 0) { throw "Video upload status generation failed. See $stderr" }
+
+    $after = @(Get-ChildItem -LiteralPath $OutputDir -Filter "video-upload-status-*.json" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+    $json = @($after | Where-Object { $before -notcontains $_.FullName } | Select-Object -First 1)
+    if (-not $json) { $json = @($after | Select-Object -First 1) }
+    if (-not $json) { throw "Video upload status JSON was not found." }
+
+    $data = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json
+    $failures = @($data.checks | Where-Object { $_.required -and -not $_.ok } | ForEach-Object { $_.name })
+    return [pscustomobject]@{
+        json = $json.FullName
+        markdown = [string]$data.reportMarkdown
+        ready = [bool]$data.readyForDevpostVideoField
+        failures = $failures
+        details = if ($data.readyForDevpostVideoField) { "READY: $($json.FullName)" } else { "DRAFT; missing=$($failures -join ', ')" }
+    }
+}
+
 function Invoke-ExternalHandoff {
     $before = @(Get-ChildItem -LiteralPath $OutputDir -Filter "external-handoff-*.json" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     $args = @(
@@ -1047,6 +1082,7 @@ $liveInputs = Invoke-LiveInputsIntake
 $releaseConfig = Invoke-ReleaseConfigAudit
 $githubCiProof = Invoke-GitHubCiProof
 $videoPublicationHandoff = Invoke-VideoPublicationHandoff
+$videoUploadStatus = Invoke-VideoUploadStatus
 $packet = Invoke-Packet
 $handoff = Invoke-Handoff
 $draftPayload = Invoke-DraftPayload
@@ -1064,6 +1100,7 @@ Add-ExternalRequirement -Name "submission_deadline_guard_ready" -Ok $deadlineGua
 Add-ExternalRequirement -Name "live_inputs_intake_ready" -Ok $liveInputs.ready -Details $liveInputs.details
 Add-ExternalRequirement -Name "release_config_audit_ready" -Ok $releaseConfig.ready -Details $releaseConfig.details
 Add-ExternalRequirement -Name "github_ci_proof_ready" -Ok $githubCiProof.ready -Details $githubCiProof.details
+Add-ExternalRequirement -Name "current_public_demo_video_ready" -Ok $videoUploadStatus.ready -Details $videoUploadStatus.details
 Add-ExternalRequirement -Name "video_publication_handoff_ready" -Ok $videoPublicationHandoff.readyForManualUpload -Details $(if ($videoPublicationHandoff.readyForManualUpload) { "READY for manual upload" } else { "DRAFT" }) -Required $false
 Add-ExternalRequirement -Name "deployed_backend_url" -Ok (-not [string]::IsNullOrWhiteSpace($BackendUrl)) -Details $(if ($BackendUrl) { $BackendUrl } else { "missing" })
 Add-ExternalRequirement -Name "devpost_packet_ready" -Ok $packet.ready -Details $(if ($packet.ready) { "READY" } else { "DRAFT; missing=$($packet.failedRequired -join ', ')" })
@@ -1088,6 +1125,8 @@ Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-uploa
 Add-Item -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
 Add-Item -Name "video_publication_handoff_markdown" -Path $videoPublicationHandoff.markdown
 Add-Item -Name "video_publication_handoff_json" -Path $videoPublicationHandoff.json
+Add-Item -Name "video_upload_status_markdown" -Path $videoUploadStatus.markdown
+Add-Item -Name "video_upload_status_json" -Path $videoUploadStatus.json
 Add-Item -Name "demo_video_render_script" -Path "scripts/qwencloud-render-demo-video.ps1" -Required $false
 Add-LatestItem -Name "latest_demo_video_render_markdown" -Filter "demo-video-render-*.md"
 Add-LatestItem -Name "latest_demo_video_render_json" -Filter "demo-video-render-*.json"
