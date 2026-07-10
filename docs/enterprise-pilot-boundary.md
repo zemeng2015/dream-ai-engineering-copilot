@@ -39,11 +39,11 @@ repository.
 
 | Control | Pilot requirement | Current public-core status |
 |---|---|---|
-| Identity | Organization-approved SSO and named user identity | Not implemented |
-| Authorization | Role policy for source onboarding, memory review, retrieval, and audit | Partial reviewer fields only |
-| ACL propagation | Preserve source ACLs and filter every retrieval result for the caller | Not implemented |
+| Identity | Organization-approved SSO and named user identity | Signed-proxy identity contract implemented; organization SSO/proxy approval pending |
+| Authorization | Role policy for source onboarding, memory review, retrieval, and audit | Core action roles and fail-closed private routes implemented; administration surfaces remain blocked |
+| ACL propagation | Preserve source ACLs and filter every retrieval result for the caller | Core source-to-prompt propagation, derived lineage, retrieval filtering and revocation ledger implemented; connector sync/deletion pending |
 | Connectors | Read-only, least-privilege, allowlisted repository/path scope | Local/synthetic inputs only |
-| Data classification | Approved categories, blocked content, source labels | Basic claim security metadata only |
+| Data classification | Approved categories, blocked content, source labels | `ResourceAccess` classification/ACL lineage implemented; enterprise taxonomy/policy pending |
 | Redaction/DLP | Pre-index and pre-prompt enforcement with test corpus | Basic deterministic redaction only |
 | Provider boundary | Approved endpoint, region, retention, and no-training terms | Provider abstraction exists; approval external |
 | Network | Private egress policy and endpoint allowlist | Deployment-specific, not provided |
@@ -51,6 +51,7 @@ repository.
 | Storage | Encrypted private storage, backup, retention, deletion | Local JSON/SQLite artifacts |
 | Audit | Named actor, source use, provider/model, decision and export | Local structured audit; export/admin controls pending |
 | Incident response | Owner, disable switch, investigation and deletion procedure | Pilot process required |
+| Dependency security | Approved supported runtime and remediated/excepted dependency findings | Angular 19 audit currently reports unresolved production findings; separate major upgrade required |
 
 Any missing control above is a go-live blocker for real organization data unless
 the security owner records an explicit, time-bounded exception.
@@ -69,7 +70,10 @@ the security owner records an explicit, time-bounded exception.
   access in the source system.
 
 The last two requirements are design goals for the Pilot extension; the current
-public core is not ACL-aware.
+public core now supplies a tested ACL-aware retrieval and revocation foundation.
+It does not yet supply connector-driven synchronization/deletion cascades or an
+organization-approved identity deployment. See
+[Pilot Security Foundation](pilot-security-foundation.md).
 
 ## Human Gate and Side Effects
 

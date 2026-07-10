@@ -542,6 +542,9 @@ For the latest UI simplification pass and product planning context, start here:
   boundary, known limitations, and evidence status.
 - `docs/enterprise-pilot-boundary.md` - required identity, ACL, connector,
   redaction, provider, storage, audit, and no-write controls for real sources.
+- `docs/pilot-security-foundation.md` - signed identity boundary, source ACL
+  propagation, fail-closed private routes, verified negative cases, and remaining
+  approval/revocation gaps.
 - `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
   one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
 - `docs/leadership-product-readiness-audit.md` - requirement-by-requirement

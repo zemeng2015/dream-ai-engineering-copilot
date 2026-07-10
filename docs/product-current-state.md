@@ -32,6 +32,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | Paired A/B harness | Same provider/model/request/contract; only context changes; honest missing metrics | Benchmark invariant tests |
 | Cost evidence gate | Exact provider/model pricing manifest plus input/output token proof | Pricing manifest tests |
 | External writes | None in the leadership scenario | Product boundary and implementation |
+| Pilot security foundation | Signed proxy identity, source ACL model/propagation, fail-closed private routes, derived artifact ACL | Security policy, API, retrieval and no-leak tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -70,13 +71,14 @@ The current system is suitable for a controlled leadership demonstration when:
 
 The public core does not currently prove:
 
-- enterprise SSO or role-based administration;
-- source-system ACL propagation and ACL-aware retrieval;
+- organization-approved SSO/proxy deployment and complete role-based administration;
+- connector ACL/revocation synchronization and deletion cascades;
 - approved production GitHub/Jira/document connectors;
 - enterprise redaction/DLP policy and classification enforcement;
 - production secrets management, storage hardening, backup, or retention;
 - organization-approved data residency and network egress controls;
 - production-scale availability, latency, cost, or support SLOs;
+- a remediated and organization-approved frontend dependency baseline;
 - a feedback-learning policy driven by Human Rating;
 - production ROI; or
 - safe automatic Jira/PR creation, comments, approval, merge, or deployment.
@@ -103,3 +105,7 @@ These are Pilot gates, not implied current capabilities.
    source.
 4. Preserve small, reviewable product commits and keep competition-only code out
    of this branch.
+
+The provider-neutral public core now contains the first Pilot security slice.
+See `docs/pilot-security-foundation.md`. This implementation reduces technical
+risk but does not change the real-source No-Go decision.
