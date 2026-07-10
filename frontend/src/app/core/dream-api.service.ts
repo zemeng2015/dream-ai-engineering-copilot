@@ -102,6 +102,26 @@ interface ApiQwenCloudShowcaseBenchmark {
   limitations: string[];
 }
 
+interface ApiQwenCloudExperienceBenchmark {
+  status: string;
+  run_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  case_count: number;
+  decision_count: number;
+  passed_cases: number;
+  proposal_accuracy: number;
+  action_accuracy: number;
+  critical_memory_recall: number;
+  forbidden_memory_leak_rate: number;
+  token_budget_compliance: number;
+  memory_payload_accuracy: number;
+  exact_canonical_key_accuracy: number;
+  overall_score: number;
+  report_path?: string | null;
+  limitations: string[];
+}
+
 interface ApiQwenCloudShowcaseResponse {
   generated_at: string;
   project_title: string;
@@ -111,7 +131,76 @@ interface ApiQwenCloudShowcaseResponse {
   judge_flow: ApiQwenCloudShowcaseStep[];
   evidence: ApiQwenCloudShowcaseEvidenceItem[];
   benchmark: ApiQwenCloudShowcaseBenchmark;
+  experience_benchmark: ApiQwenCloudExperienceBenchmark;
   scorecard: ApiQwenCloudShowcaseScorecard;
+}
+
+interface ApiExperienceMemory {
+  memory_id: string;
+  team_id: string;
+  user_id: string;
+  kind: ExperienceMemoryKind;
+  key: string;
+  value: string;
+  status: ExperienceMemoryStatus;
+  confidence: number;
+  importance: number;
+  source_session_id: string;
+  source_reference: string;
+  created_at: string;
+  updated_at: string;
+  valid_from: string;
+  valid_until?: string | null;
+  superseded_by?: string | null;
+  last_recalled_at?: string | null;
+  recall_count: number;
+  feedback_count: number;
+  helpful_total: number;
+  correctness_total: number;
+}
+
+interface ApiExperienceDecision {
+  decision_id: string;
+  team_id: string;
+  user_id: string;
+  session_id: string;
+  requested_action: ExperienceMemoryAction;
+  action: ExperienceMemoryAction;
+  target_memory_id?: string | null;
+  created_memory_id?: string | null;
+  rationale: string;
+  provider_name: string;
+  model_name: string;
+  token_usage?: Record<string, number> | null;
+  created_at: string;
+}
+
+interface ApiExperienceCaptureResult {
+  decision: ApiExperienceDecision;
+  memory?: ApiExperienceMemory | null;
+  affected_memories: ApiExperienceMemory[];
+  active_memory_count: number;
+}
+
+interface ApiExperienceRecallCandidate {
+  memory: ApiExperienceMemory;
+  score: number;
+  estimated_tokens: number;
+  selected: boolean;
+  reason: string;
+}
+
+interface ApiExperienceRecallResult {
+  team_id: string;
+  user_id: string;
+  session_id: string;
+  query: string;
+  token_budget: number;
+  estimated_tokens_used: number;
+  selected: ApiExperienceRecallCandidate[];
+  excluded: ApiExperienceRecallCandidate[];
+  expired_memory_ids: string[];
+  context_card: string;
 }
 
 interface ApiRequirementCaseSnapshot {
@@ -1382,6 +1471,115 @@ export interface QwenCloudShowcaseBenchmark {
   limitations: string[];
 }
 
+export interface QwenCloudExperienceBenchmark {
+  status: string;
+  runId: string | null;
+  provider: string | null;
+  model: string | null;
+  caseCount: number;
+  curatorDecisionCount: number;
+  lifecycleCasesPassed: number;
+  lifecycleCasePassRate: number;
+  proposalAccuracy: number;
+  governedActionAccuracy: number;
+  criticalMemoryRecall: number;
+  forbiddenMemoryLeakRate: number;
+  tokenBudgetCompliance: number;
+  overallScore: number;
+  reportPath: string | null;
+  limitations: string[];
+}
+
+export type ExperienceMemoryKind = 'preference' | 'policy' | 'episode';
+export type ExperienceMemoryStatus = 'active' | 'superseded' | 'expired' | 'forgotten';
+export type ExperienceMemoryAction = 'remember' | 'supersede' | 'forget' | 'ignore';
+
+export interface ExperienceMemory {
+  memoryId: string;
+  teamId: string;
+  userId: string;
+  kind: ExperienceMemoryKind;
+  key: string;
+  value: string;
+  status: ExperienceMemoryStatus;
+  confidence: number;
+  importance: number;
+  sourceSessionId: string;
+  sourceReference: string;
+  createdAt: string;
+  updatedAt: string;
+  validFrom: string;
+  validUntil: string | null;
+  supersededBy: string | null;
+  lastRecalledAt: string | null;
+  recallCount: number;
+  feedbackCount: number;
+  helpfulTotal: number;
+  correctnessTotal: number;
+}
+
+export interface ExperienceDecision {
+  decisionId: string;
+  teamId: string;
+  userId: string;
+  sessionId: string;
+  requestedAction: ExperienceMemoryAction;
+  action: ExperienceMemoryAction;
+  targetMemoryId: string | null;
+  createdMemoryId: string | null;
+  rationale: string;
+  providerName: string;
+  modelName: string;
+  tokenUsage: Record<string, number> | null;
+  createdAt: string;
+}
+
+export interface ExperienceCaptureInput {
+  teamId: string;
+  userId: string;
+  sessionId: string;
+  observation: string;
+  sourceReference: string;
+  llmProvider?: 'qwen-cloud' | 'deterministic';
+}
+
+export interface ExperienceCaptureResult {
+  decision: ExperienceDecision;
+  memory: ExperienceMemory | null;
+  affectedMemories: ExperienceMemory[];
+  activeMemoryCount: number;
+}
+
+export interface ExperienceRecallInput {
+  teamId: string;
+  userId: string;
+  sessionId: string;
+  query: string;
+  tokenBudget: number;
+  limit?: number;
+}
+
+export interface ExperienceRecallCandidate {
+  memory: ExperienceMemory;
+  score: number;
+  estimatedTokens: number;
+  selected: boolean;
+  reason: string;
+}
+
+export interface ExperienceRecallResult {
+  teamId: string;
+  userId: string;
+  sessionId: string;
+  query: string;
+  tokenBudget: number;
+  estimatedTokensUsed: number;
+  selected: ExperienceRecallCandidate[];
+  excluded: ExperienceRecallCandidate[];
+  expiredMemoryIds: string[];
+  contextCard: string;
+}
+
 export interface QwenCloudShowcase {
   generatedAt: string;
   projectTitle: string;
@@ -1391,6 +1589,7 @@ export interface QwenCloudShowcase {
   judgeFlow: QwenCloudShowcaseStep[];
   evidence: QwenCloudShowcaseEvidenceItem[];
   benchmark: QwenCloudShowcaseBenchmark;
+  experienceBenchmark: QwenCloudExperienceBenchmark;
   scorecard: QwenCloudShowcaseScorecard;
 }
 
@@ -1424,6 +1623,66 @@ export class DreamApiService {
     return this.http
       .get<ApiQwenCloudShowcaseResponse>(`${this.baseUrl}/qwencloud/showcase`)
       .pipe(map(mapQwenCloudShowcase));
+  }
+
+  captureExperience(input: ExperienceCaptureInput): Observable<ExperienceCaptureResult> {
+    return this.http
+      .post<ApiExperienceCaptureResult>(`${this.baseUrl}/experience/capture`, {
+        team_id: input.teamId,
+        user_id: input.userId,
+        session_id: input.sessionId,
+        observation: input.observation,
+        source_reference: input.sourceReference,
+        llm_provider: input.llmProvider ?? 'qwen-cloud',
+      })
+      .pipe(map(mapExperienceCaptureResult));
+  }
+
+  recallExperience(input: ExperienceRecallInput): Observable<ExperienceRecallResult> {
+    return this.http
+      .post<ApiExperienceRecallResult>(`${this.baseUrl}/experience/recall`, {
+        team_id: input.teamId,
+        user_id: input.userId,
+        session_id: input.sessionId,
+        query: input.query,
+        token_budget: input.tokenBudget,
+        limit: input.limit ?? 8,
+      })
+      .pipe(map(mapExperienceRecallResult));
+  }
+
+  rateExperienceMemory(
+    memoryId: string,
+    teamId: string,
+    userId: string,
+    helpful: boolean,
+    correct: boolean,
+  ): Observable<ExperienceMemory> {
+    return this.http
+      .post<ApiExperienceMemory>(`${this.baseUrl}/experience/feedback`, {
+        team_id: teamId,
+        user_id: userId,
+        memory_id: memoryId,
+        helpful,
+        correct,
+      })
+      .pipe(map(mapExperienceMemory));
+  }
+
+  listExperienceMemories(teamId: string, userId: string): Observable<ExperienceMemory[]> {
+    return this.http
+      .get<ApiExperienceMemory[]>(`${this.baseUrl}/experience/memories`, {
+        params: { team_id: teamId, user_id: userId, include_inactive: true },
+      })
+      .pipe(map((items) => items.map(mapExperienceMemory)));
+  }
+
+  listExperienceDecisions(teamId: string, userId: string): Observable<ExperienceDecision[]> {
+    return this.http
+      .get<ApiExperienceDecision[]>(`${this.baseUrl}/experience/decisions`, {
+        params: { team_id: teamId, user_id: userId },
+      })
+      .pipe(map((items) => items.map(mapExperienceDecision)));
   }
 
   draftRequirementWithOpenAI(
@@ -2129,6 +2388,27 @@ function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloud
       reportPath: response.benchmark.report_path ?? null,
       limitations: response.benchmark.limitations,
     },
+    experienceBenchmark: {
+      status: response.experience_benchmark.status,
+      runId: response.experience_benchmark.run_id ?? null,
+      provider: response.experience_benchmark.provider ?? null,
+      model: response.experience_benchmark.model ?? null,
+      caseCount: response.experience_benchmark.case_count,
+      curatorDecisionCount: response.experience_benchmark.decision_count,
+      lifecycleCasesPassed: response.experience_benchmark.passed_cases,
+      lifecycleCasePassRate:
+        response.experience_benchmark.case_count > 0
+          ? response.experience_benchmark.passed_cases / response.experience_benchmark.case_count
+          : 0,
+      proposalAccuracy: response.experience_benchmark.proposal_accuracy,
+      governedActionAccuracy: response.experience_benchmark.action_accuracy,
+      criticalMemoryRecall: response.experience_benchmark.critical_memory_recall,
+      forbiddenMemoryLeakRate: response.experience_benchmark.forbidden_memory_leak_rate,
+      tokenBudgetCompliance: response.experience_benchmark.token_budget_compliance,
+      overallScore: response.experience_benchmark.overall_score,
+      reportPath: response.experience_benchmark.report_path ?? null,
+      limitations: response.experience_benchmark.limitations,
+    },
     scorecard: {
       weightedCurrentEvidenceReady: response.scorecard.weighted_current_evidence_ready,
       weightedStaticEvidenceReady: response.scorecard.weighted_static_evidence_ready,
@@ -2137,6 +2417,83 @@ function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloud
       publicVideoPoints: response.scorecard.public_video_points,
       missingExternalInputs: response.scorecard.missing_external_inputs,
     },
+  };
+}
+
+function mapExperienceMemory(memory: ApiExperienceMemory): ExperienceMemory {
+  return {
+    memoryId: memory.memory_id,
+    teamId: memory.team_id,
+    userId: memory.user_id,
+    kind: memory.kind,
+    key: memory.key,
+    value: memory.value,
+    status: memory.status,
+    confidence: memory.confidence,
+    importance: memory.importance,
+    sourceSessionId: memory.source_session_id,
+    sourceReference: memory.source_reference,
+    createdAt: memory.created_at,
+    updatedAt: memory.updated_at,
+    validFrom: memory.valid_from,
+    validUntil: memory.valid_until ?? null,
+    supersededBy: memory.superseded_by ?? null,
+    lastRecalledAt: memory.last_recalled_at ?? null,
+    recallCount: memory.recall_count,
+    feedbackCount: memory.feedback_count,
+    helpfulTotal: memory.helpful_total,
+    correctnessTotal: memory.correctness_total,
+  };
+}
+
+function mapExperienceDecision(decision: ApiExperienceDecision): ExperienceDecision {
+  return {
+    decisionId: decision.decision_id,
+    teamId: decision.team_id,
+    userId: decision.user_id,
+    sessionId: decision.session_id,
+    requestedAction: decision.requested_action,
+    action: decision.action,
+    targetMemoryId: decision.target_memory_id ?? null,
+    createdMemoryId: decision.created_memory_id ?? null,
+    rationale: decision.rationale,
+    providerName: decision.provider_name,
+    modelName: decision.model_name,
+    tokenUsage: decision.token_usage ?? null,
+    createdAt: decision.created_at,
+  };
+}
+
+function mapExperienceCaptureResult(
+  result: ApiExperienceCaptureResult,
+): ExperienceCaptureResult {
+  return {
+    decision: mapExperienceDecision(result.decision),
+    memory: result.memory ? mapExperienceMemory(result.memory) : null,
+    affectedMemories: result.affected_memories.map(mapExperienceMemory),
+    activeMemoryCount: result.active_memory_count,
+  };
+}
+
+function mapExperienceRecallResult(result: ApiExperienceRecallResult): ExperienceRecallResult {
+  const mapCandidate = (candidate: ApiExperienceRecallCandidate): ExperienceRecallCandidate => ({
+    memory: mapExperienceMemory(candidate.memory),
+    score: candidate.score,
+    estimatedTokens: candidate.estimated_tokens,
+    selected: candidate.selected,
+    reason: candidate.reason,
+  });
+  return {
+    teamId: result.team_id,
+    userId: result.user_id,
+    sessionId: result.session_id,
+    query: result.query,
+    tokenBudget: result.token_budget,
+    estimatedTokensUsed: result.estimated_tokens_used,
+    selected: result.selected.map(mapCandidate),
+    excluded: result.excluded.map(mapCandidate),
+    expiredMemoryIds: result.expired_memory_ids,
+    contextCard: result.context_card,
   };
 }
 

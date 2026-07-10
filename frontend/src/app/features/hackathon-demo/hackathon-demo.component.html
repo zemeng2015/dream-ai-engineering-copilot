@@ -1,34 +1,35 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <section class="page hackathon-demo-page">
-  <header class="demo-hero">
-    <div class="hero-copy">
-      <span class="eyebrow">Qwen Cloud Hackathon</span>
+  <header class="arena-header page-header command-header">
+    <div class="header-copy">
+      <span class="eyebrow">Qwen Cloud Hackathon · Track 1 MemoryAgent</span>
       <h1>DREAM MemoryAgent</h1>
       <p>
-        Engineering intelligence that remembers approved context, traces every source,
-        and turns rough requests into reviewable delivery artifacts with Qwen Cloud.
+        Qwen curates durable experience across sessions. DREAM governs conflicts,
+        forgetting, context budgets, provenance, and feedback.
       </p>
     </div>
-    <div class="hero-actions" aria-label="Hackathon demo shortcuts">
-      <a class="primary-button" routerLink="/memory">
-        <app-ui-icon name="database" />
-        Start Memory
-      </a>
-      <a class="secondary-button" routerLink="/requirements">
-        <app-ui-icon name="clipboard" />
-        Draft Jira
-      </a>
-      <a class="secondary-button" routerLink="/audit">
-        <app-ui-icon name="shield" />
-        Audit Proof
-      </a>
+    <div class="header-command">
+      <button
+        class="primary-button run-button"
+        type="button"
+        [disabled]="arenaBusy()"
+        (click)="runJudgeArena()"
+      >
+        <app-ui-icon name="spark" />
+        {{ arenaBusy() ? 'Running Qwen Sessions' : 'Run Live 3-Session Proof' }}
+      </button>
+      <span class="runtime-state" [attr.data-state]="liveHealthState()">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        {{ liveHealthTitle() }}
+      </span>
     </div>
   </header>
 
-  <section class="runtime-strip" aria-label="Qwen Cloud runtime proof">
+  <section class="runtime-strip" aria-label="Competition proof signals">
     @for (signal of runtimeSignals(); track signal.label) {
-      <article class="runtime-signal" [attr.data-tone]="signal.tone">
+      <article class="runtime-signal metric-tile" [attr.data-tone]="signal.tone">
         <span>{{ signal.label }}</span>
         <strong>{{ signal.value }}</strong>
         <small>{{ signal.detail }}</small>
@@ -36,117 +37,230 @@
     }
   </section>
 
-  <section
-    class="panel live-health-panel"
-    [attr.data-state]="liveHealthState()"
-    aria-label="Live Qwen Cloud health proof"
-  >
-    <div class="panel-header">
+  <section class="judge-arena" aria-labelledby="judge-arena-title">
+    <div class="arena-titlebar">
       <div>
-        <span class="eyebrow">Live /health</span>
-        <h2>{{ liveHealthTitle() }}</h2>
-        <p>{{ liveHealthDescription() }}</p>
+        <span class="eyebrow">Live Qwen lifecycle</span>
+        <h2 id="judge-arena-title">Three sessions. One current truth.</h2>
+      </div>
+      <div class="arena-verdict" [attr.data-pass]="arenaPassed()">
+        <span>{{ arenaVerdict() }}</span>
+        <strong>{{ judgeIdentity() }}</strong>
       </div>
     </div>
-    <div class="submit-grid health-fact-grid">
-      @for (fact of liveHealthFacts(); track fact.label) {
-        <div>
-          <span>{{ fact.label }}</span>
-          <strong>{{ fact.value }}</strong>
-        </div>
-      }
-    </div>
-  </section>
 
-  <section class="panel benchmark-panel" aria-label="Measured Qwen memory benchmark">
-    <div class="panel-header">
-      <div>
-        <span class="eyebrow">Paired Qwen A/B</span>
-        <h2>Measured Qwen memory lift</h2>
-        <p>
-          Same Qwen model and output contract; the only changed variable is DREAM's retrieved
-          organization evidence.
-        </p>
-      </div>
-    </div>
-    <div class="submit-grid benchmark-fact-grid">
-      @for (fact of benchmarkFacts(); track fact.label) {
-        <div>
-          <span>{{ fact.label }}</span>
-          <strong>{{ fact.value }}</strong>
-        </div>
-      }
-    </div>
-    <p class="benchmark-caveat">{{ benchmarkCaveat() }}</p>
-  </section>
+    <ol class="session-rail" aria-label="Arena progress">
+      <li [attr.data-state]="stepState(1)">
+        <span>01</span>
+        <strong>Remember</strong>
+        <small>Durable preference</small>
+      </li>
+      <li [attr.data-state]="stepState(2)">
+        <span>02</span>
+        <strong>Supersede</strong>
+        <small>Conflict resolution</small>
+      </li>
+      <li [attr.data-state]="stepState(3)">
+        <span>03</span>
+        <strong>Recall</strong>
+        <small>64-token budget</small>
+      </li>
+    </ol>
 
-  <section class="demo-layout" aria-label="Guided hackathon demo">
-    <article class="panel flow-panel">
-      <div class="panel-header">
+    @if (arenaError()) {
+      <div class="arena-alert warning-callout" role="alert">
+        <app-ui-icon name="shield" />
         <div>
-          <h2>Five-minute Judge Flow</h2>
-          <p>Each step opens the live Angular surface used in the rendered demo video.</p>
+          <strong>Live run stopped</strong>
+          <span>{{ arenaError() }}</span>
         </div>
       </div>
+    }
 
-      <div class="flow-list">
-        @for (step of demoSteps; track step.order) {
-          <a class="flow-step" [routerLink]="step.route">
-            <span class="step-order">{{ step.order }}</span>
-            <span class="step-icon">
-              <app-ui-icon [name]="step.icon" />
-            </span>
-            <span class="step-copy">
-              <strong>{{ step.title }}</strong>
-              <span>{{ step.outcome }}</span>
-              <small>{{ step.evidence }}</small>
-            </span>
-            <span class="link-button">{{ step.routeLabel }}</span>
-          </a>
+    <div class="session-grid">
+      <article class="session-card workflow-card" [attr.data-state]="stepState(1)">
+        <header>
+          <span class="session-number">Session 1</span>
+          <strong>Capture a durable default</strong>
+          <em>{{ firstCapture()?.decision?.action ?? stepState(1) }}</em>
+        </header>
+        <blockquote>
+          “I prefer a <mark>10% canary</mark> for <mark>30 minutes</mark> before expanding rollout.”
+        </blockquote>
+        <dl class="session-facts">
+          <div>
+            <dt>Qwen action</dt>
+            <dd>{{ firstCapture()?.decision?.action ?? 'pending' }}</dd>
+          </div>
+          <div>
+            <dt>Memory kind</dt>
+            <dd>{{ firstCapture()?.memory?.kind ?? 'pending' }}</dd>
+          </div>
+          <div>
+            <dt>Importance</dt>
+            <dd>{{ firstCapture()?.memory?.importance ?? '—' }}</dd>
+          </div>
+        </dl>
+        @if (firstCapture(); as capture) {
+          <p class="decision-rationale">{{ capture.decision.rationale }}</p>
+          <small class="model-proof">
+            {{ capture.decision.modelName }} · {{ decisionTokens(capture.decision) }}
+          </small>
         }
+      </article>
+
+      <article class="session-card workflow-card" [attr.data-state]="stepState(2)">
+        <header>
+          <span class="session-number">Session 2</span>
+          <strong>Replace conflicting guidance</strong>
+          <em>{{ secondCapture()?.decision?.action ?? stepState(2) }}</em>
+        </header>
+        <blockquote>
+          “Use a <mark>20% canary</mark> for <mark>45 minutes</mark>. This replaces my earlier preference.”
+        </blockquote>
+        <dl class="session-facts">
+          <div>
+            <dt>Qwen action</dt>
+            <dd>{{ secondCapture()?.decision?.action ?? 'pending' }}</dd>
+          </div>
+          <div>
+            <dt>Old status</dt>
+            <dd>{{ oldMemory()?.status ?? 'pending' }}</dd>
+          </div>
+          <div>
+            <dt>Active count</dt>
+            <dd>{{ secondCapture()?.activeMemoryCount ?? '—' }}</dd>
+          </div>
+        </dl>
+        @if (secondCapture(); as capture) {
+          <p class="decision-rationale">{{ capture.decision.rationale }}</p>
+          <small class="model-proof">
+            {{ capture.decision.providerName }} / {{ capture.decision.modelName }}
+          </small>
+        }
+      </article>
+
+      <article class="session-card recall-card workflow-card" [attr.data-state]="stepState(3)">
+        <header>
+          <span class="session-number">Session 3</span>
+          <strong>Recall under a hard budget</strong>
+          <em>{{ recall() ? 'selected' : stepState(3) }}</em>
+        </header>
+        <blockquote>
+          “What canary rollout should I use now? Exclude obsolete guidance.”
+        </blockquote>
+        <dl class="session-facts">
+          <div>
+            <dt>Budget used</dt>
+            <dd>{{ recall()?.estimatedTokensUsed ?? 0 }} / {{ recall()?.tokenBudget ?? 64 }}</dd>
+          </div>
+          <div>
+            <dt>Selected</dt>
+            <dd>{{ recall()?.selected?.length ?? 0 }}</dd>
+          </div>
+          <div>
+            <dt>Old value leaked</dt>
+            <dd>{{ forbiddenLeakDetected() ? 'yes' : 'no' }}</dd>
+          </div>
+        </dl>
+        <pre class="context-card code-preview">{{ recall()?.contextCard ?? 'Waiting for cross-session recall...' }}</pre>
+        @if (selectedMemory()) {
+          <button
+            type="button"
+            class="feedback-button secondary-button"
+            [disabled]="feedbackState() === 'saving' || feedbackState() === 'saved'"
+            (click)="recordPositiveFeedback()"
+          >
+            <app-ui-icon name="shield" />
+            {{ feedbackState() === 'saved' ? 'Feedback Recorded' : 'Mark Helpful + Correct' }}
+          </button>
+        }
+      </article>
+    </div>
+
+    @if (arenaStep() === 4) {
+      <div class="lifecycle-proof">
+        <div class="proof-summary info-callout" [attr.data-pass]="arenaPassed()">
+          <app-ui-icon [name]="arenaPassed() ? 'shield' : 'timeline'" />
+          <div>
+            <strong>{{ arenaVerdict() }}</strong>
+            <span>
+              Qwen proposed both lifecycle actions; DREAM retained one active truth and
+              recalled it without the superseded value.
+            </span>
+          </div>
+        </div>
+        <div class="memory-ledger" role="table" aria-label="Experience memory ledger">
+          <div class="ledger-row ledger-heading" role="row">
+            <span role="columnheader">Status</span>
+            <span role="columnheader">Key</span>
+            <span role="columnheader">Value</span>
+            <span role="columnheader">Source</span>
+          </div>
+          @for (memory of memories(); track memory.memoryId) {
+            <div class="ledger-row" role="row" [attr.data-status]="memory.status">
+              <strong role="cell">{{ memory.status }}</strong>
+              <span role="cell">{{ memory.key }}</span>
+              <span role="cell">{{ memory.value }}</span>
+              <span role="cell">{{ memory.sourceSessionId }}</span>
+            </div>
+          }
+        </div>
       </div>
+    }
+  </section>
+
+  <section class="benchmark-band" aria-labelledby="benchmark-title">
+    <div class="benchmark-heading">
+      <span class="eyebrow">Reproducible Qwen Cloud benchmark</span>
+      <h2 id="benchmark-title">The live proof scales beyond one polished demo.</h2>
+      <p>
+        24 synthetic lifecycle cases and 37 real Qwen curator decisions cover conflict,
+        TTL, explicit forgetting, duplicate rejection, and limited-context recall.
+      </p>
+    </div>
+    <div class="benchmark-grid">
+      @for (fact of experienceBenchmarkFacts(); track fact.label) {
+        <div>
+          <span>{{ fact.label }}</span>
+          <strong>{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="evidence-layout" aria-label="Runtime and deeper evidence">
+    <article class="runtime-evidence">
+      <div class="section-heading">
+        <span class="eyebrow">Live environment</span>
+        <h2>Runtime identity</h2>
+      </div>
+      <dl class="health-grid">
+        @for (fact of liveHealthFacts(); track fact.label) {
+          <div>
+            <dt>{{ fact.label }}</dt>
+            <dd>{{ fact.value }}</dd>
+          </div>
+        }
+      </dl>
     </article>
 
-    <aside class="panel evidence-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Live Evidence</h2>
-          <p>Runtime identity, provenance, governance, and reproducibility in one view.</p>
-        </div>
+    <article class="deep-dive">
+      <div class="section-heading">
+        <span class="eyebrow">Source to decision</span>
+        <h2>Deep evidence routes</h2>
       </div>
-
-      <div class="evidence-list">
-        @for (item of submissionEvidence(); track item.name) {
-          <article class="evidence-row" [attr.data-tone]="item.tone">
-            <div>
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.proof }}</span>
-            </div>
-            <em>{{ item.state }}</em>
-          </article>
-        }
-      </div>
-    </aside>
-  </section>
-
-  <section class="proof-layout" aria-label="Judging criteria alignment">
-    <article class="panel scorecard-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Judging Scorecard Alignment</h2>
-          <p>Where the live product demonstrates each official judging dimension.</p>
-        </div>
-      </div>
-      <div class="evidence-list">
-        @for (item of scorecardItems(); track item.criterion) {
-          <article class="evidence-row scorecard-row" [attr.data-tone]="item.tone">
-            <div>
-              <span>{{ item.weight }}</span>
-              <strong>{{ item.criterion }}</strong>
-              <small>{{ item.proof }}</small>
-            </div>
-            <em>{{ item.state }}</em>
-          </article>
+      <div class="deep-dive-links">
+        @for (step of demoSteps; track step.order) {
+          <a class="workflow-card" [routerLink]="step.route">
+            <span>{{ step.order }}</span>
+            <app-ui-icon [name]="step.icon" />
+            <span>
+              <strong>{{ step.title }}</strong>
+              <small>{{ step.outcome }}</small>
+            </span>
+            <em>{{ step.routeLabel }}</em>
+          </a>
         }
       </div>
     </article>

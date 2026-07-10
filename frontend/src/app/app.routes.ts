@@ -4,6 +4,14 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'leadership-demo',
+    loadComponent: () =>
+      import('./features/leadership-demo/leadership-demo.component').then(
+        (module) => module.LeadershipDemoComponent,
+      ),
+    title: 'DREAM Leadership Demo',
+  },
+  {
     path: 'mission-control',
     loadComponent: () => import('./features/dashboard/dashboard.component').then((module) => module.DashboardComponent),
     title: 'DREAM Mission Control',
@@ -82,6 +90,6 @@ export const routes: Routes = [
   { path: 'context-intelligence', redirectTo: 'audit', pathMatch: 'full' },
   { path: 'testgen', redirectTo: 'workbench', pathMatch: 'full' },
   { path: 'settings', redirectTo: 'mission-control', pathMatch: 'full' },
-  { path: '', pathMatch: 'full', redirectTo: 'mission-control' },
-  { path: '**', redirectTo: 'mission-control' },
+  { path: '', pathMatch: 'full', redirectTo: 'hackathon-demo' },
+  { path: '**', redirectTo: 'hackathon-demo' },
 ];

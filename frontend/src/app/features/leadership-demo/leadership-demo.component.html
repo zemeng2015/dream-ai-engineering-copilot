@@ -1,0 +1,168 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page leadership-demo-page">
+  <header class="leadership-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">DREAM Engineering Memory</span>
+      <h1>Turn ambiguous requests into source-backed delivery decisions.</h1>
+      <p>
+        DREAM gives existing AI workflows governed organizational context, preserves
+        uncertainty, and makes every recommendation reviewable before teams act on it.
+      </p>
+      <div class="hero-actions" aria-label="Leadership demo starting points">
+        <a class="primary-button" routerLink="/requirements">
+          <app-ui-icon name="clipboard" />
+          Run the Requirement Story
+        </a>
+        <a class="secondary-button" routerLink="/memory">
+          <app-ui-icon name="database" />
+          Review Governed Memory
+        </a>
+      </div>
+    </div>
+    <aside class="hero-thesis" aria-label="DREAM product thesis">
+      <span>Product thesis</span>
+      <strong>Not another chatbot.</strong>
+      <p>
+        A governed engineering context and decision layer for requirements, reviews,
+        incidents, and delivery handoffs.
+      </p>
+      <div class="thesis-boundary">
+        <app-ui-icon name="shield" />
+        <span>Provider-neutral · human-gated · auditable</span>
+      </div>
+    </aside>
+  </header>
+
+  <section class="trust-strip" aria-label="Enterprise control boundaries">
+    @for (signal of trustSignals; track signal.label) {
+      <article class="trust-signal" [attr.data-tone]="signal.tone">
+        <span>{{ signal.label }}</span>
+        <strong>{{ signal.value }}</strong>
+        <p>{{ signal.detail }}</p>
+      </article>
+    }
+  </section>
+
+  <section class="panel comparison-panel" aria-labelledby="comparison-title">
+    <div class="panel-header">
+      <div>
+        <span class="eyebrow">Why DREAM</span>
+        <h2 id="comparison-title">The missing layer between a model and enterprise delivery</h2>
+        <p>Same request. Different access to organizational evidence and governance.</p>
+      </div>
+    </div>
+    <div class="comparison-table" role="table" aria-label="Stateless assistant and DREAM comparison">
+      <div class="comparison-row comparison-heading" role="row">
+        <span role="columnheader">Decision dimension</span>
+        <span role="columnheader">Stateless assistant</span>
+        <span role="columnheader">DREAM</span>
+      </div>
+      @for (row of comparisonRows; track row.dimension) {
+        <div class="comparison-row" role="row">
+          <strong role="cell">{{ row.dimension }}</strong>
+          <span role="cell">{{ row.stateless }}</span>
+          <span class="dream-cell" role="cell">{{ row.dream }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="evidence-layout">
+    <article class="panel benchmark-card" aria-labelledby="evidence-title">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Early technical evidence</span>
+          <h2 id="evidence-title">Governed context improved the paired synthetic baseline</h2>
+        </div>
+      </div>
+      <div class="benchmark-grid">
+        <div>
+          <span>Paired cases improved</span>
+          <strong>7 / 7</strong>
+        </div>
+        <div>
+          <span>Reference-score delta</span>
+          <strong>+23.4</strong>
+        </div>
+        <div class="constraint-metric">
+          <span>Measured Recall&#64;12</span>
+          <strong>35.6%</strong>
+        </div>
+      </div>
+      <p class="evidence-caveat">
+        Seven synthetic cases, one deterministic completion per arm. This supports a
+        technical hypothesis, not a production ROI claim. Retrieval recall remains a
+        measured bottleneck.
+      </p>
+    </article>
+
+    <aside class="panel ask-card" aria-labelledby="ask-title">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Leadership decision</span>
+          <h2 id="ask-title">Approve a controlled discovery pilot</h2>
+        </div>
+      </div>
+      <div class="ask-body">
+        <p>
+          Validate whether approved engineering memory reduces clarification time and
+          unsupported delivery assumptions for one bounded application.
+        </p>
+        <a class="primary-button" href="#pilot-boundary">Review Pilot Boundary</a>
+      </div>
+    </aside>
+  </section>
+
+  <section class="panel demo-flow" aria-labelledby="demo-flow-title">
+    <div class="panel-header">
+      <div>
+        <span class="eyebrow">Ten-minute leadership story</span>
+        <h2 id="demo-flow-title">One narrative from rough request to auditable draft</h2>
+        <p>Each step opens the live product surface that provides the proof.</p>
+      </div>
+    </div>
+    <ol class="demo-steps">
+      @for (step of demoSteps; track step.order) {
+        <li>
+          <a class="demo-step" [routerLink]="step.route">
+            <span class="step-order">{{ step.order }}</span>
+            <span class="step-icon"><app-ui-icon [name]="step.icon" /></span>
+            <span class="step-copy">
+              <strong>{{ step.title }}</strong>
+              <span>{{ step.outcome }}</span>
+              <small>{{ step.proof }}</small>
+            </span>
+            <span class="link-button">{{ step.action }}</span>
+          </a>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section id="pilot-boundary" class="panel pilot-panel" aria-labelledby="pilot-title">
+    <div class="panel-header">
+      <div>
+        <span class="eyebrow">Controlled pilot boundary</span>
+        <h2 id="pilot-title">Small enough to govern, concrete enough to measure</h2>
+      </div>
+    </div>
+    <dl class="pilot-grid">
+      @for (boundary of pilotBoundaries; track boundary.label) {
+        <div>
+          <dt>{{ boundary.label }}</dt>
+          <dd>{{ boundary.value }}</dd>
+        </div>
+      }
+    </dl>
+    <div class="pilot-metrics">
+      <strong>Proposed success measures</strong>
+      <span>Time to first engineering draft</span>
+      <span>Critical questions found before implementation</span>
+      <span>Valid source-citation rate</span>
+      <span>SME impact-map recall</span>
+      <span>Human edit distance before handoff</span>
+      <span>Zero data-boundary violations</span>
+    </div>
+  </section>
+</section>

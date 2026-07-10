@@ -3,12 +3,22 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
+import {
+  DREAM_PRODUCT_PROFILE,
+  DREAM_PRODUCT_PROFILES,
+} from './core/product-profile';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: DREAM_PRODUCT_PROFILE,
+          useValue: DREAM_PRODUCT_PROFILES.leadership,
+        },
+      ],
     }).compileComponents();
   });
 
@@ -22,8 +32,8 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app.navItems.map((item) => item.label)).toEqual([
+      'Leadership Demo',
       'Mission Control',
-      'Hackathon Demo',
       'Memory Hub',
       'Engineering Workbench',
       'Codebase Index',
@@ -36,6 +46,8 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('DREAM');
-    expect(compiled.textContent).toContain('Live Backend');
+    expect(compiled.textContent).toContain('Human-Gated');
+    expect(compiled.textContent).toContain('Provider Neutral');
+    expect(compiled.textContent).not.toContain('Alibaba Cloud');
   });
 });
