@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from dream.api.app import create_app
 from dream.api.routes import router
+from dream.security.evidence import SecurityDecisionRepository, hash_evidence_value
 from dream.security.identity import SignedProxyIdentityProvider
 
 SECRET = "private-api-test-secret-with-at-least-thirty-two-bytes"
@@ -131,6 +132,42 @@ def test_private_requirement_case_is_acl_isolated(monkeypatch, tmp_path: Path) -
     assert denied_read.status_code == 404
     assert cross_team_list.status_code == 200
     assert cross_team_list.json() == []
+    decisions = SecurityDecisionRepository(tmp_path / "artifacts")
+    identity_events = decisions.load_identity()
+    access_events = decisions.load_access()
+    assert any(
+        item.status == "allowed"
+        and item.team_id_hashes == [hash_evidence_value("team-a")]
+        for item in identity_events
+    )
+    assert any(
+        item.allowed
+        and item.reason_code == "source_acl_allowed"
+        and item.team_id_hash == hash_evidence_value("team-a")
+        for item in access_events
+    )
+    assert any(
+        not item.allowed and item.reason_code == "source_acl_denied"
+        for item in access_events
+    )
+
+
+def test_private_api_records_identity_configuration_failure(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _configure_private(monkeypatch, tmp_path)
+    monkeypatch.delenv("DREAM_IDENTITY_HEADER_SECRET")
+    client = TestClient(create_app())
+
+    response = client.get("/requirement-cases")
+
+    assert response.status_code == 503
+    events = SecurityDecisionRepository(tmp_path / "artifacts").load_identity()
+    assert len(events) == 1
+    assert events[0].status == "error"
+    assert events[0].reason_code == "identity_boundary_not_configured"
+    assert events[0].team_id_hashes == []
 
 
 def test_private_route_surface_is_explicitly_allowlisted() -> None:

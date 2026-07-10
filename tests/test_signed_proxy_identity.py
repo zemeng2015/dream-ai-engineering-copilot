@@ -93,6 +93,26 @@ def test_signed_proxy_identity_rejects_wildcard_team_and_wrong_key_id() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("header", "message"),
+    [
+        ("x-dream-team-ids", "team membership"),
+        ("x-dream-roles", "at least one role"),
+    ],
+)
+def test_signed_proxy_identity_rejects_empty_subject_sets(
+    header: str,
+    message: str,
+) -> None:
+    with pytest.raises(AccessDeniedError, match=message):
+        SignedProxyIdentityProvider(secret=SECRET).authenticate(
+            _headers(**{header: ",,,"}),
+            method="GET",
+            path="/requirement-cases",
+            now=NOW,
+        )
+
+
 def test_signed_proxy_identity_is_bound_to_method_and_path() -> None:
     headers = _headers(method="GET", path="/requirement-cases")
     provider = SignedProxyIdentityProvider(secret=SECRET)

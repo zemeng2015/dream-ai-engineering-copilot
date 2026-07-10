@@ -4,7 +4,8 @@ from typing import Annotated, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints
 
-EVIDENCE_BUNDLE_SCHEMA_VERSION = "pilot-evidence-bundle-v1"
+EVIDENCE_BUNDLE_SCHEMA_VERSION_V1 = "pilot-evidence-bundle-v1"
+EVIDENCE_BUNDLE_SCHEMA_VERSION = "pilot-evidence-bundle-v2"
 EVIDENCE_SECTION_SCHEMA_VERSION = "pilot-evidence-section-v1"
 
 EvidenceScope = Literal["team", "deployment"]
@@ -44,9 +45,10 @@ class EvidenceFileChecksum(BaseModel):
 class PilotEvidenceManifest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal["pilot-evidence-bundle-v1"] = (
-        EVIDENCE_BUNDLE_SCHEMA_VERSION
-    )
+    schema_version: Literal[
+        "pilot-evidence-bundle-v1",
+        "pilot-evidence-bundle-v2",
+    ] = EVIDENCE_BUNDLE_SCHEMA_VERSION
     bundle_id: Annotated[
         str,
         StringConstraints(

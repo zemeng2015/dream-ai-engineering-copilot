@@ -4,7 +4,12 @@ import hashlib
 from collections.abc import Callable, Iterable
 from typing import TypeVar
 
-from dream.core.errors import AccessDeniedError
+from dream.core.errors import AccessDeniedError, DreamError
+from dream.security.evidence import (
+    AccessDecisionReason,
+    SecurityDecisionRepository,
+    new_access_evidence,
+)
 from dream.security.models import (
     AccessAction,
     AccessContext,
@@ -40,8 +45,19 @@ class DefaultAccessPolicy:
         self,
         *,
         revocation_registry: AccessRevocationRegistry | None = None,
+        decision_repository: SecurityDecisionRepository | None = None,
     ) -> None:
         self.revocation_registry = revocation_registry or AccessRevocationRegistry()
+        self.decision_repository = decision_repository
+        if self.decision_repository is None and self._private_runtime_configured():
+            self.decision_repository = SecurityDecisionRepository()
+
+    @staticmethod
+    def _private_runtime_configured() -> bool:
+        # Local import avoids a config -> extension -> retriever -> security cycle.
+        from dream.config import resolve_config
+
+        return resolve_config().mode == "private-extension"
 
     def decide(
         self,
@@ -54,73 +70,55 @@ class DefaultAccessPolicy:
     ) -> AccessDecision:
         principal = context.principal
 
-        if not principal.authenticated:
+        def finish(allowed: bool, reason_code: AccessDecisionReason) -> AccessDecision:
             return self._decision(
-                False, "principal_not_authenticated", context, team_id, action, resource_id
-            )
-        if not self._team_allowed(context=context, team_id=team_id):
-            return self._decision(
-                False, "team_not_authorized", context, team_id, action, resource_id
-            )
-
-        if context.mode == "private-extension" and not (principal.roles & _ACTION_ROLES[action]):
-            return self._decision(
-                False, "role_not_authorized", context, team_id, action, resource_id
-            )
-
-        if resource_access is None:
-            return self._decision(
-                False, "resource_acl_missing", context, team_id, action, resource_id
-            )
-        if resource_access.classification == "blocked":
-            return self._decision(
-                False, "classification_blocked", context, team_id, action, resource_id
-            )
-        if self.revocation_registry.is_revoked(
-            team_id=team_id,
-            acl_versions=resource_access.acl_versions(),
-        ):
-            return self._decision(
-                False,
-                "source_acl_revoked",
+                allowed,
+                reason_code,
                 context,
                 team_id,
                 action,
                 resource_id,
+                resource_access,
             )
+
+        if not principal.authenticated:
+            return finish(False, "principal_not_authenticated")
+        if not self._team_allowed(context=context, team_id=team_id):
+            return finish(False, "team_not_authorized")
+
+        if context.mode == "private-extension" and not (principal.roles & _ACTION_ROLES[action]):
+            return finish(False, "role_not_authorized")
+
+        if resource_access is None:
+            return finish(False, "resource_acl_missing")
+        if resource_access.classification == "blocked":
+            return finish(False, "classification_blocked")
+        if self.revocation_registry.is_revoked(
+            team_id=team_id,
+            acl_versions=resource_access.acl_versions(),
+        ):
+            return finish(False, "source_acl_revoked")
 
         if context.mode == "public-demo":
             if resource_access.classification != "public_demo":
-                return self._decision(
-                    False, "non_demo_classification", context, team_id, action, resource_id
-                )
+                return finish(False, "non_demo_classification")
             if resource_access.acl_scope != "local_demo":
-                return self._decision(
-                    False, "non_demo_acl_scope", context, team_id, action, resource_id
-                )
+                return finish(False, "non_demo_acl_scope")
             if not self._acl_subject_matches(
                 context=context, access=resource_access, allow_empty=True
             ):
-                return self._decision(
-                    False, "source_acl_denied", context, team_id, action, resource_id
-                )
-            return self._decision(
-                True, "public_demo_allowed", context, team_id, action, resource_id
-            )
+                return finish(False, "source_acl_denied")
+            return finish(True, "public_demo_allowed")
 
         if resource_access.acl_scope != "source_acl":
-            return self._decision(
-                False, "source_acl_unscoped", context, team_id, action, resource_id
-            )
+            return finish(False, "source_acl_unscoped")
         if not resource_access.source_acl_version:
-            return self._decision(
-                False, "source_acl_version_missing", context, team_id, action, resource_id
-            )
+            return finish(False, "source_acl_version_missing")
         if not self._acl_subject_matches(
             context=context, access=resource_access, allow_empty=False
         ):
-            return self._decision(False, "source_acl_denied", context, team_id, action, resource_id)
-        return self._decision(True, "source_acl_allowed", context, team_id, action, resource_id)
+            return finish(False, "source_acl_denied")
+        return finish(True, "source_acl_allowed")
 
     def require(
         self,
@@ -253,16 +251,17 @@ class DefaultAccessPolicy:
             context.principal.group_ids & groups
         )
 
-    @staticmethod
     def _decision(
+        self,
         allowed: bool,
-        reason_code: str,
+        reason_code: AccessDecisionReason,
         context: AccessContext,
         team_id: str,
         action: AccessAction,
         resource_id: str | None,
+        resource_access: ResourceAccess | None,
     ) -> AccessDecision:
-        return AccessDecision(
+        decision = AccessDecision(
             allowed=allowed,
             reason_code=reason_code,
             action=action,
@@ -270,3 +269,29 @@ class DefaultAccessPolicy:
             principal_id=context.principal.principal_id,
             resource_id=resource_id,
         )
+        if self.decision_repository is not None:
+            try:
+                self.decision_repository.record_access(
+                    new_access_evidence(
+                        allowed=allowed,
+                        reason_code=reason_code,
+                        mode=context.mode,
+                        action=action,
+                        team_id=team_id,
+                        principal_id=context.principal.principal_id,
+                        request_id=context.request_id,
+                        resource_id=resource_id,
+                        classification=(
+                            resource_access.classification if resource_access else None
+                        ),
+                        acl_scope=(resource_access.acl_scope if resource_access else None),
+                        source_acl_versions=(
+                            resource_access.acl_versions() if resource_access else set()
+                        ),
+                    )
+                )
+            except DreamError as exc:
+                raise AccessDeniedError(
+                    "Access decision evidence is unavailable."
+                ) from exc
+        return decision

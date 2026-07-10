@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+from dream.security.evidence import SecurityDecisionRepository
 from dream.security.identity import SignedProxyIdentityProvider
 from dream.security.models import (
     AccessContext,
@@ -17,5 +18,6 @@ __all__ = [
     "DefaultAccessPolicy",
     "RequestPrincipal",
     "ResourceAccess",
+    "SecurityDecisionRepository",
     "SignedProxyIdentityProvider",
 ]

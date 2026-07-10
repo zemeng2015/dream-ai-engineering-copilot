@@ -27,6 +27,11 @@ from dream.evals.models import (
 from dream.evals.repository import EvaluationRepository
 from dream.llm.egress import ProviderEgressEvidence, ProviderEgressRepository
 from dream.pilot_evidence import PilotEvidenceExporter, PilotEvidenceVerifier
+from dream.security.evidence import (
+    SecurityDecisionRepository,
+    new_access_evidence,
+    new_identity_evidence,
+)
 from dream.security.models import ResourceAccess
 from dream.security.revocation import AccessRevocationRegistry
 
@@ -243,6 +248,68 @@ def _seed_evidence(artifacts: Path, db_path: Path) -> None:
             manifest_hash=f"manifest-{SECRET}",
         )
     )
+    security = SecurityDecisionRepository(artifacts)
+    security.record_identity(
+        new_identity_evidence(
+            status="allowed",
+            reason_code="signature_valid",
+            method="GET",
+            request_target=f"/private/{SECRET}",
+            team_ids={TEAM},
+            principal_id=f"principal-{SECRET}",
+            request_id=f"request-{SECRET}",
+            group_count=1,
+            role_count=2,
+        )
+    )
+    security.record_identity(
+        new_identity_evidence(
+            status="allowed",
+            reason_code="signature_valid",
+            method="GET",
+            request_target="/other-team",
+            team_ids={OTHER_TEAM},
+            principal_id="other-principal",
+        )
+    )
+    security.record_identity(
+        new_identity_evidence(
+            status="blocked",
+            reason_code="signature_invalid",
+            method="POST",
+            request_target=f"/forged/{SECRET}",
+        )
+    )
+    security.record_access(
+        new_access_evidence(
+            allowed=True,
+            reason_code="source_acl_allowed",
+            mode="private-extension",
+            action="retrieve",
+            team_id=TEAM,
+            principal_id=f"principal-{SECRET}",
+            request_id=f"request-{SECRET}",
+            resource_id=f"resource-{SECRET}",
+            classification="sensitive",
+            acl_scope="source_acl",
+            source_acl_versions={f"acl-{SECRET}"},
+        )
+    )
+    security.record_access(
+        new_access_evidence(
+            allowed=False,
+            reason_code="source_acl_denied",
+            mode="private-extension",
+            action="retrieve",
+            team_id=OTHER_TEAM,
+            principal_id="other-principal",
+            request_id=None,
+            resource_id="other-resource",
+            classification="internal",
+            acl_scope="source_acl",
+            source_acl_versions={"other-acl"},
+        )
+    )
 
 
 def _build(tmp_path: Path):
@@ -275,9 +342,10 @@ def test_evidence_bundle_is_team_scoped_metadata_only_and_verifiable(tmp_path: P
     assert "other-team-source" not in combined
     manifest = json.loads(Path(result.manifest_path).read_text(encoding="utf-8"))
     assert manifest["status"] == "partial_control_evidence"
+    assert manifest["schema_version"] == "pilot-evidence-bundle-v2"
     assert manifest["known_coverage_gaps"] == [
-        "runtime_identity_decisions_not_persisted",
-        "access_policy_decisions_not_persisted",
+        "identity_rejections_are_deployment_scoped",
+        "cross_source_snapshot_not_globally_atomic",
     ]
     assert {item["source"] for item in manifest["coverage"]} == {
         "audit_runs",
@@ -288,13 +356,81 @@ def test_evidence_bundle_is_team_scoped_metadata_only_and_verifiable(tmp_path: P
         "artifact_lineage",
         "dlp_decisions",
         "provider_egress",
+        "identity_authentications",
+        "identity_rejections",
+        "access_policy_decisions",
     }
+    identity_records = json.loads(
+        (bundle / "identity-authentications.json").read_text(encoding="utf-8")
+    )["records"]
+    access_records = json.loads(
+        (bundle / "access-policy-decisions.json").read_text(encoding="utf-8")
+    )["records"]
+    rejection_records = json.loads(
+        (bundle / "identity-rejections.json").read_text(encoding="utf-8")
+    )["records"]
+    assert len(identity_records) == 1
+    assert len(access_records) == 1
+    assert len(rejection_records) == 1
     report = PilotEvidenceVerifier().verify(
         bundle,
         expected_root_sha256=result.bundle_root_sha256,
     )
     assert report.passed
     assert report.expected_root_matched is True
+
+
+def test_evidence_verifier_remains_compatible_with_v1_bundle(tmp_path: Path) -> None:
+    _, _, result = _build(tmp_path)
+    bundle = Path(result.bundle_dir)
+    v2_only_files = {
+        "identity-authentications.json",
+        "identity-rejections.json",
+        "access-policy-decisions.json",
+    }
+    v2_only_sources = {
+        "identity_authentications",
+        "identity_rejections",
+        "access_policy_decisions",
+    }
+    for name in v2_only_files:
+        (bundle / name).unlink()
+    manifest_path = bundle / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = "pilot-evidence-bundle-v1"
+    manifest["known_coverage_gaps"] = [
+        "runtime_identity_decisions_not_persisted",
+        "access_policy_decisions_not_persisted",
+    ]
+    manifest["coverage"] = [
+        item for item in manifest["coverage"] if item["source"] not in v2_only_sources
+    ]
+    manifest["files"] = [
+        item for item in manifest["files"] if item["path"] not in v2_only_files
+    ]
+    root_payload = {
+        key: value for key, value in manifest.items() if key != "bundle_root_sha256"
+    }
+    manifest["bundle_root_sha256"] = hashlib.sha256(
+        json.dumps(
+            root_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        ).encode("utf-8")
+    ).hexdigest()
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    report = PilotEvidenceVerifier().verify(
+        bundle,
+        expected_root_sha256=manifest["bundle_root_sha256"],
+    )
+
+    assert report.passed
 
 
 def test_evidence_verifier_detects_file_tamper_and_wrong_root(tmp_path: Path) -> None:
@@ -473,6 +609,33 @@ def test_invalid_source_fails_closed_and_removes_partial_bundle(tmp_path: Path) 
         )
 
     assert output_root.exists()
+    assert list(output_root.iterdir()) == []
+
+
+def test_invalid_security_decision_source_fails_closed(tmp_path: Path) -> None:
+    artifacts = tmp_path / "artifacts"
+    control = artifacts / "pilot-security"
+    control.mkdir(parents=True)
+    (control / "identity-decisions.jsonl").write_text(
+        f'{{"unsafe":"{SECRET}"}}\n',
+        encoding="utf-8",
+    )
+    output_root = artifacts / "pilot-evidence"
+
+    with pytest.raises(DreamError, match="Security decision evidence") as error:
+        PilotEvidenceExporter(
+            artifacts_dir=artifacts,
+            audit_db_path=tmp_path / "audit.sqlite",
+            mode="private-extension",
+        ).build(
+            team_id=TEAM,
+            confirm_team=TEAM,
+            operator_id="operator",
+            reason="reason",
+            output_root=output_root,
+        )
+
+    assert SECRET not in str(error.value)
     assert list(output_root.iterdir()) == []
 
 

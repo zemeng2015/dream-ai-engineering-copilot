@@ -6,7 +6,18 @@ import os
 import time
 from collections.abc import Mapping
 
-from dream.core.errors import AccessDeniedError, ProviderConfigurationError
+from dream.core.errors import (
+    AccessDeniedError,
+    DreamError,
+    ProviderConfigurationError,
+    SecurityEvidenceUnavailableError,
+)
+from dream.security.evidence import (
+    IdentityDecisionReason,
+    IdentityDecisionStatus,
+    SecurityDecisionRepository,
+    new_identity_evidence,
+)
 from dream.security.models import AccessContext, RequestPrincipal
 
 PRINCIPAL_HEADER = "x-dream-principal-id"
@@ -17,6 +28,12 @@ TIMESTAMP_HEADER = "x-dream-identity-timestamp"
 SIGNATURE_HEADER = "x-dream-identity-signature"
 KEY_ID_HEADER = "x-dream-identity-key-id"
 REQUEST_ID_HEADER = "x-request-id"
+
+
+class _IdentityRejected(AccessDeniedError):
+    def __init__(self, reason_code: IdentityDecisionReason, message: str) -> None:
+        super().__init__(message)
+        self.reason_code = reason_code
 
 
 class SignedProxyIdentityProvider:
@@ -34,6 +51,7 @@ class SignedProxyIdentityProvider:
         secret: str,
         max_clock_skew_seconds: int = 60,
         key_id: str | None = None,
+        decision_repository: SecurityDecisionRepository | None = None,
     ) -> None:
         if len(secret.encode("utf-8")) < 32:
             raise ProviderConfigurationError(
@@ -46,6 +64,7 @@ class SignedProxyIdentityProvider:
         self._secret = secret.encode("utf-8")
         self.max_clock_skew_seconds = max_clock_skew_seconds
         self.key_id = key_id.strip() if key_id and key_id.strip() else None
+        self.decision_repository = decision_repository
 
     @classmethod
     def from_environment(cls) -> "SignedProxyIdentityProvider":
@@ -66,6 +85,7 @@ class SignedProxyIdentityProvider:
             secret=secret,
             max_clock_skew_seconds=max_clock_skew_seconds,
             key_id=os.getenv("DREAM_IDENTITY_HEADER_KEY_ID"),
+            decision_repository=SecurityDecisionRepository(),
         )
 
     def authenticate(
@@ -76,41 +96,86 @@ class SignedProxyIdentityProvider:
         path: str,
         now: int | None = None,
     ) -> AccessContext:
-        principal_id = self._required(headers, PRINCIPAL_HEADER)
-        team_ids = self._subjects(self._required(headers, TEAMS_HEADER))
-        group_ids = self._subjects(headers.get(GROUPS_HEADER, ""))
-        roles = self._subjects(self._required(headers, ROLES_HEADER))
-        request_id = self._required(headers, REQUEST_ID_HEADER)
-        timestamp_value = self._required(headers, TIMESTAMP_HEADER)
-        signature = self._required(headers, SIGNATURE_HEADER).lower()
-
-        if "*" in team_ids:
-            raise AccessDeniedError("Wildcard team access is forbidden in private mode.")
         try:
-            timestamp = int(timestamp_value)
-        except ValueError as exc:
-            raise AccessDeniedError("Identity timestamp is invalid.") from exc
-        current_time = int(time.time()) if now is None else now
-        if abs(current_time - timestamp) > self.max_clock_skew_seconds:
-            raise AccessDeniedError("Identity assertion is outside the replay window.")
+            principal_id = self._required(headers, PRINCIPAL_HEADER)
+            team_ids = self._subjects(self._required(headers, TEAMS_HEADER))
+            group_ids = self._subjects(headers.get(GROUPS_HEADER, ""))
+            roles = self._subjects(self._required(headers, ROLES_HEADER))
+            request_id = self._required(headers, REQUEST_ID_HEADER)
+            timestamp_value = self._required(headers, TIMESTAMP_HEADER)
+            signature = self._required(headers, SIGNATURE_HEADER).lower()
 
-        if self.key_id is not None and headers.get(KEY_ID_HEADER, "") != self.key_id:
-            raise AccessDeniedError("Identity signing key id is invalid.")
+            if not team_ids:
+                raise _IdentityRejected(
+                    "team_membership_missing",
+                    "Identity assertion requires explicit team membership.",
+                )
+            if not roles:
+                raise _IdentityRejected(
+                    "roles_missing",
+                    "Identity assertion requires at least one role.",
+                )
+            if "*" in team_ids:
+                raise _IdentityRejected(
+                    "wildcard_team_forbidden",
+                    "Wildcard team access is forbidden in private mode.",
+                )
+            try:
+                timestamp = int(timestamp_value)
+            except ValueError as exc:
+                raise _IdentityRejected(
+                    "timestamp_invalid",
+                    "Identity timestamp is invalid.",
+                ) from exc
+            current_time = int(time.time()) if now is None else now
+            if abs(current_time - timestamp) > self.max_clock_skew_seconds:
+                raise _IdentityRejected(
+                    "replay_window_exceeded",
+                    "Identity assertion is outside the replay window.",
+                )
 
-        expected = self.signature_for(
-            secret=self._secret,
-            principal_id=principal_id,
-            team_ids=team_ids,
-            group_ids=group_ids,
-            roles=roles,
-            timestamp=timestamp,
-            request_id=request_id,
+            if self.key_id is not None and headers.get(KEY_ID_HEADER, "") != self.key_id:
+                raise _IdentityRejected(
+                    "key_id_invalid",
+                    "Identity signing key id is invalid.",
+                )
+
+            expected = self.signature_for(
+                secret=self._secret,
+                principal_id=principal_id,
+                team_ids=team_ids,
+                group_ids=group_ids,
+                roles=roles,
+                timestamp=timestamp,
+                request_id=request_id,
+                method=method,
+                path=path,
+            )
+            if not hmac.compare_digest(signature, expected):
+                raise _IdentityRejected(
+                    "signature_invalid",
+                    "Identity signature is invalid.",
+                )
+        except _IdentityRejected as exc:
+            self._record_decision(
+                status="blocked",
+                reason_code=exc.reason_code,
+                method=method,
+                path=path,
+            )
+            raise
+
+        self._record_decision(
+            status="allowed",
+            reason_code="signature_valid",
             method=method,
             path=path,
+            team_ids=team_ids,
+            principal_id=principal_id,
+            request_id=request_id,
+            group_count=len(group_ids),
+            role_count=len(roles),
         )
-        if not hmac.compare_digest(signature, expected):
-            raise AccessDeniedError("Identity signature is invalid.")
-
         return AccessContext(
             mode="private-extension",
             principal=RequestPrincipal(
@@ -179,9 +244,46 @@ class SignedProxyIdentityProvider:
     def _required(headers: Mapping[str, str], name: str) -> str:
         value = headers.get(name, "").strip()
         if not value:
-            raise AccessDeniedError(f"Required identity header is missing: {name}.")
+            raise _IdentityRejected(
+                "identity_header_missing",
+                f"Required identity header is missing: {name}.",
+            )
         return value
 
     @staticmethod
     def _subjects(value: str) -> set[str]:
         return {item.strip() for item in value.split(",") if item.strip()}
+
+    def _record_decision(
+        self,
+        *,
+        status: IdentityDecisionStatus,
+        reason_code: IdentityDecisionReason,
+        method: str,
+        path: str,
+        team_ids: set[str] | None = None,
+        principal_id: str | None = None,
+        request_id: str | None = None,
+        group_count: int = 0,
+        role_count: int = 0,
+    ) -> None:
+        if self.decision_repository is None:
+            return
+        try:
+            self.decision_repository.record_identity(
+                new_identity_evidence(
+                    status=status,
+                    reason_code=reason_code,
+                    method=method,
+                    request_target=path,
+                    team_ids=team_ids,
+                    principal_id=principal_id,
+                    request_id=request_id,
+                    group_count=group_count,
+                    role_count=role_count,
+                )
+            )
+        except DreamError as exc:
+            raise SecurityEvidenceUnavailableError(
+                "Private identity decision evidence is unavailable."
+            ) from exc

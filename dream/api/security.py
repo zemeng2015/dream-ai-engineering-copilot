@@ -6,8 +6,14 @@ from typing import Any
 from fastapi import HTTPException, Request
 
 from dream.config import resolve_config
-from dream.core.errors import AccessDeniedError, ProviderConfigurationError
+from dream.core.errors import (
+    AccessDeniedError,
+    DreamError,
+    ProviderConfigurationError,
+    SecurityEvidenceUnavailableError,
+)
 from dream.security import AccessContext, SignedProxyIdentityProvider
+from dream.security.evidence import SecurityDecisionRepository, new_identity_evidence
 
 
 def private_acl_route(endpoint: Callable[..., Any]) -> Callable[..., Any]:
@@ -51,7 +57,34 @@ def identity_boundary(request: Request) -> None:
             method=request.method,
             path=request_target,
         )
+    except SecurityEvidenceUnavailableError as exc:
+        try:
+            SecurityDecisionRepository().record_identity(
+                new_identity_evidence(
+                    status="error",
+                    reason_code="identity_evidence_unavailable",
+                    method=request.method,
+                    request_target=request_target,
+                )
+            )
+        except DreamError:
+            pass
+        raise HTTPException(
+            status_code=503,
+            detail="Private identity decision evidence is unavailable.",
+        ) from exc
     except ProviderConfigurationError as exc:
+        try:
+            SecurityDecisionRepository().record_identity(
+                new_identity_evidence(
+                    status="error",
+                    reason_code="identity_boundary_not_configured",
+                    method=request.method,
+                    request_target=request_target,
+                )
+            )
+        except DreamError:
+            pass
         raise HTTPException(
             status_code=503,
             detail="Private identity boundary is not configured.",

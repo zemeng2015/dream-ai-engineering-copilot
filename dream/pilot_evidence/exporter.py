@@ -26,6 +26,8 @@ from dream.evals.models import EvaluationScorecard
 from dream.evals.repository import EvaluationRepository
 from dream.llm.egress import ProviderEgressRepository
 from dream.pilot_evidence.models import (
+    EVIDENCE_BUNDLE_SCHEMA_VERSION,
+    EVIDENCE_BUNDLE_SCHEMA_VERSION_V1,
     EvidenceCoverage,
     EvidenceFileChecksum,
     EvidenceSection,
@@ -33,9 +35,10 @@ from dream.pilot_evidence.models import (
     PilotEvidenceManifest,
     PilotEvidenceVerificationReport,
 )
+from dream.security.evidence import SecurityDecisionRepository, hash_evidence_value
 from dream.security.revocation import AccessRevocationRegistry
 
-SECTION_FILES: dict[str, str] = {
+SECTION_FILES_V1: dict[str, str] = {
     "audit_runs": "audit-runs.json",
     "human_ratings": "human-ratings.json",
     "evaluations": "evaluations.json",
@@ -45,10 +48,24 @@ SECTION_FILES: dict[str, str] = {
     "dlp_decisions": "dlp-decisions.json",
     "provider_egress": "provider-egress.json",
 }
-KNOWN_COVERAGE_GAPS = [
+SECTION_FILES: dict[str, str] = {
+    **SECTION_FILES_V1,
+    "identity_authentications": "identity-authentications.json",
+    "identity_rejections": "identity-rejections.json",
+    "access_policy_decisions": "access-policy-decisions.json",
+}
+KNOWN_COVERAGE_GAPS_V1 = [
     "runtime_identity_decisions_not_persisted",
     "access_policy_decisions_not_persisted",
 ]
+KNOWN_COVERAGE_GAPS = [
+    "identity_rejections_are_deployment_scoped",
+    "cross_source_snapshot_not_globally_atomic",
+]
+SCHEMA_CONTRACTS = {
+    EVIDENCE_BUNDLE_SCHEMA_VERSION_V1: (SECTION_FILES_V1, KNOWN_COVERAGE_GAPS_V1),
+    EVIDENCE_BUNDLE_SCHEMA_VERSION: (SECTION_FILES, KNOWN_COVERAGE_GAPS),
+}
 SAFE_RECORD_STRINGS = {
     "source_state",
     "lifecycle_event",
@@ -70,6 +87,8 @@ SAFE_RECORD_STRINGS = {
     "post_response",
     "allowed",
     "blocked",
+    "error",
+    "private-extension",
     "public_demo",
     "internal",
     "sensitive",
@@ -109,12 +128,43 @@ SAFE_RECORD_STRINGS = {
     "exact_approval_match",
     "response_identity_mismatch",
     "runtime_provider_identity_mismatch",
+    "signature_valid",
+    "identity_header_missing",
+    "team_membership_missing",
+    "roles_missing",
+    "wildcard_team_forbidden",
+    "timestamp_invalid",
+    "replay_window_exceeded",
+    "key_id_invalid",
+    "signature_invalid",
+    "identity_boundary_not_configured",
+    "identity_evidence_unavailable",
+    "principal_not_authenticated",
+    "team_not_authorized",
+    "role_not_authorized",
+    "resource_acl_missing",
+    "classification_blocked",
+    "source_acl_revoked",
+    "non_demo_classification",
+    "non_demo_acl_scope",
+    "source_acl_denied",
+    "public_demo_allowed",
+    "source_acl_unscoped",
+    "source_acl_version_missing",
+    "source_acl_allowed",
+    "retrieve",
+    "source_intake",
+    "memory_review",
+    "requirement_work",
+    "audit_read",
+    "security_admin",
 }
 SAFE_RECORD_KEYS = {
     "access",
     "acl_scope",
     "acl_version_hashes",
     "action",
+    "allowed",
     "actor_hash",
     "allowed_group_count",
     "allowed_principal_count",
@@ -150,6 +200,7 @@ SAFE_RECORD_KEYS = {
     "fingerprint_hash",
     "first_seen_at",
     "grade_hash",
+    "group_count",
     "hallucination_warning_count",
     "input_char_count",
     "input_fingerprint_hash",
@@ -164,6 +215,7 @@ SAFE_RECORD_KEYS = {
     "model_hash",
     "model_name_hash",
     "model_provider_hash",
+    "mode",
     "name_hash",
     "occurred_at",
     "occurrences",
@@ -175,6 +227,7 @@ SAFE_RECORD_KEYS = {
     "passed",
     "policy_version_hash",
     "previous_source_version_hash",
+    "principal_id_fingerprint_hash",
     "prompt_version_hash",
     "provider_hash",
     "purge_reason_hash",
@@ -191,6 +244,8 @@ SAFE_RECORD_KEYS = {
     "registered_at",
     "repo_name_hash",
     "resource_id_fingerprint_hash",
+    "request_id_fingerprint_hash",
+    "request_target_fingerprint_hash",
     "retrieved_source_count",
     "retrieved_source_hashes",
     "revoked_acl_version_hashes",
@@ -203,6 +258,7 @@ SAFE_RECORD_KEYS = {
     "severity",
     "source_acl_lineage_hashes",
     "source_acl_version_hash",
+    "source_acl_version_hashes",
     "source_coverage_field_count",
     "source_coverage_true_count",
     "source_id_hash",
@@ -214,6 +270,7 @@ SAFE_RECORD_KEYS = {
     "status_hash",
     "target_id_hash",
     "target_type_hash",
+    "team_count",
     "timestamp",
     "token_usage_field_count",
     "token_usage_total",
@@ -223,6 +280,8 @@ SAFE_RECORD_KEYS = {
     "warning_hash",
     "warning_hashes",
     "weight",
+    "method_fingerprint_hash",
+    "role_count",
 }
 
 
@@ -429,6 +488,71 @@ class PilotEvidenceExporter:
                 "deployment",
                 provider_records,
                 provider_hash,
+                source_exists=exists,
+            )
+        )
+
+        security_repo = SecurityDecisionRepository(self.artifacts_dir)
+        identity_events, identity_hash, exists = _stable_load(
+            security_repo.identity_path,
+            security_repo.load_identity,
+        )
+        team_hash = hash_evidence_value(team_id)
+        authentication_records = [
+            _identity_authentication_record(item)
+            for item in identity_events
+            if item.status == "allowed" and team_hash in item.team_id_hashes
+        ]
+        sections["identity_authentications"] = EvidenceSection(
+            source="identity_authentications",
+            scope="team",
+            records=authentication_records,
+        )
+        coverage.append(
+            _coverage(
+                "identity_authentications",
+                "team",
+                authentication_records,
+                identity_hash,
+                source_exists=exists,
+            )
+        )
+        rejection_records = _aggregate_identity_rejections(identity_events)
+        sections["identity_rejections"] = EvidenceSection(
+            source="identity_rejections",
+            scope="deployment",
+            records=rejection_records,
+        )
+        coverage.append(
+            _coverage(
+                "identity_rejections",
+                "deployment",
+                rejection_records,
+                identity_hash,
+                source_exists=exists,
+            )
+        )
+
+        access_events, access_hash, exists = _stable_load(
+            security_repo.access_path,
+            security_repo.load_access,
+        )
+        access_records = [
+            _access_policy_record(item)
+            for item in access_events
+            if item.team_id_hash == team_hash
+        ]
+        sections["access_policy_decisions"] = EvidenceSection(
+            source="access_policy_decisions",
+            scope="team",
+            records=access_records,
+        )
+        coverage.append(
+            _coverage(
+                "access_policy_decisions",
+                "team",
+                access_records,
+                access_hash,
                 source_exists=exists,
             )
         )
@@ -685,24 +809,23 @@ class PilotEvidenceVerifier:
         except (OSError, ValidationError, ValueError):
             return _verification_failure(verified_at, "manifest_invalid")
 
-        expected_names = {"manifest.json", *SECTION_FILES.values()}
+        section_files, known_gaps = SCHEMA_CONTRACTS[manifest.schema_version]
+        expected_names = {"manifest.json", *section_files.values()}
         actual_names = {path.name for path in root.iterdir()}
         checks["exact_file_set"] = actual_names == expected_names
         if not checks["exact_file_set"]:
             failures.append("exact_file_set")
         checks["manifest_file_contract"] = {
             item.path for item in manifest.files
-        } == set(SECTION_FILES.values()) and len(manifest.files) == len(SECTION_FILES)
+        } == set(section_files.values()) and len(manifest.files) == len(section_files)
         if not checks["manifest_file_contract"]:
             failures.append("manifest_file_contract")
         checks["coverage_contract"] = {
             item.source for item in manifest.coverage
-        } == set(SECTION_FILES) and len(manifest.coverage) == len(SECTION_FILES)
+        } == set(section_files) and len(manifest.coverage) == len(section_files)
         if not checks["coverage_contract"]:
             failures.append("coverage_contract")
-        checks["known_gaps_contract"] = (
-            manifest.known_coverage_gaps == KNOWN_COVERAGE_GAPS
-        )
+        checks["known_gaps_contract"] = manifest.known_coverage_gaps == known_gaps
         if not checks["known_gaps_contract"]:
             failures.append("known_gaps_contract")
         checks["bundle_id_contract"] = manifest.bundle_id.startswith(
@@ -745,7 +868,7 @@ class PilotEvidenceVerifier:
                     )
                 )
                 section_ok = (
-                    SECTION_FILES.get(section.source) == item.path
+                    section_files.get(section.source) == item.path
                     and coverage_item is not None
                     and coverage_item.scope == section.scope
                     and coverage_item.record_count == len(section.records)
@@ -778,6 +901,60 @@ class PilotEvidenceVerifier:
             checks=checks,
             failures=list(dict.fromkeys(failures)),
         )
+
+
+def _identity_authentication_record(item) -> dict[str, object]:
+    return {
+        "event_id_hash": _hash_text(item.event_id),
+        "timestamp": _safe_timestamp(item.timestamp),
+        "status": item.status,
+        "reason_code": item.reason_code,
+        "principal_id_fingerprint_hash": _hash_optional(item.principal_id_hash),
+        "request_id_fingerprint_hash": _hash_optional(item.request_id_hash),
+        "request_target_fingerprint_hash": _hash_text(item.request_target_hash),
+        "method_fingerprint_hash": _hash_text(item.method_hash),
+        "team_count": item.team_count,
+        "group_count": item.group_count,
+        "role_count": item.role_count,
+    }
+
+
+def _aggregate_identity_rejections(events) -> list[dict[str, object]]:
+    grouped: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for item in events:
+        if item.status != "allowed":
+            grouped[(item.status, item.reason_code)].append(
+                _safe_timestamp(item.timestamp)
+            )
+    return [
+        {
+            "status": status,
+            "reason_code": reason,
+            "event_count": len(timestamps),
+            "first_seen_at": min(timestamps),
+            "last_seen_at": max(timestamps),
+        }
+        for (status, reason), timestamps in sorted(grouped.items())
+    ]
+
+
+def _access_policy_record(item) -> dict[str, object]:
+    return {
+        "event_id_hash": _hash_text(item.event_id),
+        "timestamp": _safe_timestamp(item.timestamp),
+        "allowed": item.allowed,
+        "reason_code": item.reason_code,
+        "mode": item.mode,
+        "action": item.action,
+        "principal_id_fingerprint_hash": _hash_text(item.principal_id_hash),
+        "request_id_fingerprint_hash": _hash_optional(item.request_id_hash),
+        "resource_id_fingerprint_hash": _hash_optional(item.resource_id_hash),
+        "classification": item.classification,
+        "acl_scope": item.acl_scope,
+        "source_acl_version_hashes": [
+            _hash_text(value) for value in item.source_acl_version_hashes
+        ],
+    }
 
 
 def _aggregate_provider_events(events) -> list[dict[str, object]]:

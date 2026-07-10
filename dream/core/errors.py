@@ -25,5 +25,9 @@ class ProviderConfigurationError(DreamError):
     """Raised when an optional provider is not configured."""
 
 
+class SecurityEvidenceUnavailableError(ProviderConfigurationError):
+    """Raised when a required private security decision cannot be persisted."""
+
+
 class ProviderRequestError(DreamError):
     """Raised when an optional provider request fails."""
