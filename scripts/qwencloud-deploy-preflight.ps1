@@ -228,7 +228,7 @@ try {
                                 $health.status -eq "ok" -and
                                 $health.track -eq "Track 1: MemoryAgent" -and
                                 $health.llm_provider -eq "qwen-cloud" -and
-                                $health.proof_file -eq "deploy/alibaba/serverless-devs.yaml"
+                                $health.proof_file -eq "deploy/alibaba/serverless-devs-runtime.yaml"
                             ) {
                                 $smokeOk = $true
                             }
