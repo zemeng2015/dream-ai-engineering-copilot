@@ -353,6 +353,9 @@ export interface RequirementDraftInput {
   roughBusinessRequest: string;
   topK: number;
   role?: string;
+  userId?: string;
+  sessionId?: string;
+  experienceTokenBudget?: number;
 }
 
 export interface RequirementDraftResult {

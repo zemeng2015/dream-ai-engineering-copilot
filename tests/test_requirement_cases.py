@@ -3,6 +3,11 @@
 from dream.audit.logger import AuditLogger
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.experience import (
+    ExperienceMemoryRepository,
+    ExperienceMemoryService,
+    ExperienceObservation,
+)
 from dream.llm import LLMResponse
 from dream.memory import EngineeringMemoryRetriever
 from dream.requirement_cases import (
@@ -104,6 +109,7 @@ def _service(
     *,
     audit_repository: AuditRepository | None = None,
     llm_provider: FakeLLMProvider | None = None,
+    experience_service: ExperienceMemoryService | None = None,
 ) -> RequirementCaseService:
     audit_logger = AuditLogger(
         repository=audit_repository or AuditRepository(tmp_path / "audit.sqlite")
@@ -124,6 +130,7 @@ def _service(
         audit_logger=audit_logger,
         codebase_repository=codebase_repository,
         llm_provider=llm_provider,
+        experience_service=experience_service,
     )
 
 
@@ -156,6 +163,43 @@ def test_analyze_case_retrieves_doc_and_code_evidence(tmp_path) -> None:
     source_types = {item.source_type for item in analyzed.evidence}
     assert "knowledge_doc" in source_types
     assert {"code_file", "code_symbol", "test_file"} & source_types
+
+
+def test_requirement_case_uses_cross_session_experience_memory(tmp_path) -> None:
+    experience_service = ExperienceMemoryService(
+        repository=ExperienceMemoryRepository(tmp_path / "experience.sqlite")
+    )
+    captured = experience_service.capture(
+        ExperienceObservation(
+            team_id="demo_team",
+            user_id="zack",
+            session_id="session-1",
+            observation="preference:production_retry_mode=retry only failed tasks",
+        )
+    )
+    service = _service(tmp_path, experience_service=experience_service)
+    snapshot = service.create_case(
+        RequirementCaseCreateRequest(
+            team_id="demo_team",
+            raw_request="Plan a safe production retry for failed tasks",
+            user_id="zack",
+            session_id="session-2",
+            experience_token_budget=128,
+        )
+    )
+
+    analyzed = service.analyze_case(snapshot.case.case_id)
+    jira_context = service.prepare_jira_draft_context(snapshot.case.case_id)
+
+    assert captured.memory is not None
+    assert analyzed.experience_memory_ids == [captured.memory.memory_id]
+    assert analyzed.experience_tokens_used <= 128
+    assert any(
+        item.source_path == f"experience://{captured.memory.memory_id}"
+        and item.excerpt == "retry only failed tasks"
+        for item in analyzed.evidence
+    )
+    assert "retry only failed tasks" in jira_context.prompt
 
 
 def test_impact_map_contains_backend_api_and_test_items(tmp_path) -> None:

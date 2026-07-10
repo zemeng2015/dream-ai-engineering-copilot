@@ -323,9 +323,15 @@ def _evidence_lines(evidence: list[ContextEvidence]) -> str:
     if not evidence:
         return "- No matching evidence was retrieved."
     return "\n".join(
-        f"- {item.title} [{item.source_type}] ({item.source_path}) - {item.reason}"
+        f"- {item.title} [{item.source_type}] ({item.source_path}) "
+        f"Evidence: {_compact_excerpt(item.excerpt)} Why selected: {item.reason}"
         for item in evidence
     )
+
+
+def _compact_excerpt(value: str, limit: int = 400) -> str:
+    compact = " ".join(value.split())
+    return compact[:limit] if compact else "_No excerpt available._"
 
 
 def _question_lines(questions: list[ClarificationQuestion]) -> str:

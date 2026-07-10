@@ -21,6 +21,20 @@ from dream.evals.evaluator import EvaluationAgent
 from dream.evals.models import EvaluationJudgeRequest, EvaluationRequest, EvaluationResult
 from dream.evals.rating import HumanRatingService
 from dream.evals.repository import EvaluationRepository
+from dream.experience import (
+    ExperienceCaptureResult,
+    ExperienceDecisionRecord,
+    ExperienceFeedbackRequest,
+    ExperienceMemory,
+    ExperienceMemoryPolicy,
+    ExperienceMemoryRepository,
+    ExperienceMemoryService,
+    ExperienceObservation,
+    ExperienceRecallRequest,
+    ExperienceRecallResult,
+    LLMExperienceMemoryPolicy,
+    RuleBasedExperienceMemoryPolicy,
+)
 from dream.extensions import build_llm_provider
 from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
@@ -185,6 +199,10 @@ class MemoryConflictResolveRequest(BaseModel):
     reviewer: str | None = None
     reason: str | None = None
     scan_id: str = "latest"
+
+
+class ExperienceCaptureApiRequest(ExperienceObservation):
+    llm_provider: str = "qwen-cloud"
 
 
 class IntakeUploadRequest(BaseModel):
@@ -766,6 +784,59 @@ def get_context_report(team_id: str, repo_name: str | None = None) -> dict[str, 
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/experience/capture", response_model=ExperienceCaptureResult)
+def capture_experience(request: ExperienceCaptureApiRequest) -> ExperienceCaptureResult:
+    try:
+        observation = ExperienceObservation.model_validate(
+            request.model_dump(exclude={"llm_provider"})
+        )
+        return ExperienceMemoryService(
+            policy=_experience_policy(request.llm_provider)
+        ).capture(observation)
+    except (DreamError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/experience/recall", response_model=ExperienceRecallResult)
+def recall_experience(request: ExperienceRecallRequest) -> ExperienceRecallResult:
+    try:
+        return ExperienceMemoryService().recall(request)
+    except (DreamError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/experience/feedback", response_model=ExperienceMemory)
+def rate_experience_memory(request: ExperienceFeedbackRequest) -> ExperienceMemory:
+    try:
+        return ExperienceMemoryService().record_feedback(request)
+    except (DreamError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/experience/memories", response_model=list[ExperienceMemory])
+def list_experience_memories(
+    team_id: str,
+    user_id: str,
+    include_inactive: bool = True,
+) -> list[ExperienceMemory]:
+    return ExperienceMemoryService().list_memories(
+        team_id=team_id,
+        user_id=user_id,
+        include_inactive=include_inactive,
+    )
+
+
+@router.get("/experience/decisions", response_model=list[ExperienceDecisionRecord])
+def list_experience_decisions(
+    team_id: str,
+    user_id: str,
+) -> list[ExperienceDecisionRecord]:
+    return ExperienceMemoryRepository().list_decisions(
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+
 @router.post("/memory/scan")
 def scan_memory(request: MemoryScanRequest) -> dict[str, object]:
     try:
@@ -1148,6 +1219,12 @@ def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
     if provider == "jtestgen":
         return JTestGenAdapter()
     raise HTTPException(status_code=400, detail=f"Unsupported testgen provider: {provider}")
+
+
+def _experience_policy(provider: str) -> ExperienceMemoryPolicy:
+    if provider == "deterministic":
+        return RuleBasedExperienceMemoryPolicy()
+    return LLMExperienceMemoryPolicy(_llm_provider(provider))
 
 
 def _llm_provider(provider: str) -> LLMProvider:

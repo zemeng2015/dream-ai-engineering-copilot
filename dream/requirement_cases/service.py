@@ -9,6 +9,11 @@ from dream.audit.logger import AuditLogger
 from dream.codebase.repository import CodebaseIndexRepository
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, resolve_artifact_path
+from dream.experience import (
+    ExperienceMemoryService,
+    ExperienceRecallRequest,
+    ExperienceRecallResult,
+)
 from dream.llm import BaseLLMProvider
 from dream.requirement_cases.brief import EngineeringBriefGenerator
 from dream.requirement_cases.impact import ImpactMapGenerator
@@ -46,6 +51,7 @@ class RequirementCaseService:
         audit_logger: AuditLogger | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
         llm_provider: BaseLLMProvider | None = None,
+        experience_service: ExperienceMemoryService | None = None,
     ) -> None:
         self.repository = repository or RequirementCaseRepository()
         if memory_retriever is None:
@@ -62,6 +68,7 @@ class RequirementCaseService:
         self.jira_generator = jira_generator or JiraDraftGenerator(llm_provider=llm_provider)
         self.audit_logger = audit_logger or AuditLogger()
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
+        self.experience_service = experience_service
 
     def create_case(self, request: RequirementCaseCreateRequest) -> RequirementCaseSnapshot:
         now = datetime.now(UTC).isoformat()
@@ -74,6 +81,9 @@ class RequirementCaseService:
             created_by_role=request.created_by_role,
             target_app=request.target_app,
             target_component=request.target_component,
+            user_id=request.user_id,
+            session_id=request.session_id,
+            experience_token_budget=request.experience_token_budget,
             status="created",
             created_at=now,
             updated_at=now,
@@ -109,6 +119,21 @@ class RequirementCaseService:
                 component=snapshot.case.target_component,
             ),
         )
+        experience_recall = self._recall_experience(snapshot.case)
+        if experience_recall is not None:
+            evidence.extend(
+                ContextEvidence(
+                    evidence_id=f"experience:{item.memory.memory_id}",
+                    case_id=snapshot.case.case_id,
+                    source_type=f"experience_{item.memory.kind}",
+                    source_path=f"experience://{item.memory.memory_id}",
+                    title=item.memory.key,
+                    excerpt=item.memory.value,
+                    relevance_score=item.score,
+                    reason=item.reason,
+                )
+                for item in experience_recall.selected
+            )
         impact_items = self.impact_generator.generate(snapshot.case, evidence)
         questions = self.question_generator.generate(snapshot.case, evidence)
         warnings = [] if evidence else ["No knowledge or codebase evidence was retrieved."]
@@ -118,6 +143,12 @@ class RequirementCaseService:
             )
 
         snapshot.evidence = evidence
+        if experience_recall is not None:
+            snapshot.experience_memory_ids = [
+                item.memory.memory_id for item in experience_recall.selected
+            ]
+            snapshot.experience_context_card = experience_recall.context_card
+            snapshot.experience_tokens_used = experience_recall.estimated_tokens_used
         snapshot.impact_items = impact_items
         snapshot.questions = questions
         snapshot.warnings = warnings
@@ -130,7 +161,14 @@ class RequirementCaseService:
             team_id=snapshot.case.team_id,
             case_id=snapshot.case.case_id,
             repo_name=repo_name,
-            input_payload={"case_id": case_id, "raw_request": snapshot.case.raw_request},
+            input_payload={
+                "case_id": case_id,
+                "raw_request": snapshot.case.raw_request,
+                "user_id": snapshot.case.user_id,
+                "session_id": snapshot.case.session_id,
+                "experience_memory_ids": snapshot.experience_memory_ids,
+                "experience_tokens_used": snapshot.experience_tokens_used,
+            },
             retrieved_source_paths=sorted({item.source_path for item in evidence}),
             model_provider="deterministic",
             model_name="requirement-case-analysis-v1",
@@ -145,6 +183,20 @@ class RequirementCaseService:
             codebase_repository=self.codebase_repository,
         ).trace_case(snapshot.case.case_id)
         return snapshot
+
+    def _recall_experience(self, case: RequirementCase) -> ExperienceRecallResult | None:
+        if not case.user_id or not case.session_id:
+            return None
+        service = self.experience_service or ExperienceMemoryService()
+        return service.recall(
+            ExperienceRecallRequest(
+                team_id=case.team_id,
+                user_id=case.user_id,
+                session_id=case.session_id,
+                query=case.raw_request,
+                token_budget=case.experience_token_budget,
+            )
+        )
 
     def generate_impact_map(self, case_id: str) -> list[ImpactItem]:
         snapshot = self._ensure_analyzed(case_id)

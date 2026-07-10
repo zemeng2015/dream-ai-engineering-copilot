@@ -1438,6 +1438,9 @@ export class DreamApiService {
           created_by_role: input.role || 'BA',
           target_app: input.app,
           target_component: input.component,
+          user_id: input.userId || 'demo-reviewer',
+          session_id: input.sessionId || `ui-${Date.now()}`,
+          experience_token_budget: input.experienceTokenBudget || 512,
         }),
       onProgress,
     )

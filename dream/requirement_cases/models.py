@@ -9,6 +9,9 @@ class RequirementCaseCreateRequest(BaseModel):
     created_by_role: str | None = None
     target_app: str | None = None
     target_component: str | None = None
+    user_id: str | None = None
+    session_id: str | None = None
+    experience_token_budget: int = Field(default=512, ge=32, le=8192)
 
 
 class RequirementCase(BaseModel):
@@ -19,6 +22,9 @@ class RequirementCase(BaseModel):
     created_by_role: str | None = None
     target_app: str | None = None
     target_component: str | None = None
+    user_id: str | None = None
+    session_id: str | None = None
+    experience_token_budget: int = Field(default=512, ge=32, le=8192)
     status: str
     created_at: str
     updated_at: str
@@ -116,4 +122,7 @@ class RequirementCaseSnapshot(BaseModel):
     engineering_brief: EngineeringBrief | None = None
     jira_draft: JiraDraft | None = None
     jira_readiness: JiraReadiness | None = None
+    experience_memory_ids: list[str] = Field(default_factory=list)
+    experience_context_card: str | None = None
+    experience_tokens_used: int = 0
     warnings: list[str] = Field(default_factory=list)
