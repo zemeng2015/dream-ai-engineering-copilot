@@ -53,7 +53,7 @@ resources:
         QWEN_TIMEOUT_SECONDS: "45"
         QWEN_MAX_PROMPT_CHARS: "24000"
         DREAM_PUBLIC_QWEN_REQUESTS_PER_MINUTE: "6"
-        QWEN_PUBLIC_DEMO_VIDEO_URL: https://youtu.be/mHGZP67lEf4
+        QWEN_PUBLIC_DEMO_VIDEO_URL: https://youtu.be/ZdnO9mAulSs
         ALIBABA_CLOUD_REGION: ${vars.region}
         ALIBABA_CLOUD_SERVICE: Function Compute custom runtime
         ALIBABA_CLOUD_PROOF_FILE: deploy/alibaba/serverless-devs-runtime.yaml

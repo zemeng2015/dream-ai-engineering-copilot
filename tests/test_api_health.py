@@ -189,13 +189,13 @@ def test_qwencloud_showcase_reaches_full_score_when_public_video_is_configured(
     monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-demo-key")
     monkeypatch.setenv("ALIBABA_CLOUD_REGION", "ap-southeast-1")
     monkeypatch.setenv("ALIBABA_CLOUD_SERVICE", "Function Compute custom runtime")
-    monkeypatch.setenv("QWEN_PUBLIC_DEMO_VIDEO_URL", "https://youtu.be/mHGZP67lEf4")
+    monkeypatch.setenv("QWEN_PUBLIC_DEMO_VIDEO_URL", "https://youtu.be/ZdnO9mAulSs")
 
     payload = TestClient(create_app()).get("/qwencloud/showcase").json()
 
     assert payload["scorecard"]["weighted_current_evidence_ready"] == 100
     assert payload["scorecard"]["public_video_points"] == 15
-    assert payload["scorecard"]["public_video_url"] == "https://youtu.be/mHGZP67lEf4"
+    assert payload["scorecard"]["public_video_url"] == "https://youtu.be/ZdnO9mAulSs"
     assert payload["scorecard"]["missing_external_inputs"] == []
 
 
