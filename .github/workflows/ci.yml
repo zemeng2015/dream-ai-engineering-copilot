@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install
@@ -33,4 +33,29 @@ jobs:
         with:
           name: qwencloud-proof
           path: artifacts/qwencloud-proof/
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.14.1"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+      - name: Audit full frontend dependency tree
+        run: npm audit
+      - name: Build Angular production bundle
+        run: npm run build
+      - name: Test Angular in ChromeHeadless
+        run: npm test -- --watch=false --browsers=ChromeHeadless
 
