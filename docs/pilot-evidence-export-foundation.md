@@ -35,20 +35,24 @@ administration surface or create an external side effect.
 | Artifact lineage | Team | Artifact lineage registry |
 | DLP decisions | Team | DLP decision ledger |
 | Provider egress decisions | Deployment | Provider egress ledger |
+| Identity authentications | Team | Signed identity decision ledger |
+| Identity rejections | Deployment | Aggregated signed identity rejection evidence |
+| Access-policy decisions | Team | Default access-policy decision ledger |
 
 Provider events are deployment-scoped because the current provider decision
 record does not carry a team identifier. The manifest marks that scope instead
 of presenting those events as team-attributable evidence.
 
-The bundle status is `partial_control_evidence`. Two known gaps are mandatory in
-the v1 manifest:
+The bundle status remains `partial_control_evidence`. New exports use v2, whose
+mandatory limitations are:
 
-- `runtime_identity_decisions_not_persisted`;
-- `access_policy_decisions_not_persisted`.
+- `identity_rejections_are_deployment_scoped`;
+- `cross_source_snapshot_not_globally_atomic`.
 
-The signed identity boundary and access policy are enforced and tested, but
-their individual runtime decisions are not yet persisted in an exportable
-ledger. A verifier rejects a manifest that hides either gap.
+Identity rejections cannot be attributed to an asserted team until its signature
+is trusted, so they are aggregated at deployment scope. The verifier rejects a
+v2 manifest that hides either limitation. It also remains compatible with the
+original eight-section v1 contract and its two historical persistence gaps.
 
 ## Create and Verify
 
@@ -78,7 +82,7 @@ dream audit verify-bundle `
   --expected-root-sha256 <sha256-from-independent-channel>
 ```
 
-Verification checks the v1 schema, fixed bundle naming/team-hash relationship,
+Verification checks the versioned schema, fixed bundle naming/team-hash relationship,
 exact file set, file sizes and hashes, section/source/scope/count contracts,
 bounded metadata grammar, mandatory coverage gaps, and manifest root. Extra
 files, altered records, unsafe arbitrary strings or keys, recomputed partial
@@ -95,7 +99,7 @@ independent immutable root registry.
 Audit runs, ratings and evaluations are read in one SQLite read transaction.
 Each JSON/JSONL ledger is accepted only when its pre-read and post-read file hash
 is stable. These controls prevent torn reads within SQLite and detect a ledger
-changing during its read, but the eight sources do not share one global
+changing during its read, but the eleven v2 sections do not share one global
 transaction or point-in-time sequence. The bundle is therefore a bounded
 collection snapshot, not proof of globally atomic state.
 
@@ -110,8 +114,8 @@ the other team's records.
 - A failed build removes its newly created partial bundle directory.
 - Existing bundle directories are never overwritten; filesystem permissions and
   independent-root verification are still required to detect later mutation.
-- The verifier requires the exact nine-file v1 set: eight evidence sections and
-  `manifest.json`.
+- The verifier requires the exact twelve-file v2 set: eleven evidence sections
+  and `manifest.json`; legacy v1 verification retains its exact nine-file set.
 - Raw identifiers and upstream values already labelled as hashes are hashed
   again; the exporter never trusts an upstream string merely because its field
   name says `hash`.
@@ -122,7 +126,6 @@ the other team's records.
 
 Before this can be treated as production audit evidence, DREAM still needs:
 
-- persistent runtime identity and access-policy decision events;
 - a shared transactional evidence store or an approved snapshot coordinator;
 - approved retention, legal hold, deletion and export authorization policy;
 - tamper-evident signing or an independently controlled immutable root registry;
@@ -133,3 +136,6 @@ Before this can be treated as production audit evidence, DREAM still needs:
 Until those controls and the broader Pilot gates are approved, the bundle is
 useful engineering evidence for synthetic demonstrations and security review,
 not a compliance certification.
+
+See [Security Decision Evidence Foundation](security-decision-evidence-foundation.md)
+for trust attribution, failure behavior and remaining runtime-ledger gates.

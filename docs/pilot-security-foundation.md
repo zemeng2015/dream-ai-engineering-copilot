@@ -182,8 +182,11 @@ egress enforcement, retention/no-training terms, and data residency remain
 external gates. See [Provider Egress Foundation](provider-egress-foundation.md).
 
 The offline Pilot evidence exporter now creates a team-scoped, metadata-only,
-checksummed bundle from eight current control sources without enabling private
-Audit/Eval API administration. It is intentionally labelled partial because
-runtime identity and access-policy decisions are not persisted, and its local
-sources do not share one global transaction. See
+checksummed v2 bundle from eleven control sections without enabling private
+Audit/Eval API administration. Runtime signed-identity and access-policy
+decisions are now persisted with fail-closed writes; untrusted identity
+rejections are aggregated at deployment scope. The bundle remains partial
+because its local sources do not share one global transaction or signed custody.
+See [Security Decision Evidence Foundation](security-decision-evidence-foundation.md)
+and
 [Pilot Evidence Export Foundation](pilot-evidence-export-foundation.md).

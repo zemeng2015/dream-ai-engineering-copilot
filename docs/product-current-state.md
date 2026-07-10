@@ -33,11 +33,12 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | Cost evidence gate | Exact provider/model pricing manifest plus input/output token proof | Pricing manifest tests |
 | External writes | None in the leadership scenario | Product boundary and implementation |
 | Pilot security foundation | Signed proxy identity, source ACL model/propagation, fail-closed private routes, derived artifact ACL | Security policy, API, retrieval and no-leak tests |
+| Security decision evidence | Metadata-only signed-identity and access-policy allow/deny ledgers with fail-closed persistence | Identity/API/policy/no-leak/failure tests |
 | Frontend dependency baseline | Angular 21, TypeScript 5.9, `@angular/build`, zero production/full npm audit | Lockfile, build, ChromeHeadless and CI gates |
 | Connector source lifecycle | Metadata-only sync/tombstone contract, immutable ACL versions, revoke-first cleanup, registered artifact cascade | Connector lifecycle, restart, path-safety and cleanup-failure tests |
 | DLP enforcement foundation | Versioned pre-index/pre-prompt/pre-persist/post-response text inspection, deterministic redact/block rules, metadata-only ledger | Engine/provider corpus and workflow-boundary no-leak tests |
 | Provider egress foundation | Exact private endpoint/model approval, invocation-time expiry recheck, request-override/redirect denial, response identity gate | Provider policy, API/CLI selector, redirect and negative config tests |
-| Pilot evidence export | Offline team-scoped metadata bundle across eight control sources, immutable files, checksums and verifier | Scope/no-leak/tamper/path/source-stability/CLI tests |
+| Pilot evidence export | Offline v2 metadata bundle across eleven team/deployment sections, immutable files, checksums and v1/v2 verifier | Scope/no-leak/tamper/path/source-stability/compatibility/CLI tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -85,8 +86,8 @@ The public core does not currently prove:
 - organization-approved data residency and network egress controls;
 - organization-approved model endpoint, retention/no-training terms and
   approval-manifest operating process;
-- persisted runtime identity/access-policy decisions, globally atomic shared
-  audit storage, approved signing/retention/export operations and SIEM/GRC integration;
+- globally atomic shared audit storage, approved signing/retention/export
+  operations, multi-process durability and SIEM/GRC integration;
 - production-scale availability, latency, cost, or support SLOs;
 - organization approval of the remediated frontend dependency/runtime baseline;
 - a feedback-learning policy driven by Human Rating;
@@ -121,5 +122,6 @@ See `docs/pilot-security-foundation.md` and
 `docs/connector-lifecycle-foundation.md`,
 `docs/dlp-enforcement-foundation.md`,
 `docs/provider-egress-foundation.md`, plus
+`docs/security-decision-evidence-foundation.md` and
 `docs/pilot-evidence-export-foundation.md`. These implementations reduce technical
 risk but do not change the real-source No-Go decision.
