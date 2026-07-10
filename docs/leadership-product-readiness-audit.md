@@ -66,7 +66,8 @@ Angular ChromeHeadless tests: 23 passed
 Angular production/full dependency audit: 0 vulnerabilities
 Leadership preflight: ready_for_demo=true
 Raw-document acceptance: passed
-Strict preflight/release freeze: rerun after custody commits
+Strict preflight: passed on committed custody snapshot (feature-branch naming warning only)
+Custody-branch presentation release freeze: not rebuilt
 ```
 
 The current test count is evidence for the audited working tree only. Rerun all
