@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -29,6 +30,7 @@ from dream.memory import (
     MemoryDistillationService,
 )
 from dream.memory.repository import MemoryDistillationRepository
+from dream.pilot_evidence import PilotEvidenceExporter, PilotEvidenceVerifier
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import RequirementDraftGenerator, RequirementDraftRequest
 from dream.review import PRReviewAssistant, PRReviewRequest
@@ -620,6 +622,44 @@ def audit_show(run_id: str) -> None:
     if record is None:
         raise typer.BadParameter(f"Audit run not found: {run_id}")
     typer.echo(record.model_dump_json(indent=2))
+
+
+@audit_app.command("export-bundle")
+def audit_export_bundle(
+    team: Annotated[str, typer.Option("--team")],
+    confirm_team: Annotated[str, typer.Option("--confirm-team")],
+    operator: Annotated[str, typer.Option("--operator")],
+    reason: Annotated[str, typer.Option("--reason")],
+    output_root: Annotated[Path | None, typer.Option("--output-root")] = None,
+) -> None:
+    try:
+        result = PilotEvidenceExporter().build(
+            team_id=team,
+            confirm_team=confirm_team,
+            operator_id=operator,
+            reason=reason,
+            output_root=output_root,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(result.model_dump_json(indent=2))
+
+
+@audit_app.command("verify-bundle")
+def audit_verify_bundle(
+    bundle: Annotated[Path, typer.Option("--bundle")],
+    expected_root_sha256: Annotated[
+        str | None,
+        typer.Option("--expected-root-sha256"),
+    ] = None,
+) -> None:
+    report = PilotEvidenceVerifier().verify(
+        bundle,
+        expected_root_sha256=expected_root_sha256,
+    )
+    typer.echo(report.model_dump_json(indent=2))
+    if not report.passed:
+        raise typer.Exit(code=1)
 
 
 @eval_app.command("rate")
