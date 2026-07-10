@@ -78,11 +78,11 @@ class EngineeringMemoryRetriever:
                     0.4, 0.7 - query_index * 0.05
                 )
                 query_results = self.codebase_retriever.search(
-                        team_id=team_id,
-                        repo_name=candidate_repo,
-                        query=code_query,
-                        top_k=top_k,
-                    )
+                    team_id=team_id,
+                    repo_name=candidate_repo,
+                    query=code_query,
+                    top_k=top_k,
+                )
                 for result in query_results:
                     result.score = int(100 * query_weight + result.score)
                     results.append(result)
@@ -208,8 +208,11 @@ class EngineeringMemoryRetriever:
         if any(term in normalized for term in ["job", "execution", "status", "async"]):
             queries.append("job execution controller service test status")
             queries.append(
-                "StatusTracker ExecutionService ExecutionController BatchJobAdapter "
-                "ExecutionServiceTest StatusTrackerTest execution monitor polling"
+                "status tracker execution service controller batch job adapter "
+                "execution monitor"
+            )
+            queries.append(
+                "status tracker test execution service test status regression"
             )
         return queries
 
@@ -228,19 +231,43 @@ class EngineeringMemoryRetriever:
             )
         return queries
 
-    @staticmethod
-    def _dedupe(evidence: list[ContextEvidence]) -> list[ContextEvidence]:
-        seen: set[tuple[str, str, str]] = set()
+    @classmethod
+    def _dedupe(cls, evidence: list[ContextEvidence]) -> list[ContextEvidence]:
+        positions: dict[tuple[str, str, str], int] = {}
         deduped: list[ContextEvidence] = []
         for item in evidence:
             if item.source_type in {"code_file", "code_symbol", "test_file"}:
                 key = ("codebase", item.source_path, "")
             else:
                 key = (item.source_type, item.source_path, item.title)
-            if key not in seen:
-                seen.add(key)
+            if key not in positions:
+                positions[key] = len(deduped)
                 deduped.append(item)
+                continue
+            position = positions[key]
+            current = deduped[position]
+            if key[0] == "codebase" and cls._representation_priority(
+                item
+            ) < cls._representation_priority(current):
+                deduped[position] = item.model_copy(
+                    update={
+                        "relevance_score": max(
+                            item.relevance_score,
+                            current.relevance_score,
+                        )
+                    }
+                )
         return deduped
+
+    @classmethod
+    def _representation_priority(cls, item: ContextEvidence) -> int:
+        if item.source_type == "test_file":
+            return 0
+        if item.source_type == "code_file":
+            return 1
+        if cls._is_test_path(item.source_path):
+            return 2
+        return 3
 
     @classmethod
     def _balanced_top_k(
@@ -263,6 +290,8 @@ class EngineeringMemoryRetriever:
         categories = [
             "incident",
             "historical_jira",
+            "historical_jira",
+            "historical_pr",
             "historical_pr",
             "architecture",
             "domain",
@@ -275,6 +304,10 @@ class EngineeringMemoryRetriever:
             "graph_concept_memory",
             "test_file",
             "test_file",
+            "code_file",
+            "code_file",
+            "code_file",
+            "code_file",
             "code_file",
             "code_file",
             "code_symbol",
@@ -319,7 +352,7 @@ class EngineeringMemoryRetriever:
             return "testing"
         if "/docs/concepts/" in source:
             return "concept_memory"
-        if item.source_type == "test_file":
+        if item.source_type == "test_file" or EngineeringMemoryRetriever._is_test_path(source):
             return "test_file"
         if item.source_type == "code_file":
             return "code_file"
@@ -330,6 +363,19 @@ class EngineeringMemoryRetriever:
         if item.source_type.startswith("graph_"):
             return item.source_type
         return item.source_type
+
+    @staticmethod
+    def _is_test_path(source_path: str) -> bool:
+        source = source_path.replace("\\", "/").lower()
+        name = source.rsplit("/", 1)[-1]
+        return (
+            "/src/test/" in source
+            or source.startswith("tests/")
+            or "/tests/" in source
+            or name.endswith("test.java")
+            or name.endswith(".spec.ts")
+            or name.endswith(".test.ts")
+        )
 
     @staticmethod
     def _candidate_priority(
@@ -359,6 +405,7 @@ class EngineeringMemoryRetriever:
             "status-tracking",
             "execution-status",
             "executionservice",
+            "executioncontroller",
             "statustracker",
             "batchjobadapter",
             "execution-monitor",
@@ -366,6 +413,6 @@ class EngineeringMemoryRetriever:
             "polling",
         ]
         focus_bonus = (
-            30.0 if status_focus and any(term in text for term in preferred_terms) else 0.0
+            45.0 if status_focus and any(term in text for term in preferred_terms) else 0.0
         )
         return -(item.relevance_score + focus_bonus), item.source_path, item.title

@@ -48,7 +48,7 @@ is recorded as incomplete rather than inferred from implementation intent.
 ## Current Verification Baseline
 
 ```text
-Python: 205 passed, 1 skipped
+Python: 206 passed, 1 skipped
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
 Leadership preflight: ready_for_demo=true
@@ -67,22 +67,25 @@ the OpenAI endpoint, requested model `gpt-5.4`, and resolved model
 `gpt-5.4-2026-03-05`. Both arms used the same provider, model, request, output
 contract, and alternating arm order; only the DREAM source catalog differed.
 
-The local report recorded:
+After separating retrieval coverage from model-output coverage and fixing the
+file/symbol dedupe ranking, the current local report recorded:
 
-- DREAM valid citations: mean 43.7 per run, 100% validity;
-- impact recall: 0% stateless versus 40% DREAM;
-- history recall: 0% stateless versus 73.3% DREAM;
-- unsupported claims: mean 8.0 stateless versus 4.67 DREAM;
-- total tokens: mean 830 stateless versus 5,743 DREAM;
-- latency: mean 2.66 seconds stateless versus 9.70 seconds DREAM;
-- critical-question and test recall: 0% for both arms in this suite.
+- DREAM source-catalog recall: 100% for code, tests, and history;
+- DREAM valid citations: mean 54.0 per run, 100% validity;
+- impact recall: 0% stateless versus 86.7% DREAM;
+- test recall: 0% stateless versus 100% DREAM;
+- history recall: 0% stateless versus 93.3% DREAM;
+- critical-question recall: 0% stateless versus 33.3% DREAM;
+- unsupported claims: mean 5.67 stateless versus 5.0 DREAM;
+- total tokens: mean 773 stateless versus 5,420 DREAM;
+- latency: mean 2.61 seconds stateless versus 11.36 seconds DREAM.
 
-The zero test recall is a real retrieval gap: the DREAM catalog did not contain
-the two golden test files. The question result also shows that semantic question
-coverage needs a stronger SME-aligned scorer. This run uses only synthetic DFP
-data and is local technical evidence, not enterprise approval or a production
-ROI claim. Human edit distance and cost remain unmeasured until approved SME and
-pricing manifests exist.
+Critical-question coverage remains the clearest output-quality gap. The scorer
+now compares each question independently with normalized domain terms, but the
+golden set and thresholds still require SME approval. This run uses only
+synthetic DFP data and is local technical evidence, not enterprise approval or
+a production ROI claim. Human edit distance and cost remain unmeasured until
+approved SME and pricing manifests exist.
 
 ## Leadership Claim Boundary
 

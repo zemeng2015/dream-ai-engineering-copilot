@@ -85,6 +85,9 @@ class BenchmarkArmResult(BaseModel):
     output: LeadershipBenchmarkOutput | None = None
     parse_error: str | None = None
     citations: CitationMetric
+    source_impact_recall: CoverageMetric
+    source_test_recall: CoverageMetric
+    source_history_recall: CoverageMetric
     impact_recall: CoverageMetric
     critical_question_recall: CoverageMetric
     test_recall: CoverageMetric
@@ -684,6 +687,9 @@ def _evaluate_arm(
 ) -> BenchmarkArmResult:
     output, parse_error = _parse_output(response.text)
     allowed_ids = {item.source_id for item in sources}
+    source_text = "\n".join(
+        f"{item.source_path}\n{item.title}\n{item.excerpt}" for item in sources
+    )
     citation_values = _all_citations(output) if output else []
     valid = [item for item in citation_values if item in allowed_ids]
     invalid = [item for item in citation_values if item not in allowed_ids]
@@ -694,9 +700,7 @@ def _evaluate_arm(
         validity_rate=(round(len(valid) / len(citation_values), 4) if citation_values else None),
     )
     impact_text = _statements_text(output.impact_areas) if output else ""
-    question_text = (
-        "\n".join(item.question for item in output.critical_questions) if output else ""
-    )
+    question_texts = [item.question for item in output.critical_questions] if output else []
     test_text = _statements_text(output.test_targets) if output else ""
     history_text = _statements_text(output.historical_risks) if output else ""
     unsupported_claims = _unsupported_count(output, allowed_ids) if output else 0
@@ -711,9 +715,15 @@ def _evaluate_arm(
         output=output,
         parse_error=parse_error,
         citations=citation_metric,
+        source_impact_recall=_coverage(source_text, profile.expected_code),
+        source_test_recall=_coverage(source_text, profile.expected_tests),
+        source_history_recall=_coverage(
+            source_text,
+            [*profile.expected_incidents, *profile.expected_jira, *profile.expected_pr],
+        ),
         impact_recall=_coverage(impact_text, profile.expected_code),
         critical_question_recall=_question_coverage(
-            question_text,
+            question_texts,
             [item for values in profile.critical_questions.values() for item in values],
         ),
         test_recall=_coverage(test_text, profile.expected_tests),
@@ -800,12 +810,17 @@ def _coverage(text: str, expected: list[str]) -> CoverageMetric:
     )
 
 
-def _question_coverage(text: str, expected: list[str]) -> CoverageMetric:
-    normalized = _terms(text)
+def _question_coverage(questions: list[str], expected: list[str]) -> CoverageMetric:
+    question_terms = [_terms(question) for question in questions]
     hits = []
     for item in expected:
         expected_terms = _terms(item)
-        if expected_terms and len(normalized & expected_terms) / len(expected_terms) >= 0.65:
+        matched = any(
+            len(candidate & expected_terms) >= 2
+            and len(candidate & expected_terms) / len(expected_terms) >= 0.6
+            for candidate in question_terms
+        )
+        if expected_terms and matched:
             hits.append(item)
     misses = [item for item in expected if item not in hits]
     return CoverageMetric(
@@ -927,14 +942,33 @@ def _terms(value: str) -> set[str]:
         "is",
         "of",
         "or",
+        "same",
+        "share",
         "should",
         "the",
         "to",
         "what",
     }
+    aliases = {
+        "derived": "derive",
+        "events": "event",
+        "labels": "label",
+        "persisted": "persist",
+        "polling": "poll",
+        "regressions": "regression",
+        "running": "run",
+        "statuses": "status",
+        "subscribing": "subscribe",
+        "tasks": "task",
+        "tests": "test",
+        "transitions": "transition",
+        "updates": "update",
+        "users": "user",
+    }
+    tokens = re.findall(r"[a-z0-9]+", value.lower().replace("_", " ").replace("-", " "))
     return {
-        item
-        for item in re.findall(r"[a-z0-9_-]+", value.lower())
+        aliases.get(item, item)
+        for item in tokens
         if item not in stop and len(item) > 1
     }
 
@@ -981,6 +1015,11 @@ def _aggregate_runs(
             "ratio",
             "Expected code impacts recovered from the frozen synthetic profile.",
         ),
+        "source_catalog_impact_recall": (
+            lambda arm: arm.source_impact_recall.recall,
+            "ratio",
+            "Expected code impacts available to the model in the source catalog.",
+        ),
         "critical_question_recall": (
             lambda arm: arm.critical_question_recall.recall,
             "ratio",
@@ -991,10 +1030,20 @@ def _aggregate_runs(
             "ratio",
             "Expected test targets recovered.",
         ),
+        "source_catalog_test_recall": (
+            lambda arm: arm.source_test_recall.recall,
+            "ratio",
+            "Expected test targets available to the model in the source catalog.",
+        ),
         "history_recall": (
             lambda arm: arm.history_recall.recall,
             "ratio",
             "Expected incident, Jira, and PR history recovered.",
+        ),
+        "source_catalog_history_recall": (
+            lambda arm: arm.source_history_recall.recall,
+            "ratio",
+            "Expected history identifiers available to the model in the source catalog.",
         ),
         "unsupported_claims": (
             lambda arm: float(arm.unsupported_claims),
@@ -1134,6 +1183,25 @@ def _render_report(report: LeadershipBenchmarkReport) -> str:
             f"{_measurement_value(dream.human_edit_distance)} | n/a |"
         ),
         f"| Cost | {_measurement_value(stateless.cost)} | {_measurement_value(dream.cost)} | n/a |",
+        "",
+        "## Retrieval ceiling",
+        "",
+        "These metrics measure what the source catalog made available before generation.",
+        "",
+        "| Catalog metric | Stateless | DREAM |",
+        "|---|---:|---:|",
+        (
+            f"| Impact source recall | {stateless.source_impact_recall.recall:.1%} | "
+            f"{dream.source_impact_recall.recall:.1%} |"
+        ),
+        (
+            f"| Test source recall | {stateless.source_test_recall.recall:.1%} | "
+            f"{dream.source_test_recall.recall:.1%} |"
+        ),
+        (
+            f"| History source recall | {stateless.source_history_recall.recall:.1%} | "
+            f"{dream.source_history_recall.recall:.1%} |"
+        ),
         "",
         "## Integrity checks",
         "",

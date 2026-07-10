@@ -32,9 +32,12 @@ The deterministic evaluator reports:
 
 - valid and invalid source citations;
 - impact recall against the scenario's expected code set;
+- source-catalog impact recall, which separates retrieval coverage from model use;
 - critical-question recall against the role-specific golden set;
 - expected test coverage;
+- source-catalog test recall;
 - incident/Jira/PR history coverage;
+- source-catalog history recall;
 - unsupported output items;
 - wall-clock latency; and
 - provider-reported token usage when available.
@@ -114,9 +117,9 @@ not turn a single synthetic completion into a production ROI claim.
   templates only and are intentionally rejected as approved evidence.
 - The public pricing manifest is also a draft template; zero placeholder rates
   are not cost evidence.
-- The current fixture result shows the metric pipeline working, including honest
-  zeroes where the retrieved context does not contain expected tests.
-- A provider-neutral live-model report has not yet been approved or recorded in
-  this product branch.
+- The current retrieval gate requires the DREAM source catalog to contain all
+  frozen code, test, and history targets before output recall is interpreted.
+- A local GPT-5.4 synthetic report is recorded in the readiness audit, but it is
+  not organization-approved provider or ROI evidence.
 - The Qwen competition benchmark is a separate competition asset and is not the
   Fannie leadership evidence baseline.

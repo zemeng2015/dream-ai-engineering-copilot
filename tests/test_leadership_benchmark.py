@@ -19,6 +19,7 @@ from dream.leadership_demo import (
     write_benchmark_report,
     write_benchmark_suite_report,
 )
+from dream.leadership_demo.benchmark import _question_coverage
 from dream.leadership_demo.service import LEADERSHIP_DEMO_PROFILE_ID
 from dream.llm import LLMResponse
 
@@ -30,6 +31,27 @@ def _seeded_snapshot(tmp_path: Path):
     )
     result = service.seed(reset=True)
     return service.requirement_repository.get(result.case_id)
+
+
+def test_question_coverage_matches_domain_paraphrases_without_cross_question_leakage() -> None:
+    metric = _question_coverage(
+        [
+            "What is the source of truth for task status across service tasks and batch tasks?",
+            "How should polling stop after execution reaches a terminal state?",
+        ],
+        [
+            "What is the authoritative source for task status?",
+            "Should SERVICE_TASK and BATCH_TASK share the same status model?",
+            "What runbook update is needed for stuck execution?",
+        ],
+    )
+
+    assert metric.hits == [
+        "What is the authoritative source for task status?",
+        "Should SERVICE_TASK and BATCH_TASK share the same status model?",
+    ]
+    assert metric.misses == ["What runbook update is needed for stuck execution?"]
+    assert metric.recall == 0.6667
 
 
 def test_fixture_benchmark_proves_pair_integrity_without_claiming_model_evidence(
@@ -50,6 +72,12 @@ def test_fixture_benchmark_proves_pair_integrity_without_claiming_model_evidence
     assert report.stateless.source_count == 0
     assert report.dream.source_count == len(snapshot.evidence)
     assert report.dream.citations.valid > report.stateless.citations.valid
+    assert report.stateless.source_impact_recall.recall == 0
+    assert report.stateless.source_test_recall.recall == 0
+    assert report.stateless.source_history_recall.recall == 0
+    assert report.dream.source_impact_recall.recall == 1
+    assert report.dream.source_test_recall.recall == 1
+    assert report.dream.source_history_recall.recall == 1
     assert report.dream.critical_question_recall.recall > 0
     assert report.dream.unsupported_claims < report.stateless.unsupported_claims
     assert report.stateless.cost.status == "not_measured"
@@ -84,6 +112,9 @@ def test_fixture_benchmark_proves_pair_integrity_without_claiming_model_evidence
     assert suite.aggregates["impact_recall"].status == "measured"
     assert suite.aggregates["impact_recall"].dream is not None
     assert suite.aggregates["impact_recall"].dream.count == 3
+    assert suite.aggregates["source_catalog_impact_recall"].dream.mean == 1
+    assert suite.aggregates["source_catalog_test_recall"].dream.mean == 1
+    assert suite.aggregates["source_catalog_history_recall"].dream.mean == 1
     assert suite.aggregates["human_edit_distance"].status == "not_measured"
     suite_json, suite_markdown = write_benchmark_suite_report(
         suite,

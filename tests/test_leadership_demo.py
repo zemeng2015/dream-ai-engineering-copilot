@@ -54,6 +54,22 @@ def test_leadership_demo_seed_is_replayable_and_dfp_only(monkeypatch, tmp_path) 
         for path in first.source_paths
     )
     assert any("frontend/src/app/execution/" in path for path in first.source_paths)
+    expected_code = {
+        "StatusTracker.java",
+        "ExecutionService.java",
+        "ExecutionController.java",
+        "BatchJobAdapter.java",
+        "execution-monitor.component.ts",
+    }
+    expected_tests = {
+        "StatusTrackerTest.java",
+        "ExecutionServiceTest.java",
+    }
+    expected_history = {"INC-103", "DFP-101", "DFP-109", "PR-502", "PR-505"}
+    source_text = "\n".join(first.source_paths)
+    assert all(item in source_text for item in expected_code)
+    assert all(item in source_text for item in expected_tests)
+    assert all(item in source_text for item in expected_history)
     assert (
         service.codebase_repository.load("demo_team", LEADERSHIP_DEMO_REPO_NAME).repo_name
         == LEADERSHIP_DEMO_REPO_NAME
