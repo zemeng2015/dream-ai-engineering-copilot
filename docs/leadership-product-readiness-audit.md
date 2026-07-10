@@ -18,8 +18,8 @@ is recorded as incomplete rather than inferred from implementation intent.
 | 1 | Approved MemoryClaim affects Requirement/Jira and bounded PR Review; other statuses and unresolved conflicts stay out | **Proven for current scope** | Requirement same-case approval test; PR candidate/approved/rejected test; MemoryClaim policy tests; Context/Audit assertions | Enterprise reviewer authorization is not implemented |
 | 2 | One consistent synthetic DFP scenario and evidence chain | **Proven for leadership path** | Fixed seed ids; double-reset acceptance; preflight source boundary; README examples now use `dfp-demo-repo` | Other legacy example directories remain in the repository but are outside the leadership path |
 | 3 | Provider-neutral ten-minute leadership workflow | **Proven locally** | `/leadership-demo`; product profile tests; runbook; Angular build/tests; fixed seeded case; automated human-gate rehearsal | A timed rehearsal with the actual presenters and approved deployment is still required |
-| 4 | Credible paired value evidence including citation, recall, unsupported claims, edit distance, latency, tokens, and cost | **Partially proven** | Same-provider/model/request/contract suite; alternating arm order; metric distributions; SME/pricing manifest gates | No approved live provider run, approved SME reference, or real provider pricing evidence yet |
-| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally; release not frozen** | `run_leadership_preflight.py`; reset/rehearsal tests; fallback/runbook; full Python and Angular verification; verified checksummed candidate manifest | Working tree is uncommitted; strict-git frozen manifest and approved deployment smoke have not passed |
+| 4 | Credible paired value evidence including citation, recall, unsupported claims, edit distance, latency, tokens, and cost | **Partially proven** | Same-provider/model/request/contract suite; alternating arm order; GPT-5.4 local synthetic suite; metric distributions; SME/pricing manifest gates | The live run is local and unapproved; no approved SME reference or exact provider pricing evidence yet |
+| 5 | Deterministic reset/replay, smoke gate, fallback, stable runtime | **Proven locally and frozen** | `run_leadership_preflight.py`; reset/rehearsal tests; fallback/runbook; full Python and Angular verification; verified frozen release manifest | Approved deployment smoke and presenter-timed rehearsal remain pending |
 | 6 | Enterprise trust boundary clear and first demo read-only/human-gated | **Boundary documented; enterprise controls absent** | Enterprise Pilot boundary; no-write Pilot scope; product profile uses mock/none by default | SSO, ACL propagation, private connectors, DLP/redaction, private storage, residency and admin controls are not implemented |
 | 7 | Executable one-team/one-app/one-repo Pilot proposal | **Proposal complete; organization decision pending** | Six-week proposal with scope, roles, baseline, metrics, gates, exit and leadership ask | Named sponsor/owners, application/repository, thresholds and Security/Data approval are unassigned |
 | 8 | README/current-state/boundary/runbook match implementation and avoid inflated claims | **Proven for named documents** | README roadmap/example cleanup; product-current-state limitations; Human Rating and ROI disclaimers; preflight docs check | Older research/handoff documents are historical context and must not be presented as current product truth |
@@ -52,12 +52,37 @@ Python: 205 passed, 1 skipped
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
 Leadership preflight: ready_for_demo=true
-Preflight warning: working tree has uncommitted changes
+Strict preflight warnings: none
+Frozen release verification: passed
 ```
 
 The current test count is evidence for the audited working tree only. Rerun all
 commands on the frozen presentation commit; do not quote this count after code
 changes without a fresh run.
+
+## Local GPT-5.4 Synthetic Evidence
+
+On 2026-07-10, the paired runner completed three repetitions (six calls) using
+the OpenAI endpoint, requested model `gpt-5.4`, and resolved model
+`gpt-5.4-2026-03-05`. Both arms used the same provider, model, request, output
+contract, and alternating arm order; only the DREAM source catalog differed.
+
+The local report recorded:
+
+- DREAM valid citations: mean 43.7 per run, 100% validity;
+- impact recall: 0% stateless versus 40% DREAM;
+- history recall: 0% stateless versus 73.3% DREAM;
+- unsupported claims: mean 8.0 stateless versus 4.67 DREAM;
+- total tokens: mean 830 stateless versus 5,743 DREAM;
+- latency: mean 2.66 seconds stateless versus 9.70 seconds DREAM;
+- critical-question and test recall: 0% for both arms in this suite.
+
+The zero test recall is a real retrieval gap: the DREAM catalog did not contain
+the two golden test files. The question result also shows that semantic question
+coverage needs a stronger SME-aligned scorer. This run uses only synthetic DFP
+data and is local technical evidence, not enterprise approval or a production
+ROI claim. Human edit distance and cost remain unmeasured until approved SME and
+pricing manifests exist.
 
 ## Leadership Claim Boundary
 

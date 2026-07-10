@@ -651,6 +651,10 @@ OUTPUT RULES
 - Return one JSON object and no prose outside JSON.
 - Use source_id values exactly as supplied in the source catalog.
 - Every organization-specific impact, test, question, or historical risk needs citations.
+- When evidence supplies exact code or test filenames, include those filenames verbatim in
+  the relevant impact_areas or test_targets statement.
+- When evidence supplies incident, Jira, or PR identifiers, include those identifiers verbatim
+  in the relevant historical_risks statement.
 - Put uncertain claims in unsupported_assumptions instead of presenting them as facts.
 
 OUTPUT CONTRACT ({BENCHMARK_CONTRACT_VERSION})

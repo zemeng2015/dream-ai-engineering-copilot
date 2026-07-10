@@ -65,9 +65,14 @@ then run three paired repetitions (six provider calls):
 ```powershell
 $env:OPENAI_COMPATIBLE_API_KEY="<approved-secret>"
 $env:OPENAI_COMPATIBLE_BASE_URL="https://<approved-endpoint>/v1"
-$env:OPENAI_COMPATIBLE_MODEL="<approved-model>"
-python scripts/run_leadership_ab_benchmark.py --provider openai-compatible
+$env:OPENAI_COMPATIBLE_MODEL="gpt-5.4"
+python scripts/run_leadership_ab_benchmark.py --provider openai-compatible --model gpt-5.4
 ```
+
+`gpt-5.4` is the current local Leadership test target. This records a technical
+choice, not Fannie provider approval; production/Pilot use still requires the
+organization-approved endpoint, deployment identifier, data flow, and pricing
+evidence.
 
 Optionally supply an approved SME manifest. The manifest must name the reviewer,
 approval time, scenario/contract, relative reference JSON path, and exact
