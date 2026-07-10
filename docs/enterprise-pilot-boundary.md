@@ -49,7 +49,7 @@ repository.
 | Network | Private egress policy and endpoint allowlist | Application blocks runtime overrides, insecure/ambiguous URLs and redirects; deployment firewall/DNS allowlist remains external |
 | Secrets | Enterprise secret manager, rotation, no client exposure | Environment variables in local core |
 | Storage | Encrypted private storage, backup, retention, deletion | Local JSON/SQLite artifacts |
-| Audit | Named actor, source use, provider/model, decision and export | Local structured audit; export/admin controls pending |
+| Audit | Named actor, source use, provider/model, decision and export | Offline team-scoped metadata-only bundle, checksums and verifier implemented; runtime identity/access decisions, signing, shared store and approved admin process pending |
 | Incident response | Owner, disable switch, investigation and deletion procedure | Pilot process required |
 | Dependency security | Approved supported runtime and remediated/excepted dependency findings | Angular 21 repository baseline passes production/full npm audits; organization runtime approval pending |
 
@@ -82,6 +82,10 @@ The [Provider Egress Foundation](provider-egress-foundation.md) makes configured
 endpoint/model approval fail closed in private mode, but it does not supply the
 organization's approval, network firewall, contractual retention/no-training
 terms, or data-residency decision.
+The [Pilot Evidence Export Foundation](pilot-evidence-export-foundation.md)
+collects eight existing evidence sources without exposing arbitrary payload text.
+It explicitly reports missing runtime identity/access-decision persistence and
+does not claim a globally atomic or signed production audit record.
 
 ## Human Gate and Side Effects
 

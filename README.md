@@ -81,6 +81,8 @@ domain-aware memory applications.
 - Enhances PR review summaries with codebase memory when an index exists.
 - Evaluates generated artifacts with deterministic, source-backed scorecards.
 - Records generation runs in SQLite.
+- Exports an offline, team-scoped, metadata-only Pilot evidence bundle with
+  checksums and an independent-root verifier.
 - Applies a versioned deterministic DLP foundation before indexing, prompt
   dispatch, selected persistence boundaries, and after model responses; DLP
   evidence is metadata-only.
@@ -566,6 +568,9 @@ For the latest UI simplification pass and product planning context, start here:
 - `docs/connector-lifecycle-foundation.md` - provider-neutral source sync,
   immutable ACL refresh, revoke-first deletion cascade, lineage registry, and
   remaining production connector gates.
+- `docs/pilot-evidence-export-foundation.md` - metadata-only evidence coverage,
+  offline export/verification commands, integrity and snapshot limitations, and
+  explicit runtime identity/access-decision gaps.
 - `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
   one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
 - `docs/leadership-product-readiness-audit.md` - requirement-by-requirement

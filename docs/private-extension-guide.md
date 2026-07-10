@@ -16,6 +16,9 @@ Recommended setup:
 7. Copy and complete `config/provider-approval.example.json` outside the public
    checkout, then set `DREAM_LLM_APPROVAL_FILE` to its absolute path.
 8. Run `dream config validate`, `dream config doctor`, and provider boundary tests.
+9. Configure the audit SQLite path and artifact root on approved private storage;
+   test `dream audit export-bundle` and retain its root digest through an
+   independent approved channel before relying on Pilot evidence.
 
 Private mode rejects request-level live-provider selection and LLM plugins. Use
 `config` at API/CLI generation surfaces so the deployment-owned provider is
@@ -23,3 +26,9 @@ selected. A future plugin-egress attestation contract must be implemented and
 reviewed before enabling custom LLM plugins in private runtime.
 
 The public repository should receive only generic interface or framework improvements. If a private workflow reveals a reusable enhancement, rebuild it with DemoCorp-style synthetic examples before contributing it to public core.
+
+The current evidence bundle is an offline metadata-only foundation, not a
+production audit archive. Its runtime identity/access-decision gaps, local
+multi-source snapshot semantics and unsigned root are documented in
+`docs/pilot-evidence-export-foundation.md` and must be resolved or explicitly
+accepted by the Pilot security owner.

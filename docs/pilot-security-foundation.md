@@ -142,7 +142,8 @@ This foundation does not yet prove:
 - deletion cascades for source bodies, indexes, prompts, caches, and artifacts;
 - action-specific authorization for currently blocked administration routes;
 - organization-approved DLP taxonomy and deployment, binary/OCR/malware
-  inspection, private storage, retention/deletion, audit export, incident
+  inspection, private storage, retention/deletion, approved audit export
+  operations, incident
   response, data residency, or provider approval; or
 - Security/Data/source-owner approval of the exact Pilot data flow.
 
@@ -179,3 +180,10 @@ requires exact time-bounded provider/endpoint/model approval, blocks redirects,
 and writes metadata-only decisions. Organization endpoint approval, network
 egress enforcement, retention/no-training terms, and data residency remain
 external gates. See [Provider Egress Foundation](provider-egress-foundation.md).
+
+The offline Pilot evidence exporter now creates a team-scoped, metadata-only,
+checksummed bundle from eight current control sources without enabling private
+Audit/Eval API administration. It is intentionally labelled partial because
+runtime identity and access-policy decisions are not persisted, and its local
+sources do not share one global transaction. See
+[Pilot Evidence Export Foundation](pilot-evidence-export-foundation.md).
