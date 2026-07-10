@@ -306,6 +306,10 @@ def test_release_config_audit_registered_in_final_flow() -> None:
 
     assert script_name in final_readiness
     assert "release_config_audit_ready" in final_readiness
+    assert "function Quote-ProcessArg" in final_readiness
+    assert "function Invoke-PowerShellProcess" in final_readiness
+    assert "-ArgumentList $quotedArguments" in final_readiness
+    assert "-ArgumentList $args" not in final_readiness
     assert script_name in final_bundle
     assert "release_config_audit_ready" in final_bundle
     assert "release_config_audit_markdown" in final_bundle

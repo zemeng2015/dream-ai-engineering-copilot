@@ -57,6 +57,21 @@ function Get-PowerShellExe {
     throw "PowerShell executable not found."
 }
 
+function Quote-ProcessArg([string]$Value) {
+    if ($null -eq $Value) { return '""' }
+    return '"' + ($Value -replace '"', '\"') + '"'
+}
+
+function Invoke-PowerShellProcess {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$Stdout,
+        [Parameter(Mandatory = $true)][string]$Stderr
+    )
+    $quotedArguments = @($Arguments | ForEach-Object { Quote-ProcessArg $_ })
+    return Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $quotedArguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr
+}
+
 function Test-File([string]$Path, [int]$MinBytes = 1) {
     if (-not (Test-Path $Path)) {
         return [pscustomobject]@{ ok = $false; details = "missing: $Path" }
@@ -207,7 +222,7 @@ function Invoke-DeadlineGuard {
 
     $stdout = Join-Path $OutputDir "final-readiness-deadline-guard-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-deadline-guard-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -253,7 +268,7 @@ function Invoke-LiveInputsIntake {
 
     $stdout = Join-Path $OutputDir "final-readiness-live-inputs-intake-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-live-inputs-intake-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -296,7 +311,7 @@ function Invoke-ReleaseConfigAudit {
 
     $stdout = Join-Path $OutputDir "final-readiness-release-config-audit-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-release-config-audit-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -339,7 +354,7 @@ function Invoke-GitHubCiProof {
 
     $stdout = Join-Path $OutputDir "final-readiness-github-ci-proof-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-github-ci-proof-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -418,7 +433,7 @@ function Invoke-SubmissionPacket {
 
     $stdout = Join-Path $OutputDir "final-readiness-packet-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-packet-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"; packet = $null }
     }
@@ -478,7 +493,7 @@ function Invoke-DevpostMaterialsAudit([string]$PacketJson) {
 
     $stdout = Join-Path $OutputDir "final-readiness-devpost-materials-audit-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-devpost-materials-audit-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -522,7 +537,7 @@ function Invoke-VideoUploadStatus {
 
     $stdout = Join-Path $OutputDir "final-readiness-video-upload-status-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-video-upload-status-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -562,7 +577,7 @@ function Invoke-AlibabaProofIntegrity {
 
     $stdout = Join-Path $OutputDir "final-readiness-alibaba-proof-integrity-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-alibaba-proof-integrity-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
@@ -610,7 +625,7 @@ function Invoke-OfficialRulesGate {
 
     $stdout = Join-Path $OutputDir "final-readiness-official-rules-gate-$timestamp.out"
     $stderr = Join-Path $OutputDir "final-readiness-official-rules-gate-$timestamp.err"
-    $proc = Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $args -Stdout $stdout -Stderr $stderr
     if ($proc.ExitCode -ne 0) {
         return [pscustomobject]@{ ok = $false; details = "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr" }
     }
