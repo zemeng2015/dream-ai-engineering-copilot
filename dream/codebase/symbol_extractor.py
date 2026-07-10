@@ -46,8 +46,9 @@ def extract_symbols_and_dependencies(
     language: str,
     path: Path,
     relative_path: str,
+    content: str | None = None,
 ) -> tuple[list[SymbolNode], list[DependencyEdge], list[str]]:
-    content = path.read_text(encoding="utf-8")
+    content = content if content is not None else path.read_text(encoding="utf-8")
     if language == "java":
         symbols, dependencies = extract_java(relative_path, content)
     elif language == "python":

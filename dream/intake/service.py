@@ -10,7 +10,10 @@ from uuid import uuid4
 
 from dream.audit.logger import AuditLogger
 from dream.audit.models import AuditRecord
+from dream.config import resolve_config
+from dream.core.errors import DlpBlockedError
 from dream.core.paths import display_path, get_knowledge_packs_dir
+from dream.dlp import DefaultDlpEngine
 from dream.intake.models import (
     DownstreamUsage,
     DraftMetadataDiff,
@@ -47,11 +50,13 @@ class KnowledgeIntakeService:
         parser: IntakeParser | None = None,
         knowledge_root: Path | None = None,
         audit_logger: AuditLogger | None = None,
+        dlp_engine: DefaultDlpEngine | None = None,
     ) -> None:
         self.repository = repository or IntakeRepository()
         self.parser = parser or IntakeParser()
         self.knowledge_root = knowledge_root or get_knowledge_packs_dir()
         self.audit_logger = audit_logger or AuditLogger()
+        self.dlp_engine = dlp_engine or DefaultDlpEngine()
 
     def upload_local_file(
         self,
@@ -166,7 +171,41 @@ class KnowledgeIntakeService:
             from dream.core.paths import PROJECT_ROOT
 
             path = PROJECT_ROOT / document.stored_path
-        sections = self.parser.parse(path)
+        classification = (
+            "internal" if resolve_config().mode == "private-extension" else "public_demo"
+        )
+        try:
+            inspection = self.dlp_engine.enforce(
+                self.parser.extract_text(path),
+                stage="pre_index",
+                team_id=document.team_id,
+                resource_id=document.document_id,
+                classification=classification,
+            )
+        except DlpBlockedError:
+            document.status = "quarantined"
+            document.updated_at = datetime.now(UTC).isoformat()
+            document.warnings = list(
+                dict.fromkeys([*document.warnings, "DLP blocked source content from parsing."])
+            )
+            self.repository.save_document(document)
+            self.audit_logger.log_generation(
+                run_id=f"intake-dlp-block-{document.document_id}",
+                use_case="knowledge_intake_dlp",
+                team_id=document.team_id,
+                input_payload={"document_id": document.document_id},
+                retrieved_source_paths=[document.stored_path],
+                model_provider="deterministic",
+                model_name=self.dlp_engine.policy_version,
+                output_path="none",
+                status="quarantined",
+                warnings=document.warnings,
+            )
+            raise
+        sections = self.parser.parse_text(
+            inspection.sanitized_text,
+            source_path=path.as_posix(),
+        )
         concepts = _concepts_from_sections(sections)
         app, component = _infer_app_component(document, sections, concepts)
         draft = KnowledgeDraft(
@@ -183,6 +222,14 @@ class KnowledgeIntakeService:
             normalized_markdown="",
             warnings=[
                 *(document.warnings or []),
+                *(
+                    [
+                        f"DLP {inspection.evidence.policy_version} redacted "
+                        f"{inspection.evidence.redaction_count} finding(s) before parsing."
+                    ]
+                    if inspection.evidence.redaction_count
+                    else []
+                ),
                 *([] if sections else ["No sections were parsed from this document."]),
             ],
         )
@@ -278,9 +325,7 @@ class KnowledgeIntakeService:
                 "title": title,
                 "target_doc_type": target_doc_type,
                 "app": _clean_optional(update.app) or draft.app or app,
-                "component": _clean_optional(update.component)
-                or draft.component
-                or component,
+                "component": _clean_optional(update.component) or draft.component or component,
                 "concepts": concepts,
             }
         )
@@ -418,9 +463,7 @@ class KnowledgeIntakeService:
             raw_text_warning=raw["warning"],
             source_hash_verified=raw["source_hash_verified"],
             audit_events=audit_events,
-            review_events=(
-                self.repository.list_review_events(draft.draft_id) if draft else []
-            ),
+            review_events=(self.repository.list_review_events(draft.draft_id) if draft else []),
             downstream_events=[usage.audit_record for usage in downstream_usages],
             downstream_usages=downstream_usages,
         )
@@ -504,9 +547,7 @@ def _draft_review_event(
         metadata_snapshot=snapshot,
         metadata_diff=_metadata_diff(previous_snapshot, snapshot),
         source_hash=draft.source_hash,
-        section_hashes=[
-            section.section_hash for section in draft.sections if section.section_hash
-        ],
+        section_hashes=[section.section_hash for section in draft.sections if section.section_hash],
         warnings=draft.warnings,
     )
 
@@ -654,13 +695,9 @@ def _infer_app_component(
 
 
 def _safe_slug(value: str) -> str:
-    return (
-        value.lower()
-        .replace(" ", "-")
-        .replace("_", "-")
-        .replace("/", "-")
-        .replace("\\", "-")
-    )[:80]
+    return (value.lower().replace(" ", "-").replace("_", "-").replace("/", "-").replace("\\", "-"))[
+        :80
+    ]
 
 
 def _title_from_source_name(source_name: str) -> str:

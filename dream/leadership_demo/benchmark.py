@@ -15,6 +15,7 @@ import yaml
 from pydantic import BaseModel, Field, ValidationError
 
 from dream.core.errors import DreamError
+from dream.dlp import ensure_dlp_guarded_provider
 from dream.evals.evidence import EvalProfileLoader
 from dream.evals.models import EvalProfile
 from dream.llm import BaseLLMProvider, LLMResponse
@@ -245,9 +246,7 @@ class LeadershipBenchmarkFixtureProvider:
                     )
                 ],
                 test_targets=[BenchmarkStatement(statement="Add suitable regression tests.")],
-                historical_risks=[
-                    BenchmarkStatement(statement="Long-running work may time out.")
-                ],
+                historical_risks=[BenchmarkStatement(statement="Long-running work may time out.")],
                 unsupported_assumptions=[
                     "The current platform status model is not available to this arm."
                 ],
@@ -318,7 +317,7 @@ class LeadershipBenchmarkRunner:
         profile_loader: EvalProfileLoader | None = None,
         pricing_proof: ProviderPricingProof | None = None,
     ) -> None:
-        self.provider = provider
+        self.provider = ensure_dlp_guarded_provider(provider)
         self.evidence_tier = evidence_tier
         self.profile_loader = profile_loader or EvalProfileLoader()
         self.pricing_proof = pricing_proof
@@ -427,9 +426,7 @@ class LeadershipBenchmarkRunner:
                     dream.history_recall.recall - stateless.history_recall.recall,
                     4,
                 ),
-                unsupported_claims=(
-                    dream.unsupported_claims - stateless.unsupported_claims
-                ),
+                unsupported_claims=(dream.unsupported_claims - stateless.unsupported_claims),
             ),
             limitations=limitations,
         )
@@ -444,9 +441,7 @@ class LeadershipBenchmarkRunner:
         if self.pricing_proof is None:
             return
         if self.pricing_proof.provider != response.provider_name:
-            raise DreamError(
-                "Pricing provider does not match the resolved benchmark provider."
-            )
+            raise DreamError("Pricing provider does not match the resolved benchmark provider.")
         if self.pricing_proof.model != response.model_name:
             raise DreamError("Pricing model does not match the resolved benchmark model.")
 
@@ -481,9 +476,7 @@ class LeadershipBenchmarkSuiteRunner:
         runs = []
         for index in range(repetitions):
             order: tuple[Literal["stateless", "dream"], ...] = (
-                ("stateless", "dream")
-                if index % 2 == 0
-                else ("dream", "stateless")
+                ("stateless", "dream") if index % 2 == 0 else ("dream", "stateless")
             )
             runs.append(
                 self.runner.run(
@@ -598,9 +591,7 @@ def load_approved_pricing_manifest(path: Path) -> ProviderPricingProof:
     }
     missing = [key for key, value in required.items() if not value or not value.strip()]
     if missing:
-        raise DreamError(
-            "Approved provider pricing manifest is missing: " + ", ".join(missing)
-        )
+        raise DreamError("Approved provider pricing manifest is missing: " + ", ".join(missing))
     return ProviderPricingProof(
         provider=manifest.provider,
         model=manifest.model,
@@ -687,9 +678,7 @@ def _evaluate_arm(
 ) -> BenchmarkArmResult:
     output, parse_error = _parse_output(response.text)
     allowed_ids = {item.source_id for item in sources}
-    source_text = "\n".join(
-        f"{item.source_path}\n{item.title}\n{item.excerpt}" for item in sources
-    )
+    source_text = "\n".join(f"{item.source_path}\n{item.title}\n{item.excerpt}" for item in sources)
     citation_values = _all_citations(output) if output else []
     valid = [item for item in citation_values if item in allowed_ids]
     invalid = [item for item in citation_values if item not in allowed_ids]
@@ -968,11 +957,7 @@ def _terms(value: str) -> set[str]:
         "users": "user",
     }
     tokens = re.findall(r"[a-z0-9]+", value.lower().replace("_", " ").replace("-", " "))
-    return {
-        aliases.get(item, item)
-        for item in tokens
-        if item not in stop and len(item) > 1
-    }
+    return {aliases.get(item, item) for item in tokens if item not in stop and len(item) > 1}
 
 
 def _looks_like_test(path: str) -> bool:
@@ -992,9 +977,7 @@ def _hash(value: str) -> str:
 def _aggregate_runs(
     runs: list[LeadershipBenchmarkReport],
 ) -> dict[str, PairedMetricAggregate]:
-    cost_unit = (
-        runs[0].pricing_proof.currency if runs and runs[0].pricing_proof else "currency"
-    )
+    cost_unit = runs[0].pricing_proof.currency if runs and runs[0].pricing_proof else "currency"
     cost_note = (
         "Calculated from the approved exact-provider/model pricing manifest and "
         "per-arm input/output token counts."
@@ -1089,9 +1072,7 @@ def _aggregate_metric(
     unit: str,
     note: str,
 ) -> PairedMetricAggregate:
-    stateless_values = [
-        value for run in runs if (value := getter(run.stateless)) is not None
-    ]
+    stateless_values = [value for run in runs if (value := getter(run.stateless)) is not None]
     dream_values = [value for run in runs if (value := getter(run.dream)) is not None]
     paired_values = [
         (stateless, dream)

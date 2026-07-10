@@ -13,6 +13,7 @@ from dream.codebase.retriever import CodebaseRetriever
 from dream.config.loader import resolve_config
 from dream.config.models import DreamConfig, ResolvedDreamConfig
 from dream.core.errors import PathTraversalError
+from dream.dlp import ensure_dlp_guarded_provider
 from dream.extensions.loader import load_instance
 from dream.knowledge.pack_loader import KnowledgePackLoader
 from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
@@ -183,11 +184,13 @@ class NativeCodebaseMemoryProvider:
                 )
             )
             for concept in file_node.concepts:
-                results.extend(self.retriever.related_to_concept(
-                    team_id=team_id,
-                    repo_name=repo_name,
-                    concept=concept,
-                ))
+                results.extend(
+                    self.retriever.related_to_concept(
+                        team_id=team_id,
+                        repo_name=repo_name,
+                        concept=concept,
+                    )
+                )
         seen: set[tuple[str, str]] = set()
         deduped: list[CodebaseSearchResult] = []
         for result in sorted(results, key=lambda item: (-item.score, item.source_path)):
@@ -213,24 +216,26 @@ class NativeCodebaseMemoryProvider:
 def build_llm_provider(config: DreamConfig | ResolvedDreamConfig | None = None):
     resolved = config if isinstance(config, ResolvedDreamConfig) else resolve_config(config)
     if resolved.llm.provider == "mock":
-        return MockLLMProvider()
-    if resolved.llm.provider == "openai-compatible":
+        provider = MockLLMProvider()
+    elif resolved.llm.provider == "openai-compatible":
         api_key = os.getenv(resolved.llm.api_key_env) if resolved.llm.api_key_env else None
-        return OpenAICompatibleProvider(
+        provider = OpenAICompatibleProvider(
             api_key=api_key,
             base_url=resolved.llm.base_url,
             model_name=resolved.llm.model,
         )
-    if resolved.llm.provider == "qwen-cloud":
+    elif resolved.llm.provider == "qwen-cloud":
         api_key = os.getenv(resolved.llm.api_key_env) if resolved.llm.api_key_env else None
-        return QwenCloudProvider(
+        provider = QwenCloudProvider(
             api_key=api_key,
             base_url=resolved.llm.base_url,
             model_name=resolved.llm.model,
         )
-    if resolved.llm.provider == "plugin" and resolved.llm.class_path:
-        return load_instance(resolved.llm.class_path)
-    raise ValueError(f"Unsupported LLM provider: {resolved.llm.provider}")
+    elif resolved.llm.provider == "plugin" and resolved.llm.class_path:
+        provider = load_instance(resolved.llm.class_path)
+    else:
+        raise ValueError(f"Unsupported LLM provider: {resolved.llm.provider}")
+    return ensure_dlp_guarded_provider(provider)
 
 
 def build_redaction_provider(config: DreamConfig | ResolvedDreamConfig | None = None):

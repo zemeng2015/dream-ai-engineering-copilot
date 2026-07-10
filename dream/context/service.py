@@ -17,7 +17,7 @@ from dream.context.models import (
     RetrievalTrail,
 )
 from dream.context.repository import ContextArtifactRepository
-from dream.extensions import DefaultRedactionProvider
+from dream.dlp import DefaultDlpEngine
 from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.knowledge.models import Chunk
 from dream.memory.claim_retriever import MemoryClaimRetriever
@@ -66,6 +66,7 @@ class ContextIntelligenceService:
         memory_repository: MemoryDistillationRepository | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
         access_policy: DefaultAccessPolicy | None = None,
+        dlp_engine: DefaultDlpEngine | None = None,
     ) -> None:
         self.repository = repository or ContextArtifactRepository()
         self.requirement_repository = requirement_repository or RequirementCaseRepository()
@@ -81,7 +82,7 @@ class ContextIntelligenceService:
             access_policy=self.access_policy,
         )
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
-        self.redaction = DefaultRedactionProvider()
+        self.dlp_engine = dlp_engine or DefaultDlpEngine()
 
     def load_trail(
         self,
@@ -275,15 +276,22 @@ class ContextIntelligenceService:
                 questions=snapshot.questions,
                 deterministic_draft=deterministic,
             )
+        inspection = self.dlp_engine.enforce(
+            prompt,
+            stage="pre_prompt",
+            team_id=snapshot.case.team_id,
+            resource_id=f"{case_id}:{target}:preview",
+            classification=snapshot.case.access.classification,
+        )
         preview = PromptPreview(
             preview_id=f"prompt-preview-{case_id}-{target}",
             team_id=snapshot.case.team_id,
             case_id=case_id,
             target=target,
             provider_mode="mock-or-configured-provider",
-            prompt_text=self.redaction.redact(prompt),
+            prompt_text=inspection.sanitized_text,
             evidence_paths=_pack_evidence_paths(pack),
-            warnings=pack.warnings,
+            warnings=_with_dlp_warning(pack.warnings, inspection.evidence.redaction_count),
             access=snapshot.case.access.model_copy(deep=True),
         )
         return self.repository.save_prompt_preview(preview)
@@ -405,15 +413,22 @@ class ContextIntelligenceService:
             warnings=warnings,
             access=output_access,
         )
+        inspection = self.dlp_engine.enforce(
+            prompt,
+            stage="pre_prompt",
+            team_id=request.team_id,
+            resource_id=f"{run_id}:pr_review:preview",
+            classification=output_access.classification,
+        )
         preview = PromptPreview(
             preview_id=f"prompt-preview-{run_id}-pr_review",
             team_id=request.team_id,
             run_id=run_id,
             target="pr_review",
             provider_mode=request.llm_provider,
-            prompt_text=self.redaction.redact(prompt),
+            prompt_text=inspection.sanitized_text,
             evidence_paths=_pack_evidence_paths(pack),
-            warnings=warnings,
+            warnings=_with_dlp_warning(warnings, inspection.evidence.redaction_count),
             access=output_access.model_copy(deep=True),
         )
         return trail, pack, self.repository.save_prompt_preview(preview)
@@ -979,6 +994,19 @@ def _pack_evidence_paths(pack: ContextPack) -> list[str]:
         values.extend(item.source_path for item in group)
     values.extend(path for claim in pack.selected_memory_claims for path in claim.evidence_paths)
     return sorted(dict.fromkeys(values))
+
+
+def _with_dlp_warning(warnings: list[str], redaction_count: int) -> list[str]:
+    if not redaction_count:
+        return list(warnings)
+    return list(
+        dict.fromkeys(
+            [
+                *warnings,
+                f"DLP redacted {redaction_count} finding(s) before prompt persistence.",
+            ]
+        )
+    )
 
 
 def _safe_id(value: str) -> str:

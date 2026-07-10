@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+from dream.dlp import ensure_dlp_guarded_provider
 from dream.llm import BaseLLMProvider
+from dream.llm.base import LLMRequest
 from dream.requirement_cases.models import EngineeringBrief, RequirementCaseSnapshot
 from dream.requirement_cases.templates import (
     render_engineering_brief,
@@ -10,7 +12,9 @@ from dream.requirement_cases.templates import (
 
 class EngineeringBriefGenerator:
     def __init__(self, *, llm_provider: BaseLLMProvider | None = None) -> None:
-        self.llm_provider = llm_provider
+        self.llm_provider = (
+            ensure_dlp_guarded_provider(llm_provider) if llm_provider is not None else None
+        )
         self.last_model_provider = "deterministic"
         self.last_model_name = "engineering-brief-v1"
 
@@ -30,7 +34,17 @@ class EngineeringBriefGenerator:
                 questions=snapshot.questions,
                 deterministic_draft=deterministic_markdown,
             )
-            response = self.llm_provider.complete(prompt)
+            response = self.llm_provider.complete(
+                LLMRequest(
+                    prompt=prompt,
+                    metadata={
+                        "team_id": snapshot.case.team_id,
+                        "resource_id": snapshot.case.case_id,
+                        "use_case": "engineering_brief",
+                        "classification": snapshot.case.access.classification,
+                    },
+                )
+            )
             markdown = response.text
             self.last_model_provider = response.provider_name
             self.last_model_name = response.model_name

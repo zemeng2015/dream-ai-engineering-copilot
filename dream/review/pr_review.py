@@ -11,10 +11,11 @@ from dream.core.paths import (
     resolve_artifact_path,
     resolve_project_path,
 )
+from dream.dlp import ensure_dlp_guarded_provider
 from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
-from dream.llm import BaseLLMProvider, MockLLMProvider
+from dream.llm import BaseLLMProvider, LLMRequest, MockLLMProvider
 from dream.memory import MemoryClaimRetriever
 from dream.memory.models import MemoryClaimRetrievalBatch, MemoryClaimSearchResult
 from dream.memory.repository import MemoryDistillationRepository
@@ -44,7 +45,7 @@ class PRReviewAssistant:
         self.pack_loader = pack_loader or KnowledgePackLoader()
         self.doc_loader = doc_loader or MarkdownDocumentLoader()
         self.chunker = chunker or Chunker()
-        self.llm_provider = llm_provider or MockLLMProvider()
+        self.llm_provider = ensure_dlp_guarded_provider(llm_provider or MockLLMProvider())
         self.audit_logger = audit_logger or AuditLogger()
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
         self.codebase_retriever = codebase_retriever or CodebaseRetriever(
@@ -181,7 +182,17 @@ class PRReviewAssistant:
             access_context=context,
             artifact_access=artifact_access,
         )
-        llm_response = self.llm_provider.complete(prompt)
+        llm_response = self.llm_provider.complete(
+            LLMRequest(
+                prompt=prompt,
+                metadata={
+                    "team_id": request.team_id,
+                    "resource_id": run_id,
+                    "use_case": "pr_review",
+                    "classification": artifact_access.classification,
+                },
+            )
+        )
         markdown = llm_response.text
         output_path = resolve_artifact_path(f"pr-review-summary-{run_id}.md")
         output_path.write_text(markdown, encoding="utf-8")

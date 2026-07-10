@@ -17,15 +17,19 @@ DOCX_TEXT = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
 
 class IntakeParser:
     def parse(self, path: Path) -> list[ParsedSection]:
+        return self.parse_text(self.extract_text(path), source_path=path.as_posix())
+
+    def extract_text(self, path: Path) -> str:
         suffix = path.suffix.lower()
         if suffix == ".docx":
-            return parse_markdown(_docx_text(path), source_path=path.as_posix())
+            return _docx_text(path)
         if suffix in {".html", ".htm"}:
-            return parse_markdown(
-                _html_text(path.read_text(encoding="utf-8-sig")),
-                source_path=path.as_posix(),
-            )
-        return parse_markdown(path.read_text(encoding="utf-8-sig"), source_path=path.as_posix())
+            return _html_text(path.read_text(encoding="utf-8-sig"))
+        return path.read_text(encoding="utf-8-sig")
+
+    @staticmethod
+    def parse_text(raw: str, *, source_path: str) -> list[ParsedSection]:
+        return parse_markdown(raw, source_path=source_path)
 
 
 def parse_markdown(raw: str, *, source_path: str) -> list[ParsedSection]:
@@ -94,9 +98,7 @@ def _concepts(text: str) -> list[str]:
         "operator": ("operator",),
     }
     phrases = [
-        phrase
-        for phrase, parts in phrase_rules.items()
-        if all(part in tokens for part in parts)
+        phrase for phrase, parts in phrase_rules.items() if all(part in tokens for part in parts)
     ]
     return sorted(set(phrases + selected[:6]))
 

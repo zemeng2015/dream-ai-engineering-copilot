@@ -5,6 +5,7 @@ import json
 from time import perf_counter
 from typing import Any
 
+from dream.dlp import ensure_dlp_guarded_provider
 from dream.evals.models import EvaluationScorecard, LLMJudgeResult
 from dream.llm import BaseLLMProvider, LLMRequest
 
@@ -21,6 +22,7 @@ class LLMJudgeRunner:
         markdown: str,
         sources: list[str],
     ) -> LLMJudgeResult:
+        provider = ensure_dlp_guarded_provider(provider)
         prompt = self._prompt(scorecard=scorecard, markdown=markdown, sources=sources)
         input_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         started_at = perf_counter()
@@ -32,6 +34,8 @@ class LLMJudgeRunner:
                         "use_case": "llm_judge_eval",
                         "target_type": scorecard.target_type,
                         "evaluation_id": scorecard.evaluation_id,
+                        "resource_id": scorecard.evaluation_id,
+                        "team_id": scorecard.team_id or "_unknown",
                         "prompt_version": PROMPT_VERSION,
                     },
                 )

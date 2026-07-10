@@ -17,6 +17,10 @@ class AccessDeniedError(DreamError):
     """Raised when identity, role, or source ACL policy denies an operation."""
 
 
+class DlpBlockedError(DreamError):
+    """Raised when versioned DLP policy blocks content from crossing a boundary."""
+
+
 class ProviderConfigurationError(DreamError):
     """Raised when an optional provider is not configured."""
 

@@ -20,7 +20,9 @@ from dream.codebase.repository import CodebaseIndexRepository
 from dream.codebase.scanner import CodebaseScanner
 from dream.codebase.summarizer import summarize_file, summarize_symbol
 from dream.codebase.symbol_extractor import concepts_for_symbol, extract_symbols_and_dependencies
+from dream.core.errors import DlpBlockedError
 from dream.core.paths import display_path, resolve_project_path
+from dream.dlp import DefaultDlpEngine
 from dream.security.models import ResourceAccess
 
 
@@ -31,10 +33,12 @@ class CodebaseIndexer:
         scanner: CodebaseScanner | None = None,
         repository: CodebaseIndexRepository | None = None,
         audit_logger: AuditLogger | None = None,
+        dlp_engine: DefaultDlpEngine | None = None,
     ) -> None:
         self.scanner = scanner or CodebaseScanner()
         self.repository = repository or CodebaseIndexRepository()
         self.audit_logger = audit_logger or AuditLogger()
+        self.dlp_engine = dlp_engine or DefaultDlpEngine()
 
     def index(
         self,
@@ -55,20 +59,39 @@ class CodebaseIndexer:
         files_by_path = {file_node.path: file_node for file_node in file_nodes}
         for file_node in file_nodes:
             path = root / file_node.path
+            try:
+                raw_content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                warnings.append(f"Skipped non-UTF-8 file: {file_node.path}")
+                continue
+            try:
+                inspection = self.dlp_engine.enforce(
+                    raw_content,
+                    stage="pre_index",
+                    team_id=team_id,
+                    resource_id=f"{name}:{file_node.path}",
+                    classification=file_node.access.classification,
+                )
+            except DlpBlockedError:
+                file_node.access = file_node.access.model_copy(update={"classification": "blocked"})
+                warnings.append(f"DLP blocked file content from indexing: {file_node.path}")
+                continue
+            if inspection.evidence.redaction_count:
+                warnings.append(
+                    f"DLP redacted {inspection.evidence.redaction_count} finding(s) "
+                    f"before indexing: {file_node.path}"
+                )
             if detect_language(path) not in {"java", "python", "typescript"}:
                 file_node.concepts = self._concepts_from_path(file_node.path)
                 file_node.summary = summarize_file(file_node)
                 continue
-            try:
-                extracted = extract_symbols_and_dependencies(
-                    language=file_node.language,
-                    path=path,
-                    relative_path=file_node.path,
-                )
-                extracted_symbols, extracted_dependencies, concepts = extracted
-            except UnicodeDecodeError:
-                warnings.append(f"Skipped non-UTF-8 file: {file_node.path}")
-                continue
+            extracted = extract_symbols_and_dependencies(
+                language=file_node.language,
+                path=path,
+                relative_path=file_node.path,
+                content=inspection.sanitized_text,
+            )
+            extracted_symbols, extracted_dependencies, concepts = extracted
             file_node.concepts = concepts
             for symbol in extracted_symbols:
                 symbol.access = file_node.access.model_copy(deep=True)
@@ -79,13 +102,14 @@ class CodebaseIndexer:
             dependencies.extend(extracted_dependencies)
             file_node.summary = summarize_file(file_node)
 
-        tests = self._map_tests(file_nodes)
+        indexable_files = [item for item in file_nodes if item.access.classification != "blocked"]
+        tests = self._map_tests(indexable_files)
         for mapping in tests:
             source_access = files_by_path[mapping.source_file].access
             test_access = files_by_path[mapping.test_file].access
             mapping.access = source_access.restrictive_merge(test_access)
         dependencies.extend(self._test_dependencies(tests))
-        concepts = self._build_concept_mappings(file_nodes, symbols, tests)
+        concepts = self._build_concept_mappings(indexable_files, symbols, tests)
         for concept in concepts:
             concept.access = repo_access.model_copy(deep=True)
         index = RepoIndex(

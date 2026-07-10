@@ -9,6 +9,7 @@ from dream.audit.logger import AuditLogger
 from dream.codebase.repository import CodebaseIndexRepository
 from dream.core.errors import NotFoundError
 from dream.core.paths import display_path, resolve_artifact_path
+from dream.dlp import DefaultDlpEngine
 from dream.llm import BaseLLMProvider
 from dream.requirement_cases.brief import EngineeringBriefGenerator
 from dream.requirement_cases.impact import ImpactMapGenerator
@@ -50,6 +51,7 @@ class RequirementCaseService:
         codebase_repository: CodebaseIndexRepository | None = None,
         llm_provider: BaseLLMProvider | None = None,
         access_policy: DefaultAccessPolicy | None = None,
+        dlp_engine: DefaultDlpEngine | None = None,
     ) -> None:
         self.repository = repository or RequirementCaseRepository()
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
@@ -76,6 +78,7 @@ class RequirementCaseService:
         self.jira_generator = jira_generator or JiraDraftGenerator(llm_provider=llm_provider)
         self.audit_logger = audit_logger or AuditLogger()
         self.access_policy = access_policy or DefaultAccessPolicy()
+        self.dlp_engine = dlp_engine or DefaultDlpEngine()
 
     def create_case(
         self,
@@ -93,29 +96,47 @@ class RequirementCaseService:
             resource_access=request.access,
             resource_id=case_id or "new-requirement-case",
         )
-        now = created_at or datetime.now(UTC).isoformat()
         case_id = case_id or f"case-{uuid4().hex[:12]}"
+        inspection = self.dlp_engine.enforce(
+            request.raw_request,
+            stage="pre_persist",
+            team_id=request.team_id,
+            resource_id=case_id,
+            classification=request.access.classification,
+        )
+        safe_request = request.model_copy(update={"raw_request": inspection.sanitized_text})
+        now = created_at or datetime.now(UTC).isoformat()
         case = RequirementCase(
             case_id=case_id,
-            team_id=request.team_id,
-            title=self._title(request.raw_request),
-            raw_request=request.raw_request,
-            created_by_role=request.created_by_role,
-            target_app=request.target_app,
-            target_component=request.target_component,
+            team_id=safe_request.team_id,
+            title=self._title(safe_request.raw_request),
+            raw_request=safe_request.raw_request,
+            created_by_role=safe_request.created_by_role,
+            target_app=safe_request.target_app,
+            target_component=safe_request.target_component,
             status="created",
             created_at=now,
             updated_at=now,
-            access=request.access.model_copy(deep=True),
+            access=safe_request.access.model_copy(deep=True),
         )
-        snapshot = RequirementCaseSnapshot(case=case)
+        snapshot = RequirementCaseSnapshot(
+            case=case,
+            warnings=(
+                [
+                    f"DLP {inspection.evidence.policy_version} redacted "
+                    f"{inspection.evidence.redaction_count} finding(s) before persistence."
+                ]
+                if inspection.evidence.redaction_count
+                else []
+            ),
+        )
         self.repository.save(snapshot)
         self.audit_logger.log_generation(
             run_id=case_id,
             use_case="requirement_case_create",
             team_id=case.team_id,
             case_id=case.case_id,
-            input_payload=request.model_dump(),
+            input_payload=safe_request.model_dump(),
             retrieved_source_paths=[],
             model_provider="deterministic",
             model_name="requirement-case-v1",
@@ -301,6 +322,13 @@ class RequirementCaseService:
         answer_text = answer.strip()
         if not answer_text:
             raise ValueError("Clarification answer cannot be empty.")
+        answer_text = self.dlp_engine.enforce(
+            answer_text,
+            stage="pre_persist",
+            team_id=snapshot.case.team_id,
+            resource_id=f"{case_id}:{question_id}:answer",
+            classification=snapshot.case.access.classification,
+        ).sanitized_text
         updated_question: ClarificationQuestion | None = None
         now = datetime.now(UTC).isoformat()
         questions: list[ClarificationQuestion] = []
@@ -362,6 +390,13 @@ class RequirementCaseService:
         reason_text = reason.strip()
         if not reason_text:
             raise ValueError("Clarification waiver reason cannot be empty.")
+        reason_text = self.dlp_engine.enforce(
+            reason_text,
+            stage="pre_persist",
+            team_id=snapshot.case.team_id,
+            resource_id=f"{case_id}:{question_id}:waiver",
+            classification=snapshot.case.access.classification,
+        ).sanitized_text
         updated_question: ClarificationQuestion | None = None
         now = datetime.now(UTC).isoformat()
         questions: list[ClarificationQuestion] = []
