@@ -35,6 +35,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | Pilot security foundation | Signed proxy identity, source ACL model/propagation, fail-closed private routes, derived artifact ACL | Security policy, API, retrieval and no-leak tests |
 | Frontend dependency baseline | Angular 21, TypeScript 5.9, `@angular/build`, zero production/full npm audit | Lockfile, build, ChromeHeadless and CI gates |
 | Connector source lifecycle | Metadata-only sync/tombstone contract, immutable ACL versions, revoke-first cleanup, registered artifact cascade | Connector lifecycle, restart, path-safety and cleanup-failure tests |
+| DLP enforcement foundation | Versioned pre-index/pre-prompt/pre-persist/post-response text inspection, deterministic redact/block rules, metadata-only ledger | Engine/provider corpus and workflow-boundary no-leak tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -76,7 +77,8 @@ The public core does not currently prove:
 - organization-approved SSO/proxy deployment and complete role-based administration;
 - approved production connectors, shared lifecycle storage, and deletion SLA;
 - approved production GitHub/Jira/document connectors;
-- enterprise redaction/DLP policy and classification enforcement;
+- organization-approved DLP taxonomy/deployment, binary/OCR/malware inspection,
+  exception workflow, and false-positive operations;
 - production secrets management, storage hardening, backup, or retention;
 - organization-approved data residency and network egress controls;
 - production-scale availability, latency, cost, or support SLOs;
@@ -110,5 +112,6 @@ These are Pilot gates, not implied current capabilities.
 
 The provider-neutral public core now contains the first Pilot security slices.
 See `docs/pilot-security-foundation.md` and
-`docs/connector-lifecycle-foundation.md`. These implementations reduce technical
+`docs/connector-lifecycle-foundation.md`, plus
+`docs/dlp-enforcement-foundation.md`. These implementations reduce technical
 risk but do not change the real-source No-Go decision.

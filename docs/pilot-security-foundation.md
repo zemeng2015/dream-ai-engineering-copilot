@@ -137,8 +137,9 @@ This foundation does not yet prove:
   lifecycle integration;
 - deletion cascades for source bodies, indexes, prompts, caches, and artifacts;
 - action-specific authorization for currently blocked administration routes;
-- enterprise DLP/classification, private storage, retention/deletion, audit
-  export, incident response, data residency, or provider approval; or
+- organization-approved DLP taxonomy and deployment, binary/OCR/malware
+  inspection, private storage, retention/deletion, audit export, incident
+  response, data residency, or provider approval; or
 - Security/Data/source-owner approval of the exact Pilot data flow.
 
 ### Frontend Dependency Remediation
@@ -162,3 +163,9 @@ deletion approval remain open. See
 [Connector Source Lifecycle Foundation](connector-lifecycle-foundation.md).
 Until these items are approved and tested, real-source ingestion remains
 **No-Go**.
+
+The public core now also includes a versioned deterministic DLP enforcement
+foundation at the text boundaries currently used by source loading, indexing,
+Requirement Case persistence, prompt dispatch, and model response handling. See
+[DLP Enforcement Foundation](dlp-enforcement-foundation.md). It reduces accidental
+text leakage risk but does not satisfy the enterprise DLP gate by itself.

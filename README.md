@@ -81,6 +81,9 @@ domain-aware memory applications.
 - Enhances PR review summaries with codebase memory when an index exists.
 - Evaluates generated artifacts with deterministic, source-backed scorecards.
 - Records generation runs in SQLite.
+- Applies a versioned deterministic DLP foundation before indexing, prompt
+  dispatch, selected persistence boundaries, and after model responses; DLP
+  evidence is metadata-only.
 - Stores human ratings for generated outputs.
 - Exposes a FastAPI API and Typer CLI.
 - Includes an Angular workbench backed by the live FastAPI workflows; mock data
@@ -94,7 +97,10 @@ DREAM does not include a production test-generation engine. It provides a
 
 The MVP also does not include real GitHub integration, real Jira integration, PR
 posting, vector search, code graph precision, model fine-tuning, generic chat,
-or enterprise security features.
+or an organization-approved production security deployment. The public core
+contains tested ACL, connector-lifecycle, and deterministic DLP foundations;
+these contracts do not replace enterprise identity, DLP policy, private storage,
+provider, network, retention, or security approval.
 
 The Angular frontend does not implement a unit-test generation engine. Its
 TestGen page is a safe mock/stub workflow that plans and reports without
@@ -169,6 +175,11 @@ After committing and rerunning strict preflight, use `--strict` to produce a
 See the [Leadership Demo runbook](docs/leadership-demo-runbook.md) for the
 ten-minute script, Pilot ask, safety boundary, fallback plan, and verification
 commands.
+
+The enterprise-preparation branch also documents the
+[DLP Enforcement Foundation](docs/dlp-enforcement-foundation.md). Real company
+sources remain No-Go until the organization approves the complete data flow and
+control matrix.
 
 Validate the same-model/same-request/same-contract A/B harness locally:
 

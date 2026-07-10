@@ -44,7 +44,7 @@ repository.
 | ACL propagation | Preserve source ACLs and filter every retrieval result for the caller | Core source-to-prompt propagation, derived lineage, retrieval filtering, revocation, and registered artifact cleanup implemented; production connector/shared store pending |
 | Connectors | Read-only, least-privilege, allowlisted repository/path scope | Provider-neutral lifecycle contract and synthetic/local adapters only; approved production connector pending |
 | Data classification | Approved categories, blocked content, source labels | `ResourceAccess` classification/ACL lineage implemented; enterprise taxonomy/policy pending |
-| Redaction/DLP | Pre-index and pre-prompt enforcement with test corpus | Basic deterministic redaction only |
+| Redaction/DLP | Pre-index, pre-prompt, selected pre-persist, and post-response enforcement with adversarial corpus | Versioned deterministic foundation implemented; enterprise taxonomy, binary/OCR scanning, exceptions and approved production policy pending |
 | Provider boundary | Approved endpoint, region, retention, and no-training terms | Provider abstraction exists; approval external |
 | Network | Private egress policy and endpoint allowlist | Deployment-specific, not provided |
 | Secrets | Enterprise secret manager, rotation, no client exposure | Environment variables in local core |
@@ -75,6 +75,9 @@ production connector, organization-approved identity deployment, shared
 transactional lifecycle store, or approved deletion SLA. See
 [Pilot Security Foundation](pilot-security-foundation.md) and
 [Connector Source Lifecycle Foundation](connector-lifecycle-foundation.md).
+The [DLP Enforcement Foundation](dlp-enforcement-foundation.md) records
+metadata-only decisions and prevents known redaction/block classes from entering
+derived indexes and model calls, but it is not approval to ingest company data.
 
 ## Human Gate and Side Effects
 
