@@ -45,8 +45,8 @@ repository.
 | Connectors | Read-only, least-privilege, allowlisted repository/path scope | Provider-neutral lifecycle contract and synthetic/local adapters only; approved production connector pending |
 | Data classification | Approved categories, blocked content, source labels | `ResourceAccess` classification/ACL lineage implemented; enterprise taxonomy/policy pending |
 | Redaction/DLP | Pre-index, pre-prompt, selected pre-persist, and post-response enforcement with adversarial corpus | Versioned deterministic foundation implemented; enterprise taxonomy, binary/OCR scanning, exceptions and approved production policy pending |
-| Provider boundary | Approved endpoint, region, retention, and no-training terms | Provider abstraction exists; approval external |
-| Network | Private egress policy and endpoint allowlist | Deployment-specific, not provided |
+| Provider boundary | Approved endpoint, region, retention, and no-training terms | Exact endpoint/model manifest, expiry/recheck, response identity and metadata-only evidence implemented; organization approval remains external |
+| Network | Private egress policy and endpoint allowlist | Application blocks runtime overrides, insecure/ambiguous URLs and redirects; deployment firewall/DNS allowlist remains external |
 | Secrets | Enterprise secret manager, rotation, no client exposure | Environment variables in local core |
 | Storage | Encrypted private storage, backup, retention, deletion | Local JSON/SQLite artifacts |
 | Audit | Named actor, source use, provider/model, decision and export | Local structured audit; export/admin controls pending |
@@ -78,6 +78,10 @@ transactional lifecycle store, or approved deletion SLA. See
 The [DLP Enforcement Foundation](dlp-enforcement-foundation.md) records
 metadata-only decisions and prevents known redaction/block classes from entering
 derived indexes and model calls, but it is not approval to ingest company data.
+The [Provider Egress Foundation](provider-egress-foundation.md) makes configured
+endpoint/model approval fail closed in private mode, but it does not supply the
+organization's approval, network firewall, contractual retention/no-training
+terms, or data-residency decision.
 
 ## Human Gate and Side Effects
 

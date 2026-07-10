@@ -29,6 +29,10 @@ public-core security contract, not approval to ingest organization data.
 - Derived artifacts retain every underlying `source_acl_version`. A persistent,
   team-scoped revocation ledger denies both the original source and every
   derived artifact on the next policy decision.
+- Private live-model calls must use the deployment-configured provider and an
+  unexpired exact endpoint/model approval outside the public checkout. Approval
+  is rechecked before every invocation; redirects and response identity drift
+  fail closed.
 
 ## Signed Identity Boundary
 
@@ -169,3 +173,9 @@ foundation at the text boundaries currently used by source loading, indexing,
 Requirement Case persistence, prompt dispatch, and model response handling. See
 [DLP Enforcement Foundation](dlp-enforcement-foundation.md). It reduces accidental
 text leakage risk but does not satisfy the enterprise DLP gate by itself.
+
+The provider egress foundation prevents request-level live-provider overrides,
+requires exact time-bounded provider/endpoint/model approval, blocks redirects,
+and writes metadata-only decisions. Organization endpoint approval, network
+egress enforcement, retention/no-training terms, and data residency remain
+external gates. See [Provider Egress Foundation](provider-egress-foundation.md).

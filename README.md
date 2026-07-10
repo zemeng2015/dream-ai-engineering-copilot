@@ -181,6 +181,11 @@ The enterprise-preparation branch also documents the
 sources remain No-Go until the organization approves the complete data flow and
 control matrix.
 
+Private live-model execution is additionally constrained by the
+[Provider Egress Foundation](docs/provider-egress-foundation.md): exact
+time-bounded endpoint/model approval, no runtime provider override, no redirect,
+and invocation-time revalidation.
+
 Validate the same-model/same-request/same-contract A/B harness locally:
 
 ```powershell

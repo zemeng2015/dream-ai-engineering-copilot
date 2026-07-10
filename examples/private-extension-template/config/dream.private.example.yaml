@@ -3,9 +3,10 @@
 mode: private-extension
 
 llm:
-  provider: plugin
-  model: ExampleLLM
-  class_path: "private_plugins.custom_llm_provider:CustomLLMProvider"
+  provider: openai-compatible
+  model: gpt-5.4
+  base_url: "https://api.openai.com/v1"
+  api_key_env: PILOT_OPENAI_API_KEY
 
 knowledge:
   pack_root: "knowledge_packs"

@@ -33,8 +33,10 @@ Private extension config:
 ```yaml
 mode: private-extension
 llm:
-  provider: plugin
-  class_path: "private_plugins.custom_llm_provider:CustomLLMProvider"
+  provider: openai-compatible
+  model: gpt-5.4
+  base_url: "https://api.openai.com/v1"
+  api_key_env: PILOT_OPENAI_API_KEY
 knowledge:
   pack_root: "knowledge_packs"
 artifacts:
@@ -48,6 +50,12 @@ prompt_policy:
   provider: plugin
   class_path: "private_plugins.custom_prompt_policy:CustomPromptPolicy"
 ```
+
+Private mode also requires an absolute `DREAM_LLM_APPROVAL_FILE` path outside
+the public checkout. The JSON manifest must use schema
+`provider-approval-v1` and exactly match provider, base URL, and model, with a
+timezone-aware approval and expiration window. See
+[Provider Egress Foundation](provider-egress-foundation.md).
 
 Commands:
 

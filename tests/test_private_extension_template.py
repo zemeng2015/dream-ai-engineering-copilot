@@ -10,6 +10,7 @@ def test_private_extension_template_files_exist() -> None:
         "pyproject.toml",
         ".gitignore",
         "config/dream.private.example.yaml",
+        "config/provider-approval.example.json",
         "private_plugins/__init__.py",
         "private_plugins/custom_llm_provider.py",
         "private_plugins/custom_redaction_provider.py",

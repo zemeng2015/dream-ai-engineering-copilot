@@ -1,0 +1,10 @@
+{
+  "schema_version": "provider-approval-v1",
+  "approval_id": "REPLACE_WITH_APPROVED_CHANGE_ID",
+  "provider": "openai-compatible",
+  "base_url": "https://api.openai.com/v1",
+  "model": "gpt-5.4",
+  "approved_by": "REPLACE_WITH_APPROVER_ID",
+  "approved_at": "REPLACE_WITH_TIMEZONE_AWARE_ISO_8601",
+  "expires_at": "REPLACE_WITH_TIMEZONE_AWARE_ISO_8601"
+}

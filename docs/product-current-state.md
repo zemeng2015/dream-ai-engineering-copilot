@@ -36,6 +36,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | Frontend dependency baseline | Angular 21, TypeScript 5.9, `@angular/build`, zero production/full npm audit | Lockfile, build, ChromeHeadless and CI gates |
 | Connector source lifecycle | Metadata-only sync/tombstone contract, immutable ACL versions, revoke-first cleanup, registered artifact cascade | Connector lifecycle, restart, path-safety and cleanup-failure tests |
 | DLP enforcement foundation | Versioned pre-index/pre-prompt/pre-persist/post-response text inspection, deterministic redact/block rules, metadata-only ledger | Engine/provider corpus and workflow-boundary no-leak tests |
+| Provider egress foundation | Exact private endpoint/model approval, invocation-time expiry recheck, request-override/redirect denial, response identity gate | Provider policy, API/CLI selector, redirect and negative config tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -81,6 +82,8 @@ The public core does not currently prove:
   exception workflow, and false-positive operations;
 - production secrets management, storage hardening, backup, or retention;
 - organization-approved data residency and network egress controls;
+- organization-approved model endpoint, retention/no-training terms and
+  approval-manifest operating process;
 - production-scale availability, latency, cost, or support SLOs;
 - organization approval of the remediated frontend dependency/runtime baseline;
 - a feedback-learning policy driven by Human Rating;
@@ -113,5 +116,6 @@ These are Pilot gates, not implied current capabilities.
 The provider-neutral public core now contains the first Pilot security slices.
 See `docs/pilot-security-foundation.md` and
 `docs/connector-lifecycle-foundation.md`, plus
-`docs/dlp-enforcement-foundation.md`. These implementations reduce technical
+`docs/dlp-enforcement-foundation.md` and
+`docs/provider-egress-foundation.md`. These implementations reduce technical
 risk but do not change the real-source No-Go decision.
