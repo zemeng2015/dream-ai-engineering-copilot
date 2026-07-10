@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from dream.core.errors import DreamError
 from dream.core.paths import get_artifacts_dir
 
+_REVOCATION_LEDGER_LOCK = Lock()
+
 
 class AccessRevocationEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -33,7 +35,6 @@ class AccessRevocationRegistry:
 
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or get_artifacts_dir() / "pilot-security/access-revocations.json"
-        self._lock = Lock()
 
     def revoke(
         self,
@@ -56,7 +57,7 @@ class AccessRevocationRegistry:
             **values,
             revoked_at=revoked_at or datetime.now(UTC).isoformat(),
         )
-        with self._lock:
+        with _REVOCATION_LEDGER_LOCK:
             ledger = self.load()
             if not any(
                 item.team_id == event.team_id
