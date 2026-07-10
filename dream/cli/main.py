@@ -30,7 +30,12 @@ from dream.memory import (
     MemoryDistillationService,
 )
 from dream.memory.repository import MemoryDistillationRepository
-from dream.pilot_evidence import PilotEvidenceExporter, PilotEvidenceVerifier
+from dream.pilot_evidence import (
+    PilotEvidenceExporter,
+    PilotEvidenceSignatureVerifier,
+    PilotEvidenceSigner,
+    PilotEvidenceVerifier,
+)
 from dream.requirement_cases import RequirementCaseCreateRequest, RequirementCaseService
 from dream.requirements import RequirementDraftGenerator, RequirementDraftRequest
 from dream.review import PRReviewAssistant, PRReviewRequest
@@ -656,6 +661,57 @@ def audit_verify_bundle(
     report = PilotEvidenceVerifier().verify(
         bundle,
         expected_root_sha256=expected_root_sha256,
+    )
+    typer.echo(report.model_dump_json(indent=2))
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@audit_app.command("sign-bundle")
+def audit_sign_bundle(
+    bundle: Annotated[Path, typer.Option("--bundle")],
+    expected_root_sha256: Annotated[str, typer.Option("--expected-root-sha256")],
+    private_key: Annotated[Path, typer.Option("--private-key")],
+    key_id: Annotated[str, typer.Option("--key-id")],
+    signer: Annotated[str, typer.Option("--signer")],
+    reason: Annotated[str, typer.Option("--reason")],
+    private_key_password_env: Annotated[
+        str | None,
+        typer.Option("--private-key-password-env"),
+    ] = "DREAM_EVIDENCE_SIGNING_KEY_PASSWORD",
+    output: Annotated[Path | None, typer.Option("--output")] = None,
+) -> None:
+    try:
+        result = PilotEvidenceSigner().sign(
+            bundle_dir=bundle,
+            expected_root_sha256=expected_root_sha256,
+            private_key_path=private_key,
+            key_id=key_id,
+            signer_id=signer,
+            reason=reason,
+            private_key_password_env=private_key_password_env,
+            output_path=output,
+        )
+    except DreamError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(result.model_dump_json(indent=2))
+
+
+@audit_app.command("verify-signature")
+def audit_verify_signature(
+    bundle: Annotated[Path, typer.Option("--bundle")],
+    receipt: Annotated[Path, typer.Option("--receipt")],
+    public_key: Annotated[Path, typer.Option("--public-key")],
+    expected_key_id: Annotated[
+        str | None,
+        typer.Option("--expected-key-id"),
+    ] = None,
+) -> None:
+    report = PilotEvidenceSignatureVerifier().verify(
+        bundle_dir=bundle,
+        receipt_path=receipt,
+        public_key_path=public_key,
+        expected_key_id=expected_key_id,
     )
     typer.echo(report.model_dump_json(indent=2))
     if not report.passed:

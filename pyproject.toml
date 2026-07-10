@@ -24,6 +24,7 @@ keywords = [
   "test-generation",
 ]
 dependencies = [
+  "cryptography>=44.0.0",
   "fastapi>=0.115.0",
   "pydantic>=2.8.0",
   "python-multipart>=0.0.9",
