@@ -2,217 +2,148 @@
 
 # Current Development Handoff
 
-Last updated: 2026-07-06.
+Status date: 2026-07-10
 
-This file is the first stop for a new development conversation. It summarizes
-the current local branch state after the UI simplification and live FastAPI
-wiring work.
+This is the authoritative short engineering handoff for the cumulative
+provider-neutral leadership/Pilot candidate. Older planning and UI handoffs are
+historical context, not current branch or capability truth.
 
-For product-planning context and the detailed raw-doc-to-structured-memory
-implementation notes, read:
+## Product and Branch Boundary
 
-- `docs/recent-changes-planning-handoff.zh-CN.md`
+DREAM is a governed Engineering Memory and Decision Workbench. The fixed
+leadership story turns an ambiguous synthetic Forecast Platform request into a
+source-backed impact map, role questions, human-gated Jira draft, Context Trail,
+Eval and Audit evidence. It does not autonomously write to Jira, GitHub,
+deployment, email or messaging systems.
 
-## Branch and Runtime
-
-- Branch: `codex/memory-hub-density-cleanup`
-- Frontend: Angular app on `http://localhost:4300`
-- Backend: FastAPI on `http://127.0.0.1:8000`
-- FastAPI command:
-
-```powershell
-uvicorn dream.api.app:app --reload --host 127.0.0.1 --port 8000
-```
-
-- Frontend command:
-
-```powershell
-npm start --prefix frontend -- --host 127.0.0.1 --port 4300
-```
-
-## Current Product Surfaces
-
-Primary routes:
-
-- `/mission-control`
-- `/memory`
-- `/memory/:documentId`
-- `/workbench`
-- `/requirements`
-- `/review`
-- `/context/:caseId`
-- `/codebase`
-- `/audit`
-- `/audit/:targetId`
-
-Legacy mock routes redirect into the primary surfaces. Do not restore old mock
-pages unless the product decision changes.
-
-## Live Workflow State
-
-- Memory Hub supports browser file upload and backend-visible local path
-  registration, then exposes the full lifecycle: parse, edit draft metadata,
-  approve, promote. Only `promoted` documents count as memory.
-- `/memory/:documentId` shows the source detail view with raw source preview,
-  parsed sections, source/hash/span provenance, normalized Markdown, review
-  state, promoted path, structured draft review events, intake audit events, and
-  downstream workflow runs that later consumed the promoted source. Review events
-  cover metadata updates, review decisions, and promotion with field diffs,
-  metadata snapshots, source hash, section hashes, reviewer notes, and linked
-  audit run ids. Downstream usage includes matched source paths, match reason,
-  structured match proofs with source hash and section span/hash evidence, and
-  an Audit route when one can be inferred.
-- `dream memory scan` and `/memory/scan` now attach intake provenance to
-  document-derived `MemoryClaim` evidence. Claims produced from promoted intake
-  docs include `evidence.intake_proofs` with `document_id`, `draft_id`,
-  promoted/raw paths, source hash verification, intake audit run ids, and
-  section hash/span proof, deterministic match explanation, and matched terms.
-- Memory Hub has a Claim Review tab backed by `/memory/diff`,
-  `/memory/conflicts`, `/memory/review`, and `/memory/ledger`. It can run a demo
-  memory scan, list added/changed markers over latest-scan claims, show active
-  single-value conflict pairs with raw-trace links, resolve a pair through the
-  conservative `approve_winner_reject_other` action, show intake proof summaries,
-  link back to `/memory/:documentId`, and write approve/reject/quarantine events
-  into the durable memory ledger. Review ledger events now carry reviewer
-  signatures, field-level governance diffs, claim snapshots, raw risk/conflict
-  signals, and reviewer-readable signal explanations; conflict resolution events
-  are stored in `memory-conflict-resolutions`.
-- Promoted source documents expose `promoted_path` through `/intake/documents`.
-- The current promoted synthetic runbook is:
-  `knowledge_packs/demo_team/docs/runbooks/output-reconciliation-intake-demo-intake-5d2fff8695d5.md`
-- Requirement Draft creates/analyzes a requirement case, generates a Jira draft,
-  runs strict eval, links to `/audit/:evaluationId`, and links matched source
-  rows back to `/memory/:documentId`.
-- PR Review sends inline PR diff and Jira context text to `/review/pr`, runs
-  strict eval, links to `/audit/:evaluationId`, and links matched source rows
-  back to `/memory/:documentId`.
-- `/context/:caseId` reads FastAPI context trail, context pack, and prompt
-  preview APIs. It exposes retrieval steps, selected evidence, context-pack
-  grouping, prompt preview, retrieval reasons, and source-detail links for
-  matched intake documents. Memory claim references now preserve
-  `intake_proofs`, so approved claims in context can still be traced back to
-  raw intake documents, section hashes, intake audit runs, and claim/source
-  match explanations.
-- Codebase Index reads saved repo index JSON and file content through FastAPI.
-- Audit & Eval detail reads `/eval/runs/{evaluation_id}`, including
-  `markdown_report`, `json_path`, `markdown_path`, and `warnings`.
-- Audit & Eval selected-run source chips link back to `/memory/:documentId` when
-  a retrieved source path matches a registered intake document.
-
-## Raw Doc To Structured Memory Snapshot
-
-The current intake implementation is real FastAPI/backend code, not only a
-frontend mock:
+The integration branch is:
 
 ```text
-POST /intake/documents
-  -> computes source_hash and duplicate-content warnings
-  -> artifacts/intake/uploads/<document_id>.<ext>
-  -> artifacts/intake/documents/<document_id>.json
-
-POST /intake/documents/upload
-  -> accepts multipart browser file upload
-  -> computes source_hash and duplicate-content warnings
-  -> artifacts/intake/uploads/<document_id>.<ext>
-  -> artifacts/intake/documents/<document_id>.json
-
-GET /intake/documents/{document_id}/detail
-  -> raw source preview, source hash verification, draft, promoted path, draft review events, intake audit events, downstream usage events/usages, match proofs
-
-POST /intake/documents/{document_id}/parse
-  -> parsed sections include source_span, source_reference, and section_hash
-  -> artifacts/intake/drafts/<draft_id>/draft.json
-  -> artifacts/intake/drafts/<draft_id>/draft.md
-
-GET /intake/drafts/{draft_id}
-  -> returns parsed sections, proposed metadata, concepts, provenance, and markdown
-
-GET /intake/drafts/{draft_id}/review-events
-  -> structured metadata/review/promote event ledger with field diffs and audit run ids
-
-PATCH /intake/drafts/{draft_id}/metadata
-  -> updates title, document type, app, component, concepts
-  -> regenerates draft.md before approval/promotion
-  -> writes review-events/<event_id>.json with metadata diff
-
-POST /intake/drafts/{draft_id}/review
-  -> draft review_status updated to approved/rejected/etc.
-  -> writes review-events/<event_id>.json with status diff
-
-POST /intake/drafts/{draft_id}/promote
-  -> knowledge_packs/<team_id>/docs/<document_type>/<title>-<document_id>.md
-  -> writes review-events/<event_id>.json with promoted path diff
-
-POST /memory/scan
-  -> document-derived MemoryClaim evidence includes intake_proofs
-  -> review queue/diff markdown shows the intake document id and match explanation for traced claims
-GET /memory/conflicts
-  -> active single-value conflict pairs include both claims, effective statuses, latest reviews, evidence paths, intake ids, and explanation
-POST /memory/conflicts/resolve
-  -> approve selected winner, reject the other side, append normal review events plus conflict resolution event
-GET /memory/conflict-resolutions
-  -> dedicated conflict resolution ledger
+codex/leadership-pilot-candidate
 ```
 
-Key code:
+Its history is a linear accumulation of the frozen leadership product followed
+by Pilot security, Angular dependency remediation, connector lifecycle, DLP,
+provider egress, evidence export, runtime security decisions and Ed25519 evidence
+custody. No merge or cherry-pick from the Qwen competition worktree is required.
 
-- `dream/intake/service.py`
-- `dream/intake/repository.py`
-- `dream/intake/parsers.py`
-- `dream/intake/models.py`
-- `dream/memory/models.py`
-- `dream/memory/distiller.py`
-- `dream/memory/claim_retriever.py`
-- `frontend/src/app/features/memory-hub/`
-- `frontend/src/app/features/memory-document-detail/`
-- `frontend/src/app/core/dream-api.service.ts`
+The Qwen/Hackathon worktree and routes remain separate competition assets. Do
+not use them as a leadership fallback or merge competition-only UI, provider,
+benchmark, deployment configuration or submission material into this candidate.
 
-Important product caveat: browser upload is local POC multipart upload, not a
-real enterprise document connector. `document_type` should also match folders
-listed in `knowledge_packs/<team_id>/team.yaml` or promoted documents may not be
-loaded by the knowledge retriever.
+## Fixed Leadership Contract
 
-Remaining high-value gaps: add supersede/merge-style conflict actions and design
-connector ACL/redaction/audit policy before real enterprise sources are
-attached.
+```text
+team_id   = demo_team
+repo_name = dfp-demo-repo
+repo_path = examples/dfp-demo-repo
+case_id   = case-leadership-async-status
+scan_id   = leadership-dfp-memory-v1
+route     = /leadership-demo
+```
 
-## Known Limits
+The checked-in provider remains `mock`. A GPT-5.4/OpenAI-compatible run requires
+an explicit private/local configuration and exact provider approval; do not
+switch providers during a presentation.
 
-- `npm run build` succeeds but reports the existing
-  `codebase-memory.component.scss` style budget warning.
-- Human Rating in Audit & Eval is persisted through
-  `/audit/runs/{run_id}/ratings` and the SQLite `human_ratings` table.
-- PR Review currently uses `dfp-demo-repo` as the frontend default repo name.
-- Windows Git may warn that LF will be replaced by CRLF.
-- `docs/frontend-runbook/` contains historical generated artifacts and must be
-  regenerated before a new UI acceptance pass.
+## Implemented Pilot Foundations
 
-## Verification Commands
+- approved MemoryClaims enter Requirement/Jira and bounded PR Review prompts;
+- unresolved conflicts and unapproved claims stay out;
+- signed proxy identity, action roles, source ACL filtering and revocation;
+- derived artifact ACL lineage and connector revoke-first cleanup;
+- Angular 21 production dependency baseline with zero current npm findings;
+- deterministic pre-index/pre-prompt/pre-persist/post-response DLP;
+- exact time-bounded private provider endpoint/model approval and egress evidence;
+- metadata-only identity and DefaultAccessPolicy decision ledgers;
+- team-scoped Pilot evidence bundle v2 with v1 verification compatibility; and
+- detached Ed25519 custody receipts verified against an independently trusted
+  public key.
+
+These are public-core engineering controls. They are not organization approval
+for real company data.
+
+## Local Runtime
+
+Backend:
+
+```powershell
+uvicorn dream.api.app:app --host 127.0.0.1 --port 8000
+```
+
+Frontend:
+
+```powershell
+npm start --prefix frontend -- --host 127.0.0.1 --port 4200
+```
+
+Reset the deterministic leadership scenario before rehearsal:
+
+```powershell
+python scripts/seed_leadership_demo.py --reset
+```
+
+## Candidate Verification and Freeze
+
+Run from this worktree on the exact commit being presented:
 
 ```powershell
 python -m ruff check .
-python -m pytest
-```
-
-Raw doc to structured memory acceptance:
-
-```powershell
+python -m pytest -q
+npm --prefix frontend ci
+npm --prefix frontend run build
+npm --prefix frontend test -- --watch=false --browsers=ChromeHeadless
+npm --prefix frontend audit --omit=dev
+npm --prefix frontend audit
 python scripts/verify_raw_doc_memory_flow.py
+python scripts/run_leadership_preflight.py --strict-git --require-frontend-bundle
+python scripts/run_leadership_rehearsal.py
+python scripts/build_leadership_release.py --strict
+python scripts/verify_leadership_release.py
 ```
+
+The release manifest binds the entire Git-visible source snapshot and explicitly
+checksums leadership plus Pilot security/evidence/custody critical files. A
+`frozen` manifest proves a clean reproducible local presentation snapshot, not
+enterprise production readiness.
+
+## Evidence Bundle and Custody
+
+Offline evidence administration remains outside the private API:
 
 ```powershell
-cd frontend
-npm run build
-npm test -- --watch=false --browsers=ChromeHeadless
+dream audit export-bundle --team <team> --confirm-team <team> `
+  --operator <operator> --reason <reason>
+
+dream audit sign-bundle --bundle <bundle-dir> `
+  --expected-root-sha256 <reviewed-export-root> `
+  --private-key <approved-ed25519-private-pem> `
+  --key-id <approved-key-id> --signer <operator> --reason <reason>
+
+dream audit verify-signature --bundle <bundle-dir> `
+  --receipt <detached-receipt> --public-key <independent-trust-key> `
+  --expected-key-id <approved-key-id>
 ```
 
-## Documentation To Keep In Sync
+Signing/private trust keys must remain outside both checkout and artifact roots.
 
-- `docs/recent-changes-planning-handoff.zh-CN.md`
-- `README.md`
-- `docs/frontend-angular.md`
-- `docs/knowledge-intake-pipeline.md`
-- `docs/codebase-memory.md`
-- `docs/evaluation-agent.md`
-- `docs/frontend-runbook/README.md`
-- `docs/frontend-runbook/regression-20260703-memory-ui/frontend-regression-report.md`
+## Real-Source No-Go Boundary
+
+Do not ingest organization sources until named owners approve the exact Pilot
+data flow. Still external or incomplete:
+
+- organization SSO/proxy deployment and identity/group lifecycle;
+- approved production read-only connector and source ACL synchronization;
+- shared private transactional storage, backup, retention/deletion and legal hold;
+- approved DLP taxonomy/operations, network, region and provider terms;
+- managed signing keys, rotation/revocation, immutable custody and SIEM/GRC;
+- approved SME golden baseline, thresholds and exact provider pricing; and
+- timed presenter rehearsal plus approved deployment smoke.
+
+## Handoff Decision
+
+This candidate is suitable for final local product acceptance and a synthetic
+leadership demonstration after its strict release gate passes. It remains No-Go
+for real-source Pilot activation until the external gates above are assigned and
+approved. Keep the long-term goal active; do not mark enterprise Pilot readiness
+complete based only on local tests or cryptographic receipts.

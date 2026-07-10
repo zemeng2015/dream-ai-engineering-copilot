@@ -16,6 +16,28 @@ from dream.leadership_demo.release import (
 )
 
 
+def test_release_critical_paths_bind_pilot_control_plane() -> None:
+    required = {
+        "docs/pilot-security-foundation.md",
+        "docs/connector-lifecycle-foundation.md",
+        "docs/dlp-enforcement-foundation.md",
+        "docs/provider-egress-foundation.md",
+        "docs/security-decision-evidence-foundation.md",
+        "docs/pilot-evidence-export-foundation.md",
+        "docs/pilot-evidence-custody-foundation.md",
+        "frontend/package-lock.json",
+        "dream/api/security.py",
+        "dream/config/validator.py",
+        "dream/security/identity.py",
+        "dream/security/policy.py",
+        "dream/security/evidence.py",
+        "dream/pilot_evidence/exporter.py",
+        "dream/pilot_evidence/custody.py",
+    }
+
+    assert required <= set(CRITICAL_SOURCE_PATHS)
+
+
 def test_release_candidate_hashes_current_source_evidence_and_frontend(tmp_path: Path) -> None:
     project_root = _release_project(tmp_path)
     manifest = LeadershipReleaseBuilder(project_root=project_root).build(

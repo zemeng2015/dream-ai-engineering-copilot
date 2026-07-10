@@ -3,8 +3,8 @@
 # Leadership Product Readiness Audit
 
 Audit date: 2026-07-10
-Branch under review: `codex/pilot-evidence-custody` (cumulative provider-neutral
-Pilot chain based on the frozen leadership product)
+Branch under review: `codex/leadership-pilot-candidate` (cumulative
+provider-neutral Pilot chain based on the frozen leadership product)
 Overall decision: **Synthetic leadership demo ready with warnings; real-source
 Pilot remains No-Go.**
 
@@ -59,15 +59,15 @@ is recorded as incomplete rather than inferred from implementation intent.
 ## Current Verification Baseline
 
 ```text
-Python: 308 passed, 1 skipped
+Python: 309 passed, 1 skipped
 Ruff: passed
 Angular production build: passed
 Angular ChromeHeadless tests: 23 passed
 Angular production/full dependency audit: 0 vulnerabilities
 Leadership preflight: ready_for_demo=true
 Raw-document acceptance: passed
-Strict preflight: passed on committed custody snapshot (feature-branch naming warning only)
-Custody-branch presentation release freeze: not rebuilt
+Strict preflight: passed on the committed custody predecessor; final candidate rerun pending
+Candidate presentation release freeze: pending final integration commit
 ```
 
 The current test count is evidence for the audited working tree only. Rerun all

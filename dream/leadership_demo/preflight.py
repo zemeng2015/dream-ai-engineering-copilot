@@ -361,6 +361,15 @@ class LeadershipPreflightRunner:
             "docs/leadership-ab-benchmark.md",
             "docs/leadership-product-readiness-audit.md",
             "docs/leadership-release-process.md",
+            "docs/pilot-security-foundation.md",
+            "docs/frontend-dependency-security.md",
+            "docs/connector-lifecycle-foundation.md",
+            "docs/dlp-enforcement-foundation.md",
+            "docs/provider-egress-foundation.md",
+            "docs/security-decision-evidence-foundation.md",
+            "docs/pilot-evidence-export-foundation.md",
+            "docs/pilot-evidence-custody-foundation.md",
+            "docs/current-development-handoff.md",
         ]
         missing = [value for value in required if not (self.project_root / value).exists()]
         return PreflightCheck(
