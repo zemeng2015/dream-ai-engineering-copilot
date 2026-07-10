@@ -10,6 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "qwencloud-devpost-handoff.ps1"
+REPO_REF = "codex/champion-memory-loop"
 
 
 def _powershell_command() -> list[str]:
@@ -49,6 +50,8 @@ def test_devpost_handoff_treats_env_placeholders_as_missing(tmp_path) -> None:
         str(SCRIPT),
         "-OutputDir",
         str(output_dir),
+        "-RepoRef",
+        REPO_REF,
         "-EnvFile",
         str(env_file),
         "-DemoVideoUrl",
@@ -83,3 +86,7 @@ def test_devpost_handoff_treats_env_placeholders_as_missing(tmp_path) -> None:
     assert "env.DASHSCOPE_API_KEY" in report["blockers"]
     assert "env.ALIBABA_CLOUD_CONTAINER_IMAGE" in report["blockers"]
     assert "env.ALIBABA_CLOUD_REGION" not in report["blockers"]
+    assert report["repoRef"] == REPO_REF
+    assert report["sourceCodeUrl"].endswith(f"/tree/{REPO_REF}")
+    assert report["copyFields"]["repoUrl"].endswith(f"/tree/{REPO_REF}")
+    assert f"/blob/{REPO_REF}/LICENSE" in report["copyFields"]["licenseUrl"]

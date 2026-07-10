@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -42,6 +44,7 @@ $reportMd = Join-Path $OutputDir "devpost-materials-audit-$timestamp.md"
 $checks = @()
 $publicTextItems = @()
 $generatedArtifacts = @()
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
 
 function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
     $script:checks += [ordered]@{
@@ -229,6 +232,7 @@ $commonPacketArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", "scripts/qwencloud-hackathon-submission-packet.ps1",
     "-RepoUrl", $RepoUrl,
+    "-RepoRef", $RepoRef,
     "-OutputDir", $OutputDir,
     "-LocalVideoPath", $LocalDemoVideoPath,
     "-ArchitectureUploadPath", $ArchitectureUploadPath,
@@ -247,6 +251,7 @@ $commonPayloadArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", "scripts/qwencloud-devpost-draft-payload.ps1",
     "-RepoUrl", $RepoUrl,
+    "-RepoRef", $RepoRef,
     "-OutputDir", $OutputDir,
     "-ArchitectureUploadPath", $ArchitectureUploadPath,
     "-AlibabaScreenshotPath", $AlibabaScreenshotPath,
@@ -261,6 +266,7 @@ $commonHandoffArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", "scripts/qwencloud-devpost-handoff.ps1",
     "-RepoUrl", $RepoUrl,
+    "-RepoRef", $RepoRef,
     "-OutputDir", $OutputDir,
     "-ArchitectureUploadPath", $ArchitectureUploadPath,
     "-LocalDemoVideoPath", $LocalDemoVideoPath,
@@ -360,6 +366,19 @@ Add-Check -Name "secret_free_public_copy" -Ok ($secretHits.Count -eq 0) -Details
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
 $repoConsistent = (@($repoValues | ForEach-Object { Normalize-Url $_ } | Sort-Object -Unique).Count -le 1)
 Add-Check -Name "repo_url_consistent_across_materials" -Ok $repoConsistent -Details "values=$(@($repoValues | Sort-Object -Unique) -join ', ')"
+$sourceField = Get-PayloadField -Payload $payload -ElementId "participants_submission_requirements_submission_field_values_attributes_7_value"
+$sourceFieldValue = Convert-ToText -Value (Get-Prop -Object $sourceField -Name "value")
+$competitionSourceValues = @(
+    (Get-Prop -Object $packetProject -Name "sourceCodeUrl")
+    (Get-Prop -Object $packetInfo -Name "repositoryUrl")
+    (Get-Prop -Object $payload -Name "sourceCodeUrl")
+    $sourceFieldValue
+    (Get-Prop -Object $handoff -Name "sourceCodeUrl")
+    (Get-Prop -Object $handoffCopy -Name "repoUrl")
+) | ForEach-Object { Convert-ToText -Value $_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+$competitionSourceUrls = @($competitionSourceValues | ForEach-Object { Normalize-Url $_ } | Sort-Object -Unique)
+$sourceRefApplied = ($competitionSourceUrls.Count -eq 1) -and ($competitionSourceUrls[0] -eq (Normalize-Url $sourceCodeUrl))
+Add-Check -Name "competition_source_ref_applied" -Ok $sourceRefApplied -Details "expected=$sourceCodeUrl; values=$($competitionSourceValues -join ', ')"
 Add-Check -Name "demo_video_url_present" -Ok (-not [string]::IsNullOrWhiteSpace($demoUsed)) -Details $(if ($demoUsed) { $demoUsed } else { "missing" })
 Add-Check -Name "demo_video_url_devpost_rules_platform" -Ok (Test-QwenCloudDevpostVideoUrl -Url $demoUsed) -Details $(if ($demoUsed) { $demoUsed } else { "missing" })
 $demoConsistent = if ($demoValues.Count -gt 0) { (@($demoValues | ForEach-Object { Normalize-Url $_ } | Sort-Object -Unique).Count -eq 1) } else { $false }
@@ -403,6 +422,8 @@ $result = [ordered]@{
     status = $status
     readyForDevpostMaterials = $ready
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
+    sourceCodeUrl = $sourceCodeUrl
     demoVideoUrl = $demoUsed
     backendUrl = $backendUsed
     blogPostUrl = $BlogPostUrl
@@ -430,7 +451,7 @@ $lines = @(
     "",
     "- Status: $status",
     "- Ready for Devpost materials: $ready",
-    "- Repo: $RepoUrl",
+    "- Repo: $sourceCodeUrl",
     "- Demo video URL: $(if ($demoUsed) { $demoUsed } else { '<missing>' })",
     "- Backend URL: $(if ($backendUsed) { $backendUsed } else { '<missing>' })",
     "- Packet JSON: $(if ($PacketJson) { $PacketJson } else { '<missing>' })",

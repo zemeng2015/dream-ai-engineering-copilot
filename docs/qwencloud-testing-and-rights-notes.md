@@ -34,6 +34,7 @@ The `/health` response should prove:
 ```powershell
 git clone https://github.com/zemeng2015/dream-ai-engineering-copilot.git
 cd dream-ai-engineering-copilot
+git checkout codex/champion-memory-loop
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
@@ -50,6 +51,7 @@ second terminal:
 ```bash
 git clone https://github.com/zemeng2015/dream-ai-engineering-copilot.git
 cd dream-ai-engineering-copilot
+git checkout codex/champion-memory-loop
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"

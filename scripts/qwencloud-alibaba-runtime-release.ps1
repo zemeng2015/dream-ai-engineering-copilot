@@ -4,6 +4,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -27,6 +29,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-env.ps1")
@@ -180,6 +183,8 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
         generatedAt = (Get-Date).ToUniversalTime().ToString("o")
         planOnly = [bool]$PlanOnly
         repoUrl = $RepoUrl
+        repoRef = $RepoRef
+        sourceCodeUrl = $sourceCodeUrl
         demoVideoUrl = $DemoVideoUrl
         backendUrl = $EffectiveBackendUrl
         blogPostUrl = $BlogPostUrl
@@ -196,7 +201,7 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
         "# Qwen Cloud Alibaba Runtime Release ($timestamp)",
         "",
         "- Plan only: $([bool]$PlanOnly)",
-        "- Repo: $RepoUrl",
+        "- Repo: $sourceCodeUrl",
         "- Demo video: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
         "- Backend URL: $(if ($EffectiveBackendUrl) { $EffectiveBackendUrl } else { '<missing>' })",
         "- Blog/social: $(if ($BlogPostUrl) { $BlogPostUrl } else { '<optional>' })",
@@ -349,7 +354,7 @@ try {
         Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-validate-alibaba-proof.ps1", "-BackendUrl", $effectiveBackendUrl) -Name "validate-alibaba-proof-integrity" | Out-Null
     }
 
-    $packetArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-submission-packet.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
+    $packetArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-hackathon-submission-packet.ps1", "-RepoUrl", $RepoUrl, "-RepoRef", $RepoRef, "-BackendUrl", $effectiveBackendUrl)
     if ($DemoVideoUrl) {
         $packetArgs += @("-DemoVideoUrl", $DemoVideoUrl)
     }
@@ -364,7 +369,7 @@ try {
     }
     Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $packetArgs -Name "submission-packet" | Out-Null
 
-    $handoffArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-handoff.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
+    $handoffArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-handoff.ps1", "-RepoUrl", $RepoUrl, "-RepoRef", $RepoRef, "-BackendUrl", $effectiveBackendUrl)
     if ($DemoVideoUrl) {
         $handoffArgs += @("-DemoVideoUrl", $DemoVideoUrl)
     }
@@ -379,7 +384,7 @@ try {
     }
     Invoke-Logged -FilePath (Get-PowerShellExe) -ArgumentList $handoffArgs -Name "devpost-handoff" | Out-Null
 
-    $materialsAuditArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-materials-audit.ps1", "-RepoUrl", $RepoUrl, "-BackendUrl", $effectiveBackendUrl)
+    $materialsAuditArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/qwencloud-devpost-materials-audit.ps1", "-RepoUrl", $RepoUrl, "-RepoRef", $RepoRef, "-BackendUrl", $effectiveBackendUrl)
     if ($DemoVideoUrl) {
         $materialsAuditArgs += @("-DemoVideoUrl", $DemoVideoUrl)
     }

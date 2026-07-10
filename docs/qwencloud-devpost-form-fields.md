@@ -201,8 +201,8 @@ hackathon.
 - If started/existed before May 26: `Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period.`
 - Track: `Track 1: MemoryAgent`
 - Project link 1: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/`
-- Code repository URL: `https://github.com/zemeng2015/dream-ai-engineering-copilot`
-- Alibaba Cloud deployment proof code file: `https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs-runtime.yaml`
+- Code repository URL: `https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop`
+- Alibaba Cloud deployment proof code file: `https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/deploy/alibaba/serverless-devs-runtime.yaml`
 - Architecture diagram upload: `docs/assets/qwencloud-architecture.png`
 - Alibaba deployment screenshot upload: `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
   generated with `scripts/qwencloud-capture-alibaba-proof.ps1 -BaseUrl "<deployed-backend-url>"`

@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -31,7 +33,8 @@ $track = "Track 1: MemoryAgent"
 $projectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit"
 $additionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
 $finalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
-$deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
+$deploymentProofUrl = "$RepoUrl/blob/$RepoRef/deploy/alibaba/serverless-devs-runtime.yaml"
 $tryItOutUrl = if (-not [string]::IsNullOrWhiteSpace($BackendUrl)) { $BackendUrl } else { "" }
 $builtWith = "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript"
 $aiTools = "Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation."
@@ -40,36 +43,36 @@ $preExistingExplanation = "Not applicable. The public DREAM memory platform rele
 $projectStory = @"
 ## Inspiration
 
-Engineering teams lose crucial context across tickets, code, incidents, runbooks, review comments, and tribal knowledge. Generic AI assistants then answer from memoryless prompts, which creates hallucinated requirements, repeated onboarding, and weak auditability.
+Most AI assistants start every session from zero. When a preference changes, old guidance may survive beside the new truth; temporary instructions may never expire; and useful experience must be pasted back into every prompt.
 
 ## What it does
 
-DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence. It turns knowledge packs, codebase structure, incidents, Jira and PR history, and reviewed memory claims into durable context for requirement drafting, review, and engineering workflow automation.
+DREAM gives Qwen governed cross-session experience. Qwen classifies natural-language observations as remember, supersede, forget, or ignore. DREAM enforces lifecycle state, TTL, explicit forgetting, provenance, feedback ranking, and recall under a hard token budget.
 
-The agent supports persistent memory intake, claim review, retrieval traces, audit/evaluation ledgers, requirement case drafting, and Qwen Cloud generation through an OpenAI-compatible provider. The deployed backend exposes runtime proof for Track 1, qwen-cloud provider, model, Alibaba deployment target, region, and the deployment proof file path without exposing secrets.
+The live Judge Arena proves three separate sessions: Qwen remembers a durable rollout preference, supersedes it when the user changes their mind, then recalls only the current value in 19 of 64 tokens without leaking the old one. Approved organizational source claims can enter the same Requirement Case, impact map, engineering brief, and Jira draft with reviewer and source provenance.
 
 ## How we built it
 
-The backend uses FastAPI, Typer, SQLite-backed audit/eval stores, provider abstractions, Docker packaging, and Alibaba Cloud Function Compute custom-container deployment. Qwen Cloud is configured through the qwen-cloud provider and examples/config/dream.qwen.yaml. The repo includes reproducible scripts for CI proof, Alibaba deployment preflight, architecture export, demo video generation, proof capture, and final Devpost packet generation.
+The backend uses FastAPI, a SQLite experience repository, Qwen structured decisions, deterministic lifecycle governance, feedback-aware ranking, and governed source-claim retrieval. Angular provides the live three-session Arena. The same package runs on Alibaba Cloud Function Compute with qwen3.7-plus, CI, reproducible benchmark tooling, and public proof endpoints.
 
 ## Challenges
 
-The hardest part was making the project credible as production engineering infrastructure rather than a toy chatbot. DREAM keeps memory reviewable, separates evidence from generated output, avoids secret leakage in public proof endpoints, and gates final submission with machine-checkable readiness reports.
+The hardest part was separating semantic judgment from deterministic safety. Qwen must understand whether an observation is durable, conflicting, temporary, reusable, or noise; DREAM must ensure stale, expired, forgotten, and budget-excluded values never re-enter context.
 
 ## Accomplishments
 
-The project now has a public Apache-2.0 repo, Qwen Cloud provider mode, Alibaba Cloud deployment packaging, architecture assets, CI verification, local proof runners, Devpost packet generation, and a final readiness dashboard that tracks what is still missing before submission.
+We executed 37 real Qwen curator decisions across 24 synthetic lifecycle cases. All 24 passed; critical-memory recall was 100%, forbidden-memory leak was 0%, token-budget compliance was 100%, and the weighted score was 100.0/100. The deployed public API independently passed remember, supersede, 19/64-token recall, and feedback verification.
 
 ## Judging alignment
 
-- Innovation and AI creativity: DREAM uses Qwen Cloud inside a governed memory workflow with claim distillation, source-backed retrieval, requirement drafting, audit/eval feedback, and human review loops.
-- Technical depth and engineering: the implementation includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment, architecture assets, CI, release workflow, and machine-checked final readiness gates.
-- Problem value and impact: engineering teams repeatedly lose context across Jira, code, incidents, runbooks, and PRs; DREAM turns that context into reusable, auditable memory for real requirement and review workflows.
+- Innovation and AI creativity: Qwen is the semantic experience curator; DREAM adds deterministic lifecycle truth, timely forgetting, constrained recall, provenance, and feedback.
+- Technical depth and engineering: the implementation includes persistent cross-session state, conflict supersession, TTL, feedback ranking, budgeted retrieval, approved source claims, FastAPI/Angular, Alibaba Function Compute, CI, and a public benchmark.
+- Problem value and impact: teams and agents repeatedly act on stale preferences and forgotten lessons; DREAM keeps one current, auditable truth available at the next decision.
 - Presentation and documentation: the submission includes architecture diagrams, generated demo/proof videos, deployment proof, field-level Devpost payloads, and a final upload bundle so judging artifacts stay reproducible.
 
 ## What's next
 
-Next steps are completing the live Alibaba deployment, publishing the public demo video, saving the Devpost draft fields, attaching the required proof assets, and submitting only after the final readiness gate reports READY.
+Next steps are expanding the benchmark with human-reviewed production scenarios, adding encrypted multi-tenant storage, and upstreaming only generic lifecycle primitives into the provider-neutral DREAM framework.
 "@
 
 function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
@@ -148,7 +151,7 @@ Add-Field -Page "additional_info" -ElementId "participants_submission_requiremen
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_4_value" -Label "Project start date" -Value "06-21-26" -InputKind "text"
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_5_value" -Label "Pre-existing project explanation" -Value $preExistingExplanation -InputKind "textarea"
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_6_value" -Label "Selected Track" -Value $track -InputKind "select"
-Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_7_value" -Label "Code repository URL" -Value $RepoUrl -InputKind "text"
+Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_7_value" -Label "Code repository URL" -Value $sourceCodeUrl -InputKind "text"
 Add-Field -Page "additional_info" -ElementId "participants_submission_requirements_submission_field_values_attributes_8_value" -Label "Alibaba deployment proof code URL" -Value $deploymentProofUrl -InputKind "text"
 Add-Field -Page "additional_info" -ElementId "submission_field_file_27544_add_files" -Label "Architecture diagram upload" -Value $ArchitectureUploadPath -InputKind "file" -SafeForNonLegalDraftSave $false -Notes "File upload requires action-time confirmation."
 Add-Field -Page "additional_info" -ElementId "submission_field_file_27832_add_files" -Label "Alibaba deployment screenshot upload" -Value $AlibabaScreenshotPath -InputKind "file" -SafeForNonLegalDraftSave $false -Notes "File upload requires action-time confirmation and real Alibaba backend proof."
@@ -197,6 +200,8 @@ $payload = [ordered]@{
     readyForFinalDevpostFields = $readyForFinalDevpostFields
     externalWriteRequiresActionTimeConfirmation = $true
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
+    sourceCodeUrl = $sourceCodeUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl

@@ -142,7 +142,7 @@ and `deploy/alibaba/README.md` for Devpost.
 
 ## Required Devpost Links
 
-- Source code: public GitHub repository
+- Source code: <https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop>
 - Live demo: `https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/`
 - License: Apache-2.0
 - Architecture diagram: `docs/assets/qwencloud-architecture.svg`

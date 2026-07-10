@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -259,22 +261,23 @@ function Get-VideoMetadata([string]$Path) {
     }
 }
 
-function Get-FileUrl([string]$Repo, [string]$Path) {
-    return "$Repo/blob/main/$Path"
+function Get-FileUrl([string]$Repo, [string]$Ref, [string]$Path) {
+    return "$Repo/blob/$Ref/$Path"
 }
 
 $repoUsed = Normalize-RepoUrl -Url $RepoUrl
-$licenseUrl = Get-FileUrl -Repo $repoUsed -Path "LICENSE"
-$architectureSvgUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.svg"
-$architecturePngUrl = Get-FileUrl -Repo $repoUsed -Path "docs/assets/qwencloud-architecture.png"
-$deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Path "deploy/alibaba/serverless-devs-runtime.yaml"
-$deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-deploy-preflight.ps1"
-$qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Path "examples/config/dream.qwen.yaml"
-$buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-build-journey-post.md"
-$testingAndRightsNotesUrl = Get-FileUrl -Repo $repoUsed -Path "docs/qwencloud-testing-and-rights-notes.md"
-$devpostAutofillSnippetScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-devpost-autofill-snippet.ps1"
-$judgingScorecardScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-judging-scorecard.ps1"
-$officialRulesGateScriptUrl = Get-FileUrl -Repo $repoUsed -Path "scripts/qwencloud-official-rules-gate.ps1"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $repoUsed } else { "$repoUsed/tree/$RepoRef" }
+$licenseUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "LICENSE"
+$architectureSvgUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "docs/assets/qwencloud-architecture.svg"
+$architecturePngUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "docs/assets/qwencloud-architecture.png"
+$deploymentProofUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "deploy/alibaba/serverless-devs-runtime.yaml"
+$deployPreflightUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "scripts/qwencloud-deploy-preflight.ps1"
+$qwenConfigUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "examples/config/dream.qwen.yaml"
+$buildJourneyDraftUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "docs/qwencloud-build-journey-post.md"
+$testingAndRightsNotesUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "docs/qwencloud-testing-and-rights-notes.md"
+$devpostAutofillSnippetScriptUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "scripts/qwencloud-devpost-autofill-snippet.ps1"
+$judgingScorecardScriptUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "scripts/qwencloud-judging-scorecard.ps1"
+$officialRulesGateScriptUrl = Get-FileUrl -Repo $repoUsed -Ref $RepoRef -Path "scripts/qwencloud-official-rules-gate.ps1"
 $ciUrl = "$repoUsed/actions/workflows/ci.yml"
 
 $requiredPaths = @(
@@ -452,6 +455,8 @@ $packet = [ordered]@{
         title = $projectTitle
         track = $track
         repoUrl = $repoUsed
+        repoRef = $RepoRef
+        sourceCodeUrl = $sourceCodeUrl
         demoVideoUrl = $DemoVideoUrl
         backendUrl = $BackendUrl
         blogPostUrl = $BlogPostUrl
@@ -469,7 +474,7 @@ $packet = [ordered]@{
         projectStartDate = "06-21-26"
         beforeMay26UpdateExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
         selectedTrack = $track
-        repositoryUrl = $repoUsed
+        repositoryUrl = $sourceCodeUrl
         alibabaProofCodeFile = $deploymentProofUrl
         aiToolsUsed = "Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation."
         learningLevel = "Significant"
@@ -504,7 +509,7 @@ $md = @(
     "- Status: $statusWord",
     "- Project: $projectTitle",
     "- Track: $track",
-    "- Repo: $repoUsed",
+    "- Repo: $sourceCodeUrl",
     "- Demo video: $videoLine",
     "- Testing backend: $backendLine",
     "- Optional blog/social post: $blogLine",
@@ -514,7 +519,7 @@ $md = @(
     "",
     "## Required Links",
     "",
-    "- Source code: $repoUsed",
+    "- Source code: $sourceCodeUrl",
     "- License: $licenseUrl",
     "- Architecture diagram (SVG): $architectureSvgUrl",
     "- Architecture diagram (PNG upload asset): $architecturePngUrl",
@@ -540,19 +545,19 @@ $md = @(
     "",
     "### Short pitch",
     "",
-    "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence. It turns docs, codebase structure, incidents, Jira and PR history, and reviewed memory claims into durable, auditable context for requirement drafting and review workflows.",
+    "DREAM gives Qwen governed cross-session experience that remembers durable preferences, supersedes stale truth, forgets on time, learns from feedback, and recalls safely under a hard context budget.",
     "",
     "### Description",
     "",
-    "Engineering teams lose critical context across tickets, code, incidents, runbooks, and review decisions. DREAM makes that context persistent and governed. It loads knowledge packs, indexes local codebases, distills reviewable memory claims, retrieves source-backed context, and uses Qwen Cloud through an OpenAI-compatible provider to produce traceable requirement and review outputs.",
+    "Most assistants start every session from zero. DREAM combines Qwen semantic memory curation with deterministic lifecycle governance. In the live Arena, Qwen remembers a rollout preference, supersedes it when the user changes their mind, and Session 3 recalls only the current value in 19/64 tokens without leaking the old one.",
     "",
-    "The system is built as a production-minded Track 1 MemoryAgent: memory can be promoted, rejected, audited, evaluated, and reused across workflows. The public health endpoint exposes runtime proof such as Track 1, qwen-cloud provider, model, deployment target, region, and the Alibaba Cloud proof file path without exposing secrets.",
+    "A real Qwen benchmark ran 37 curator decisions across 24 lifecycle cases: 24/24 passed, critical recall was 100%, forbidden leak was 0%, and token-budget compliance was 100%. Approved organizational claims can enter later requirement and Jira workflows only with source and reviewer provenance.",
     "",
     "### Judging alignment",
     "",
-    "- Innovation and AI Creativity: Qwen Cloud is used inside a governed memory workflow with claim distillation, source-backed retrieval, requirement drafting, audit/eval feedback, and human review loops.",
-    "- Technical Depth and Engineering: DREAM includes provider abstraction, API/CLI surfaces, Docker packaging, Alibaba Function Compute deployment, architecture assets, CI, release workflow, proof automation, and final readiness gates.",
-    "- Problem Value and Impact: the product solves a real engineering pain point: lost context across Jira, code, incidents, runbooks, and PR history, turning it into reusable auditable memory.",
+    "- Innovation and AI Creativity: Qwen is the semantic experience curator; DREAM adds deterministic lifecycle truth, timely forgetting, constrained recall, provenance, and feedback.",
+    "- Technical Depth and Engineering: DREAM includes persistent state, conflict supersession, TTL, feedback ranking, budgeted retrieval, governed source claims, FastAPI/Angular, Alibaba Function Compute, CI, and a public benchmark.",
+    "- Problem Value and Impact: the product prevents agents and teams from acting on stale preferences while preserving useful experience across sessions.",
     "- Presentation and Documentation: the repo includes architecture diagrams, generated demo/proof videos, deployment proof, field-level Devpost payloads, judging scorecard, and a final upload bundle.",
     "",
     "### Built with",
@@ -567,7 +572,7 @@ $md = @(
     "- Project start date: 06-21-26",
     "- If started/existed before May 26: Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period.",
     "- Track: $track",
-    "- Code repository URL: $repoUsed",
+    "- Code repository URL: $sourceCodeUrl",
     "- Alibaba Cloud deployment proof code file: $deploymentProofUrl",
     "- Architecture diagram file upload: $ArchitectureUploadPath",
     "- Alibaba deployment screenshot upload: $AlibabaScreenshotPath",
@@ -583,6 +588,7 @@ $md = @(
     '```powershell',
     'git clone https://github.com/zemeng2015/dream-ai-engineering-copilot.git',
     'cd dream-ai-engineering-copilot',
+    "git checkout $RepoRef",
     'python -m venv .venv',
     '.\.venv\Scripts\Activate.ps1',
     'pip install -e ".[dev]"',

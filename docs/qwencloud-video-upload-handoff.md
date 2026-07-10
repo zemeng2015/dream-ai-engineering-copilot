@@ -102,7 +102,7 @@ Description:
 ```text
 DREAM is a Qwen Cloud Track 1 MemoryAgent for source-backed engineering intelligence. It uses persistent, governed engineering memory, Qwen Cloud generation, and Alibaba Cloud deployment proof to turn codebase docs, incidents, and review context into auditable requirement and review outputs.
 
-Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot
+Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
 Track: Track 1: MemoryAgent
 ```
 

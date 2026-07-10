@@ -31,6 +31,9 @@ def test_official_requirements_snapshot_is_in_readiness_and_bundle_flow() -> Non
 
     assert "OfficialRequirementsSnapshotPath" in official_gate
     assert "official_requirements_snapshot" in official_gate
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in official_gate
+    assert "/blob/$RepoRef/deploy/alibaba/serverless-devs-runtime.yaml" in official_gate
     assert "docs/qwencloud-official-requirements-snapshot.md" in final_bundle
     assert "docs/qwencloud-official-requirements-snapshot.md" in final_readiness
     assert "docs/qwencloud-official-requirements-snapshot.md" in packet
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in packet

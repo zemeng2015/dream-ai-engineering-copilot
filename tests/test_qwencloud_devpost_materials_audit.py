@@ -13,6 +13,7 @@ SCRIPT = ROOT / "scripts" / "qwencloud-devpost-materials-audit.ps1"
 REPO_URL = "https://github.com/zemeng2015/dream-ai-engineering-copilot"
 DEMO_URL = "https://youtu.be/dreamdemo123"
 BACKEND_URL = "https://dream-qwencloud.example.com"
+REPO_REF = "codex/champion-memory-loop"
 
 
 def _powershell_command() -> list[str]:
@@ -266,6 +267,8 @@ def test_devpost_materials_audit_accepts_ready_materials(tmp_path: Path) -> None
         + [
             "-File",
             str(SCRIPT),
+            "-RepoRef",
+            "main",
             "-OutputDir",
             str(paths["output_dir"]),
             "-PacketJson",
@@ -308,6 +311,8 @@ def test_devpost_materials_audit_rejects_placeholders_and_secret_like_values(
         + [
             "-File",
             str(SCRIPT),
+            "-RepoRef",
+            "main",
             "-OutputDir",
             str(paths["output_dir"]),
             "-PacketJson",
@@ -355,6 +360,8 @@ def test_devpost_materials_audit_quotes_producer_paths_with_spaces(tmp_path: Pat
             str(SCRIPT),
             "-RepoUrl",
             REPO_URL,
+            "-RepoRef",
+            REPO_REF,
             "-DemoVideoUrl",
             DEMO_URL,
             "-BackendUrl",
@@ -388,6 +395,8 @@ def test_devpost_materials_audit_quotes_producer_paths_with_spaces(tmp_path: Pat
     )
     report = json.loads(report_path.read_text(encoding="utf-8-sig"))
     assert _check(report, "generate.handoff")["ok"] is True
+    assert _check(report, "competition_source_ref_applied")["ok"] is True
+    assert report["sourceCodeUrl"].endswith(f"/tree/{REPO_REF}")
     assert report["handoffJson"]
 
 

@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -43,8 +45,9 @@ $devpostPreviewUrl = "https://devpost.com/software/dream-qwen-cloud-memoryagent"
 $devpostProjectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit"
 $devpostAdditionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
 $devpostFinalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
-$deploymentProofUrl = "$RepoUrl/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
-$licenseUrl = "$RepoUrl/blob/main/LICENSE"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
+$deploymentProofUrl = "$RepoUrl/blob/$RepoRef/deploy/alibaba/serverless-devs-runtime.yaml"
+$licenseUrl = "$RepoUrl/blob/$RepoRef/LICENSE"
 
 function Has-Env([string]$Name) {
     return Test-QwenCloudEnvValuePresent -Name $Name
@@ -153,18 +156,18 @@ $backendValue = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function
 $blogValue = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
 $description = @"
-Engineering teams lose critical context across tickets, code, incidents, runbooks, and review decisions. DREAM makes that context persistent and governed. It loads knowledge packs, indexes local codebases, distills reviewable memory claims, retrieves source-backed context, and uses Qwen Cloud through an OpenAI-compatible provider to produce traceable requirement and review outputs.
+Most assistants start every session from zero. DREAM gives Qwen governed cross-session experience: Qwen decides remember, supersede, forget, or ignore; DREAM enforces TTL, one current truth, provenance, feedback, and hard context budgets. In the live Arena, a changed rollout preference supersedes the old value and Session 3 recalls only the current 20% canary in 19/64 tokens. A real Qwen benchmark ran 37 curator decisions across 24 lifecycle cases: 24/24 passed, critical recall was 100%, forbidden leak was 0%, and token-budget compliance was 100%.
 
-The system is built as a production-minded Track 1 MemoryAgent: memory can be promoted, rejected, audited, evaluated, and reused across workflows. The public health endpoint exposes runtime proof such as Track 1, qwen-cloud provider, model, deployment target, region, and the Alibaba Cloud proof file path without exposing secrets.
+Approved organizational source claims can enter the same requirement and Jira workflows only after governance. The public Alibaba Function Compute runtime exposes Track 1, qwen-cloud, qwen3.7-plus, benchmark proof, and deployment metadata without exposing secrets.
 "@
 
-$shortPitch = "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering intelligence. It turns docs, codebase structure, incidents, Jira and PR history, and reviewed memory claims into durable, auditable context for requirement drafting and review workflows."
+$shortPitch = "DREAM gives Qwen governed cross-session experience that remembers durable preferences, supersedes stale truth, forgets on time, learns from feedback, and recalls safely under a hard context budget."
 
 $nextCommands = @(
     'scripts/qwencloud-render-demo-video.ps1',
     'scripts/qwencloud-video-publication-handoff.ps1',
-    'scripts/qwencloud-alibaba-runtime-release.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>"',
-    'scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl "https://github.com/zemeng2015/dream-ai-engineering-copilot" -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
+    "scripts/qwencloud-alibaba-runtime-release.ps1 -RepoRef $RepoRef -EnvFile .env.qwencloud.local -DemoVideoUrl `"<public-video-url>`"",
+    "scripts/qwencloud-hackathon-submission-packet.ps1 -RepoUrl `"https://github.com/zemeng2015/dream-ai-engineering-copilot`" -RepoRef $RepoRef -DemoVideoUrl `"<public-video-url>`" -BackendUrl `"<deployed-url>`"",
     'scripts/qwencloud-final-readiness.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"',
     'scripts/qwencloud-final-upload-bundle.ps1 -EnvFile .env.qwencloud.local -DemoVideoUrl "<public-video-url>" -BackendUrl "<deployed-url>"'
 )
@@ -185,6 +188,8 @@ $handoff = [ordered]@{
         finalizationUrl = $devpostFinalizationUrl
     }
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
+    sourceCodeUrl = $sourceCodeUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
@@ -202,7 +207,7 @@ $handoff = [ordered]@{
         submitterType = "Individual"
         country = "United States"
         projectStartDate = "06-21-26"
-        repoUrl = $RepoUrl
+        repoUrl = $sourceCodeUrl
         licenseUrl = $licenseUrl
         deploymentProofCodeFile = $deploymentProofUrl
         demoVideoUrl = $videoValue
@@ -233,7 +238,7 @@ $md = @(
     "- Live draft project details: $devpostProjectDetailsUrl",
     "- Live draft additional info: $devpostAdditionalInfoUrl",
     "- Live draft finalization: $devpostFinalizationUrl",
-    "- Repo: $RepoUrl",
+    "- Repo: $sourceCodeUrl",
     "- Demo video URL: $videoValue",
     "- Backend URL: $backendValue",
     "- Blog/social URL: $blogValue",
@@ -304,7 +309,7 @@ $md += @(
     "- Newly built or existing project: New",
     "- Project start date: 06-21-26",
     "- Track: $track",
-    "- Code repository URL: $RepoUrl",
+    "- Code repository URL: $sourceCodeUrl",
     "- Alibaba Cloud deployment proof code file: $deploymentProofUrl",
     "- Architecture diagram file upload: $ArchitectureUploadPath",
     "- Alibaba deployment screenshot upload: $AlibabaScreenshotPath",
@@ -396,7 +401,7 @@ $html = @"
   <p><strong>Live draft:</strong> <a href="$(Html $devpostProjectDetailsUrl)">Project details</a> |
     <a href="$(Html $devpostAdditionalInfoUrl)">Additional info</a> |
     <a href="$(Html $devpostFinalizationUrl)">Finalization</a></p>
-  <p><strong>Repo:</strong> <a href="$(Html $RepoUrl)">$(Html $RepoUrl)</a></p>
+  <p><strong>Repo:</strong> <a href="$(Html $sourceCodeUrl)">$(Html $sourceCodeUrl)</a></p>
 
   <h2>Blockers</h2>
   <ul>
@@ -422,7 +427,7 @@ $html = @"
     </section>
     <section>
       <h2>Required Links</h2>
-      <pre><code>Repo: $(Html $RepoUrl)
+      <pre><code>Repo: $(Html $sourceCodeUrl)
 License: $(Html $licenseUrl)
 Deployment proof code file: $(Html $deploymentProofUrl)
 Demo video: $(Html $videoValue)

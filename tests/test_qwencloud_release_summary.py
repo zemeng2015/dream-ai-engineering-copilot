@@ -275,6 +275,8 @@ def test_release_workflow_and_bundle_register_release_summary() -> None:
     assert "releaseSummaryJson" in final_sprint
     assert "scripts/qwencloud-release-summary.ps1" in final_readiness
     assert "scripts/qwencloud-release-summary.ps1" in scorecard
+    assert '[string]$RepoRef = "codex/champion-memory-loop"' in scorecard
+    assert 'repoUrl = "$RepoUrl/blob/$RepoRef/$Path"' in scorecard
     assert "workflow run summary" in docs
     assert "generated after the final upload bundle" in docs
     assert "Qwen Cloud Release" in docs

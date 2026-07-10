@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -11,6 +13,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 
@@ -23,7 +26,7 @@ function Test-EvidencePath([string]$Path) {
     return [ordered]@{
         path = $Path
         exists = $exists
-        repoUrl = "$RepoUrl/blob/main/$Path"
+        repoUrl = "$RepoUrl/blob/$RepoRef/$Path"
     }
 }
 
@@ -198,6 +201,8 @@ $result = [ordered]@{
     status = if ($ready) { "READY" } else { "DRAFT" }
     readyForJudgingNarrative = $ready
     repoUrl = $RepoUrl
+    repoRef = $RepoRef
+    sourceCodeUrl = $sourceCodeUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     weightedEvidenceReady = $weightedEvidenceReady
@@ -215,7 +220,7 @@ $lines = @(
     "- Ready for judging narrative: $ready",
     "- Weighted evidence ready: $weightedEvidenceReady / $weightedTotal",
     "- Weighted static evidence ready: $weightedStaticEvidenceReady / $weightedTotal",
-    "- Repo: $RepoUrl",
+    "- Repo: $sourceCodeUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "",

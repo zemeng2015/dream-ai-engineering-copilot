@@ -43,7 +43,7 @@ readiness gates. Re-check the source URL before final submit.
 
 ## DREAM Evidence Mapping
 
-- Repository: `https://github.com/zemeng2015/dream-ai-engineering-copilot`
+- Repository: `https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop`
 - License: `LICENSE`
 - Track brief: `docs/qwencloud-submission.md`
 - Qwen Cloud provider: `dream/llm/qwen_cloud.py`

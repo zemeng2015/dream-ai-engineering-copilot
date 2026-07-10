@@ -20,7 +20,7 @@ scorecards, and human review. The backend is packaged for Alibaba Cloud Function
 Compute as an ACR-free custom runtime code package, with reproducible release
 checks and public architecture proof.
 
-Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot
+Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
 Demo video: <public video URL>
 Backend proof: <deployed /health URL>
 
@@ -107,9 +107,9 @@ and engineering workflow shell around it.
 
 ## Links
 
-- Repository: https://github.com/zemeng2015/dream-ai-engineering-copilot
-- Architecture: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/docs/assets/qwencloud-architecture.svg
-- Architecture PNG: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/docs/assets/qwencloud-architecture.png
-- Deployment proof: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/main/deploy/alibaba/serverless-devs-runtime.yaml
+- Repository: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
+- Architecture: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/assets/qwencloud-architecture.svg
+- Architecture PNG: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/assets/qwencloud-architecture.png
+- Deployment proof: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/deploy/alibaba/serverless-devs-runtime.yaml
 - Demo video: <public video URL>
 - Live backend: https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/

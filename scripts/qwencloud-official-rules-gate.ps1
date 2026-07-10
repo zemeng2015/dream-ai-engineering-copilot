@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -26,6 +28,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
@@ -245,7 +248,7 @@ Add-Requirement `
     -Id "alibaba_deployment_proof_code" `
     -OfficialRequirement "Include proof of Alibaba Cloud deployment as a link to a code file demonstrating Alibaba Cloud services and APIs." `
     -Ok $proofCode.ok `
-    -Evidence "$($proofCode.details); url=$($repo.normalized)/blob/main/deploy/alibaba/serverless-devs-runtime.yaml"
+    -Evidence "$($proofCode.details); url=$($repo.normalized)/blob/$RepoRef/deploy/alibaba/serverless-devs-runtime.yaml"
 
 Add-Requirement `
     -Id "backend_running_on_alibaba_cloud" `
@@ -334,6 +337,8 @@ $result = [ordered]@{
     officialRulesUrl = $officialRulesUrl
     officialRequirementsSnapshotPath = $OfficialRequirementsSnapshotPath
     repoUrl = $repo.normalized
+    repoRef = $RepoRef
+    sourceCodeUrl = $sourceCodeUrl
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
@@ -350,7 +355,7 @@ $lines = @(
     "- Ready for official rules: $ready",
     "- Official rules: $officialRulesUrl",
     "- Deadline UTC: $($submissionDeadlineUtc.ToString('o'))",
-    "- Repo: $($repo.normalized)",
+    "- Repo: $sourceCodeUrl",
     "- Demo video URL: $(if ($DemoVideoUrl) { $DemoVideoUrl } else { '<missing>' })",
     "- Backend URL: $(if ($BackendUrl) { $BackendUrl } else { '<missing>' })",
     "",

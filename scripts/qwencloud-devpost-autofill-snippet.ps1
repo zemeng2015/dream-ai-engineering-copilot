@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$RepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot",
     [Parameter(Mandatory = $false)]
+    [string]$RepoRef = "codex/champion-memory-loop",
+    [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
     [string]$BackendUrl = "",
@@ -45,6 +47,7 @@ if ([string]::IsNullOrWhiteSpace($PayloadJson)) {
         "-ExecutionPolicy", "Bypass",
         "-File", "scripts/qwencloud-devpost-draft-payload.ps1",
         "-RepoUrl", $RepoUrl,
+        "-RepoRef", $RepoRef,
         "-OutputDir", $OutputDir,
         "-AllowDraft"
     )
