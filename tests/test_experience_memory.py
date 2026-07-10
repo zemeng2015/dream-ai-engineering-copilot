@@ -53,6 +53,28 @@ class FakeQwenProvider:
         )
 
 
+class FakeIgnoreQwenProvider:
+    provider_name = "qwen-cloud"
+    model_name = "qwen3.7-plus"
+
+    def complete(self, prompt) -> LLMResponse:
+        return LLMResponse(
+            text="""{
+  "action": "ignore",
+  "kind": null,
+  "key": null,
+  "value": null,
+  "target_memory_id": null,
+  "confidence": 0.96,
+  "importance": 0,
+  "ttl_days": 0,
+  "rationale": "Transient observation."
+}""",
+            provider_name=self.provider_name,
+            model_name=self.model_name,
+        )
+
+
 def _observation(session_id: str, text: str) -> ExperienceObservation:
     return ExperienceObservation(
         team_id="demo_team",
@@ -230,6 +252,46 @@ def test_recall_prioritizes_critical_memory_under_token_budget(tmp_path) -> None
     assert any("token budget" in item.reason for item in recalled.excluded)
 
 
+def test_recall_compacts_long_critical_value_for_small_context_budget(tmp_path) -> None:
+    repository = ExperienceMemoryRepository(tmp_path / "experience.sqlite")
+    value = (
+        "require on-call lead approval before deletion and preserve the audit record "
+        "with the request identifier, reviewer decision, timestamp, and rollback plan"
+    )
+    captured = ExperienceMemoryService(
+        repository=repository,
+        policy=StaticPolicy(
+            _remember(
+                key="production_delete_approval",
+                value=value,
+                kind="policy",
+                importance=5,
+            )
+        ),
+    ).capture(
+        _observation("session-1", "Require approval before production deletion."),
+        now=datetime(2026, 7, 10, tzinfo=UTC),
+    )
+
+    recalled = ExperienceMemoryService(repository=repository).recall(
+        ExperienceRecallRequest(
+            team_id="demo_team",
+            user_id="zack",
+            session_id="session-2",
+            query="production deletion approval",
+            token_budget=40,
+        ),
+        now=datetime(2026, 7, 11, tzinfo=UTC),
+    )
+
+    assert [item.memory.memory_id for item in recalled.selected] == [
+        captured.memory.memory_id
+    ]
+    assert recalled.estimated_tokens_used <= 40
+    assert "require on-call lead approval" in recalled.context_card
+    assert repository.get_memory(captured.memory.memory_id).value == value
+
+
 def test_feedback_changes_future_recall_ranking(tmp_path) -> None:
     repository = ExperienceMemoryRepository(tmp_path / "experience.sqlite")
     current = datetime(2026, 7, 10, tzinfo=UTC)
@@ -295,3 +357,13 @@ def test_qwen_memory_policy_parses_fenced_structured_action() -> None:
     assert result.proposal.importance == 5
     assert result.token_usage == {"total_tokens": 180}
 
+
+def test_qwen_memory_policy_normalizes_irrelevant_ignore_bounds() -> None:
+    result = LLMExperienceMemoryPolicy(FakeIgnoreQwenProvider()).decide(
+        _observation("session-1", "The sandbox build took 94 seconds."),
+        [],
+    )
+
+    assert result.proposal.action == "ignore"
+    assert result.proposal.importance == 1
+    assert result.proposal.ttl_days is None

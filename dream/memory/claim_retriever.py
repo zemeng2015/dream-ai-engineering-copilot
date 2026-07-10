@@ -2,7 +2,11 @@
 
 import re
 
-from dream.memory.models import MemoryClaim, MemoryClaimSearchResult
+from dream.memory.models import (
+    MemoryClaim,
+    MemoryClaimRetrievalBatch,
+    MemoryClaimSearchResult,
+)
 from dream.memory.repository import MemoryDistillationRepository
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
@@ -20,14 +24,46 @@ class MemoryClaimRetriever:
         scan_id: str = "latest",
         top_k: int = 8,
     ) -> list[MemoryClaimSearchResult]:
+        return self.search_with_policy(
+            team_id=team_id,
+            query=query,
+            scan_id=scan_id,
+            top_k=top_k,
+        ).results
+
+    def search_with_policy(
+        self,
+        *,
+        team_id: str,
+        query: str,
+        scan_id: str = "latest",
+        top_k: int = 8,
+    ) -> MemoryClaimRetrievalBatch:
         scan = self.repository.load_scan(team_id, scan_id)
         review_statuses = self.repository.latest_review_statuses(team_id)
+        unresolved_conflict_claim_ids = self._unresolved_conflict_claim_ids(
+            team_id=team_id,
+            scan_id=scan.scan_id,
+        )
+        blocked_claim_ids = {
+            claim.claim_id
+            for claim in scan.claims
+            if claim.claim_id in unresolved_conflict_claim_ids
+            and (
+                review_statuses[claim.claim_id].new_status
+                if claim.claim_id in review_statuses
+                else claim.governance.status
+            )
+            == "approved"
+        }
         terms = self._tokens(query)
         scored: list[MemoryClaimSearchResult] = []
         for claim in scan.claims:
             effective_status = review_statuses.get(claim.claim_id)
             status = effective_status.new_status if effective_status else claim.governance.status
             if status != "approved":
+                continue
+            if claim.claim_id in blocked_claim_ids:
                 continue
             score = self._score_claim(claim, terms)
             if score <= 0:
@@ -38,12 +74,25 @@ class MemoryClaimRetriever:
                     effective_status=status,
                     score=float(score),
                     reason="Approved memory claim matched query terms.",
+                    review_event=effective_status,
                 )
             )
-        return sorted(
+        results = sorted(
             scored,
             key=lambda item: (-item.score, item.claim.entity.canonical_name, item.claim.claim_id),
         )[:top_k]
+        blocked = sorted(blocked_claim_ids)
+        warnings = []
+        if blocked:
+            warnings.append(
+                "Approved memory claims were blocked because their conflicts are unresolved: "
+                + ", ".join(blocked)
+            )
+        return MemoryClaimRetrievalBatch(
+            results=results,
+            blocked_claim_ids=blocked,
+            warnings=warnings,
+        )
 
     def context_card(
         self,
@@ -86,8 +135,7 @@ class MemoryClaimRetriever:
             if claim.evidence.intake_proofs:
                 proof = claim.evidence.intake_proofs[0]
                 lines.append(
-                    "  - intake proof: "
-                    f"{proof.document_id} / {len(proof.section_proofs)} sections"
+                    f"  - intake proof: {proof.document_id} / {len(proof.section_proofs)} sections"
                 )
         return "\n".join(lines).rstrip() + "\n"
 
@@ -114,3 +162,19 @@ class MemoryClaimRetriever:
     @staticmethod
     def _tokens(value: str) -> list[str]:
         return [token.lower() for token in TOKEN_RE.findall(value)]
+
+    def _unresolved_conflict_claim_ids(
+        self,
+        *,
+        team_id: str,
+        scan_id: str,
+    ) -> set[str]:
+        # Imported lazily because the distillation service imports the memory models
+        # used by this retriever. Conflict policy remains defined in one place.
+        from dream.memory.distiller import MemoryDistillationService
+
+        report = MemoryDistillationService(repository=self.repository).conflicts(
+            team_id=team_id,
+            scan_id=scan_id,
+        )
+        return {side.claim.claim_id for pair in report.pairs for side in (pair.left, pair.right)}

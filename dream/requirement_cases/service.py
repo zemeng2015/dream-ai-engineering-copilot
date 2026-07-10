@@ -35,7 +35,7 @@ from dream.requirement_cases.questions import QuestionGenerator
 from dream.requirement_cases.repository import RequirementCaseRepository
 
 if TYPE_CHECKING:
-    from dream.memory import EngineeringMemoryRetriever
+    from dream.memory import EngineeringMemoryRetriever, MemoryClaimRetriever
 
 
 class RequirementCaseService:
@@ -44,6 +44,7 @@ class RequirementCaseService:
         *,
         repository: RequirementCaseRepository | None = None,
         memory_retriever: "EngineeringMemoryRetriever | None" = None,
+        memory_claim_retriever: "MemoryClaimRetriever | None" = None,
         impact_generator: ImpactMapGenerator | None = None,
         question_generator: QuestionGenerator | None = None,
         brief_generator: EngineeringBriefGenerator | None = None,
@@ -54,12 +55,22 @@ class RequirementCaseService:
         experience_service: ExperienceMemoryService | None = None,
     ) -> None:
         self.repository = repository or RequirementCaseRepository()
+        self.codebase_repository = codebase_repository or CodebaseIndexRepository()
         if memory_retriever is None:
             from dream.memory import EngineeringMemoryRetriever as DefaultMemoryRetriever
 
             self.memory_retriever = DefaultMemoryRetriever()
         else:
             self.memory_retriever = memory_retriever
+        if memory_claim_retriever is None:
+            from dream.memory import MemoryClaimRetriever as DefaultMemoryClaimRetriever
+            from dream.memory.repository import MemoryDistillationRepository
+
+            self.memory_claim_retriever = DefaultMemoryClaimRetriever(
+                repository=MemoryDistillationRepository(self.codebase_repository.artifacts_dir)
+            )
+        else:
+            self.memory_claim_retriever = memory_claim_retriever
         self.impact_generator = impact_generator or ImpactMapGenerator()
         self.question_generator = question_generator or QuestionGenerator()
         self.brief_generator = brief_generator or EngineeringBriefGenerator(
@@ -67,7 +78,6 @@ class RequirementCaseService:
         )
         self.jira_generator = jira_generator or JiraDraftGenerator(llm_provider=llm_provider)
         self.audit_logger = audit_logger or AuditLogger()
-        self.codebase_repository = codebase_repository or CodebaseIndexRepository()
         self.experience_service = experience_service
 
     def create_case(self, request: RequirementCaseCreateRequest) -> RequirementCaseSnapshot:
@@ -119,6 +129,8 @@ class RequirementCaseService:
                 component=snapshot.case.target_component,
             ),
         )
+        governed_evidence, memory_warnings = self._approved_memory_claim_evidence(snapshot.case)
+        evidence.extend(governed_evidence)
         experience_recall = self._recall_experience(snapshot.case)
         if experience_recall is not None:
             evidence.extend(
@@ -136,7 +148,9 @@ class RequirementCaseService:
             )
         impact_items = self.impact_generator.generate(snapshot.case, evidence)
         questions = self.question_generator.generate(snapshot.case, evidence)
-        warnings = [] if evidence else ["No knowledge or codebase evidence was retrieved."]
+        warnings = list(memory_warnings)
+        if not evidence:
+            warnings.append("No knowledge, codebase, or approved memory evidence was retrieved.")
         if repo_name is None:
             warnings.append(
                 "No codebase index found for this team; analysis used knowledge docs only."
@@ -169,7 +183,7 @@ class RequirementCaseService:
                 "experience_memory_ids": snapshot.experience_memory_ids,
                 "experience_tokens_used": snapshot.experience_tokens_used,
             },
-            retrieved_source_paths=sorted({item.source_path for item in evidence}),
+            retrieved_source_paths=_evidence_source_paths(evidence),
             model_provider="deterministic",
             model_name="requirement-case-analysis-v1",
             output_path="sqlite:requirement_cases",
@@ -181,8 +195,66 @@ class RequirementCaseService:
         ContextIntelligenceService(
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
+            memory_repository=self.memory_claim_retriever.repository,
         ).trace_case(snapshot.case.case_id)
         return snapshot
+
+    def _approved_memory_claim_evidence(
+        self,
+        case: RequirementCase,
+    ) -> tuple[list[ContextEvidence], list[str]]:
+        try:
+            batch = self.memory_claim_retriever.search_with_policy(
+                team_id=case.team_id,
+                query=case.raw_request,
+                top_k=8,
+            )
+        except NotFoundError:
+            return [], ["No memory scan is available; governed MemoryClaims were not used."]
+
+        evidence: list[ContextEvidence] = []
+        for result in batch.results:
+            claim = result.claim
+            relation_value = claim.relation.value or claim.relation.object_entity_id or "_"
+            condition = (
+                f" Condition: {claim.relation.condition}." if claim.relation.condition else ""
+            )
+            evidence_paths = list(
+                dict.fromkeys(
+                    [
+                        *(span.path for span in claim.evidence.spans),
+                        *(proof.promoted_path for proof in claim.evidence.intake_proofs),
+                    ]
+                )
+            )
+            review = result.review_event
+            review_reason = (
+                f" Approved by {review.reviewer or 'an authorized reviewer'}"
+                f" at {review.reviewed_at}."
+                if review
+                else " Approved by source governance policy."
+            )
+            evidence.append(
+                ContextEvidence(
+                    evidence_id=f"memory-claim:{claim.claim_id}",
+                    case_id=case.case_id,
+                    source_type="memory_claim",
+                    source_path=f"memory-claim://{claim.claim_id}",
+                    title=(f"Approved memory: {claim.entity.canonical_name} {claim.relation.type}"),
+                    excerpt=(
+                        f"{claim.entity.canonical_name} --{claim.relation.type}--> "
+                        f"{relation_value}.{condition}"
+                    ),
+                    relevance_score=result.score,
+                    reason=f"{result.reason}{review_reason}",
+                    memory_claim_id=claim.claim_id,
+                    governance_status=result.effective_status,
+                    reviewed_by=review.reviewer if review else None,
+                    reviewed_at=review.reviewed_at if review else None,
+                    evidence_paths=evidence_paths,
+                )
+            )
+        return evidence, batch.warnings
 
     def _recall_experience(self, case: RequirementCase) -> ExperienceRecallResult | None:
         if not case.user_id or not case.session_id:
@@ -330,7 +402,7 @@ class RequirementCaseService:
     def generate_role_view(self, case_id: str, role: str) -> RoleView:
         snapshot = self._ensure_analyzed(case_id)
         questions = self.generate_questions(case_id, role=role)
-        sources = sorted({item.source_path for item in snapshot.evidence})
+        sources = _evidence_source_paths(snapshot.evidence)
         question_lines = "\n".join(f"- {item.question}" for item in questions) or "- None"
         markdown = f"""# {role.upper()} View
 
@@ -372,9 +444,7 @@ class RequirementCaseService:
             case_id=snapshot.case.case_id,
             input_payload={"case_id": case_id},
             retrieved_source_paths=brief.sources_used,
-            model_provider=getattr(
-                self.brief_generator, "last_model_provider", "deterministic"
-            ),
+            model_provider=getattr(self.brief_generator, "last_model_provider", "deterministic"),
             model_name=getattr(self.brief_generator, "last_model_name", "engineering-brief-v1"),
             output_path=display_path(output_path),
             status="success",
@@ -385,6 +455,7 @@ class RequirementCaseService:
         ContextIntelligenceService(
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
+            memory_repository=self.memory_claim_retriever.repository,
         ).prompt_for_case(case_id, target="engineering_brief")
         return brief
 
@@ -454,6 +525,7 @@ class RequirementCaseService:
         ContextIntelligenceService(
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
+            memory_repository=self.memory_claim_retriever.repository,
         ).prompt_for_case(case_id, target="jira_draft")
         return jira
 
@@ -470,7 +542,7 @@ class RequirementCaseService:
             team_id=snapshot.case.team_id,
             case_id=snapshot.case.case_id,
             input_payload={"case_id": case_id},
-            retrieved_source_paths=sorted({item.source_path for item in snapshot.evidence}),
+            retrieved_source_paths=_evidence_source_paths(snapshot.evidence),
             model_provider="deterministic",
             model_name="jira-readiness-v1",
             output_path="sqlite:requirement_cases",
@@ -509,9 +581,7 @@ class RequirementCaseService:
             question for question in snapshot.questions if question.status == "waived"
         ]
         draft_exists = (
-            snapshot.jira_draft is not None
-            if jira_draft_exists is None
-            else jira_draft_exists
+            snapshot.jira_draft is not None if jira_draft_exists is None else jira_draft_exists
         )
         blocking: list[str] = []
         if not snapshot.evidence:
@@ -568,3 +638,7 @@ class RequirementCaseService:
 
 def _source_lines(sources: list[str]) -> str:
     return "\n".join(f"- {source}" for source in sources) or "- No sources used."
+
+
+def _evidence_source_paths(evidence: list[ContextEvidence]) -> list[str]:
+    return sorted({path for item in evidence for path in item.provenance_paths()})

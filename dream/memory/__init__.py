@@ -5,6 +5,7 @@ from dream.memory.distiller import MemoryDistillationService
 from dream.memory.evaluator import MemoryDistillationEvaluator
 from dream.memory.models import (
     MemoryClaim,
+    MemoryClaimRetrievalBatch,
     MemoryClaimSearchResult,
     MemoryConflictClaimSide,
     MemoryConflictPair,
@@ -30,6 +31,7 @@ from dream.memory.retriever import EngineeringMemoryRetriever
 __all__ = [
     "EngineeringMemoryRetriever",
     "MemoryClaim",
+    "MemoryClaimRetrievalBatch",
     "MemoryConflictClaimSide",
     "MemoryConflictPair",
     "MemoryConflictReport",

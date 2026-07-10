@@ -157,9 +157,7 @@ class MemoryReviewEvent(BaseModel):
     claim_snapshot: MemoryReviewClaimSnapshot | None = None
     risk_signals: list[str] = Field(default_factory=list)
     conflict_signals: list[str] = Field(default_factory=list)
-    signal_explanations: list[MemoryReviewSignalExplanation] = Field(
-        default_factory=list
-    )
+    signal_explanations: list[MemoryReviewSignalExplanation] = Field(default_factory=list)
 
 
 class MemoryLedgerSnapshot(BaseModel):
@@ -290,6 +288,13 @@ class MemoryClaimSearchResult(BaseModel):
     effective_status: str
     score: float
     reason: str
+    review_event: MemoryReviewEvent | None = None
+
+
+class MemoryClaimRetrievalBatch(BaseModel):
+    results: list[MemoryClaimSearchResult] = Field(default_factory=list)
+    blocked_claim_ids: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class MemoryDiffResult(BaseModel):

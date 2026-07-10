@@ -39,6 +39,14 @@ class ContextEvidence(BaseModel):
     excerpt: str
     relevance_score: float
     reason: str
+    memory_claim_id: str | None = None
+    governance_status: str | None = None
+    reviewed_by: str | None = None
+    reviewed_at: str | None = None
+    evidence_paths: list[str] = Field(default_factory=list)
+
+    def provenance_paths(self) -> list[str]:
+        return list(dict.fromkeys([self.source_path, *self.evidence_paths]))
 
 
 class ImpactItem(BaseModel):

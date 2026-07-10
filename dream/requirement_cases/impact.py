@@ -99,8 +99,7 @@ class ImpactMapGenerator:
                     confidence=0.45,
                     sources=[],
                     reason=(
-                        "Inferred from status tracking request; confirm UI ownership "
-                        "with FE/BA."
+                        "Inferred from status tracking request; confirm UI ownership with FE/BA."
                     ),
                 )
             )
@@ -141,7 +140,7 @@ class ImpactMapGenerator:
         for item in evidence:
             text = f"{item.source_path} {item.title} {item.excerpt} {item.reason}".lower()
             if any(marker.lower() in text for marker in markers):
-                sources.append(item.source_path)
+                sources.extend(item.provenance_paths())
         return sorted(dict.fromkeys(sources))
 
     @staticmethod

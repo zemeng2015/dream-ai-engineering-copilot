@@ -327,6 +327,9 @@ def test_fc_code_package_includes_same_origin_angular_build() -> None:
     assert 'frontendFileCount = $frontendFileCount' in package_script
     assert 'docs/assets/qwen-memory-ab-benchmark-summary.json' in package_script
     assert 'docs/qwen-memory-ab-benchmark.md' in package_script
+    assert 'docs/assets/qwen-experience-memory-benchmark-summary.json' in package_script
+    assert 'docs/assets/qwen-experience-memory-benchmark-report.json' in package_script
+    assert 'docs/qwen-experience-memory-benchmark.md' in package_script
     assert 'deploy/alibaba/requirements-fc312.lock.txt' in package_script
     assert 'requirementsLockSha256' in package_script
     assert 'deploy/alibaba/serverless-devs-runtime.yaml' in package_script

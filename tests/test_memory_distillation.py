@@ -111,15 +111,10 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
         },
     )
     claims_with_conflict = [
-        claim if claim.claim_id != candidate.claim_id else candidate
-        for claim in scan.claims
+        claim if claim.claim_id != candidate.claim_id else candidate for claim in scan.claims
     ]
     repository.save_scan(
-        scan.model_copy(
-            update={
-                "claims": [*claims_with_conflict, conflicting_claim]
-            }
-        )
+        scan.model_copy(update={"claims": [*claims_with_conflict, conflicting_claim]})
     )
 
     event = service.review_claim(
@@ -130,12 +125,7 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
         reason="Validated source-backed candidate.",
         scan_id=scan.scan_id,
     )
-    results = MemoryClaimRetriever(repository=repository).search(
-        team_id="demo_team",
-        query=candidate.entity.canonical_name,
-        scan_id=scan.scan_id,
-    )
-    context_card = MemoryClaimRetriever(repository=repository).context_card(
+    retrieval_before_resolution = MemoryClaimRetriever(repository=repository).search_with_policy(
         team_id="demo_team",
         query=candidate.entity.canonical_name,
         scan_id=scan.scan_id,
@@ -149,6 +139,12 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
     assert event.claim_snapshot.evidence_paths
     assert "semantic_claim_requires_human_review" in event.risk_signals
     assert event.conflict_signals
+    assert not any(
+        result.claim.claim_id == candidate.claim_id
+        for result in retrieval_before_resolution.results
+    )
+    assert retrieval_before_resolution.blocked_claim_ids == [candidate.claim_id]
+    assert "unresolved" in " ".join(retrieval_before_resolution.warnings)
     assert event.signal_explanations
     assert any(
         explanation.signal == "semantic_claim_requires_human_review"
@@ -156,8 +152,7 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
         for explanation in event.signal_explanations
     )
     assert any(
-        explanation.category == "conflict"
-        and explanation.evidence[0] == conflicting_claim.claim_id
+        explanation.category == "conflict" and explanation.evidence[0] == conflicting_claim.claim_id
         for explanation in event.signal_explanations
     )
     conflict_report = service.conflicts(team_id="demo_team", scan_id=scan.scan_id)
@@ -188,6 +183,16 @@ def test_memory_review_ledger_and_approved_claim_retrieval(tmp_path) -> None:
     resolved_report = service.conflicts(team_id="demo_team", scan_id=scan.scan_id)
     resolution_ledger = repository.load_conflict_resolution_ledger("demo_team")
     latest_statuses = repository.latest_review_statuses("demo_team")
+    results = MemoryClaimRetriever(repository=repository).search(
+        team_id="demo_team",
+        query=candidate.entity.canonical_name,
+        scan_id=scan.scan_id,
+    )
+    context_card = MemoryClaimRetriever(repository=repository).context_card(
+        team_id="demo_team",
+        query=candidate.entity.canonical_name,
+        scan_id=scan.scan_id,
+    )
     assert resolution.action == "approve_winner_reject_other"
     assert resolution.winning_claim_id == candidate.claim_id
     assert resolution.rejected_claim_id == conflicting_claim.claim_id

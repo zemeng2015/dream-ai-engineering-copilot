@@ -32,8 +32,9 @@ class LLMExperienceMemoryPolicy:
     ) -> ExperiencePolicyResult:
         response = self.provider.complete(self._prompt(observation, active_memories))
         try:
+            payload = json.loads(_extract_json_object(response.text))
             proposal = MemoryActionProposal.model_validate(
-                json.loads(_extract_json_object(response.text))
+                _normalize_proposal_payload(payload)
             )
         except (json.JSONDecodeError, ValueError) as exc:
             raise ProviderRequestError(
@@ -69,11 +70,31 @@ be remembered, supersede an existing memory, forget an existing memory, or be ig
 
 Safety rules:
 - Store only durable preferences, operating policies, or reusable experience.
+- Use preference for a person's durable defaults ("I prefer", "my preference",
+  "for me"); use policy for mandatory team or organization rules; use episode for a
+  reusable lesson learned from an observed outcome.
+- Store explicit temporary operational directives when they affect later decisions, and
+  set ttl_days from the stated duration so they expire automatically.
 - Do not store secrets, transient chatter, or unsupported assumptions.
-- Use supersede when the same key has a newer conflicting value.
+- Use supersede when the same key has a newer conflicting value; reuse the exact active
+  memory key and target_memory_id.
 - Use forget only when the observation explicitly invalidates an existing memory.
-- Keep keys short and stable snake_case.
+- Keep keys short and stable snake_case without team, user, or company-name prefixes.
+- Keep values as concise natural-language phrases, never snake_case. Preserve units such
+  as percent, workers, days, minutes, region, and UTC when they affect meaning.
+- First-person choices such as "I prefer" or "I want" are preferences.
+- Organization-wide must/should rules are policies.
+- Repeated lessons or explicitly reusable tips are episodes, even at importance 1.
+- Importance must always be an integer from 1 to 5, including ignore and forget.
+- TTL days must be null or an integer from 1 to 3650; use null for no expiry.
 - Return one JSON object and no markdown.
+
+Decision examples:
+- "For today only, route alerts to the response room" means remember a policy with
+  ttl_days 1; it is not transient chatter because it affects a later decision.
+- "Reviews repeatedly go faster when graphs are grouped by service; keep this reusable
+  tip" means remember an episode with importance 1.
+- "The build took 94 seconds" means ignore because it is a one-off observation.
 
 JSON contract:
 {{
@@ -154,6 +175,26 @@ def _validate_proposal(proposal: MemoryActionProposal) -> None:
         raise ValueError("Forget action requires target_memory_id.")
 
 
+def _normalize_proposal_payload(payload: object) -> object:
+    if not isinstance(payload, dict):
+        return payload
+    normalized = dict(payload)
+    if isinstance(normalized.get("action"), str):
+        normalized["action"] = normalized["action"].strip().lower()
+    if isinstance(normalized.get("kind"), str):
+        normalized["kind"] = normalized["kind"].strip().lower() or None
+    for field in ("key", "value", "target_memory_id"):
+        if isinstance(normalized.get(field), str) and not normalized[field].strip():
+            normalized[field] = None
+    if normalized.get("action") in {"ignore", "forget"} and normalized.get(
+        "importance"
+    ) in {None, 0, "0"}:
+        normalized["importance"] = 1
+    if normalized.get("ttl_days") in {0, "0", ""}:
+        normalized["ttl_days"] = None
+    return normalized
+
+
 def _extract_json_object(value: str) -> str:
     text = value.strip()
     if text.startswith("```"):
@@ -168,4 +209,3 @@ def _extract_json_object(value: str) -> str:
     if start < 0 or end < start:
         raise ValueError("No JSON object was found.")
     return text[start : end + 1]
-

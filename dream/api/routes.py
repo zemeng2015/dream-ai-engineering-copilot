@@ -110,6 +110,7 @@ class QwenCloudShowcaseScorecard(BaseModel):
     weighted_total: int = 100
     live_backend_points: int
     public_video_points: int = 0
+    public_video_url: str | None = None
     missing_external_inputs: list[str]
 
 
@@ -130,6 +131,27 @@ class QwenCloudShowcaseBenchmark(BaseModel):
     limitations: list[str] = Field(default_factory=list)
 
 
+class QwenCloudExperienceBenchmark(BaseModel):
+    status: str
+    run_id: str | None = None
+    provider: str | None = None
+    model: str | None = None
+    case_count: int = 0
+    decision_count: int = 0
+    passed_cases: int = 0
+    overall_score: float = 0
+    proposal_accuracy: float = 0
+    action_accuracy: float = 0
+    critical_memory_recall: float = 0
+    forbidden_memory_leak_rate: float = 0
+    token_budget_compliance: float = 0
+    memory_payload_accuracy: float = 0
+    exact_canonical_key_accuracy: float = 0
+    report_path: str | None = None
+    methodology_path: str | None = None
+    limitations: list[str] = Field(default_factory=list)
+
+
 class QwenCloudShowcaseResponse(BaseModel):
     generated_at: str
     project_title: str
@@ -139,6 +161,7 @@ class QwenCloudShowcaseResponse(BaseModel):
     judge_flow: list[QwenCloudShowcaseStep]
     evidence: list[QwenCloudShowcaseEvidenceItem]
     benchmark: QwenCloudShowcaseBenchmark
+    experience_benchmark: QwenCloudExperienceBenchmark
     scorecard: QwenCloudShowcaseScorecard
 
 
@@ -284,7 +307,9 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
     )
     live_backend_ready = qwen_cloud_ready and alibaba_runtime_ready
     live_backend_points = 30 if live_backend_ready else 0
-    missing_external_inputs = ["public_demo_video_url"]
+    public_video_url = os.getenv("QWEN_PUBLIC_DEMO_VIDEO_URL", "").strip()
+    public_video_points = 15 if public_video_url else 0
+    missing_external_inputs = [] if public_video_url else ["public_demo_video_url"]
     if not live_backend_ready:
         missing_external_inputs.insert(0, "deployed_backend_url")
 
@@ -421,11 +446,26 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
                     "tests/test_qwencloud_memory_ab_benchmark.py",
                 ],
             ),
+            QwenCloudShowcaseEvidenceItem(
+                name="Cross-session Qwen experience benchmark",
+                state="measured",
+                proof_paths=[
+                    "docs/assets/qwen-experience-memory-benchmark-summary.json",
+                    "examples/experience-benchmark/scenarios.yaml",
+                    "scripts/qwencloud_experience_memory_benchmark.py",
+                    "tests/test_qwencloud_experience_memory_benchmark.py",
+                ],
+            ),
         ],
         benchmark=_qwen_benchmark_summary(),
+        experience_benchmark=_qwen_experience_benchmark_summary(),
         scorecard=QwenCloudShowcaseScorecard(
-            weighted_current_evidence_ready=55 + live_backend_points,
+            weighted_current_evidence_ready=(
+                55 + live_backend_points + public_video_points
+            ),
             live_backend_points=live_backend_points,
+            public_video_points=public_video_points,
+            public_video_url=public_video_url or None,
             missing_external_inputs=missing_external_inputs,
         ),
     )
@@ -464,6 +504,51 @@ def _qwen_benchmark_summary() -> QwenCloudShowcaseBenchmark:
         return QwenCloudShowcaseBenchmark(
             status="invalid",
             limitations=["Benchmark summary file failed schema validation."],
+        )
+
+
+def _qwen_experience_benchmark_summary() -> QwenCloudExperienceBenchmark:
+    path_value = os.getenv(
+        "QWEN_EXPERIENCE_BENCHMARK_SUMMARY_FILE",
+        "docs/assets/qwen-experience-memory-benchmark-summary.json",
+    )
+    path = resolve_project_path(path_value)
+    if not path.is_file():
+        return QwenCloudExperienceBenchmark(
+            status="missing",
+            limitations=["Experience benchmark summary file is not packaged."],
+        )
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        aggregate = data["aggregate"]
+        return QwenCloudExperienceBenchmark(
+            status="ready",
+            run_id=str(data["run_id"]),
+            provider=str(data["provider"]),
+            model=str(data["model"]),
+            case_count=int(data["case_count"]),
+            decision_count=int(data["decision_count"]),
+            passed_cases=int(aggregate["passed_cases"]),
+            overall_score=float(aggregate["overall_score"]),
+            proposal_accuracy=float(aggregate["proposal_accuracy"]),
+            action_accuracy=float(aggregate["action_accuracy"]),
+            critical_memory_recall=float(aggregate["critical_memory_recall"]),
+            forbidden_memory_leak_rate=float(
+                aggregate["forbidden_memory_leak_rate"]
+            ),
+            token_budget_compliance=float(aggregate["token_budget_compliance"]),
+            memory_payload_accuracy=float(aggregate["memory_payload_accuracy"]),
+            exact_canonical_key_accuracy=float(
+                aggregate["exact_canonical_key_accuracy"]
+            ),
+            report_path=str(data["report_path"]),
+            methodology_path=str(data["methodology_path"]),
+            limitations=[str(item) for item in data.get("limitations", [])],
+        )
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return QwenCloudExperienceBenchmark(
+            status="invalid",
+            limitations=["Experience benchmark summary file failed schema validation."],
         )
 
 

@@ -1,0 +1,1938 @@
+{
+  "schema_version": "experience-benchmark-v1",
+  "run_id": "20260710T045527Z",
+  "started_at": "2026-07-10T04:55:27.476944+00:00",
+  "finished_at": "2026-07-10T04:57:29.841730+00:00",
+  "duration_seconds": 122.365,
+  "policy_mode": "qwen-cloud",
+  "provider": "qwen-cloud",
+  "model": "qwen3.7-plus",
+  "case_count": 24,
+  "aggregate": {
+    "passed_cases": 24,
+    "proposal_accuracy": 1.0,
+    "action_accuracy": 1.0,
+    "memory_payload_accuracy": 1.0,
+    "exact_canonical_key_accuracy": 0.5135,
+    "critical_memory_recall": 1.0,
+    "forbidden_memory_leak_rate": 0.0,
+    "token_budget_compliance": 1.0,
+    "stateless_baseline_carryover_recall": 0.0,
+    "overall_score": 100.0,
+    "category_pass_rates": {
+      "conflict_supersede": 1.0,
+      "cross_session_preference": 1.0,
+      "duplicate_or_ignore": 1.0,
+      "limited_token_budget": 1.0,
+      "ttl_or_forget": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "preference-01-production-retry-mode",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-d06292a7e4f9",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 650,
+            "total_tokens": 752,
+            "completion_tokens": 102
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-d06292a7e4f9",
+            "kind": "preference",
+            "key": "production_retry_mode",
+            "value": "rerun only failed tasks, never the entire batch",
+            "importance": 5,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "production_retry_mode"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-d06292a7e4f9"
+        ],
+        "selected_keys": [
+          "production_retry_mode"
+        ],
+        "selected_values": [
+          "rerun only failed tasks, never the entire batch"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-d06292a7e4f9"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "retry the entire batch"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 24,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-02-review-findings-order",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-0c26e359fbb4",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 645,
+            "total_tokens": 749,
+            "completion_tokens": 104
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-0c26e359fbb4",
+            "kind": "preference",
+            "key": "review_findings_order",
+            "value": "Show blocking findings before the summary in DemoCorp code reviews",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "review_findings_order"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-0c26e359fbb4"
+        ],
+        "selected_keys": [
+          "review_findings_order"
+        ],
+        "selected_values": [
+          "Show blocking findings before the summary in DemoCorp code reviews"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-0c26e359fbb4"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "summary before blocking findings"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 29,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-03-sandbox-deploy-region",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-44dca5fbfcc9",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 651,
+            "total_tokens": 745,
+            "completion_tokens": 94
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-44dca5fbfcc9",
+            "kind": "preference",
+            "key": "sandbox_deploy_region",
+            "value": "north-test",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "sandbox_deploy_region"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-44dca5fbfcc9"
+        ],
+        "selected_keys": [
+          "sandbox_deploy_region"
+        ],
+        "selected_values": [
+          "north-test"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-44dca5fbfcc9"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "south-test region"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 15,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-04-test-execution-order",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-05075bd383bd",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 646,
+            "total_tokens": 753,
+            "completion_tokens": 107
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-05075bd383bd",
+            "kind": "preference",
+            "key": "test_execution_order",
+            "value": "Run focused tests before the full suite when changing DemoCorp services",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "test_execution_order"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-05075bd383bd"
+        ],
+        "selected_keys": [
+          "test_execution_order"
+        ],
+        "selected_values": [
+          "Run focused tests before the full suite when changing DemoCorp services"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-05075bd383bd"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "full suite before focused tests"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 30,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-05-incident-update-cadence",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-96876a0ed562",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 651,
+            "total_tokens": 758,
+            "completion_tokens": 107
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-96876a0ed562",
+            "kind": "preference",
+            "key": "incident_update_cadence",
+            "value": "concise timeline update every 30 minutes during DemoCorp incidents",
+            "importance": 4,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "incident_update_cadence"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-96876a0ed562"
+        ],
+        "selected_keys": [
+          "incident_update_cadence"
+        ],
+        "selected_values": [
+          "concise timeline update every 30 minutes during DemoCorp incidents"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-96876a0ed562"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "one update at incident close"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 29,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-06-analysis-output-format",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-666aa01645e0",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 647,
+            "total_tokens": 746,
+            "completion_tokens": 99
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-666aa01645e0",
+            "kind": "preference",
+            "key": "analysis_output_format",
+            "value": "Short human summary followed by machine-readable JSON",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "analysis_output_format"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-666aa01645e0"
+        ],
+        "selected_keys": [
+          "analysis_output_format"
+        ],
+        "selected_values": [
+          "Short human summary followed by machine-readable JSON"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-666aa01645e0"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "JSON before the human summary"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 26,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-07-feature-branch-prefix",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-90168e650225",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 640,
+            "total_tokens": 732,
+            "completion_tokens": 92
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-90168e650225",
+            "kind": "preference",
+            "key": "feature_branch_prefix",
+            "value": "demo-feature/",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "feature_branch_prefix"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-90168e650225"
+        ],
+        "selected_keys": [
+          "feature_branch_prefix"
+        ],
+        "selected_values": [
+          "demo-feature/"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-90168e650225"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "feature/"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 15,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "preference-08-nonproduction-alerting",
+      "category": "cross_session_preference",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-f22baad961d4",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 649,
+            "total_tokens": 756,
+            "completion_tokens": 107
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-f22baad961d4",
+            "kind": "preference",
+            "key": "nonprod_alerting_method",
+            "value": "Notify in team feed for DemoCorp nonproduction failures; do not page",
+            "importance": 4,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "nonproduction_alerting"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-f22baad961d4"
+        ],
+        "selected_keys": [
+          "nonprod_alerting_method"
+        ],
+        "selected_values": [
+          "Notify in team feed for DemoCorp nonproduction failures; do not page"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-f22baad961d4"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "page immediately"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 30,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-01-rollout-percentage",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-b1899e3b5033",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 645,
+            "total_tokens": 735,
+            "completion_tokens": 90
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-b1899e3b5033",
+            "kind": "policy",
+            "key": "production_canary_start_percent",
+            "value": "5 percent",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-619de7bf8bef",
+          "target_memory_id": "experience-memory-b1899e3b5033",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 716,
+            "total_tokens": 834,
+            "completion_tokens": 118
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-619de7bf8bef",
+            "kind": "policy",
+            "key": "production_canary_start_percent",
+            "value": "10 percent",
+            "importance": 5,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "production_canary_size"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-619de7bf8bef"
+        ],
+        "selected_keys": [
+          "production_canary_start_percent"
+        ],
+        "selected_values": [
+          "10 percent"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-619de7bf8bef"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "5 percent"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 16,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-02-ci-parallelism",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-d8c3b9aad277",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 640,
+            "total_tokens": 736,
+            "completion_tokens": 96
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-d8c3b9aad277",
+            "kind": "policy",
+            "key": "ci_parallel_workers",
+            "value": "Run integration tests with four parallel workers",
+            "importance": 3,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-1ac3aeb1c8f7",
+          "target_memory_id": "experience-memory-d8c3b9aad277",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 711,
+            "total_tokens": 826,
+            "completion_tokens": 115
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-1ac3aeb1c8f7",
+            "kind": "policy",
+            "key": "ci_parallel_workers",
+            "value": "Run integration tests with eight parallel workers",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "integration_test_workers"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-1ac3aeb1c8f7"
+        ],
+        "selected_keys": [
+          "ci_parallel_workers"
+        ],
+        "selected_values": [
+          "Run integration tests with eight parallel workers"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-1ac3aeb1c8f7"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "4 workers"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 23,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-03-release-approval",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-89dbbdd82cb4",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 640,
+            "total_tokens": 734,
+            "completion_tokens": 94
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-89dbbdd82cb4",
+            "kind": "policy",
+            "key": "staging_release_approval",
+            "value": "DemoCorp staging releases require service owner approval",
+            "importance": 4,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-6fde3ce4e0e1",
+          "target_memory_id": "experience-memory-89dbbdd82cb4",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 708,
+            "total_tokens": 825,
+            "completion_tokens": 117
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-6fde3ce4e0e1",
+            "kind": "policy",
+            "key": "staging_release_approval",
+            "value": "DemoCorp staging releases require automated policy checks instead of service owner approval",
+            "importance": 4,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "staging_release_approval"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-6fde3ce4e0e1"
+        ],
+        "selected_keys": [
+          "staging_release_approval"
+        ],
+        "selected_values": [
+          "DemoCorp staging releases require automated policy checks instead of service owner approval"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-6fde3ce4e0e1"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "service owner approval"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 30,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-04-schema-migration-mode",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-d1bc28342da2",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 641,
+            "total_tokens": 736,
+            "completion_tokens": 95
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-d1bc28342da2",
+            "kind": "policy",
+            "key": "schema_migration_mode",
+            "value": "Use a single maintenance migration for schema changes",
+            "importance": 4,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-d9246427b86f",
+          "target_memory_id": "experience-memory-d1bc28342da2",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 714,
+            "total_tokens": 834,
+            "completion_tokens": 120
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-d9246427b86f",
+            "kind": "policy",
+            "key": "schema_migration_mode",
+            "value": "Use expand and contract migrations for schema changes",
+            "importance": 4,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "schema_migration_mode"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-d9246427b86f"
+        ],
+        "selected_keys": [
+          "schema_migration_mode"
+        ],
+        "selected_values": [
+          "Use expand and contract migrations for schema changes"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-d9246427b86f"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "single maintenance migration"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 24,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-05-debug-log-retention",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-35ab25013ffc",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 642,
+            "total_tokens": 741,
+            "completion_tokens": 99
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-35ab25013ffc",
+            "kind": "policy",
+            "key": "debug_log_retention_days",
+            "value": "Retain DemoCorp debug logs for 14 days",
+            "importance": 3,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-e42b009f7c5b",
+          "target_memory_id": "experience-memory-35ab25013ffc",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 721,
+            "total_tokens": 848,
+            "completion_tokens": 127
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-e42b009f7c5b",
+            "kind": "policy",
+            "key": "debug_log_retention_days",
+            "value": "Retain debug logs for 7 days",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "debug_log_retention"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-e42b009f7c5b"
+        ],
+        "selected_keys": [
+          "debug_log_retention_days"
+        ],
+        "selected_values": [
+          "Retain debug logs for 7 days"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-e42b009f7c5b"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "14 days"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 19,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "conflict-06-release-freeze-start",
+      "category": "conflict_supersede",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-619e35517854",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 646,
+            "total_tokens": 749,
+            "completion_tokens": 103
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-619e35517854",
+            "kind": "policy",
+            "key": "weekly_release_freeze_start",
+            "value": "Friday at 18:00 UTC",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "supersede",
+          "actual_proposal": "supersede",
+          "proposal_ok": true,
+          "expected_action": "supersede",
+          "actual_action": "supersede",
+          "requested_action": "supersede",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-b19471e36e0c",
+          "target_memory_id": "experience-memory-619e35517854",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 722,
+            "total_tokens": 844,
+            "completion_tokens": 122
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-b19471e36e0c",
+            "kind": "policy",
+            "key": "weekly_release_freeze_start",
+            "value": "Thursday at 20:00 UTC",
+            "importance": 5,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "weekly_release_freeze_start"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-b19471e36e0c"
+        ],
+        "selected_keys": [
+          "weekly_release_freeze_start"
+        ],
+        "selected_values": [
+          "Thursday at 20:00 UTC"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-b19471e36e0c"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "Friday 18:00 UTC"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 18,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "forget-01-temporary-release-window",
+      "category": "ttl_or_forget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-1bd998c62a30",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 651,
+            "total_tokens": 764,
+            "completion_tokens": 113
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-1bd998c62a30",
+            "kind": "policy",
+            "key": "prod_release_window_override",
+            "value": "DemoCorp production releases may start after 18:00 UTC for the next two days only",
+            "importance": 4,
+            "valid_until": "2026-01-03T00:00:00+00:00"
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [],
+        "expected_memory_ids": [],
+        "selected_keys": [],
+        "selected_values": [],
+        "selected_memory_ids": [],
+        "expected_hits": 0,
+        "expected_total": 0,
+        "recall": 1.0,
+        "forbidden_values": [
+          "release after 18:00 UTC"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [
+          "experience-memory-1bd998c62a30"
+        ],
+        "token_budget": 128,
+        "estimated_tokens_used": 0,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "forget-02-incident-routing-ttl",
+      "category": "ttl_or_forget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-3ba5a80469c9",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 646,
+            "total_tokens": 751,
+            "completion_tokens": 105
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-3ba5a80469c9",
+            "kind": "policy",
+            "key": "incident_alert_routing",
+            "value": "Route DemoCorp checkout alerts to the temporary response room",
+            "importance": 3,
+            "valid_until": "2026-01-02T00:00:00+00:00"
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [],
+        "expected_memory_ids": [],
+        "selected_keys": [],
+        "selected_values": [],
+        "selected_memory_ids": [],
+        "expected_hits": 0,
+        "expected_total": 0,
+        "recall": 1.0,
+        "forbidden_values": [
+          "temporary response room"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [
+          "experience-memory-3ba5a80469c9"
+        ],
+        "token_budget": 128,
+        "estimated_tokens_used": 0,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "forget-03-explicit-cache-bypass",
+      "category": "ttl_or_forget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-d0daf5c77783",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 647,
+            "total_tokens": 750,
+            "completion_tokens": 103
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-d0daf5c77783",
+            "kind": "policy",
+            "key": "build_cache_bypass_diagnostics",
+            "value": "DemoCorp package builds should bypass the shared cache while diagnostics are active",
+            "importance": 4,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "forget",
+          "actual_proposal": "forget",
+          "proposal_ok": true,
+          "expected_action": "forget",
+          "actual_action": "forget",
+          "requested_action": "forget",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": null,
+          "target_memory_id": "experience-memory-d0daf5c77783",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 721,
+            "total_tokens": 822,
+            "completion_tokens": 101
+          },
+          "actual_memory": null
+        }
+      ],
+      "recall": {
+        "expected_keys": [],
+        "expected_memory_ids": [],
+        "selected_keys": [],
+        "selected_values": [],
+        "selected_memory_ids": [],
+        "expected_hits": 0,
+        "expected_total": 0,
+        "recall": 1.0,
+        "forbidden_values": [
+          "bypass shared cache"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 0,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "forget-04-explicit-staging-mirror",
+      "category": "ttl_or_forget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-8825094c2c6e",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 650,
+            "total_tokens": 761,
+            "completion_tokens": 111
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-8825094c2c6e",
+            "kind": "preference",
+            "key": "staging_mirror",
+            "value": "use blue staging mirror for DemoCorp artifact validation",
+            "importance": 3,
+            "valid_until": "2026-01-08T00:00:00+00:00"
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "forget",
+          "actual_proposal": "forget",
+          "proposal_ok": true,
+          "expected_action": "forget",
+          "actual_action": "forget",
+          "requested_action": "forget",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": null,
+          "target_memory_id": "experience-memory-8825094c2c6e",
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 743,
+            "total_tokens": 842,
+            "completion_tokens": 99
+          },
+          "actual_memory": null
+        }
+      ],
+      "recall": {
+        "expected_keys": [],
+        "expected_memory_ids": [],
+        "selected_keys": [],
+        "selected_values": [],
+        "selected_memory_ids": [],
+        "expected_hits": 0,
+        "expected_total": 0,
+        "recall": 1.0,
+        "forbidden_values": [
+          "blue staging mirror"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 128,
+        "estimated_tokens_used": 0,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "budget-01-production-delete-approval",
+      "category": "limited_token_budget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-db3c311e2b30",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 644,
+            "total_tokens": 746,
+            "completion_tokens": 102
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-db3c311e2b30",
+            "kind": "policy",
+            "key": "production_data_deletion_approval",
+            "value": "Require approval from the on-call lead before any DemoCorp production data deletion",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-da228ac89458",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 727,
+            "total_tokens": 843,
+            "completion_tokens": 116
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-da228ac89458",
+            "kind": "episode",
+            "key": "deletion_rehearsal_optimization",
+            "value": "Group sample files by date before operators begin to speed up deletion rehearsals",
+            "importance": 2,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "production_delete_approval"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-db3c311e2b30"
+        ],
+        "selected_keys": [
+          "production_data_deletion_approval"
+        ],
+        "selected_values": [
+          "Require approval from the on-call lead before any DemoCorp production data deletion"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-db3c311e2b30"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "group sample files by date before deletion rehearsals"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 40,
+        "estimated_tokens_used": 29,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "budget-02-rollback-checkpoint",
+      "category": "limited_token_budget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-8c4fea52e4f2",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 640,
+            "total_tokens": 738,
+            "completion_tokens": 98
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-8c4fea52e4f2",
+            "kind": "policy",
+            "key": "production_rollback_checkpoint",
+            "value": "Restore the last verified checkpoint during DemoCorp production rollbacks",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-c38102845074",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 720,
+            "total_tokens": 825,
+            "completion_tokens": 105
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-c38102845074",
+            "kind": "episode",
+            "key": "rollback_review_graph_grouping",
+            "value": "Group graphs by service before DemoCorp rollback reviews to improve efficiency",
+            "importance": 1,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "production_rollback_checkpoint"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-8c4fea52e4f2"
+        ],
+        "selected_keys": [
+          "production_rollback_checkpoint"
+        ],
+        "selected_values": [
+          "Restore the last verified checkpoint during DemoCorp production rollbacks"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-8c4fea52e4f2"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "group rollback graphs by service before review"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 40,
+        "estimated_tokens_used": 30,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "budget-03-customer-export-redaction",
+      "category": "limited_token_budget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": "experience-memory-428271ef6380",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 645,
+            "total_tokens": 748,
+            "completion_tokens": 103
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-428271ef6380",
+            "kind": "policy",
+            "key": "customer_export_redaction",
+            "value": "Redact personal fields from DemoCorp customer exports before leaving the controlled workspace",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-c2e0b772d51f",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 726,
+            "total_tokens": 833,
+            "completion_tokens": 107
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-c2e0b772d51f",
+            "kind": "episode",
+            "key": "demo_export_review_optimization",
+            "value": "Sort sample columns alphabetically before review to speed up DemoCorp export reviews",
+            "importance": 2,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "customer_export_redaction"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-428271ef6380"
+        ],
+        "selected_keys": [
+          "customer_export_redaction"
+        ],
+        "selected_values": [
+          "Redact personal fields from DemoCorp customer exports before leaving the controlled workspace"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-428271ef6380"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "sort sample columns alphabetically before export review"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 40,
+        "estimated_tokens_used": 30,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "budget-04-artifact-provenance-gate",
+      "category": "limited_token_budget",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-2c62eeac201e",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 651,
+            "total_tokens": 756,
+            "completion_tokens": 105
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-2c62eeac201e",
+            "kind": "policy",
+            "key": "artifact_provenance_requirement",
+            "value": "Do not publish a DemoCorp release artifact unless its provenance is signed and verified.",
+            "importance": 5,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-e224b9cc771b",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 731,
+            "total_tokens": 841,
+            "completion_tokens": 110
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-e224b9cc771b",
+            "kind": "episode",
+            "key": "archive_label_build_date",
+            "value": "Include build date in archive labels based on repeated packaging review lessons.",
+            "importance": 3,
+            "valid_until": null
+          }
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "artifact_publish_gate"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-2c62eeac201e"
+        ],
+        "selected_keys": [
+          "artifact_provenance_requirement"
+        ],
+        "selected_values": [
+          "Do not publish a DemoCorp release artifact unless its provenance is signed and verified."
+        ],
+        "selected_memory_ids": [
+          "experience-memory-2c62eeac201e"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "include the build date in archive labels"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 40,
+        "estimated_tokens_used": 31,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "ignore-01-exact-duplicate-preference",
+      "category": "duplicate_or_ignore",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "remember",
+          "actual_proposal": "remember",
+          "proposal_ok": true,
+          "expected_action": "remember",
+          "actual_action": "remember",
+          "requested_action": "remember",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": false,
+          "created_memory_id": "experience-memory-eb415ec387cb",
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 643,
+            "total_tokens": 740,
+            "completion_tokens": 97
+          },
+          "actual_memory": {
+            "memory_id": "experience-memory-eb415ec387cb",
+            "kind": "preference",
+            "key": "pr_merge_strategy",
+            "value": "squash merging for DemoCorp pull requests",
+            "importance": 3,
+            "valid_until": null
+          }
+        },
+        {
+          "step": 2,
+          "session_id": "session-2",
+          "expected_proposal": "ignore",
+          "actual_proposal": "ignore",
+          "proposal_ok": true,
+          "expected_action": "ignore",
+          "actual_action": "ignore",
+          "requested_action": "ignore",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": null,
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 711,
+            "total_tokens": 799,
+            "completion_tokens": 88
+          },
+          "actual_memory": null
+        }
+      ],
+      "recall": {
+        "expected_keys": [
+          "pull_request_merge_mode"
+        ],
+        "expected_memory_ids": [
+          "experience-memory-eb415ec387cb"
+        ],
+        "selected_keys": [
+          "pr_merge_strategy"
+        ],
+        "selected_values": [
+          "squash merging for DemoCorp pull requests"
+        ],
+        "selected_memory_ids": [
+          "experience-memory-eb415ec387cb"
+        ],
+        "expected_hits": 1,
+        "expected_total": 1,
+        "recall": 1.0,
+        "forbidden_values": [
+          "merge commit"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 21,
+        "budget_ok": true
+      }
+    },
+    {
+      "id": "ignore-02-transient-build-chatter",
+      "category": "duplicate_or_ignore",
+      "passed": true,
+      "payload_diagnostic_pass": true,
+      "steps": [
+        {
+          "step": 1,
+          "session_id": "session-1",
+          "expected_proposal": "ignore",
+          "actual_proposal": "ignore",
+          "proposal_ok": true,
+          "expected_action": "ignore",
+          "actual_action": "ignore",
+          "requested_action": "ignore",
+          "action_ok": true,
+          "memory_ok": true,
+          "exact_key_ok": true,
+          "created_memory_id": null,
+          "target_memory_id": null,
+          "provider": "qwen-cloud",
+          "model": "qwen3.7-plus",
+          "token_usage": {
+            "prompt_tokens": 651,
+            "total_tokens": 738,
+            "completion_tokens": 87
+          },
+          "actual_memory": null
+        }
+      ],
+      "recall": {
+        "expected_keys": [],
+        "expected_memory_ids": [],
+        "selected_keys": [],
+        "selected_values": [],
+        "selected_memory_ids": [],
+        "expected_hits": 0,
+        "expected_total": 0,
+        "recall": 1.0,
+        "forbidden_values": [
+          "94 seconds"
+        ],
+        "leaked_values": [],
+        "expired_memory_ids": [],
+        "token_budget": 96,
+        "estimated_tokens_used": 0,
+        "budget_ok": true
+      }
+    }
+  ],
+  "limitations": [
+    "Synthetic engineering scenarios do not establish production effectiveness.",
+    "The deterministic mode validates lifecycle mechanics, not natural-language extraction.",
+    "The qwen-cloud mode uses one curator decision per benchmark step.",
+    "A stateless baseline has no cross-session memory and therefore zero carryover recall."
+  ]
+}

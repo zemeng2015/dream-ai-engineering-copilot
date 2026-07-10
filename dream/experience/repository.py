@@ -2,6 +2,8 @@
 
 import os
 import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from dream.core.errors import NotFoundError
@@ -109,10 +111,15 @@ class ExperienceMemoryRepository:
             ).fetchall()
         return [ExperienceDecisionRecord.model_validate_json(row["payload"]) for row in rows]
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
-        return conn
+        try:
+            yield conn
+            conn.commit()
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
         with self._connect() as conn:
@@ -160,4 +167,3 @@ class ExperienceMemoryRepository:
         if configured:
             return Path(configured)
         return ensure_artifacts_dir() / "experience-memory.sqlite"
-

@@ -1,0 +1,655 @@
+schema_version: "experience-benchmark-v1"
+organization: "DemoCorp"
+scenarios:
+  - id: "preference-01-production-retry-mode"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "At DemoCorp, I prefer production retries to rerun only failed tasks, never the entire batch."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "production_retry_mode"
+        value: "retry only failed tasks"
+        importance: 5
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 14
+      query: "How should I retry a failed DemoCorp production batch?"
+      token_budget: 128
+      expected_keys:
+        - "production_retry_mode"
+      forbidden_values:
+        - "retry the entire batch"
+
+  - id: "preference-02-review-findings-order"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "For my DemoCorp code reviews, always show blocking findings before the summary."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "review_findings_order"
+        value: "blocking findings before summary"
+        importance: 4
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 21
+      query: "Format the review for this DemoCorp pull request."
+      token_budget: 128
+      expected_keys:
+        - "review_findings_order"
+      forbidden_values:
+        - "summary before blocking findings"
+
+  - id: "preference-03-sandbox-deploy-region"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "My durable preference is to use the north-test region by default for my DemoCorp sandbox deployments."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "sandbox_deploy_region"
+        value: "north-test region"
+        importance: 4
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 30
+      query: "Choose the default region for a new DemoCorp sandbox."
+      token_budget: 96
+      expected_keys:
+        - "sandbox_deploy_region"
+      forbidden_values:
+        - "south-test region"
+
+  - id: "preference-04-test-execution-order"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "When changing DemoCorp services, I want focused tests run before the full suite."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "test_execution_order"
+        value: "focused tests before full suite"
+        importance: 4
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 10
+      query: "What test order should I use for this DemoCorp service change?"
+      token_budget: 128
+      expected_keys:
+        - "test_execution_order"
+      forbidden_values:
+        - "full suite before focused tests"
+
+  - id: "preference-05-incident-update-cadence"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "During DemoCorp incidents, give me a concise timeline update every 30 minutes."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "incident_update_cadence"
+        value: "concise timeline every 30 minutes"
+        importance: 5
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 45
+      query: "Prepare communications for the current DemoCorp incident."
+      token_budget: 128
+      expected_keys:
+        - "incident_update_cadence"
+      forbidden_values:
+        - "one update at incident close"
+
+  - id: "preference-06-analysis-output-format"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "My durable preference for DemoCorp analysis tasks is a short human summary followed by machine-readable JSON."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "analysis_output_format"
+        value: "short human summary followed by machine-readable JSON"
+        importance: 3
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 12
+      query: "How should the DemoCorp dependency analysis be formatted?"
+      token_budget: 128
+      expected_keys:
+        - "analysis_output_format"
+      forbidden_values:
+        - "JSON before the human summary"
+
+  - id: "preference-07-feature-branch-prefix"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "Prefix my DemoCorp feature branches with demo-feature/."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "feature_branch_prefix"
+        value: "demo-feature/"
+        importance: 3
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 60
+      query: "Name a branch for the DemoCorp audit dashboard feature."
+      token_budget: 96
+      expected_keys:
+        - "feature_branch_prefix"
+      forbidden_values:
+        - "feature/"
+
+  - id: "preference-08-nonproduction-alerting"
+    category: "cross_session_preference"
+    steps:
+      - day_offset: 0
+        natural_observation: "For DemoCorp nonproduction failures, notify me in the team feed and do not page me."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "nonproduction_alerting"
+        value: "team feed notification without paging"
+        importance: 4
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 18
+      query: "A DemoCorp test environment failed. How should I be notified?"
+      token_budget: 128
+      expected_keys:
+        - "nonproduction_alerting"
+      forbidden_values:
+        - "page immediately"
+
+  - id: "conflict-01-rollout-percentage"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "DemoCorp production rollouts must start with a 5 percent canary."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "production_canary_size"
+        value: "5 percent"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 3
+        natural_observation: "The DemoCorp release council replaced the old rollout rule: production canaries must now start at 10 percent."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "production_canary_size"
+        value: "10 percent"
+        importance: 5
+        ttl_days: null
+        target_key: "production_canary_size"
+    recall:
+      day_offset: 5
+      query: "What canary percentage should the next DemoCorp production rollout use?"
+      token_budget: 128
+      expected_keys:
+        - "production_canary_size"
+      forbidden_values:
+        - "5 percent"
+
+  - id: "conflict-02-ci-parallelism"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "Run DemoCorp integration tests with four parallel workers."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "integration_test_workers"
+        value: "4 workers"
+        importance: 3
+        ttl_days: null
+        target_key: null
+      - day_offset: 7
+        natural_observation: "Capacity testing is complete; replace the DemoCorp integration test setting with eight parallel workers."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "integration_test_workers"
+        value: "8 workers"
+        importance: 3
+        ttl_days: null
+        target_key: "integration_test_workers"
+    recall:
+      day_offset: 8
+      query: "How many workers should run the DemoCorp integration tests?"
+      token_budget: 96
+      expected_keys:
+        - "integration_test_workers"
+      forbidden_values:
+        - "4 workers"
+
+  - id: "conflict-03-release-approval"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "A DemoCorp staging release needs approval from the service owner."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "staging_release_approval"
+        value: "service owner approval"
+        importance: 4
+        ttl_days: null
+        target_key: null
+      - day_offset: 15
+        natural_observation: "DemoCorp changed staging governance: replace service owner approval with automated policy checks."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "staging_release_approval"
+        value: "automated policy checks"
+        importance: 4
+        ttl_days: null
+        target_key: "staging_release_approval"
+    recall:
+      day_offset: 16
+      query: "What approval is required for a DemoCorp staging release?"
+      token_budget: 128
+      expected_keys:
+        - "staging_release_approval"
+      forbidden_values:
+        - "service owner approval"
+
+  - id: "conflict-04-schema-migration-mode"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "DemoCorp schema changes should use a single maintenance migration."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "schema_migration_mode"
+        value: "single maintenance migration"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 30
+        natural_observation: "The DemoCorp data team retired maintenance migrations; use expand and contract migrations from now on."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "schema_migration_mode"
+        value: "expand and contract migration"
+        importance: 5
+        ttl_days: null
+        target_key: "schema_migration_mode"
+    recall:
+      day_offset: 31
+      query: "Which migration mode should the DemoCorp customer service use?"
+      token_budget: 128
+      expected_keys:
+        - "schema_migration_mode"
+      forbidden_values:
+        - "single maintenance migration"
+
+  - id: "conflict-05-debug-log-retention"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "Retain DemoCorp debug logs for 14 days."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "debug_log_retention"
+        value: "14 days"
+        importance: 4
+        ttl_days: null
+        target_key: null
+      - day_offset: 20
+        natural_observation: "The current DemoCorp retention policy supersedes the prior one: keep debug logs for 7 days."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "debug_log_retention"
+        value: "7 days"
+        importance: 4
+        ttl_days: null
+        target_key: "debug_log_retention"
+    recall:
+      day_offset: 22
+      query: "How long may DemoCorp debug logs be retained?"
+      token_budget: 96
+      expected_keys:
+        - "debug_log_retention"
+      forbidden_values:
+        - "14 days"
+
+  - id: "conflict-06-release-freeze-start"
+    category: "conflict_supersede"
+    steps:
+      - day_offset: 0
+        natural_observation: "DemoCorp weekly release freeze begins Friday at 18:00 UTC."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "weekly_release_freeze_start"
+        value: "Friday 18:00 UTC"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 9
+        natural_observation: "Replace the DemoCorp release freeze schedule; it now begins Thursday at 20:00 UTC."
+        expected_proposal: "supersede"
+        expected_action: "supersede"
+        kind: "policy"
+        key: "weekly_release_freeze_start"
+        value: "Thursday 20:00 UTC"
+        importance: 5
+        ttl_days: null
+        target_key: "weekly_release_freeze_start"
+    recall:
+      day_offset: 10
+      query: "When does the DemoCorp weekly release freeze start?"
+      token_budget: 128
+      expected_keys:
+        - "weekly_release_freeze_start"
+      forbidden_values:
+        - "Friday 18:00 UTC"
+
+  - id: "forget-01-temporary-release-window"
+    category: "ttl_or_forget"
+    steps:
+      - day_offset: 0
+        natural_observation: "For the next two days only, DemoCorp production releases may start after 18:00 UTC."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "temporary_release_window"
+        value: "release after 18:00 UTC"
+        importance: 4
+        ttl_days: 2
+        target_key: null
+    recall:
+      day_offset: 3
+      query: "When may the next DemoCorp production release start?"
+      token_budget: 128
+      expected_keys: []
+      forbidden_values:
+        - "release after 18:00 UTC"
+
+  - id: "forget-02-incident-routing-ttl"
+    category: "ttl_or_forget"
+    steps:
+      - day_offset: 0
+        natural_observation: "For today only, route DemoCorp checkout alerts to the temporary response room."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "checkout_alert_route"
+        value: "temporary response room"
+        importance: 5
+        ttl_days: 1
+        target_key: null
+    recall:
+      day_offset: 2
+      query: "Where should DemoCorp checkout alerts be routed now?"
+      token_budget: 128
+      expected_keys: []
+      forbidden_values:
+        - "temporary response room"
+
+  - id: "forget-03-explicit-cache-bypass"
+    category: "ttl_or_forget"
+    steps:
+      - day_offset: 0
+        natural_observation: "Remember that DemoCorp package builds should bypass the shared cache while diagnostics are active."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "package_build_cache_mode"
+        value: "bypass shared cache"
+        importance: 3
+        ttl_days: null
+        target_key: null
+      - day_offset: 4
+        natural_observation: "Diagnostics are over. Explicitly forget the saved DemoCorp package build cache mode."
+        expected_proposal: "forget"
+        expected_action: "forget"
+        kind: null
+        key: null
+        value: null
+        importance: null
+        ttl_days: null
+        target_key: "package_build_cache_mode"
+    recall:
+      day_offset: 5
+      query: "Should the current DemoCorp package build bypass the shared cache?"
+      token_budget: 128
+      expected_keys: []
+      forbidden_values:
+        - "bypass shared cache"
+
+  - id: "forget-04-explicit-staging-mirror"
+    category: "ttl_or_forget"
+    steps:
+      - day_offset: 0
+        natural_observation: "My temporary personal preference is to use the blue staging mirror for DemoCorp artifact validation."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "artifact_validation_mirror"
+        value: "blue staging mirror"
+        importance: 3
+        ttl_days: null
+        target_key: null
+      - day_offset: 6
+        natural_observation: "The mirror experiment ended. Forget my DemoCorp artifact validation mirror preference."
+        expected_proposal: "forget"
+        expected_action: "forget"
+        kind: null
+        key: null
+        value: null
+        importance: null
+        ttl_days: null
+        target_key: "artifact_validation_mirror"
+    recall:
+      day_offset: 7
+      query: "Which mirror should DemoCorp use for artifact validation?"
+      token_budget: 128
+      expected_keys: []
+      forbidden_values:
+        - "blue staging mirror"
+
+  - id: "budget-01-production-delete-approval"
+    category: "limited_token_budget"
+    steps:
+      - day_offset: 0
+        natural_observation: "Before any DemoCorp production data deletion, require approval from the on-call lead."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "production_delete_approval"
+        value: "require on-call lead approval"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 1
+        natural_observation: "DemoCorp deletion rehearsals repeatedly finish faster when sample files are grouped by date before operators begin; keep this reusable rehearsal tip."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "episode"
+        key: "deletion_rehearsal_notes"
+        value: "group sample files by date before deletion rehearsals"
+        importance: 1
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 8
+      query: "What safety approval is required before DemoCorp production data deletion?"
+      token_budget: 40
+      expected_keys:
+        - "production_delete_approval"
+      forbidden_values:
+        - "group sample files by date before deletion rehearsals"
+
+  - id: "budget-02-rollback-checkpoint"
+    category: "limited_token_budget"
+    steps:
+      - day_offset: 0
+        natural_observation: "A DemoCorp production rollback must restore the last verified checkpoint."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "production_rollback_checkpoint"
+        value: "restore last verified checkpoint"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 2
+        natural_observation: "DemoCorp rollback reviews are easier when graphs are grouped by service before the meeting; keep this reusable retrospective tip."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "episode"
+        key: "rollback_retrospective_misc"
+        value: "group rollback graphs by service before review"
+        importance: 1
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 11
+      query: "Which checkpoint must a DemoCorp production rollback restore?"
+      token_budget: 40
+      expected_keys:
+        - "production_rollback_checkpoint"
+      forbidden_values:
+        - "group rollback graphs by service before review"
+
+  - id: "budget-03-customer-export-redaction"
+    category: "limited_token_budget"
+    steps:
+      - day_offset: 0
+        natural_observation: "DemoCorp customer exports must redact personal fields before leaving the controlled workspace."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "customer_export_redaction"
+        value: "redact personal fields before export"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 1
+        natural_observation: "DemoCorp export reviews go faster when sample columns are sorted alphabetically before review; remember this reusable workshop tip."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "episode"
+        key: "export_workshop_ideas"
+        value: "sort sample columns alphabetically before export review"
+        importance: 1
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 20
+      query: "What must happen before a DemoCorp customer export leaves the workspace?"
+      token_budget: 40
+      expected_keys:
+        - "customer_export_redaction"
+      forbidden_values:
+        - "sort sample columns alphabetically before export review"
+
+  - id: "budget-04-artifact-provenance-gate"
+    category: "limited_token_budget"
+    steps:
+      - day_offset: 0
+        natural_observation: "Do not publish a DemoCorp release artifact unless its provenance is signed and verified."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "policy"
+        key: "artifact_publish_gate"
+        value: "require signed and verified provenance"
+        importance: 5
+        ttl_days: null
+        target_key: null
+      - day_offset: 3
+        natural_observation: "From repeated DemoCorp packaging reviews, the reusable lesson is that archive labels should include the build date."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "episode"
+        key: "packaging_background_notes"
+        value: "include the build date in archive labels"
+        importance: 1
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 9
+      query: "What gate applies before publishing a DemoCorp release artifact?"
+      token_budget: 40
+      expected_keys:
+        - "artifact_publish_gate"
+      forbidden_values:
+        - "include the build date in archive labels"
+
+  - id: "ignore-01-exact-duplicate-preference"
+    category: "duplicate_or_ignore"
+    steps:
+      - day_offset: 0
+        natural_observation: "For DemoCorp pull requests, I prefer squash merging."
+        expected_proposal: "remember"
+        expected_action: "remember"
+        kind: "preference"
+        key: "pull_request_merge_mode"
+        value: "squash merge"
+        importance: 3
+        ttl_days: null
+        target_key: null
+      - day_offset: 5
+        natural_observation: "Keep my existing DemoCorp pull request preference: use squash merge."
+        expected_proposal: "ignore"
+        expected_action: "ignore"
+        kind: null
+        key: null
+        value: null
+        importance: null
+        ttl_days: null
+        target_key: "pull_request_merge_mode"
+    recall:
+      day_offset: 12
+      query: "How should this DemoCorp pull request be merged?"
+      token_budget: 96
+      expected_keys:
+        - "pull_request_merge_mode"
+      forbidden_values:
+        - "merge commit"
+
+  - id: "ignore-02-transient-build-chatter"
+    category: "duplicate_or_ignore"
+    steps:
+      - day_offset: 0
+        natural_observation: "The DemoCorp sandbox build finished in 94 seconds this morning, and the progress indicator was green."
+        expected_proposal: "ignore"
+        expected_action: "ignore"
+        kind: null
+        key: null
+        value: null
+        importance: null
+        ttl_days: null
+        target_key: null
+    recall:
+      day_offset: 10
+      query: "What durable DemoCorp build preference or policy should guide this run?"
+      token_budget: 96
+      expected_keys: []
+      forbidden_values:
+        - "94 seconds"

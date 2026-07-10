@@ -87,7 +87,11 @@ class ContextIntelligenceService:
             query=snapshot.case.raw_request,
             include_candidates=True,
         )
-        used_claims = [item for item in considered_claims if item.status == "approved"]
+        approved_claim_ids, claim_policy_warnings = self._approved_memory_claim_ids(
+            team_id=snapshot.case.team_id,
+            query=snapshot.case.raw_request,
+        )
+        used_claims = [item for item in considered_claims if item.claim_id in approved_claim_ids]
         trail = RetrievalTrail(
             trail_id=f"context-trail-{case_id}",
             case_id=case_id,
@@ -126,7 +130,7 @@ class ContextIntelligenceService:
             graph_expansion_paths=graph_paths,
             memory_claims_considered=considered_claims,
             memory_claims_used=used_claims,
-            warnings=snapshot.warnings,
+            warnings=list(dict.fromkeys([*snapshot.warnings, *claim_policy_warnings])),
             final_context_summary=_summary(selected, graph_paths, used_claims),
         )
         return self.repository.save_trail(trail)
@@ -496,6 +500,22 @@ class ContextIntelligenceService:
         refs.sort(key=lambda ref: (0 if ref.intake_proofs else 1, ref.entity, ref.claim_id))
         return refs[:20]
 
+    def _approved_memory_claim_ids(
+        self,
+        *,
+        team_id: str,
+        query: str,
+    ) -> tuple[set[str], list[str]]:
+        try:
+            batch = self.memory_retriever.search_with_policy(
+                team_id=team_id,
+                query=query,
+                top_k=20,
+            )
+        except Exception:  # noqa: BLE001 - a missing scan must not break context trace.
+            return set(), []
+        return {result.claim.claim_id for result in batch.results}, batch.warnings
+
     def _claim_counts(self, team_id: str) -> tuple[int, int]:
         try:
             scan = self.memory_repository.load_scan(team_id, "latest")
@@ -588,9 +608,7 @@ def _detect_concepts(raw_text: str, evidence: list[EvidenceCandidate]) -> list[s
         "idempotency": ["idempotency"],
     }
     detected = {
-        name
-        for name, required in phrases.items()
-        if all(term in tokens for term in required)
+        name for name, required in phrases.items() if all(term in tokens for term in required)
     }
     common = [item for item, _ in Counter(tokens).most_common(8) if item not in STOP_WORDS]
     return sorted(detected | set(common[:6]))

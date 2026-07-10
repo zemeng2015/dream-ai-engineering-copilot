@@ -3,13 +3,19 @@
 from dream.audit.logger import AuditLogger
 from dream.audit.repository import AuditRepository
 from dream.codebase import CodebaseIndexer, CodebaseIndexRepository, CodebaseRetriever
+from dream.context import ContextIntelligenceService
 from dream.experience import (
     ExperienceMemoryRepository,
     ExperienceMemoryService,
     ExperienceObservation,
 )
 from dream.llm import LLMResponse
-from dream.memory import EngineeringMemoryRetriever
+from dream.memory import (
+    EngineeringMemoryRetriever,
+    MemoryClaimRetriever,
+    MemoryDistillationService,
+)
+from dream.memory.repository import MemoryDistillationRepository
 from dream.requirement_cases import (
     RequirementCaseCreateRequest,
     RequirementCaseRepository,
@@ -110,6 +116,7 @@ def _service(
     audit_repository: AuditRepository | None = None,
     llm_provider: FakeLLMProvider | None = None,
     experience_service: ExperienceMemoryService | None = None,
+    memory_claim_retriever: MemoryClaimRetriever | None = None,
 ) -> RequirementCaseService:
     audit_logger = AuditLogger(
         repository=audit_repository or AuditRepository(tmp_path / "audit.sqlite")
@@ -127,6 +134,7 @@ def _service(
     return RequirementCaseService(
         repository=RequirementCaseRepository(tmp_path / "cases.sqlite"),
         memory_retriever=memory_retriever,
+        memory_claim_retriever=memory_claim_retriever,
         audit_logger=audit_logger,
         codebase_repository=codebase_repository,
         llm_provider=llm_provider,
@@ -200,6 +208,114 @@ def test_requirement_case_uses_cross_session_experience_memory(tmp_path) -> None
         for item in analyzed.evidence
     )
     assert "retry only failed tasks" in jira_context.prompt
+
+
+def test_approved_memory_claim_changes_same_case_jira_context_and_audit(tmp_path) -> None:
+    artifacts_dir = tmp_path / "artifacts"
+    memory_repository = MemoryDistillationRepository(artifacts_dir)
+    audit_repository = AuditRepository(tmp_path / "audit.sqlite")
+    distillation_service = MemoryDistillationService(
+        repository=memory_repository,
+        codebase_repository=CodebaseIndexRepository(artifacts_dir),
+        audit_logger=AuditLogger(repository=audit_repository),
+    )
+    scan = distillation_service.scan(
+        team_id="demo_team",
+        repo_path="examples/java-demo-repo",
+        repo_name="java-demo-repo",
+    )
+    candidate = next(
+        claim
+        for claim in scan.claims
+        if claim.governance.status == "candidate"
+        and claim.extraction.method == "heuristic_semantic"
+    )
+    policy_value = "refresh long-running status every five seconds"
+    governed_candidate = candidate.model_copy(
+        deep=True,
+        update={
+            "relation": candidate.relation.model_copy(
+                update={
+                    "type": "demo_operating_policy",
+                    "value": policy_value,
+                }
+            )
+        },
+    )
+    memory_repository.save_scan(
+        scan.model_copy(
+            update={
+                "claims": [
+                    governed_candidate if claim.claim_id == candidate.claim_id else claim
+                    for claim in scan.claims
+                ]
+            }
+        )
+    )
+    service = _service(
+        tmp_path,
+        audit_repository=audit_repository,
+        memory_claim_retriever=MemoryClaimRetriever(repository=memory_repository),
+    )
+    snapshot = service.create_case(
+        RequirementCaseCreateRequest(
+            team_id="demo_team",
+            raw_request=(
+                f"Apply {governed_candidate.entity.canonical_name} guidance to "
+                "long-running status visibility"
+            ),
+        )
+    )
+
+    before_approval = service.analyze_case(snapshot.case.case_id)
+    before_context = service.prepare_jira_draft_context(snapshot.case.case_id)
+
+    assert not any(
+        item.memory_claim_id == governed_candidate.claim_id for item in before_approval.evidence
+    )
+    assert policy_value not in before_context.prompt
+
+    review = distillation_service.review_claim(
+        team_id="demo_team",
+        claim_id=governed_candidate.claim_id,
+        new_status="approved",
+        reviewer="leadership-demo-reviewer",
+        reason="Validated for the controlled leadership demo.",
+        scan_id=scan.scan_id,
+    )
+
+    after_approval = service.analyze_case(snapshot.case.case_id)
+    after_context = service.prepare_jira_draft_context(snapshot.case.case_id)
+    trail = ContextIntelligenceService(
+        requirement_repository=service.repository,
+        codebase_repository=service.codebase_repository,
+        memory_repository=memory_repository,
+    ).trace_case(snapshot.case.case_id)
+    claim_evidence = next(
+        item
+        for item in after_approval.evidence
+        if item.memory_claim_id == governed_candidate.claim_id
+    )
+    analysis_records = [
+        record
+        for record in audit_repository.list_audit_records()
+        if record.use_case == "requirement_case_analysis"
+    ]
+
+    assert policy_value in after_context.prompt
+    assert governed_candidate.claim_id in after_context.prompt
+    assert claim_evidence.memory_claim_id == governed_candidate.claim_id
+    assert claim_evidence.governance_status == "approved"
+    assert claim_evidence.reviewed_by == "leadership-demo-reviewer"
+    assert claim_evidence.reviewed_at == review.reviewed_at
+    assert claim_evidence.evidence_paths
+    assert f"memory-claim://{governed_candidate.claim_id}" in after_context.sources_used
+    assert set(claim_evidence.evidence_paths).issubset(after_context.sources_used)
+    assert f"memory-claim://{governed_candidate.claim_id}" in (
+        analysis_records[0].retrieved_source_paths
+    )
+    assert set(claim_evidence.evidence_paths).issubset(analysis_records[0].retrieved_source_paths)
+    assert any(claim.claim_id == governed_candidate.claim_id for claim in trail.memory_claims_used)
 
 
 def test_impact_map_contains_backend_api_and_test_items(tmp_path) -> None:
@@ -355,9 +471,7 @@ def test_question_waiver_drives_readiness_and_audit(tmp_path) -> None:
     snapshot_after_review = service.get_case(analyzed.case.case_id)
     records = audit_repository.list_audit_records()
 
-    expected_waiver_reason = (
-        "Out of scope for this release: documented as a demo handoff risk."
-    )
+    expected_waiver_reason = "Out of scope for this release: documented as a demo handoff risk."
     assert waived.status == "waived"
     assert waived.waived_reason == expected_waiver_reason
     assert readiness.ready is True

@@ -132,6 +132,9 @@ $docsAssetsPackage = Join-Path $outputPath "docs/assets"
 New-Item -ItemType Directory -Path $docsAssetsPackage -Force | Out-Null
 Copy-RepoItem -Source "docs/assets/qwen-memory-ab-benchmark-summary.json" -Destination $docsAssetsPackage
 Copy-RepoItem -Source "docs/qwen-memory-ab-benchmark.md" -Destination (Join-Path $outputPath "docs")
+Copy-RepoItem -Source "docs/assets/qwen-experience-memory-benchmark-summary.json" -Destination $docsAssetsPackage
+Copy-RepoItem -Source "docs/assets/qwen-experience-memory-benchmark-report.json" -Destination $docsAssetsPackage
+Copy-RepoItem -Source "docs/qwen-experience-memory-benchmark.md" -Destination (Join-Path $outputPath "docs")
 
 $deployPackage = Join-Path $outputPath "deploy/alibaba"
 New-Item -ItemType Directory -Path $deployPackage -Force | Out-Null
@@ -188,6 +191,9 @@ foreach ($requiredPackagePath in @(
     "frontend/dist/frontend/browser/index.html",
     "docs/assets/qwen-memory-ab-benchmark-summary.json",
     "docs/qwen-memory-ab-benchmark.md",
+    "docs/assets/qwen-experience-memory-benchmark-summary.json",
+    "docs/assets/qwen-experience-memory-benchmark-report.json",
+    "docs/qwen-experience-memory-benchmark.md",
     "deploy/alibaba/requirements-fc312.lock.txt",
     "deploy/alibaba/serverless-devs-runtime.yaml",
     "bootstrap",

@@ -21,6 +21,7 @@ from dream.experience.policy import ExperienceMemoryPolicy, RuleBasedExperienceM
 from dream.experience.repository import ExperienceMemoryRepository
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9_-]*", flags=re.IGNORECASE)
+MAX_CONTEXT_VALUE_CHARS = 72
 
 
 class ExperienceMemoryService:
@@ -358,10 +359,11 @@ class ExperienceMemoryService:
             + kind_bonus,
             4,
         )
+        context_value = _compact_context_value(memory.value)
         estimated_tokens = max(
             8,
-            math.ceil((len(memory.key) + len(memory.value) + len(memory.source_reference)) / 4)
-            + 8,
+            math.ceil((len(memory.kind) + len(memory.key) + len(context_value)) / 4)
+            + 4,
         )
         return ExperienceRecallCandidate(
             memory=memory,
@@ -382,8 +384,8 @@ class ExperienceMemoryService:
         for item in selected:
             memory = item.memory
             lines.append(
-                f"- [{memory.memory_id}] {memory.kind}:{memory.key} = {memory.value} "
-                f"(source={memory.source_reference}, score={item.score:.2f})"
+                f"- {memory.kind}:{memory.key} = "
+                f"{_compact_context_value(memory.value)}"
             )
         return "\n".join(lines).rstrip() + "\n"
 
@@ -411,6 +413,13 @@ def _normalize_value(value: str) -> str:
     return " ".join(value.lower().split())
 
 
+def _compact_context_value(value: str) -> str:
+    normalized = " ".join(value.split())
+    if len(normalized) <= MAX_CONTEXT_VALUE_CHARS:
+        return normalized
+    shortened = normalized[: MAX_CONTEXT_VALUE_CHARS - 3].rsplit(" ", 1)[0]
+    return f"{shortened or normalized[: MAX_CONTEXT_VALUE_CHARS - 3]}..."
+
+
 def _tokens(value: str) -> list[str]:
     return [token.lower() for token in TOKEN_RE.findall(value)]
-

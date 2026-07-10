@@ -79,6 +79,7 @@ def test_qwencloud_showcase_reports_static_evidence_without_live_backend(monkeyp
     monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
     monkeypatch.delenv("ALIBABA_CLOUD_REGION", raising=False)
     monkeypatch.delenv("ALIBABA_CLOUD_SERVICE", raising=False)
+    monkeypatch.delenv("QWEN_PUBLIC_DEMO_VIDEO_URL", raising=False)
 
     client = TestClient(create_app())
 
@@ -108,6 +109,15 @@ def test_qwencloud_showcase_reports_static_evidence_without_live_backend(monkeyp
     assert payload["benchmark"]["dream_wins"] == 7
     assert payload["benchmark"]["exact_retrieval_recall_at_12"] == 0.356
     assert payload["benchmark"]["report_path"] == "docs/qwen-memory-ab-benchmark.md"
+    assert payload["experience_benchmark"]["status"] == "ready"
+    assert payload["experience_benchmark"]["provider"] == "qwen-cloud"
+    assert payload["experience_benchmark"]["model"] == "qwen3.7-plus"
+    assert payload["experience_benchmark"]["case_count"] == 24
+    assert payload["experience_benchmark"]["decision_count"] == 37
+    assert payload["experience_benchmark"]["passed_cases"] == 24
+    assert payload["experience_benchmark"]["overall_score"] == 100.0
+    assert payload["experience_benchmark"]["critical_memory_recall"] == 1.0
+    assert payload["experience_benchmark"]["forbidden_memory_leak_rate"] == 0.0
     deployment_evidence = next(
         item
         for item in payload["evidence"]
@@ -120,6 +130,14 @@ def test_qwencloud_showcase_reports_static_evidence_without_live_backend(monkeyp
         "scripts/qwencloud-alibaba-runtime-release.ps1"
         in deployment_evidence["proof_paths"]
     )
+    experience_evidence = next(
+        item
+        for item in payload["evidence"]
+        if item["name"] == "Cross-session Qwen experience benchmark"
+    )
+    assert "examples/experience-benchmark/scenarios.yaml" in experience_evidence[
+        "proof_paths"
+    ]
     assert [step["route"] for step in payload["judge_flow"]] == [
         "/memory",
         "/requirements",
@@ -142,6 +160,7 @@ def test_qwencloud_showcase_upgrades_when_qwen_alibaba_runtime_is_configured(
     monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-demo-key")
     monkeypatch.setenv("ALIBABA_CLOUD_REGION", "ap-southeast-1")
     monkeypatch.setenv("ALIBABA_CLOUD_SERVICE", "Function Compute custom container")
+    monkeypatch.delenv("QWEN_PUBLIC_DEMO_VIDEO_URL", raising=False)
 
     client = TestClient(create_app())
 
@@ -156,6 +175,28 @@ def test_qwencloud_showcase_upgrades_when_qwen_alibaba_runtime_is_configured(
     assert payload["scorecard"]["weighted_current_evidence_ready"] == 85
     assert payload["scorecard"]["live_backend_points"] == 30
     assert payload["scorecard"]["missing_external_inputs"] == ["public_demo_video_url"]
+
+
+def test_qwencloud_showcase_reaches_full_score_when_public_video_is_configured(
+    monkeypatch, tmp_path
+) -> None:
+    config_path = tmp_path / "dream.yaml"
+    config_path.write_text(
+        "mode: public-demo\nllm:\n  provider: qwen-cloud\n  model: qwen3.7-plus\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DREAM_CONFIG_FILE", str(config_path))
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-demo-key")
+    monkeypatch.setenv("ALIBABA_CLOUD_REGION", "ap-southeast-1")
+    monkeypatch.setenv("ALIBABA_CLOUD_SERVICE", "Function Compute custom runtime")
+    monkeypatch.setenv("QWEN_PUBLIC_DEMO_VIDEO_URL", "https://youtu.be/mHGZP67lEf4")
+
+    payload = TestClient(create_app()).get("/qwencloud/showcase").json()
+
+    assert payload["scorecard"]["weighted_current_evidence_ready"] == 100
+    assert payload["scorecard"]["public_video_points"] == 15
+    assert payload["scorecard"]["public_video_url"] == "https://youtu.be/mHGZP67lEf4"
+    assert payload["scorecard"]["missing_external_inputs"] == []
 
 
 def test_qwencloud_showcase_accepts_custom_runtime_proof(monkeypatch, tmp_path) -> None:
