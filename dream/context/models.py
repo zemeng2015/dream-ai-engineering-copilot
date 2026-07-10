@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field
 
 from dream.memory.models import MemoryIntakeProof
+from dream.security.models import ResourceAccess
 
 
 class RetrievalStep(BaseModel):
@@ -26,6 +27,7 @@ class EvidenceCandidate(BaseModel):
     excluded_reason: str | None = None
     concepts: list[str] = Field(default_factory=list)
     authority_status: str = "unknown"
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class MemoryClaimReference(BaseModel):
@@ -39,6 +41,7 @@ class MemoryClaimReference(BaseModel):
     reason: str = ""
     reviewed_by: str | None = None
     reviewed_at: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class GraphPathReference(BaseModel):
@@ -68,6 +71,7 @@ class RetrievalTrail(BaseModel):
     final_context_summary: str
     json_path: str | None = None
     markdown_path: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class ContextPack(BaseModel):
@@ -93,10 +97,12 @@ class ContextPack(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     json_path: str | None = None
     markdown_path: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class PromptPreview(BaseModel):
     preview_id: str
+    team_id: str = ""
     case_id: str | None = None
     run_id: str | None = None
     target: str
@@ -106,6 +112,7 @@ class PromptPreview(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     json_path: str | None = None
     markdown_path: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class EvidenceCard(BaseModel):
@@ -120,6 +127,7 @@ class EvidenceCard(BaseModel):
     related_sources: list[str] = Field(default_factory=list)
     authority_status: str = "unknown"
     warnings: list[str] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class MemoryMapReport(BaseModel):
@@ -136,3 +144,4 @@ class MemoryMapReport(BaseModel):
     recommendations: list[str] = Field(default_factory=list)
     json_path: str | None = None
     markdown_path: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)

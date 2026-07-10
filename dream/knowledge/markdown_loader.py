@@ -8,6 +8,7 @@ import yaml
 from dream.core.errors import PathTraversalError
 from dream.core.paths import display_path
 from dream.knowledge.models import Document, TeamKnowledgePack
+from dream.security.models import ResourceAccess
 
 
 class MarkdownDocumentLoader:
@@ -38,6 +39,7 @@ class MarkdownDocumentLoader:
             title=title,
             content=content.strip(),
             metadata=base_metadata,
+            access=ResourceAccess.from_metadata(metadata),
         )
 
     @staticmethod

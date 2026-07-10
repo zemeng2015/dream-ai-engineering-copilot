@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class SourceSpan(BaseModel):
     span_id: str
@@ -25,6 +27,7 @@ class SourceRecord(BaseModel):
     acl_scope: str = "local"
     security_flags: list[str] = Field(default_factory=list)
     spans: list[SourceSpan] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class MemoryEntity(BaseModel):
@@ -106,6 +109,21 @@ class TemporalInfo(BaseModel):
 class SecurityInfo(BaseModel):
     classification: str = "public_demo"
     redaction_applied: bool = False
+    acl_scope: str = "local_demo"
+    allowed_principal_ids: list[str] = Field(default_factory=list)
+    allowed_group_ids: list[str] = Field(default_factory=list)
+    source_acl_version: str | None = None
+
+    def resource_access(self) -> ResourceAccess:
+        return ResourceAccess.model_validate(
+            {
+                "classification": self.classification,
+                "acl_scope": self.acl_scope,
+                "allowed_principal_ids": self.allowed_principal_ids,
+                "allowed_group_ids": self.allowed_group_ids,
+                "source_acl_version": self.source_acl_version,
+            }
+        )
 
 
 class ClaimAuditInfo(BaseModel):

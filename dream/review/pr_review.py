@@ -5,7 +5,7 @@ from uuid import uuid4
 from dream.audit.logger import AuditLogger
 from dream.codebase import CodebaseIndexRepository, CodebaseRetriever
 from dream.codebase.models import CodebaseSearchResult, TestMapping
-from dream.core.errors import DreamError, NotFoundError
+from dream.core.errors import AccessDeniedError, DreamError, NotFoundError
 from dream.core.paths import (
     display_path,
     resolve_artifact_path,
@@ -21,6 +21,7 @@ from dream.memory.repository import MemoryDistillationRepository
 from dream.review.diff_parser import parse_unified_diff
 from dream.review.models import PRReviewRequest, PRReviewResponse
 from dream.review.templates import render_pr_review_summary
+from dream.security import AccessContext, DefaultAccessPolicy
 
 
 class PRReviewAssistant:
@@ -38,6 +39,7 @@ class PRReviewAssistant:
         graph_retriever: EvidenceGraphRetriever | None = None,
         memory_repository: MemoryDistillationRepository | None = None,
         memory_claim_retriever: MemoryClaimRetriever | None = None,
+        access_policy: DefaultAccessPolicy | None = None,
     ) -> None:
         self.pack_loader = pack_loader or KnowledgePackLoader()
         self.doc_loader = doc_loader or MarkdownDocumentLoader()
@@ -56,8 +58,29 @@ class PRReviewAssistant:
         self.memory_claim_retriever = memory_claim_retriever or MemoryClaimRetriever(
             repository=self.memory_repository
         )
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
-    def review(self, request: PRReviewRequest) -> PRReviewResponse:
+    def review(
+        self,
+        request: PRReviewRequest,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> PRReviewResponse:
+        context = access_context or AccessContext.public_demo(team_ids={request.team_id})
+        self.access_policy.require(
+            context=context,
+            team_id=request.team_id,
+            action="requirement_work",
+            resource_access=request.access,
+            resource_id="new-pr-review",
+        )
+        if context.mode == "private-extension" and (
+            request.pr_diff_path or request.jira_context_path
+        ):
+            raise AccessDeniedError(
+                "Private PR review accepts connector-supplied inline content only; "
+                "local path inputs are disabled."
+            )
         run_id = f"pr-{uuid4().hex[:12]}"
         diff_text = self._read_diff(request)
         diff_summary = parse_unified_diff(diff_text)
@@ -66,6 +89,13 @@ class PRReviewAssistant:
         )
 
         pack = self.pack_loader.load(request.team_id)
+        self.access_policy.require(
+            context=context,
+            team_id=request.team_id,
+            action="retrieve",
+            resource_access=pack.access,
+            resource_id=f"knowledge-pack:{pack.team_id}",
+        )
         pack_dir = self.pack_loader.pack_dir(pack.team_id)
         documents = self.doc_loader.load_for_pack(pack, pack_dir)
         chunks = self.chunker.chunk_all(documents)
@@ -82,6 +112,7 @@ class PRReviewAssistant:
             app=request.app,
             component=request.component,
             top_k=request.top_k,
+            access_context=context,
         )
         warnings = []
         if not retrieved and (request.app or request.component):
@@ -89,6 +120,7 @@ class PRReviewAssistant:
                 query,
                 team_id=request.team_id,
                 top_k=request.top_k,
+                access_context=context,
             )
             if retrieved:
                 warnings.append(
@@ -100,14 +132,27 @@ class PRReviewAssistant:
             request=request,
             diff_summary=diff_summary,
             query=query,
+            access_context=context,
         )
         warnings.extend(codebase_warnings)
         memory_batch = self._governed_memory_context(
             team_id=request.team_id,
             query=" ".join([query, *diff_summary.files_changed]),
             top_k=request.top_k,
+            access_context=context,
         )
         warnings.extend(memory_batch.warnings)
+        artifact_access = self.access_policy.derive_artifact_access(
+            context=context,
+            team_id=request.team_id,
+            source_access=[
+                *(chunk.access for chunk in retrieved),
+                *(result.access for result in codebase_results),
+                *(mapping.access for mapping in related_tests),
+                *(result.claim.security.resource_access() for result in memory_batch.results),
+            ],
+            requested_access=request.access,
+        )
         prompt = render_pr_review_summary(
             diff_summary=diff_summary,
             jira_context=jira_context,
@@ -133,6 +178,8 @@ class PRReviewAssistant:
             memory_claims=memory_batch.results,
             warnings=warnings,
             prompt=prompt,
+            access_context=context,
+            artifact_access=artifact_access,
         )
         llm_response = self.llm_provider.complete(prompt)
         markdown = llm_response.text
@@ -166,9 +213,7 @@ class PRReviewAssistant:
             markdown=markdown,
             sources_used=sources_used,
             warnings=warnings,
-            memory_claims_used=[
-                result.claim.claim_id for result in memory_batch.results
-            ],
+            memory_claims_used=[result.claim.claim_id for result in memory_batch.results],
             blocked_memory_claim_ids=memory_batch.blocked_claim_ids,
             context_trail_id=f"context-trail-{run_id}",
         )
@@ -179,12 +224,14 @@ class PRReviewAssistant:
         team_id: str,
         query: str,
         top_k: int,
+        access_context: AccessContext,
     ) -> MemoryClaimRetrievalBatch:
         try:
             batch = self.memory_claim_retriever.search_with_policy(
                 team_id=team_id,
                 query=query,
                 top_k=200,
+                access_context=access_context,
             )
         except NotFoundError:
             return MemoryClaimRetrievalBatch(
@@ -203,9 +250,7 @@ class PRReviewAssistant:
                 ),
             )[: max(top_k, 8)]
         if not batch.results and not batch.warnings:
-            batch.warnings.append(
-                "No policy-approved memory claim matched this PR review context."
-            )
+            batch.warnings.append("No policy-approved memory claim matched this PR review context.")
         return batch
 
     @staticmethod
@@ -241,6 +286,7 @@ class PRReviewAssistant:
         request: PRReviewRequest,
         diff_summary,
         query: str,
+        access_context: AccessContext,
     ) -> tuple[list[CodebaseSearchResult], list[TestMapping], list[str]]:
         if request.repo_name is None:
             return [], [], []
@@ -255,7 +301,10 @@ class PRReviewAssistant:
                 ],
             )
         results = self.codebase_retriever.search_index(
-            index=index, query=query, top_k=request.top_k
+            index=index,
+            query=query,
+            top_k=request.top_k,
+            access_context=access_context,
         )
         changed_results: list[CodebaseSearchResult] = []
         related_tests: list[TestMapping] = []
@@ -264,6 +313,7 @@ class PRReviewAssistant:
                 team_id=request.team_id,
                 repo_name=request.repo_name,
                 file_path=changed_file,
+                access_context=access_context,
             )
             if file_node is not None:
                 changed_results.append(
@@ -275,6 +325,7 @@ class PRReviewAssistant:
                         score=100,
                         reason="File was directly changed in the PR diff.",
                         metadata={"role": file_node.role, "language": file_node.language},
+                        access=file_node.access.model_copy(deep=True),
                     )
                 )
                 related_tests.extend(
@@ -282,6 +333,7 @@ class PRReviewAssistant:
                         team_id=request.team_id,
                         repo_name=request.repo_name,
                         source_file=file_node.path,
+                        access_context=access_context,
                     )
                 )
         merged = self._merge_results(changed_results + results)
@@ -289,11 +341,14 @@ class PRReviewAssistant:
             request=request,
             diff_summary=diff_summary,
             query=query,
+            access_context=access_context,
         )
         merged = self._merge_results(merged + graph_results)
-        return merged[: request.top_k + len(changed_results) + 6], self._dedupe_tests(
-            related_tests
-        ), []
+        return (
+            merged[: request.top_k + len(changed_results) + 6],
+            self._dedupe_tests(related_tests),
+            [],
+        )
 
     def _graph_context(
         self,
@@ -301,6 +356,7 @@ class PRReviewAssistant:
         request: PRReviewRequest,
         diff_summary,
         query: str,
+        access_context: AccessContext,
     ) -> list[CodebaseSearchResult]:
         if request.repo_name is None:
             return []
@@ -312,6 +368,7 @@ class PRReviewAssistant:
             repo_name=request.repo_name,
             query=graph_query,
             top_k=request.top_k,
+            access_context=access_context,
         )
         for changed_file in diff_summary.files_changed:
             neighbors = self.graph_retriever.neighbors(
@@ -319,6 +376,7 @@ class PRReviewAssistant:
                 repo_name=request.repo_name,
                 node=changed_file,
                 limit=8,
+                access_context=access_context,
             )
             for node in neighbors.matched_nodes:
                 if node.key == changed_file or node.source_path == changed_file:
@@ -357,6 +415,7 @@ class PRReviewAssistant:
                     score=result.score,
                     reason=result.reason,
                     metadata={"graph_node_type": node.node_type},
+                    access=node.access.model_copy(deep=True),
                 )
             )
         return converted

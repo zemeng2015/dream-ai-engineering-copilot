@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class RequirementCaseCreateRequest(BaseModel):
     team_id: str
@@ -9,6 +11,7 @@ class RequirementCaseCreateRequest(BaseModel):
     created_by_role: str | None = None
     target_app: str | None = None
     target_component: str | None = None
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class RequirementCase(BaseModel):
@@ -22,6 +25,7 @@ class RequirementCase(BaseModel):
     status: str
     created_at: str
     updated_at: str
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class ContextEvidence(BaseModel):
@@ -38,6 +42,7 @@ class ContextEvidence(BaseModel):
     reviewed_by: str | None = None
     reviewed_at: str | None = None
     evidence_paths: list[str] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
     def provenance_paths(self) -> list[str]:
         return list(dict.fromkeys([self.source_path, *self.evidence_paths]))

@@ -4,13 +4,20 @@ import re
 
 from dream.codebase.models import CodebaseSearchResult, FileNode, RepoIndex, SymbolNode, TestMapping
 from dream.codebase.repository import CodebaseIndexRepository
+from dream.security import AccessContext, DefaultAccessPolicy, ResourceAccess
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 
 
 class CodebaseRetriever:
-    def __init__(self, repository: CodebaseIndexRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: CodebaseIndexRepository | None = None,
+        *,
+        access_policy: DefaultAccessPolicy | None = None,
+    ) -> None:
         self.repository = repository or CodebaseIndexRepository()
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
     def search(
         self,
@@ -19,11 +26,17 @@ class CodebaseRetriever:
         repo_name: str,
         query: str,
         top_k: int = 5,
+        access_context: AccessContext | None = None,
     ) -> list[CodebaseSearchResult]:
         index = self.repository.try_load(team_id, repo_name)
         if index is None:
             return []
-        return self.search_index(index=index, query=query, top_k=top_k)
+        return self.search_index(
+            index=index,
+            query=query,
+            top_k=top_k,
+            access_context=access_context,
+        )
 
     def search_index(
         self,
@@ -31,14 +44,37 @@ class CodebaseRetriever:
         index: RepoIndex,
         query: str,
         top_k: int = 5,
+        access_context: AccessContext | None = None,
     ) -> list[CodebaseSearchResult]:
+        context = access_context or AccessContext.public_demo(team_ids={index.team_id})
+        if not self._readable(
+            context=context,
+            team_id=index.team_id,
+            access=index.access,
+            resource_id=index.repo_id,
+        ):
+            return []
         terms = self._tokens(query)
         scored: list[tuple[int, str, CodebaseSearchResult]] = []
         for file_node in index.files:
+            if not self._readable(
+                context=context,
+                team_id=index.team_id,
+                access=file_node.access,
+                resource_id=file_node.file_id,
+            ):
+                continue
             score = self._score_file(file_node, terms)
             if score > 0:
                 scored.append((score, file_node.path, self._file_result(file_node, score, terms)))
         for symbol in index.symbols:
+            if not self._readable(
+                context=context,
+                team_id=index.team_id,
+                access=symbol.access,
+                resource_id=symbol.symbol_id,
+            ):
+                continue
             score = self._score_symbol(symbol, terms)
             if score > 0:
                 scored.append(
@@ -49,6 +85,13 @@ class CodebaseRetriever:
                     )
                 )
         for concept in index.concepts:
+            if not self._readable(
+                context=context,
+                team_id=index.team_id,
+                access=concept.access,
+                resource_id=f"concept:{concept.concept}",
+            ):
+                continue
             score = self._score_text(
                 " ".join(
                     [
@@ -72,6 +115,7 @@ class CodebaseRetriever:
                             score=score,
                             reason="Concept matched query terms.",
                             metadata={"repo_name": index.repo_name, "team_id": index.team_id},
+                            access=concept.access.model_copy(deep=True),
                         ),
                     )
                 )
@@ -79,37 +123,109 @@ class CodebaseRetriever:
         return [item[2] for item in scored[:top_k]]
 
     def find_tests_for_source(
-        self, *, team_id: str, repo_name: str, source_file: str
+        self,
+        *,
+        team_id: str,
+        repo_name: str,
+        source_file: str,
+        access_context: AccessContext | None = None,
     ) -> list[TestMapping]:
         index = self.repository.try_load(team_id, repo_name)
         if index is None:
             return []
-        return [
-            mapping
-            for mapping in index.tests
-            if mapping.source_file == source_file or mapping.source_file.endswith(source_file)
-        ]
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
+        if not self._readable(
+            context=context,
+            team_id=team_id,
+            access=index.access,
+            resource_id=index.repo_id,
+        ):
+            return []
+        files_by_path = {item.path: item for item in index.files}
+        mappings = []
+        for mapping in index.tests:
+            if not (
+                mapping.source_file == source_file or mapping.source_file.endswith(source_file)
+            ):
+                continue
+            source = files_by_path.get(mapping.source_file)
+            test = files_by_path.get(mapping.test_file)
+            if source is None or test is None:
+                continue
+            if self._readable(
+                context=context,
+                team_id=team_id,
+                access=source.access,
+                resource_id=source.file_id,
+            ) and self._readable(
+                context=context,
+                team_id=team_id,
+                access=test.access,
+                resource_id=test.file_id,
+            ):
+                mappings.append(mapping)
+        return mappings
 
-    def find_file(self, *, team_id: str, repo_name: str, file_path: str) -> FileNode | None:
+    def find_file(
+        self,
+        *,
+        team_id: str,
+        repo_name: str,
+        file_path: str,
+        access_context: AccessContext | None = None,
+    ) -> FileNode | None:
         index = self.repository.try_load(team_id, repo_name)
         if index is None:
             return None
         normalized = file_path.replace("\\", "/")
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
+        if not self._readable(
+            context=context,
+            team_id=team_id,
+            access=index.access,
+            resource_id=index.repo_id,
+        ):
+            return None
         for file_node in index.files:
-            if file_node.path == normalized or file_node.path.endswith(normalized):
+            if (
+                file_node.path == normalized or file_node.path.endswith(normalized)
+            ) and self._readable(
+                context=context,
+                team_id=team_id,
+                access=file_node.access,
+                resource_id=file_node.file_id,
+            ):
                 return file_node
         return None
 
     def related_to_concept(
-        self, *, team_id: str, repo_name: str, concept: str
+        self,
+        *,
+        team_id: str,
+        repo_name: str,
+        concept: str,
+        access_context: AccessContext | None = None,
     ) -> list[CodebaseSearchResult]:
         index = self.repository.try_load(team_id, repo_name)
         if index is None:
             return []
         normalized = concept.lower()
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
+        if not self._readable(
+            context=context,
+            team_id=team_id,
+            access=index.access,
+            resource_id=index.repo_id,
+        ):
+            return []
         results: list[CodebaseSearchResult] = []
         for mapping in index.concepts:
-            if normalized in mapping.concept.lower():
+            if normalized in mapping.concept.lower() and self._readable(
+                context=context,
+                team_id=team_id,
+                access=mapping.access,
+                resource_id=f"concept:{mapping.concept}",
+            ):
                 results.append(
                     CodebaseSearchResult(
                         result_type="concept",
@@ -119,9 +235,26 @@ class CodebaseRetriever:
                         score=10,
                         reason=mapping.reason,
                         metadata={"repo_name": repo_name, "team_id": team_id},
+                        access=mapping.access.model_copy(deep=True),
                     )
                 )
         return results
+
+    def _readable(
+        self,
+        *,
+        context: AccessContext,
+        team_id: str,
+        access: ResourceAccess,
+        resource_id: str,
+    ) -> bool:
+        return self.access_policy.decide(
+            context=context,
+            team_id=team_id,
+            action="retrieve",
+            resource_access=access,
+            resource_id=resource_id,
+        ).allowed
 
     @staticmethod
     def _file_result(file_node: FileNode, score: int, terms: list[str]) -> CodebaseSearchResult:
@@ -135,6 +268,7 @@ class CodebaseRetriever:
             score=score,
             reason=reason,
             metadata={"language": file_node.language, "role": file_node.role},
+            access=file_node.access.model_copy(deep=True),
         )
 
     @staticmethod
@@ -147,6 +281,7 @@ class CodebaseRetriever:
             score=score,
             reason="Matched symbol name, signature, concepts, or summary.",
             metadata={"symbol_id": symbol.symbol_id, "kind": symbol.kind},
+            access=symbol.access.model_copy(deep=True),
         )
 
     @classmethod

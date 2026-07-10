@@ -13,6 +13,10 @@ class PathTraversalError(DreamError):
     """Raised when a file path escapes the DREAM project root."""
 
 
+class AccessDeniedError(DreamError):
+    """Raised when identity, role, or source ACL policy denies an operation."""
+
+
 class ProviderConfigurationError(DreamError):
     """Raised when an optional provider is not configured."""
 

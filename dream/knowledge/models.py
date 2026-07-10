@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class TeamKnowledgePack(BaseModel):
     team_name: str
@@ -12,6 +14,7 @@ class TeamKnowledgePack(BaseModel):
     review_rules: list[str] = Field(default_factory=list)
     requirement_template: str = "default"
     test_generation_rules: dict[str, object] = Field(default_factory=dict)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class Document(BaseModel):
@@ -20,6 +23,7 @@ class Document(BaseModel):
     title: str
     content: str
     metadata: dict[str, str] = Field(default_factory=dict)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class Chunk(BaseModel):
@@ -29,3 +33,4 @@ class Chunk(BaseModel):
     title: str
     content: str
     metadata: dict[str, str] = Field(default_factory=dict)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)

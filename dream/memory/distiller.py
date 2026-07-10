@@ -48,6 +48,7 @@ from dream.memory.models import (
     SourceSpan,
 )
 from dream.memory.repository import MemoryDistillationRepository
+from dream.security.models import ResourceAccess
 
 STRUCTURAL_EXTRACTION = "deterministic_structure"
 SEMANTIC_EXTRACTION = "heuristic_semantic"
@@ -131,6 +132,7 @@ class MemoryDistillationService:
         repo_name: str | None = None,
         scan_id: str | None = None,
         created_at: str | None = None,
+        access: ResourceAccess | None = None,
     ) -> MemoryScanResult:
         created_at = created_at or datetime.now(UTC).isoformat()
         scan_id = scan_id or f"memscan-{uuid4().hex[:12]}"
@@ -139,7 +141,12 @@ class MemoryDistillationService:
         index = CodebaseIndexer(
             repository=self.codebase_repository,
             audit_logger=self.audit_logger,
-        ).index(team_id=team_id, repo_path=root, repo_name=repo_name)
+        ).index(
+            team_id=team_id,
+            repo_path=root,
+            repo_name=repo_name,
+            access=access,
+        )
 
         sources: list[SourceRecord] = []
         claims: list[MemoryClaim] = []
@@ -159,6 +166,7 @@ class MemoryDistillationService:
                 indexed_at=created_at,
                 trust_level="high",
                 commit_sha=provenance.commit_sha,
+                access=file_node.access,
             )
             sources.append(source)
             source_by_path[file_node.path] = (source, content)
@@ -191,6 +199,7 @@ class MemoryDistillationService:
                     symbol.file_path,
                     created_at,
                     provenance.commit_sha,
+                    access=symbol.access,
                 )
                 sources.append(source)
                 source_by_path[symbol.file_path] = (source, content)
@@ -274,6 +283,7 @@ class MemoryDistillationService:
                 indexed_at=created_at,
                 trust_level=self._doc_trust_level(entry),
                 commit_sha=provenance.commit_sha,
+                access=ResourceAccess.from_metadata(entry.metadata),
             )
             sources.append(doc_source)
             claims.extend(
@@ -1379,8 +1389,16 @@ class MemoryDistillationService:
             ),
             governance=GovernanceInfo(status=status, risk_level=risk_level),
             security=SecurityInfo(
-                classification=security_classification,
+                classification=(
+                    "blocked"
+                    if security_classification == "blocked"
+                    else source.access.classification
+                ),
                 redaction_applied=bool(source.security_flags),
+                acl_scope=source.access.acl_scope,
+                allowed_principal_ids=sorted(source.access.allowed_principal_ids),
+                allowed_group_ids=sorted(source.access.allowed_group_ids),
+                source_acl_version=source.access.source_acl_version,
             ),
             audit=ClaimAuditInfo(created_at=created_at, updated_at=created_at),
         )
@@ -1397,7 +1415,9 @@ class MemoryDistillationService:
         indexed_at: str,
         trust_level: str,
         commit_sha: str | None,
+        access: ResourceAccess | None = None,
     ) -> SourceRecord:
+        resolved_access = (access or ResourceAccess()).model_copy(deep=True)
         content_hash = cls._sha256(content)
         source_key = f"{team_id}:{repo_name}:{source_type}:{path}:{content_hash}"
         source_id = f"src:{cls._stable_id(source_key)}"
@@ -1419,8 +1439,10 @@ class MemoryDistillationService:
             content_hash=content_hash,
             indexed_at=indexed_at,
             trust_level=trust_level,
+            acl_scope=resolved_access.acl_scope,
             security_flags=cls._security_flags(content),
             spans=[span],
+            access=resolved_access,
         )
 
     @classmethod
@@ -1627,6 +1649,7 @@ class MemoryDistillationService:
         path: str,
         indexed_at: str,
         commit_sha: str | None,
+        access: ResourceAccess | None = None,
     ) -> tuple[SourceRecord, str]:
         source = cls._source_record(
             team_id=team_id,
@@ -1637,6 +1660,7 @@ class MemoryDistillationService:
             indexed_at=indexed_at,
             trust_level="low",
             commit_sha=commit_sha,
+            access=access,
         )
         return source, ""
 

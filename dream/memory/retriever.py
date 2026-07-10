@@ -8,6 +8,7 @@ from dream.graph import EvidenceGraphRepository, EvidenceGraphRetriever
 from dream.graph.models import EvidenceGraphSearchResult
 from dream.knowledge import Chunker, KnowledgePackLoader, MarkdownDocumentLoader, SimpleRetriever
 from dream.requirement_cases.models import ContextEvidence
+from dream.security import AccessContext
 
 
 class EngineeringMemoryRetriever:
@@ -43,6 +44,7 @@ class EngineeringMemoryRetriever:
         top_k: int = 8,
         app: str | None = None,
         component: str | None = None,
+        access_context: AccessContext | None = None,
     ) -> list[ContextEvidence]:
         evidence = []
         for query_index, knowledge_query in enumerate(self._knowledge_queries(query)):
@@ -55,6 +57,7 @@ class EngineeringMemoryRetriever:
                     app=app,
                     component=component,
                     query_weight=query_weight,
+                    access_context=access_context,
                 )
             )
             if app is not None or component is not None:
@@ -66,6 +69,7 @@ class EngineeringMemoryRetriever:
                         app=None,
                         component=None,
                         query_weight=query_weight,
+                        access_context=access_context,
                     )
                 )
         repo_names = [repo_name] if repo_name else self.codebase_repository.list_repo_names(team_id)
@@ -74,14 +78,13 @@ class EngineeringMemoryRetriever:
                 continue
             results = []
             for query_index, code_query in enumerate(self._code_queries(query)):
-                query_weight = 1.0 if query_index == 0 else max(
-                    0.4, 0.7 - query_index * 0.05
-                )
+                query_weight = 1.0 if query_index == 0 else max(0.4, 0.7 - query_index * 0.05)
                 query_results = self.codebase_retriever.search(
                     team_id=team_id,
                     repo_name=candidate_repo,
                     query=code_query,
                     top_k=top_k,
+                    access_context=access_context,
                 )
                 for result in query_results:
                     result.score = int(100 * query_weight + result.score)
@@ -99,6 +102,7 @@ class EngineeringMemoryRetriever:
                         excerpt=result.excerpt,
                         relevance_score=float(result.score),
                         reason=result.reason,
+                        access=result.access.model_copy(deep=True),
                     )
                 )
         evidence.sort(key=lambda item: (-item.relevance_score, item.source_path, item.title))
@@ -108,6 +112,7 @@ class EngineeringMemoryRetriever:
                 repo_names=repo_names,
                 query=query,
                 top_k=top_k,
+                access_context=access_context,
             )
         )
         evidence.sort(key=lambda item: (-item.relevance_score, item.source_path, item.title))
@@ -121,6 +126,7 @@ class EngineeringMemoryRetriever:
         repo_names: list[str | None],
         query: str,
         top_k: int,
+        access_context: AccessContext | None,
     ) -> list[ContextEvidence]:
         evidence: list[ContextEvidence] = []
         graph_names = repo_names or self.graph_repository.list_graph_names(team_id)
@@ -132,6 +138,7 @@ class EngineeringMemoryRetriever:
                 repo_name=repo_name,
                 query=query,
                 top_k=top_k,
+                access_context=access_context,
             ):
                 evidence.append(self._graph_result_to_evidence(result))
         return evidence
@@ -145,6 +152,7 @@ class EngineeringMemoryRetriever:
         app: str | None,
         component: str | None,
         query_weight: float,
+        access_context: AccessContext | None,
     ) -> list[ContextEvidence]:
         pack = self.pack_loader.load(team_id)
         pack_dir = self.pack_loader.pack_dir(pack.team_id)
@@ -156,6 +164,7 @@ class EngineeringMemoryRetriever:
             app=app,
             component=component,
             top_k=top_k,
+            access_context=access_context,
         )
         evidence: list[ContextEvidence] = []
         for rank, (score, chunk) in enumerate(retrieved):
@@ -172,6 +181,7 @@ class EngineeringMemoryRetriever:
                         "Knowledge pack chunk matched request keywords; rank and original-query "
                         "priority were preserved."
                     ),
+                    access=chunk.access.model_copy(deep=True),
                 )
             )
         return evidence
@@ -199,6 +209,7 @@ class EngineeringMemoryRetriever:
             excerpt=excerpt[:600] or "Evidence graph node matched the request.",
             relevance_score=float(min(result.score, 25)),
             reason=result.reason,
+            access=node.access.model_copy(deep=True),
         )
 
     @staticmethod
@@ -208,12 +219,9 @@ class EngineeringMemoryRetriever:
         if any(term in normalized for term in ["job", "execution", "status", "async"]):
             queries.append("job execution controller service test status")
             queries.append(
-                "status tracker execution service controller batch job adapter "
-                "execution monitor"
+                "status tracker execution service controller batch job adapter execution monitor"
             )
-            queries.append(
-                "status tracker test execution service test status regression"
-            )
+            queries.append("status tracker test execution service test status regression")
         return queries
 
     @staticmethod
@@ -317,9 +325,7 @@ class EngineeringMemoryRetriever:
             candidates = [
                 item
                 for item in evidence
-                if item not in selected
-                and item not in reserved
-                and cls._category(item) == category
+                if item not in selected and item not in reserved and cls._category(item) == category
             ]
             for item in sorted(
                 candidates, key=lambda candidate: cls._candidate_priority(candidate, query)

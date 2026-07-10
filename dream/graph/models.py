@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class EvidenceNode(BaseModel):
     node_id: str
@@ -12,6 +14,7 @@ class EvidenceNode(BaseModel):
     aliases: list[str] = Field(default_factory=list)
     concepts: list[str] = Field(default_factory=list)
     metadata: dict[str, object] = Field(default_factory=dict)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class EvidenceEdge(BaseModel):

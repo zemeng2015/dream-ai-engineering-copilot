@@ -23,6 +23,7 @@ class Chunker:
                     title=chunk_title,
                     content=content.strip(),
                     metadata=document.metadata.copy(),
+                    access=document.access.model_copy(deep=True),
                 )
             )
         return chunks

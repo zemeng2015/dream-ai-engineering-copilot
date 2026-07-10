@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class PRReviewRequest(BaseModel):
     team_id: str
@@ -14,6 +16,7 @@ class PRReviewRequest(BaseModel):
     component: str | None = None
     top_k: int = Field(default=5, ge=1, le=20)
     llm_provider: str = "mock"
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class PRReviewResponse(BaseModel):

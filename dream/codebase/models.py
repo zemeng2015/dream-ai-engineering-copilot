@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from dream.security.models import ResourceAccess
+
 
 class FileNode(BaseModel):
     file_id: str
@@ -13,6 +15,7 @@ class FileNode(BaseModel):
     summary: str | None = None
     symbols: list[str] = Field(default_factory=list)
     concepts: list[str] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class SymbolNode(BaseModel):
@@ -26,6 +29,7 @@ class SymbolNode(BaseModel):
     docstring: str | None = None
     summary: str | None = None
     concepts: list[str] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class TestMapping(BaseModel):
@@ -33,6 +37,7 @@ class TestMapping(BaseModel):
     test_file: str
     confidence: float
     reason: str
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class DependencyEdge(BaseModel):
@@ -52,6 +57,7 @@ class ConceptMapping(BaseModel):
     related_docs: list[str] = Field(default_factory=list)
     confidence: float
     reason: str
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class RepoIndex(BaseModel):
@@ -67,6 +73,7 @@ class RepoIndex(BaseModel):
     concepts: list[ConceptMapping] = Field(default_factory=list)
     summary: str
     warnings: list[str] = Field(default_factory=list)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)
 
 
 class CodebaseSearchResult(BaseModel):
@@ -77,3 +84,4 @@ class CodebaseSearchResult(BaseModel):
     score: int
     reason: str
     metadata: dict[str, str] = Field(default_factory=dict)
+    access: ResourceAccess = Field(default_factory=ResourceAccess)

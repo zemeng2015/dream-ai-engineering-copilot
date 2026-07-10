@@ -28,6 +28,8 @@ from dream.requirement_cases.models import (
 )
 from dream.requirement_cases.questions import QuestionGenerator
 from dream.requirement_cases.repository import RequirementCaseRepository
+from dream.security import AccessContext, DefaultAccessPolicy
+from dream.security.models import AccessAction
 
 if TYPE_CHECKING:
     from dream.memory import EngineeringMemoryRetriever, MemoryClaimRetriever
@@ -47,6 +49,7 @@ class RequirementCaseService:
         audit_logger: AuditLogger | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
         llm_provider: BaseLLMProvider | None = None,
+        access_policy: DefaultAccessPolicy | None = None,
     ) -> None:
         self.repository = repository or RequirementCaseRepository()
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
@@ -72,6 +75,7 @@ class RequirementCaseService:
         )
         self.jira_generator = jira_generator or JiraDraftGenerator(llm_provider=llm_provider)
         self.audit_logger = audit_logger or AuditLogger()
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
     def create_case(
         self,
@@ -79,7 +83,16 @@ class RequirementCaseService:
         *,
         case_id: str | None = None,
         created_at: str | None = None,
+        access_context: AccessContext | None = None,
     ) -> RequirementCaseSnapshot:
+        context = access_context or AccessContext.public_demo(team_ids={request.team_id})
+        self.access_policy.require(
+            context=context,
+            team_id=request.team_id,
+            action="requirement_work",
+            resource_access=request.access,
+            resource_id=case_id or "new-requirement-case",
+        )
         now = created_at or datetime.now(UTC).isoformat()
         case_id = case_id or f"case-{uuid4().hex[:12]}"
         case = RequirementCase(
@@ -93,6 +106,7 @@ class RequirementCaseService:
             status="created",
             created_at=now,
             updated_at=now,
+            access=request.access.model_copy(deep=True),
         )
         snapshot = RequirementCaseSnapshot(case=case)
         self.repository.save(snapshot)
@@ -111,9 +125,19 @@ class RequirementCaseService:
         )
         return snapshot
 
-    def analyze_case(self, case_id: str) -> RequirementCaseSnapshot:
+    def analyze_case(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> RequirementCaseSnapshot:
         snapshot = self.repository.get(case_id)
-        repo_name = self._default_repo_name(snapshot.case.team_id)
+        context = self._require_snapshot(
+            snapshot,
+            access_context=access_context,
+            action="requirement_work",
+        )
+        repo_name = self._default_repo_name(snapshot.case.team_id, access_context=context)
         evidence = self._with_case_id(
             snapshot.case.case_id,
             self.memory_retriever.search(
@@ -123,10 +147,20 @@ class RequirementCaseService:
                 top_k=20,
                 app=snapshot.case.target_app,
                 component=snapshot.case.target_component,
+                access_context=context,
             ),
         )
-        governed_evidence, memory_warnings = self._approved_memory_claim_evidence(snapshot.case)
+        governed_evidence, memory_warnings = self._approved_memory_claim_evidence(
+            snapshot.case,
+            access_context=context,
+        )
         evidence.extend(governed_evidence)
+        snapshot.case.access = self.access_policy.derive_artifact_access(
+            context=context,
+            team_id=snapshot.case.team_id,
+            source_access=(item.access for item in evidence),
+            requested_access=snapshot.case.access,
+        )
         impact_items = self.impact_generator.generate(snapshot.case, evidence)
         questions = self.question_generator.generate(snapshot.case, evidence)
         warnings = list(memory_warnings)
@@ -164,18 +198,21 @@ class RequirementCaseService:
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
             memory_repository=self.memory_claim_retriever.repository,
-        ).trace_case(snapshot.case.case_id)
+        ).trace_case(snapshot.case.case_id, access_context=context)
         return snapshot
 
     def _approved_memory_claim_evidence(
         self,
         case: RequirementCase,
+        *,
+        access_context: AccessContext,
     ) -> tuple[list[ContextEvidence], list[str]]:
         try:
             batch = self.memory_claim_retriever.search_with_policy(
                 team_id=case.team_id,
                 query=case.raw_request,
                 top_k=8,
+                access_context=access_context,
             )
         except NotFoundError:
             return [], ["No memory scan is available; governed MemoryClaims were not used."]
@@ -220,18 +257,28 @@ class RequirementCaseService:
                     reviewed_by=review.reviewer if review else None,
                     reviewed_at=review.reviewed_at if review else None,
                     evidence_paths=evidence_paths,
+                    access=claim.security.resource_access(),
                 )
             )
         return evidence, batch.warnings
 
-    def generate_impact_map(self, case_id: str) -> list[ImpactItem]:
-        snapshot = self._ensure_analyzed(case_id)
+    def generate_impact_map(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> list[ImpactItem]:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         return snapshot.impact_items
 
     def generate_questions(
-        self, case_id: str, *, role: str | None = None
+        self,
+        case_id: str,
+        *,
+        role: str | None = None,
+        access_context: AccessContext | None = None,
     ) -> list[ClarificationQuestion]:
-        snapshot = self._ensure_analyzed(case_id)
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         if role is None:
             return snapshot.questions
         normalized = role.upper()
@@ -244,8 +291,9 @@ class RequirementCaseService:
         answer: str,
         *,
         answered_by: str | None = None,
+        access_context: AccessContext | None = None,
     ) -> ClarificationQuestion:
-        snapshot = self._ensure_analyzed(case_id)
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         answer_text = answer.strip()
         if not answer_text:
             raise ValueError("Clarification answer cannot be empty.")
@@ -302,8 +350,9 @@ class RequirementCaseService:
         reason: str,
         *,
         waived_by: str | None = None,
+        access_context: AccessContext | None = None,
     ) -> ClarificationQuestion:
-        snapshot = self._ensure_analyzed(case_id)
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         reason_text = reason.strip()
         if not reason_text:
             raise ValueError("Clarification waiver reason cannot be empty.")
@@ -353,9 +402,19 @@ class RequirementCaseService:
         )
         return updated_question
 
-    def generate_role_view(self, case_id: str, role: str) -> RoleView:
-        snapshot = self._ensure_analyzed(case_id)
-        questions = self.generate_questions(case_id, role=role)
+    def generate_role_view(
+        self,
+        case_id: str,
+        role: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> RoleView:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
+        questions = self.generate_questions(
+            case_id,
+            role=role,
+            access_context=access_context,
+        )
         sources = _evidence_source_paths(snapshot.evidence)
         question_lines = "\n".join(f"- {item.question}" for item in questions) or "- None"
         markdown = f"""# {role.upper()} View
@@ -382,8 +441,13 @@ class RequirementCaseService:
         self.repository.save(snapshot)
         return role_view
 
-    def generate_engineering_brief(self, case_id: str) -> EngineeringBrief:
-        snapshot = self._ensure_analyzed(case_id)
+    def generate_engineering_brief(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> EngineeringBrief:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         brief = self.brief_generator.generate(snapshot)
         output_path = self._case_artifact_dir(case_id) / "engineering-brief.md"
         output_path.write_text(brief.markdown, encoding="utf-8")
@@ -410,11 +474,20 @@ class RequirementCaseService:
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
             memory_repository=self.memory_claim_retriever.repository,
-        ).prompt_for_case(case_id, target="engineering_brief")
+        ).prompt_for_case(
+            case_id,
+            target="engineering_brief",
+            access_context=self._case_context(snapshot, access_context),
+        )
         return brief
 
-    def prepare_jira_draft_context(self, case_id: str) -> JiraDraftContext:
-        snapshot = self._ensure_analyzed(case_id)
+    def prepare_jira_draft_context(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> JiraDraftContext:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         context = self.jira_generator.prepare(snapshot)
         output_path = self._case_artifact_dir(case_id) / "jira-draft-context.md"
         output_path.write_text(
@@ -448,8 +521,13 @@ class RequirementCaseService:
         )
         return context
 
-    def generate_jira_draft(self, case_id: str) -> JiraDraft:
-        snapshot = self._ensure_analyzed(case_id)
+    def generate_jira_draft(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> JiraDraft:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         jira = self.jira_generator.generate(snapshot)
         readiness = self._jira_readiness(snapshot, jira_draft_exists=True)
         if not readiness.ready:
@@ -480,11 +558,20 @@ class RequirementCaseService:
             requirement_repository=self.repository,
             codebase_repository=self.codebase_repository,
             memory_repository=self.memory_claim_retriever.repository,
-        ).prompt_for_case(case_id, target="jira_draft")
+        ).prompt_for_case(
+            case_id,
+            target="jira_draft",
+            access_context=self._case_context(snapshot, access_context),
+        )
         return jira
 
-    def jira_readiness(self, case_id: str) -> JiraReadiness:
-        snapshot = self._ensure_analyzed(case_id)
+    def jira_readiness(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> JiraReadiness:
+        snapshot = self._ensure_analyzed(case_id, access_context=access_context)
         readiness = self._jira_readiness(snapshot)
         snapshot.jira_readiness = readiness
         snapshot.case.status = readiness.status
@@ -505,21 +592,104 @@ class RequirementCaseService:
         )
         return readiness
 
-    def get_case(self, case_id: str) -> RequirementCaseSnapshot:
-        return self.repository.get(case_id)
-
-    def list_cases(self) -> list[RequirementCaseSnapshot]:
-        return self.repository.list()
-
-    def _ensure_analyzed(self, case_id: str) -> RequirementCaseSnapshot:
+    def get_case(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> RequirementCaseSnapshot:
         snapshot = self.repository.get(case_id)
-        if not snapshot.evidence and snapshot.case.status == "created":
-            return self.analyze_case(case_id)
+        self._require_snapshot(snapshot, access_context=access_context)
         return snapshot
 
-    def _default_repo_name(self, team_id: str) -> str | None:
+    def list_cases(
+        self,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> list[RequirementCaseSnapshot]:
+        snapshots = self.repository.list()
+        return [
+            snapshot
+            for snapshot in snapshots
+            if self._case_allowed(snapshot, access_context=access_context)
+        ]
+
+    def _ensure_analyzed(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> RequirementCaseSnapshot:
+        snapshot = self.repository.get(case_id)
+        context = self._require_snapshot(
+            snapshot,
+            access_context=access_context,
+            action="requirement_work",
+        )
+        if not snapshot.evidence and snapshot.case.status == "created":
+            return self.analyze_case(case_id, access_context=context)
+        return snapshot
+
+    def _require_snapshot(
+        self,
+        snapshot: RequirementCaseSnapshot,
+        *,
+        access_context: AccessContext | None,
+        action: AccessAction = "retrieve",
+    ) -> AccessContext:
+        context = self._case_context(snapshot, access_context)
+        self.access_policy.require(
+            context=context,
+            team_id=snapshot.case.team_id,
+            action=action,
+            resource_access=snapshot.case.access,
+            resource_id=snapshot.case.case_id,
+        )
+        return context
+
+    def _case_allowed(
+        self,
+        snapshot: RequirementCaseSnapshot,
+        *,
+        access_context: AccessContext | None,
+    ) -> bool:
+        context = self._case_context(snapshot, access_context)
+        return self.access_policy.decide(
+            context=context,
+            team_id=snapshot.case.team_id,
+            action="retrieve",
+            resource_access=snapshot.case.access,
+            resource_id=snapshot.case.case_id,
+        ).allowed
+
+    @staticmethod
+    def _case_context(
+        snapshot: RequirementCaseSnapshot,
+        access_context: AccessContext | None,
+    ) -> AccessContext:
+        return access_context or AccessContext.public_demo(team_ids={snapshot.case.team_id})
+
+    def _default_repo_name(
+        self,
+        team_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> str | None:
         repo_names = self.codebase_repository.list_repo_names(team_id)
-        return repo_names[0] if repo_names else None
+        for repo_name in repo_names:
+            index = self.codebase_repository.try_load(team_id, repo_name)
+            if (
+                index is not None
+                and self.access_policy.decide(
+                    context=access_context,
+                    team_id=team_id,
+                    action="retrieve",
+                    resource_access=index.access,
+                    resource_id=index.repo_id,
+                ).allowed
+            ):
+                return repo_name
+        return None
 
     @staticmethod
     def _jira_readiness(

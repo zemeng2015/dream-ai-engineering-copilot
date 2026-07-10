@@ -8,13 +8,20 @@ from dream.memory.models import (
     MemoryClaimSearchResult,
 )
 from dream.memory.repository import MemoryDistillationRepository
+from dream.security import AccessContext, DefaultAccessPolicy
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 
 
 class MemoryClaimRetriever:
-    def __init__(self, repository: MemoryDistillationRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: MemoryDistillationRepository | None = None,
+        *,
+        access_policy: DefaultAccessPolicy | None = None,
+    ) -> None:
         self.repository = repository or MemoryDistillationRepository()
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
     def search(
         self,
@@ -23,12 +30,14 @@ class MemoryClaimRetriever:
         query: str,
         scan_id: str = "latest",
         top_k: int = 8,
+        access_context: AccessContext | None = None,
     ) -> list[MemoryClaimSearchResult]:
         return self.search_with_policy(
             team_id=team_id,
             query=query,
             scan_id=scan_id,
             top_k=top_k,
+            access_context=access_context,
         ).results
 
     def search_with_policy(
@@ -38,8 +47,21 @@ class MemoryClaimRetriever:
         query: str,
         scan_id: str = "latest",
         top_k: int = 8,
+        access_context: AccessContext | None = None,
     ) -> MemoryClaimRetrievalBatch:
         scan = self.repository.load_scan(team_id, scan_id)
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
+        readable_claims = [
+            claim
+            for claim in scan.claims
+            if self.access_policy.decide(
+                context=context,
+                team_id=team_id,
+                action="retrieve",
+                resource_access=claim.security.resource_access(),
+                resource_id=claim.claim_id,
+            ).allowed
+        ]
         review_statuses = self.repository.latest_review_statuses(team_id)
         unresolved_conflict_claim_ids = self._unresolved_conflict_claim_ids(
             team_id=team_id,
@@ -47,7 +69,7 @@ class MemoryClaimRetriever:
         )
         blocked_claim_ids = {
             claim.claim_id
-            for claim in scan.claims
+            for claim in readable_claims
             if claim.claim_id in unresolved_conflict_claim_ids
             and (
                 review_statuses[claim.claim_id].new_status
@@ -58,7 +80,7 @@ class MemoryClaimRetriever:
         }
         terms = self._tokens(query)
         scored: list[MemoryClaimSearchResult] = []
-        for claim in scan.claims:
+        for claim in readable_claims:
             effective_status = review_statuses.get(claim.claim_id)
             status = effective_status.new_status if effective_status else claim.governance.status
             if status != "approved":
@@ -101,8 +123,15 @@ class MemoryClaimRetriever:
         query: str,
         scan_id: str = "latest",
         top_k: int = 8,
+        access_context: AccessContext | None = None,
     ) -> str:
-        results = self.search(team_id=team_id, query=query, scan_id=scan_id, top_k=top_k)
+        results = self.search(
+            team_id=team_id,
+            query=query,
+            scan_id=scan_id,
+            top_k=top_k,
+            access_context=access_context,
+        )
         lines = [
             "# DREAM Memory Context Card",
             "",

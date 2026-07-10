@@ -32,6 +32,8 @@ from dream.requirement_cases.templates import (
     render_jira_draft_prompt,
 )
 from dream.review.diff_parser import DiffSummary
+from dream.security import AccessContext, DefaultAccessPolicy
+from dream.security.models import ResourceAccess
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]+")
 STOP_WORDS = {
@@ -63,34 +65,119 @@ class ContextIntelligenceService:
         graph_repository: EvidenceGraphRepository | None = None,
         memory_repository: MemoryDistillationRepository | None = None,
         codebase_repository: CodebaseIndexRepository | None = None,
+        access_policy: DefaultAccessPolicy | None = None,
     ) -> None:
         self.repository = repository or ContextArtifactRepository()
         self.requirement_repository = requirement_repository or RequirementCaseRepository()
         self.graph_repository = graph_repository or EvidenceGraphRepository()
-        self.graph_retriever = EvidenceGraphRetriever(repository=self.graph_repository)
+        self.access_policy = access_policy or DefaultAccessPolicy()
+        self.graph_retriever = EvidenceGraphRetriever(
+            repository=self.graph_repository,
+            access_policy=self.access_policy,
+        )
         self.memory_repository = memory_repository or MemoryDistillationRepository()
-        self.memory_retriever = MemoryClaimRetriever(repository=self.memory_repository)
+        self.memory_retriever = MemoryClaimRetriever(
+            repository=self.memory_repository,
+            access_policy=self.access_policy,
+        )
         self.codebase_repository = codebase_repository or CodebaseIndexRepository()
         self.redaction = DefaultRedactionProvider()
 
-    def trace_case(self, case_id: str) -> RetrievalTrail:
+    def load_trail(
+        self,
+        trail_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> RetrievalTrail:
+        trail = self.repository.load_trail(trail_id)
+        self.access_policy.require(
+            context=access_context,
+            team_id=trail.team_id,
+            action="retrieve",
+            resource_access=trail.access,
+            resource_id=trail.trail_id,
+        )
+        return trail
+
+    def load_context_pack(
+        self,
+        context_pack_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> ContextPack:
+        pack = self.repository.load_context_pack(context_pack_id)
+        self.access_policy.require(
+            context=access_context,
+            team_id=pack.team_id,
+            action="retrieve",
+            resource_access=pack.access,
+            resource_id=pack.context_pack_id,
+        )
+        return pack
+
+    def load_prompt_preview(
+        self,
+        preview_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> PromptPreview:
+        preview = self.repository.load_prompt_preview(preview_id)
+        self.access_policy.require(
+            context=access_context,
+            team_id=preview.team_id,
+            action="retrieve",
+            resource_access=preview.access,
+            resource_id=preview.preview_id,
+        )
+        return preview
+
+    def trace_case(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> RetrievalTrail:
         snapshot = self.requirement_repository.get(case_id)
-        repo_name = self._default_repo_name(snapshot.case.team_id)
-        selected = [_candidate_from_context(item, selected=True) for item in snapshot.evidence]
+        context = access_context or AccessContext.public_demo(team_ids={snapshot.case.team_id})
+        self.access_policy.require(
+            context=context,
+            team_id=snapshot.case.team_id,
+            action="retrieve",
+            resource_access=snapshot.case.access,
+            resource_id=snapshot.case.case_id,
+        )
+        repo_name = self._default_repo_name(
+            snapshot.case.team_id,
+            access_context=context,
+        )
+        selected = [
+            _candidate_from_context(item, selected=True)
+            for item in snapshot.evidence
+            if self.access_policy.decide(
+                context=context,
+                team_id=snapshot.case.team_id,
+                action="retrieve",
+                resource_access=item.access,
+                resource_id=item.evidence_id,
+            ).allowed
+        ]
         concepts = _detect_concepts(snapshot.case.raw_request, selected)
         graph_paths = self._graph_paths(
             team_id=snapshot.case.team_id,
             repo_name=repo_name,
             query=snapshot.case.raw_request,
+            access_context=context,
         )
         considered_claims = self._memory_claims(
             team_id=snapshot.case.team_id,
             query=snapshot.case.raw_request,
             include_candidates=True,
+            access_context=context,
         )
         used_claims, claim_policy_warnings = self._approved_memory_claims(
             team_id=snapshot.case.team_id,
             query=snapshot.case.raw_request,
+            access_context=context,
         )
         used_claim_ids = {item.claim_id for item in used_claims}
         considered_claims = [
@@ -137,17 +224,29 @@ class ContextIntelligenceService:
             memory_claims_used=used_claims,
             warnings=list(dict.fromkeys([*snapshot.warnings, *claim_policy_warnings])),
             final_context_summary=_summary(selected, graph_paths, used_claims),
+            access=snapshot.case.access.model_copy(deep=True),
         )
         return self.repository.save_trail(trail)
 
-    def assemble_case(self, case_id: str) -> ContextPack:
+    def assemble_case(
+        self,
+        case_id: str,
+        *,
+        access_context: AccessContext | None = None,
+    ) -> ContextPack:
         snapshot = self.requirement_repository.get(case_id)
-        trail = self.trace_case(case_id)
+        trail = self.trace_case(case_id, access_context=access_context)
         return self._pack_from_snapshot(snapshot, trail)
 
-    def prompt_for_case(self, case_id: str, target: str = "jira_draft") -> PromptPreview:
+    def prompt_for_case(
+        self,
+        case_id: str,
+        target: str = "jira_draft",
+        *,
+        access_context: AccessContext | None = None,
+    ) -> PromptPreview:
         snapshot = self.requirement_repository.get(case_id)
-        pack = self.assemble_case(case_id)
+        pack = self.assemble_case(case_id, access_context=access_context)
         if target == "engineering_brief":
             deterministic = render_engineering_brief(
                 case=snapshot.case,
@@ -178,12 +277,14 @@ class ContextIntelligenceService:
             )
         preview = PromptPreview(
             preview_id=f"prompt-preview-{case_id}-{target}",
+            team_id=snapshot.case.team_id,
             case_id=case_id,
             target=target,
             provider_mode="mock-or-configured-provider",
             prompt_text=self.redaction.redact(prompt),
             evidence_paths=_pack_evidence_paths(pack),
             warnings=pack.warnings,
+            access=snapshot.case.access.model_copy(deep=True),
         )
         return self.repository.save_prompt_preview(preview)
 
@@ -199,7 +300,18 @@ class ContextIntelligenceService:
         memory_claims: list[MemoryClaimSearchResult],
         warnings: list[str],
         prompt: str,
+        access_context: AccessContext | None = None,
+        artifact_access: ResourceAccess | None = None,
     ) -> tuple[RetrievalTrail, ContextPack, PromptPreview]:
+        context = access_context or AccessContext.public_demo(team_ids={request.team_id})
+        output_access = artifact_access or request.access
+        self.access_policy.require(
+            context=context,
+            team_id=request.team_id,
+            action="retrieve",
+            resource_access=request.access,
+            resource_id=run_id,
+        )
         evidence = [_candidate_from_chunk(chunk) for chunk in chunks]
         evidence.extend(_candidate_from_codebase(result) for result in codebase_results)
         for mapping in related_tests:
@@ -214,6 +326,7 @@ class ContextIntelligenceService:
                     reason="Related test mapping from codebase memory.",
                     selected=True,
                     authority_status="candidate",
+                    access=mapping.access.model_copy(deep=True),
                 )
             )
         concepts = _detect_concepts(diff_summary.rough_changed_content, evidence)
@@ -221,6 +334,7 @@ class ContextIntelligenceService:
             team_id=request.team_id,
             repo_name=request.repo_name,
             query=" ".join([diff_summary.rough_changed_content, *diff_summary.files_changed]),
+            access_context=context,
         )
         claim_refs = [
             self._memory_claim_reference(
@@ -276,6 +390,7 @@ class ContextIntelligenceService:
             memory_claims_used=claim_refs,
             warnings=warnings,
             final_context_summary=_summary(selected, graph_paths, claim_refs),
+            access=output_access.model_copy(deep=True),
         )
         trail = self.repository.save_trail(trail)
         pack = self._pack_from_candidates(
@@ -288,24 +403,36 @@ class ContextIntelligenceService:
             graph_paths=graph_paths,
             selected_claims=claim_refs,
             warnings=warnings,
+            access=output_access,
         )
         preview = PromptPreview(
             preview_id=f"prompt-preview-{run_id}-pr_review",
+            team_id=request.team_id,
             run_id=run_id,
             target="pr_review",
             provider_mode=request.llm_provider,
             prompt_text=self.redaction.redact(prompt),
             evidence_paths=_pack_evidence_paths(pack),
             warnings=warnings,
+            access=output_access.model_copy(deep=True),
         )
         return trail, pack, self.repository.save_prompt_preview(preview)
 
-    def evidence_card(self, *, team_id: str, source_path: str, repo_name: str | None = None):
+    def evidence_card(
+        self,
+        *,
+        team_id: str,
+        source_path: str,
+        repo_name: str | None = None,
+        access_context: AccessContext | None = None,
+    ):
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
         graph_results = self.graph_retriever.search(
             team_id=team_id,
             repo_name=repo_name,
             query=source_path,
             top_k=5,
+            access_context=context,
         )
         matched = next(
             (item for item in graph_results if item.node.source_path == source_path),
@@ -329,6 +456,7 @@ class ContextIntelligenceService:
                 related_sources=related,
                 authority_status="graph-backed",
                 warnings=[],
+                access=node.access.model_copy(deep=True),
             )
         return EvidenceCard(
             card_id=f"evidence-card-{_safe_id(source_path)}",
@@ -339,20 +467,44 @@ class ContextIntelligenceService:
             warnings=["No graph-backed metadata found for this source."],
         )
 
-    def memory_report(self, *, team_id: str, repo_name: str | None = None) -> MemoryMapReport:
+    def memory_report(
+        self,
+        *,
+        team_id: str,
+        repo_name: str | None = None,
+        access_context: AccessContext | None = None,
+    ) -> MemoryMapReport:
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
         graph = self.graph_repository.try_load(team_id, repo_name)
         top_concepts: list[str] = []
         most_connected: list[str] = []
         important_paths: list[str] = []
         missing_tests: list[str] = []
         warnings: list[str] = []
+        visible_access: list[ResourceAccess] = []
         if graph is None:
             warnings.append("No evidence graph found for this team/repo.")
         else:
-            top_concepts = [node.title for node in graph.nodes if node.node_type == "concept"][:10]
+            readable_nodes = [
+                node
+                for node in graph.nodes
+                if self.access_policy.decide(
+                    context=context,
+                    team_id=team_id,
+                    action="retrieve",
+                    resource_access=node.access,
+                    resource_id=node.node_id,
+                ).allowed
+            ]
+            visible_access.extend(node.access for node in readable_nodes)
+            top_concepts = [node.title for node in readable_nodes if node.node_type == "concept"][
+                :10
+            ]
             degree = Counter()
-            node_by_id = {node.node_id: node for node in graph.nodes}
+            node_by_id = {node.node_id: node for node in readable_nodes}
             for edge in graph.edges:
+                if edge.from_node_id not in node_by_id or edge.to_node_id not in node_by_id:
+                    continue
                 degree[edge.from_node_id] += 1
                 degree[edge.to_node_id] += 1
             most_connected = [
@@ -364,19 +516,36 @@ class ContextIntelligenceService:
                 team_id=team_id,
                 repo_name=repo_name,
                 query="execution status",
+                access_context=context,
             )
             important_paths = explanation.evidence_paths[:10]
             indexed = self.codebase_repository.try_load(team_id, repo_name) if repo_name else None
+            if indexed:
+                if not self.access_policy.decide(
+                    context=context,
+                    team_id=team_id,
+                    action="retrieve",
+                    resource_access=indexed.access,
+                    resource_id=indexed.repo_id,
+                ).allowed:
+                    indexed = None
             if indexed:
                 mapped_sources = {mapping.source_file for mapping in indexed.tests}
                 missing_tests = [
                     file.path
                     for file in indexed.files
-                    if file.role == "source"
+                    if self.access_policy.decide(
+                        context=context,
+                        team_id=team_id,
+                        action="retrieve",
+                        resource_access=file.access,
+                        resource_id=file.file_id,
+                    ).allowed
+                    and file.role == "source"
                     and file.language in {"java", "typescript", "python"}
                     and file.path not in mapped_sources
                 ][:10]
-        approved, candidate = self._claim_counts(team_id)
+        approved, candidate = self._claim_counts(team_id, access_context=context)
         report = MemoryMapReport(
             report_id=f"memory-map-{team_id}-{repo_name or '_team'}",
             team_id=team_id,
@@ -389,6 +558,7 @@ class ContextIntelligenceService:
             candidate_memory_claims=candidate,
             warnings=warnings,
             recommendations=_memory_recommendations(warnings, missing_tests, candidate),
+            access=self._aggregate_access(visible_access, context=context),
         )
         return self.repository.save_memory_report(report)
 
@@ -410,6 +580,7 @@ class ContextIntelligenceService:
                 item for item in trail.memory_claims_considered if item.status != "approved"
             ],
             warnings=trail.warnings,
+            access=snapshot.case.access,
         )
 
     def _pack_from_candidates(
@@ -426,6 +597,7 @@ class ContextIntelligenceService:
         selected_claims: list[MemoryClaimReference] | None = None,
         candidate_claims: list[MemoryClaimReference] | None = None,
         warnings: list[str] | None = None,
+        access: ResourceAccess | None = None,
     ) -> ContextPack:
         pack = ContextPack(
             context_pack_id=context_pack_id,
@@ -452,6 +624,7 @@ class ContextIntelligenceService:
             graph_paths=graph_paths,
             selected_evidence_count=len([item for item in candidates if item.selected]),
             warnings=warnings or [],
+            access=(access or ResourceAccess()).model_copy(deep=True),
         )
         return self.repository.save_context_pack(pack)
 
@@ -461,11 +634,13 @@ class ContextIntelligenceService:
         team_id: str,
         repo_name: str | None,
         query: str,
+        access_context: AccessContext,
     ) -> list[GraphPathReference]:
         explanation = self.graph_retriever.explain(
             team_id=team_id,
             repo_name=repo_name,
             query=query,
+            access_context=access_context,
         )
         return [
             GraphPathReference(
@@ -486,6 +661,7 @@ class ContextIntelligenceService:
         team_id: str,
         query: str,
         include_candidates: bool,
+        access_context: AccessContext,
     ) -> list[MemoryClaimReference]:
         try:
             scan = self.memory_repository.load_scan(team_id, "latest")
@@ -495,6 +671,14 @@ class ContextIntelligenceService:
         terms = set(_tokens(query))
         refs: list[MemoryClaimReference] = []
         for claim in scan.claims:
+            if not self.access_policy.decide(
+                context=access_context,
+                team_id=team_id,
+                action="retrieve",
+                resource_access=claim.security.resource_access(),
+                resource_id=claim.claim_id,
+            ).allowed:
+                continue
             effective = review_statuses.get(claim.claim_id)
             status = effective.new_status if effective else claim.governance.status
             if status != "approved" and not include_candidates:
@@ -529,12 +713,14 @@ class ContextIntelligenceService:
         *,
         team_id: str,
         query: str,
+        access_context: AccessContext,
     ) -> tuple[list[MemoryClaimReference], list[str]]:
         try:
             batch = self.memory_retriever.search_with_policy(
                 team_id=team_id,
                 query=query,
                 top_k=20,
+                access_context=access_context,
             )
         except Exception:  # noqa: BLE001 - a missing scan must not break context trace.
             return [], []
@@ -569,9 +755,15 @@ class ContextIntelligenceService:
             reason=reason,
             reviewed_by=reviewed_by,
             reviewed_at=reviewed_at,
+            access=claim.security.resource_access(),
         )
 
-    def _claim_counts(self, team_id: str) -> tuple[int, int]:
+    def _claim_counts(
+        self,
+        team_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> tuple[int, int]:
         try:
             scan = self.memory_repository.load_scan(team_id, "latest")
         except Exception:  # noqa: BLE001
@@ -580,6 +772,14 @@ class ContextIntelligenceService:
         approved = 0
         candidate = 0
         for claim in scan.claims:
+            if not self.access_policy.decide(
+                context=access_context,
+                team_id=team_id,
+                action="retrieve",
+                resource_access=claim.security.resource_access(),
+                resource_id=claim.claim_id,
+            ).allowed:
+                continue
             effective = review_statuses.get(claim.claim_id)
             status = effective.new_status if effective else claim.governance.status
             if status == "approved":
@@ -588,9 +788,44 @@ class ContextIntelligenceService:
                 candidate += 1
         return approved, candidate
 
-    def _default_repo_name(self, team_id: str) -> str | None:
+    @staticmethod
+    def _aggregate_access(
+        descriptors: list[ResourceAccess],
+        *,
+        context: AccessContext,
+    ) -> ResourceAccess:
+        if not descriptors:
+            return (
+                ResourceAccess()
+                if context.mode == "public-demo"
+                else ResourceAccess.unscoped_private()
+            )
+        merged = descriptors[0].model_copy(deep=True)
+        for descriptor in descriptors[1:]:
+            merged = merged.restrictive_merge(descriptor)
+        return merged
+
+    def _default_repo_name(
+        self,
+        team_id: str,
+        *,
+        access_context: AccessContext,
+    ) -> str | None:
         repo_names = self.codebase_repository.list_repo_names(team_id)
-        return repo_names[0] if repo_names else None
+        for repo_name in repo_names:
+            index = self.codebase_repository.try_load(team_id, repo_name)
+            if (
+                index is not None
+                and self.access_policy.decide(
+                    context=access_context,
+                    team_id=team_id,
+                    action="retrieve",
+                    resource_access=index.access,
+                    resource_id=index.repo_id,
+                ).allowed
+            ):
+                return repo_name
+        return None
 
 
 def _candidate_from_context(item: ContextEvidence, *, selected: bool) -> EvidenceCandidate:
@@ -606,6 +841,7 @@ def _candidate_from_context(item: ContextEvidence, *, selected: bool) -> Evidenc
         selected=selected,
         concepts=_detect_concepts(" ".join([item.title, item.excerpt, item.source_path]), []),
         authority_status=_authority_for_source_type(source_type),
+        access=item.access.model_copy(deep=True),
     )
 
 
@@ -625,6 +861,7 @@ def _candidate_from_chunk(chunk: Chunk) -> EvidenceCandidate:
         selected=True,
         concepts=_detect_concepts(chunk.content, []),
         authority_status="knowledge_pack",
+        access=chunk.access.model_copy(deep=True),
     )
 
 
@@ -641,6 +878,7 @@ def _candidate_from_codebase(result) -> EvidenceCandidate:
         selected=True,
         concepts=_detect_concepts(" ".join([result.title, result.excerpt, result.source_path]), []),
         authority_status=_authority_for_source_type(source_type),
+        access=result.access.model_copy(deep=True),
     )
 
 

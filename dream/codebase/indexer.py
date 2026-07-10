@@ -21,6 +21,7 @@ from dream.codebase.scanner import CodebaseScanner
 from dream.codebase.summarizer import summarize_file, summarize_symbol
 from dream.codebase.symbol_extractor import concepts_for_symbol, extract_symbols_and_dependencies
 from dream.core.paths import display_path, resolve_project_path
+from dream.security.models import ResourceAccess
 
 
 class CodebaseIndexer:
@@ -36,11 +37,17 @@ class CodebaseIndexer:
         self.audit_logger = audit_logger or AuditLogger()
 
     def index(
-        self, *, team_id: str, repo_path: str | Path, repo_name: str | None = None
+        self,
+        *,
+        team_id: str,
+        repo_path: str | Path,
+        repo_name: str | None = None,
+        access: ResourceAccess | None = None,
     ) -> RepoIndex:
         root = resolve_project_path(repo_path, must_exist=True)
         name = repo_name or root.name
-        file_nodes = self.scanner.scan(root)
+        repo_access = access or ResourceAccess()
+        file_nodes = self.scanner.scan(root, access=repo_access)
         symbols: list[SymbolNode] = []
         dependencies: list[DependencyEdge] = []
         warnings: list[str] = []
@@ -64,6 +71,7 @@ class CodebaseIndexer:
                 continue
             file_node.concepts = concepts
             for symbol in extracted_symbols:
+                symbol.access = file_node.access.model_copy(deep=True)
                 symbol.concepts = concepts_for_symbol(symbol, concepts)
                 symbol.summary = summarize_symbol(symbol)
                 symbols.append(symbol)
@@ -72,8 +80,14 @@ class CodebaseIndexer:
             file_node.summary = summarize_file(file_node)
 
         tests = self._map_tests(file_nodes)
+        for mapping in tests:
+            source_access = files_by_path[mapping.source_file].access
+            test_access = files_by_path[mapping.test_file].access
+            mapping.access = source_access.restrictive_merge(test_access)
         dependencies.extend(self._test_dependencies(tests))
         concepts = self._build_concept_mappings(file_nodes, symbols, tests)
+        for concept in concepts:
+            concept.access = repo_access.model_copy(deep=True)
         index = RepoIndex(
             repo_id=self._stable_id(f"{team_id}:{name}:{display_path(root)}"),
             repo_name=name,
@@ -90,6 +104,7 @@ class CodebaseIndexer:
             concepts=concepts,
             summary=self._summary(name, file_nodes, symbols, tests, concepts),
             warnings=warnings,
+            access=repo_access.model_copy(deep=True),
         )
         output_path = self.repository.save(index)
         self.audit_logger.log_generation(

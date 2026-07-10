@@ -6,6 +6,7 @@ from pathlib import Path
 from dream.codebase.language import classify_role, detect_language
 from dream.codebase.models import FileNode
 from dream.core.paths import display_path, resolve_project_path
+from dream.security.models import ResourceAccess
 
 IGNORED_DIRECTORIES = {
     ".git",
@@ -21,8 +22,14 @@ IGNORED_DIRECTORIES = {
 
 
 class CodebaseScanner:
-    def scan(self, repo_path: str | Path) -> list[FileNode]:
+    def scan(
+        self,
+        repo_path: str | Path,
+        *,
+        access: ResourceAccess | None = None,
+    ) -> list[FileNode]:
         root = resolve_project_path(repo_path, must_exist=True)
+        repo_access = access or ResourceAccess()
         files: list[FileNode] = []
         for path in sorted(self._walk_files(root)):
             relative_path = path.relative_to(root).as_posix()
@@ -37,6 +44,7 @@ class CodebaseScanner:
                     size_bytes=path.stat().st_size,
                     line_count=line_count,
                     role=classify_role(relative_path, language),
+                    access=repo_access.model_copy(deep=True),
                 )
             )
         return files

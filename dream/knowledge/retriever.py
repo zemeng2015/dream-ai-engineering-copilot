@@ -3,6 +3,7 @@
 import re
 
 from dream.knowledge.models import Chunk
+from dream.security import AccessContext, DefaultAccessPolicy
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 STOP_WORDS = {
@@ -38,8 +39,14 @@ STOP_WORDS = {
 
 
 class SimpleRetriever:
-    def __init__(self, chunks: list[Chunk]) -> None:
+    def __init__(
+        self,
+        chunks: list[Chunk],
+        *,
+        access_policy: DefaultAccessPolicy | None = None,
+    ) -> None:
         self.chunks = chunks
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
     def search(
         self,
@@ -50,6 +57,7 @@ class SimpleRetriever:
         component: str | None = None,
         doc_type: str | None = None,
         top_k: int = 5,
+        access_context: AccessContext | None = None,
     ) -> list[Chunk]:
         return [
             chunk
@@ -60,6 +68,7 @@ class SimpleRetriever:
                 component=component,
                 doc_type=doc_type,
                 top_k=top_k,
+                access_context=access_context,
             )
         ]
 
@@ -72,6 +81,7 @@ class SimpleRetriever:
         component: str | None = None,
         doc_type: str | None = None,
         top_k: int = 5,
+        access_context: AccessContext | None = None,
     ) -> list[tuple[int, Chunk]]:
         terms = self._tokens(query)
         scored: list[tuple[int, str, str, Chunk]] = []
@@ -79,6 +89,18 @@ class SimpleRetriever:
             if not self._metadata_matches(
                 chunk, team_id=team_id, app=app, component=component, doc_type=doc_type
             ):
+                continue
+            resource_team_id = chunk.metadata.get("team_id") or team_id
+            if resource_team_id is None:
+                continue
+            context = access_context or AccessContext.public_demo(team_ids={resource_team_id})
+            if not self.access_policy.decide(
+                context=context,
+                team_id=resource_team_id,
+                action="retrieve",
+                resource_access=chunk.access,
+                resource_id=chunk.id,
+            ).allowed:
                 continue
             score = self._score(chunk, terms)
             if score > 0:
@@ -89,9 +111,7 @@ class SimpleRetriever:
     @staticmethod
     def _tokens(value: str) -> list[str]:
         return [
-            token.lower()
-            for token in TOKEN_RE.findall(value)
-            if token.lower() not in STOP_WORDS
+            token.lower() for token in TOKEN_RE.findall(value) if token.lower() not in STOP_WORDS
         ]
 
     @classmethod

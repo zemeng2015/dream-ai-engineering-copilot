@@ -17,6 +17,7 @@ from dream.core.paths import display_path
 from dream.graph.models import EvidenceEdge, EvidenceGraph, EvidenceNode
 from dream.graph.repository import EvidenceGraphRepository
 from dream.knowledge import KnowledgePackLoader
+from dream.security.models import ResourceAccess
 
 
 @dataclass(frozen=True)
@@ -47,9 +48,7 @@ class EvidenceGraphBuilder:
     def build(self, *, team_id: str, repo_name: str | None = None) -> EvidenceGraph:
         pack = self.pack_loader.load(team_id)
         pack_dir = self.pack_loader.packs_dir / pack.team_id
-        repo_index = (
-            self.codebase_repository.try_load(team_id, repo_name) if repo_name else None
-        )
+        repo_index = self.codebase_repository.try_load(team_id, repo_name) if repo_name else None
         warnings = []
         if repo_name and repo_index is None:
             warnings.append(
@@ -73,6 +72,7 @@ class EvidenceGraphBuilder:
                         "concepts": merged_concepts,
                         "metadata": merged_metadata,
                         "source_path": existing.source_path or node.source_path,
+                        "access": existing.access.restrictive_merge(node.access),
                     }
                 )
                 node = nodes[node.node_id]
@@ -122,10 +122,13 @@ class EvidenceGraphBuilder:
                         "app": str(entry.metadata.get("app", "")),
                         "component": str(entry.metadata.get("component", "")),
                     },
+                    access=ResourceAccess.from_metadata(entry.metadata),
                 )
             )
             for concept in doc_node.concepts:
-                concept_node = add_node(self._concept_node(team_id, concept))
+                concept_node = add_node(
+                    self._concept_node(team_id, concept, access=doc_node.access)
+                )
                 add_edge(
                     concept_node.node_id,
                     doc_node.node_id,
@@ -146,6 +149,7 @@ class EvidenceGraphBuilder:
                     aliases=aliases,
                     nodes=nodes,
                     add_node=add_node,
+                    access=ResourceAccess.from_metadata(entry.metadata),
                 )
                 add_edge(
                     doc_node_id,
@@ -155,7 +159,13 @@ class EvidenceGraphBuilder:
                     "Document front matter links this code file.",
                 )
                 for concept in self._metadata_list(entry.metadata.get("concepts")):
-                    concept_node = add_node(self._concept_node(team_id, concept))
+                    concept_node = add_node(
+                        self._concept_node(
+                            team_id,
+                            concept,
+                            access=ResourceAccess.from_metadata(entry.metadata),
+                        )
+                    )
                     add_edge(
                         concept_node.node_id,
                         code_node.node_id,
@@ -203,6 +213,7 @@ class EvidenceGraphBuilder:
         add_node,
         add_edge,
     ) -> None:
+        files_by_path = {item.path: item for item in repo_index.files}
         for file_node in repo_index.files:
             add_node(self._file_node(repo_index.team_id, file_node))
         for symbol in repo_index.symbols:
@@ -212,6 +223,7 @@ class EvidenceGraphBuilder:
                     team_id=repo_index.team_id,
                     path=symbol.file_path,
                     node_type="test_file" if "/test/" in symbol.file_path.lower() else "code_file",
+                    access=symbol.access,
                 )
             )
             add_edge(
@@ -222,7 +234,9 @@ class EvidenceGraphBuilder:
                 "Symbol extractor mapped the symbol to this file.",
             )
             for concept in symbol.concepts:
-                concept_node = add_node(self._concept_node(repo_index.team_id, concept))
+                concept_node = add_node(
+                    self._concept_node(repo_index.team_id, concept, access=symbol.access)
+                )
                 add_edge(
                     concept_node.node_id,
                     symbol_node.node_id,
@@ -232,10 +246,28 @@ class EvidenceGraphBuilder:
                 )
         for mapping in repo_index.tests:
             source_node = add_node(
-                self._file_stub_node(repo_index.team_id, mapping.source_file, "code_file")
+                self._file_stub_node(
+                    repo_index.team_id,
+                    mapping.source_file,
+                    "code_file",
+                    access=self._path_access(
+                        files_by_path,
+                        mapping.source_file,
+                        fallback=repo_index.access,
+                    ),
+                )
             )
             test_node = add_node(
-                self._file_stub_node(repo_index.team_id, mapping.test_file, "test_file")
+                self._file_stub_node(
+                    repo_index.team_id,
+                    mapping.test_file,
+                    "test_file",
+                    access=self._path_access(
+                        files_by_path,
+                        mapping.test_file,
+                        fallback=repo_index.access,
+                    ),
+                )
             )
             add_edge(
                 source_node.node_id,
@@ -245,10 +277,25 @@ class EvidenceGraphBuilder:
                 mapping.reason,
             )
         for mapping in repo_index.concepts:
-            concept_node = add_node(self._concept_node(repo_index.team_id, mapping.concept))
+            concept_node = add_node(
+                self._concept_node(
+                    repo_index.team_id,
+                    mapping.concept,
+                    access=mapping.access,
+                )
+            )
             for file_path in mapping.related_files:
                 file_node = add_node(
-                    self._file_stub_node(repo_index.team_id, file_path, "code_file")
+                    self._file_stub_node(
+                        repo_index.team_id,
+                        file_path,
+                        "code_file",
+                        access=self._path_access(
+                            files_by_path,
+                            file_path,
+                            fallback=repo_index.access,
+                        ),
+                    )
                 )
                 add_edge(
                     concept_node.node_id,
@@ -259,7 +306,16 @@ class EvidenceGraphBuilder:
                 )
             for test_path in mapping.related_tests:
                 test_node = add_node(
-                    self._file_stub_node(repo_index.team_id, test_path, "test_file")
+                    self._file_stub_node(
+                        repo_index.team_id,
+                        test_path,
+                        "test_file",
+                        access=self._path_access(
+                            files_by_path,
+                            test_path,
+                            fallback=repo_index.access,
+                        ),
+                    )
                 )
                 add_edge(
                     concept_node.node_id,
@@ -312,12 +368,13 @@ class EvidenceGraphBuilder:
         aliases: dict[str, str],
         nodes: dict[str, EvidenceNode],
         add_node,
+        access: ResourceAccess,
     ) -> EvidenceNode:
         resolved_id = self._resolve_alias(code_path, aliases)
         if resolved_id is not None:
             return nodes[resolved_id]
         node_type = "test_file" if self._looks_like_test_path(code_path) else "code_file"
-        return add_node(self._file_stub_node(team_id, code_path, node_type))
+        return add_node(self._file_stub_node(team_id, code_path, node_type, access=access))
 
     def _load_doc_entries(
         self,
@@ -444,10 +501,28 @@ class EvidenceGraphBuilder:
                 "role": file_node.role,
                 "summary": file_node.summary or "",
             },
+            access=file_node.access.model_copy(deep=True),
         )
 
+    @staticmethod
+    def _path_access(
+        files_by_path: dict[str, FileNode],
+        path: str,
+        *,
+        fallback: ResourceAccess,
+    ) -> ResourceAccess:
+        file_node = files_by_path.get(path)
+        return (file_node.access if file_node else fallback).model_copy(deep=True)
+
     @classmethod
-    def _file_stub_node(cls, team_id: str, path: str, node_type: str) -> EvidenceNode:
+    def _file_stub_node(
+        cls,
+        team_id: str,
+        path: str,
+        node_type: str,
+        *,
+        access: ResourceAccess | None = None,
+    ) -> EvidenceNode:
         return EvidenceNode(
             node_id=cls._node_id(node_type, path),
             node_type=node_type,
@@ -457,6 +532,7 @@ class EvidenceGraphBuilder:
             aliases=cls._path_aliases(path),
             concepts=cls._concepts_from_path(path),
             metadata={"team_id": team_id},
+            access=(access or ResourceAccess()).model_copy(deep=True),
         )
 
     @classmethod
@@ -476,10 +552,17 @@ class EvidenceGraphBuilder:
                 "signature": symbol.signature or "",
                 "summary": symbol.summary or "",
             },
+            access=symbol.access.model_copy(deep=True),
         )
 
     @classmethod
-    def _concept_node(cls, team_id: str, concept: str) -> EvidenceNode:
+    def _concept_node(
+        cls,
+        team_id: str,
+        concept: str,
+        *,
+        access: ResourceAccess | None = None,
+    ) -> EvidenceNode:
         normalized = cls._normalize_concept(concept)
         return EvidenceNode(
             node_id=cls._node_id("concept", normalized),
@@ -489,6 +572,7 @@ class EvidenceGraphBuilder:
             aliases=[concept, normalized],
             concepts=[normalized],
             metadata={"team_id": team_id},
+            access=(access or ResourceAccess()).model_copy(deep=True),
         )
 
     @staticmethod

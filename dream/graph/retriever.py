@@ -10,13 +10,20 @@ from dream.graph.models import (
     EvidenceNode,
 )
 from dream.graph.repository import EvidenceGraphRepository
+from dream.security import AccessContext, DefaultAccessPolicy
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 
 
 class EvidenceGraphRetriever:
-    def __init__(self, repository: EvidenceGraphRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: EvidenceGraphRepository | None = None,
+        *,
+        access_policy: DefaultAccessPolicy | None = None,
+    ) -> None:
         self.repository = repository or EvidenceGraphRepository()
+        self.access_policy = access_policy or DefaultAccessPolicy()
 
     def search(
         self,
@@ -25,13 +32,21 @@ class EvidenceGraphRetriever:
         query: str,
         repo_name: str | None = None,
         top_k: int = 8,
+        access_context: AccessContext | None = None,
     ) -> list[EvidenceGraphSearchResult]:
         graphs = self._load_candidate_graphs(team_id, repo_name)
         if not graphs:
             return []
         results: list[EvidenceGraphSearchResult] = []
         for graph in graphs:
-            results.extend(self.search_graph(graph=graph, query=query, top_k=top_k))
+            results.extend(
+                self.search_graph(
+                    graph=graph,
+                    query=query,
+                    top_k=top_k,
+                    access_context=access_context,
+                )
+            )
         results.sort(key=lambda item: (-item.score, item.node.title))
         return results[:top_k]
 
@@ -41,14 +56,25 @@ class EvidenceGraphRetriever:
         graph: EvidenceGraph,
         query: str,
         top_k: int = 8,
+        access_context: AccessContext | None = None,
     ) -> list[EvidenceGraphSearchResult]:
         terms = self._tokens(query)
         if not terms:
             return []
-        node_by_id = {node.node_id: node for node in graph.nodes}
+        context = access_context or AccessContext.public_demo(team_ids={graph.team_id})
+        readable_nodes = [
+            node
+            for node in graph.nodes
+            if self._readable(
+                context=context,
+                team_id=graph.team_id,
+                node=node,
+            )
+        ]
+        node_by_id = {node.node_id: node for node in readable_nodes}
         adjacency = self._adjacency(graph.edges)
         scored: list[tuple[int, str, EvidenceGraphSearchResult]] = []
-        for node in graph.nodes:
+        for node in readable_nodes:
             score, matched_terms = self._score_node(node, terms, query)
             if score <= 0:
                 continue
@@ -82,8 +108,14 @@ class EvidenceGraphRetriever:
         query: str,
         repo_name: str | None = None,
         max_nodes: int = 12,
+        access_context: AccessContext | None = None,
     ) -> EvidenceGraphExplainResult:
-        best_match = self._best_graph_match(team_id=team_id, repo_name=repo_name, query=query)
+        best_match = self._best_graph_match(
+            team_id=team_id,
+            repo_name=repo_name,
+            query=query,
+            access_context=access_context,
+        )
         if best_match is None:
             return EvidenceGraphExplainResult(query=query)
         graph, results = best_match
@@ -122,18 +154,28 @@ class EvidenceGraphRetriever:
         node: str,
         repo_name: str | None = None,
         limit: int = 12,
+        access_context: AccessContext | None = None,
     ) -> EvidenceGraphExplainResult:
         graph = None
         target = None
+        context = access_context or AccessContext.public_demo(team_ids={team_id})
         for candidate_graph in self._load_candidate_graphs(team_id, repo_name):
             candidate_target = self._resolve_node(candidate_graph, node)
-            if candidate_target is not None:
+            if candidate_target is not None and self._readable(
+                context=context,
+                team_id=candidate_graph.team_id,
+                node=candidate_target,
+            ):
                 graph = candidate_graph
                 target = candidate_target
                 break
         if graph is None or target is None:
             return EvidenceGraphExplainResult(query=node)
-        node_by_id = {item.node_id: item for item in graph.nodes}
+        node_by_id = {
+            item.node_id: item
+            for item in graph.nodes
+            if self._readable(context=context, team_id=graph.team_id, node=item)
+        }
         adjacency = self._adjacency(graph.edges)
         connected = self._connected_nodes(target.node_id, node_by_id, adjacency, limit=limit)
         selected_ids = {target.node_id, *(item.node_id for item in connected)}
@@ -155,11 +197,17 @@ class EvidenceGraphRetriever:
         team_id: str,
         repo_name: str | None,
         query: str,
+        access_context: AccessContext | None,
     ) -> tuple[EvidenceGraph, list[EvidenceGraphSearchResult]] | None:
         best_graph: EvidenceGraph | None = None
         best_results: list[EvidenceGraphSearchResult] = []
         for graph in self._load_candidate_graphs(team_id, repo_name):
-            results = self.search_graph(graph=graph, query=query, top_k=3)
+            results = self.search_graph(
+                graph=graph,
+                query=query,
+                top_k=3,
+                access_context=access_context,
+            )
             if not results:
                 continue
             if not best_results or results[0].score > best_results[0].score:
@@ -168,6 +216,21 @@ class EvidenceGraphRetriever:
         if best_graph is None:
             return None
         return best_graph, best_results
+
+    def _readable(
+        self,
+        *,
+        context: AccessContext,
+        team_id: str,
+        node: EvidenceNode,
+    ) -> bool:
+        return self.access_policy.decide(
+            context=context,
+            team_id=team_id,
+            action="retrieve",
+            resource_access=node.access,
+            resource_id=node.node_id,
+        ).allowed
 
     def _load_candidate_graphs(
         self, team_id: str, repo_name: str | None = None
