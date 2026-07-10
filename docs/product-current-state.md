@@ -34,6 +34,7 @@ an Eval/Audit trail using synthetic DemoCorp/DFP data.
 | External writes | None in the leadership scenario | Product boundary and implementation |
 | Pilot security foundation | Signed proxy identity, source ACL model/propagation, fail-closed private routes, derived artifact ACL | Security policy, API, retrieval and no-leak tests |
 | Frontend dependency baseline | Angular 21, TypeScript 5.9, `@angular/build`, zero production/full npm audit | Lockfile, build, ChromeHeadless and CI gates |
+| Connector source lifecycle | Metadata-only sync/tombstone contract, immutable ACL versions, revoke-first cleanup, registered artifact cascade | Connector lifecycle, restart, path-safety and cleanup-failure tests |
 
 The verified local suite currently covers Python services, the Angular build,
 and ChromeHeadless component tests. See the leadership runbook for the latest
@@ -73,7 +74,7 @@ The current system is suitable for a controlled leadership demonstration when:
 The public core does not currently prove:
 
 - organization-approved SSO/proxy deployment and complete role-based administration;
-- connector ACL/revocation synchronization and deletion cascades;
+- approved production connectors, shared lifecycle storage, and deletion SLA;
 - approved production GitHub/Jira/document connectors;
 - enterprise redaction/DLP policy and classification enforcement;
 - production secrets management, storage hardening, backup, or retention;
@@ -107,6 +108,7 @@ These are Pilot gates, not implied current capabilities.
 4. Preserve small, reviewable product commits and keep competition-only code out
    of this branch.
 
-The provider-neutral public core now contains the first Pilot security slice.
-See `docs/pilot-security-foundation.md`. This implementation reduces technical
-risk but does not change the real-source No-Go decision.
+The provider-neutral public core now contains the first Pilot security slices.
+See `docs/pilot-security-foundation.md` and
+`docs/connector-lifecycle-foundation.md`. These implementations reduce technical
+risk but do not change the real-source No-Go decision.

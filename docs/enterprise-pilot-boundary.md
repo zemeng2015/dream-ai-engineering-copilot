@@ -41,8 +41,8 @@ repository.
 |---|---|---|
 | Identity | Organization-approved SSO and named user identity | Signed-proxy identity contract implemented; organization SSO/proxy approval pending |
 | Authorization | Role policy for source onboarding, memory review, retrieval, and audit | Core action roles and fail-closed private routes implemented; administration surfaces remain blocked |
-| ACL propagation | Preserve source ACLs and filter every retrieval result for the caller | Core source-to-prompt propagation, derived lineage, retrieval filtering and revocation ledger implemented; connector sync/deletion pending |
-| Connectors | Read-only, least-privilege, allowlisted repository/path scope | Local/synthetic inputs only |
+| ACL propagation | Preserve source ACLs and filter every retrieval result for the caller | Core source-to-prompt propagation, derived lineage, retrieval filtering, revocation, and registered artifact cleanup implemented; production connector/shared store pending |
+| Connectors | Read-only, least-privilege, allowlisted repository/path scope | Provider-neutral lifecycle contract and synthetic/local adapters only; approved production connector pending |
 | Data classification | Approved categories, blocked content, source labels | `ResourceAccess` classification/ACL lineage implemented; enterprise taxonomy/policy pending |
 | Redaction/DLP | Pre-index and pre-prompt enforcement with test corpus | Basic deterministic redaction only |
 | Provider boundary | Approved endpoint, region, retention, and no-training terms | Provider abstraction exists; approval external |
@@ -69,11 +69,12 @@ the security owner records an explicit, time-bounded exception.
 - A user must never gain access to a source through DREAM that they could not
   access in the source system.
 
-The last two requirements are design goals for the Pilot extension; the current
-public core now supplies a tested ACL-aware retrieval and revocation foundation.
-It does not yet supply connector-driven synchronization/deletion cascades or an
-organization-approved identity deployment. See
-[Pilot Security Foundation](pilot-security-foundation.md).
+The current public core supplies tested ACL-aware retrieval, source lifecycle,
+revocation, and registered artifact cleanup foundations. It does not supply a
+production connector, organization-approved identity deployment, shared
+transactional lifecycle store, or approved deletion SLA. See
+[Pilot Security Foundation](pilot-security-foundation.md) and
+[Connector Source Lifecycle Foundation](connector-lifecycle-foundation.md).
 
 ## Human Gate and Side Effects
 

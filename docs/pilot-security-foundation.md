@@ -154,7 +154,11 @@ Repository remediation does not replace organization approval of the exact
 Node/Angular/browser runtime and dependency policy before Pilot deployment.
 
 `source_acl_version`, derived lineage, and the core revocation ledger enforce
-fail-closed invalidation once a version is revoked. A connector must still feed
-source-system revocations into that ledger and trigger required deletion
-cascades. Until these items are approved and tested, real-source ingestion
-remains **No-Go**.
+fail-closed invalidation once a version is revoked. The provider-neutral
+connector lifecycle foundation now consumes source changes, revokes old versions
+before cleanup, and purges registered source/derived artifacts. Production
+connector implementation, shared transactional storage, and organization
+deletion approval remain open. See
+[Connector Source Lifecycle Foundation](connector-lifecycle-foundation.md).
+Until these items are approved and tested, real-source ingestion remains
+**No-Go**.

@@ -547,6 +547,9 @@ For the latest UI simplification pass and product planning context, start here:
   approval/revocation gaps.
 - `docs/frontend-dependency-security.md` - Angular 21 migration, zero-audit
   dependency baseline, build-system change, CI gates, and operating rules.
+- `docs/connector-lifecycle-foundation.md` - provider-neutral source sync,
+  immutable ACL refresh, revoke-first deletion cascade, lineage registry, and
+  remaining production connector gates.
 - `docs/controlled-enterprise-pilot-proposal.md` - six-week one-team/
   one-application/one-repository Pilot scope, owners, metrics, gates, and ask.
 - `docs/leadership-product-readiness-audit.md` - requirement-by-requirement
