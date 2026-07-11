@@ -1,9 +1,9 @@
 {
   "schema_version": "experience-benchmark-v1",
-  "run_id": "20260710T045527Z",
-  "started_at": "2026-07-10T04:55:27.476944+00:00",
-  "finished_at": "2026-07-10T04:57:29.841730+00:00",
-  "duration_seconds": 122.365,
+  "run_id": "20260711T023241Z",
+  "started_at": "2026-07-11T02:32:41.056496+00:00",
+  "finished_at": "2026-07-11T02:34:48.362406+00:00",
+  "duration_seconds": 127.306,
   "policy_mode": "qwen-cloud",
   "provider": "qwen-cloud",
   "model": "qwen3.7-plus",
@@ -13,7 +13,12 @@
     "proposal_accuracy": 1.0,
     "action_accuracy": 1.0,
     "memory_payload_accuracy": 1.0,
-    "exact_canonical_key_accuracy": 0.5135,
+    "exact_canonical_key_accuracy": 0.4595,
+    "lifecycle_key_stability": 1.0,
+    "qwen_receipt_coverage": 1.0,
+    "qwen_receipt_count": 37,
+    "qwen_decision_count": 37,
+    "qwen_total_tokens": 28694,
     "critical_memory_recall": 1.0,
     "forbidden_memory_leak_rate": 0.0,
     "token_budget_compliance": 1.0,
@@ -33,6 +38,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -46,17 +52,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-d06292a7e4f9",
+          "expected_key": "production_retry_mode",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "b873136d4a42cc2ea54587fc95328aa8b2cd1424197d2a06932e0857c12b812d",
+            "response_sha256": "8c9eceb9e9f18b8245f1a725b50f430aa04a08aba3f1288097b11310a5c8dc57",
+            "requested_at": "2026-07-11T02:32:41.242003+00:00",
+            "completed_at": "2026-07-11T02:32:45.104248+00:00",
+            "latency_ms": 3862,
+            "provider_request_id": "83339c83-1c28-9e11-bb5e-b922984c3b66",
+            "response_id": "chatcmpl-83339c83-1c28-9e11-bb5e-b922984c3b66"
+          },
+          "created_memory_id": "experience-memory-f005692e1b12",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 650,
-            "total_tokens": 752,
-            "completion_tokens": 102
+            "total_tokens": 747,
+            "completion_tokens": 97
           },
           "actual_memory": {
-            "memory_id": "experience-memory-d06292a7e4f9",
+            "memory_id": "experience-memory-f005692e1b12",
             "kind": "preference",
             "key": "production_retry_mode",
             "value": "rerun only failed tasks, never the entire batch",
@@ -70,7 +89,7 @@
           "production_retry_mode"
         ],
         "expected_memory_ids": [
-          "experience-memory-d06292a7e4f9"
+          "experience-memory-f005692e1b12"
         ],
         "selected_keys": [
           "production_retry_mode"
@@ -79,7 +98,7 @@
           "rerun only failed tasks, never the entire batch"
         ],
         "selected_memory_ids": [
-          "experience-memory-d06292a7e4f9"
+          "experience-memory-f005692e1b12"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -99,6 +118,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -112,20 +132,33 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-0c26e359fbb4",
+          "expected_key": "review_findings_order",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "8cfa7850d8e2772ce8fc2e845af310df4f829c18858d554eae17771c91ba9d2a",
+            "response_sha256": "904a3a2256de036edf4b34d842e61909a763d37aba2a25bfdc09e7c5528e54d1",
+            "requested_at": "2026-07-11T02:32:45.235398+00:00",
+            "completed_at": "2026-07-11T02:32:48.407331+00:00",
+            "latency_ms": 3172,
+            "provider_request_id": "6924650f-d0ed-9432-817c-7a4edefb9df9",
+            "response_id": "chatcmpl-6924650f-d0ed-9432-817c-7a4edefb9df9"
+          },
+          "created_memory_id": "experience-memory-dd6439180d07",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 645,
-            "total_tokens": 749,
-            "completion_tokens": 104
+            "total_tokens": 742,
+            "completion_tokens": 97
           },
           "actual_memory": {
-            "memory_id": "experience-memory-0c26e359fbb4",
+            "memory_id": "experience-memory-dd6439180d07",
             "kind": "preference",
             "key": "review_findings_order",
-            "value": "Show blocking findings before the summary in DemoCorp code reviews",
+            "value": "Show blocking findings before the summary",
             "importance": 3,
             "valid_until": null
           }
@@ -136,16 +169,16 @@
           "review_findings_order"
         ],
         "expected_memory_ids": [
-          "experience-memory-0c26e359fbb4"
+          "experience-memory-dd6439180d07"
         ],
         "selected_keys": [
           "review_findings_order"
         ],
         "selected_values": [
-          "Show blocking findings before the summary in DemoCorp code reviews"
+          "Show blocking findings before the summary"
         ],
         "selected_memory_ids": [
-          "experience-memory-0c26e359fbb4"
+          "experience-memory-dd6439180d07"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -156,7 +189,7 @@
         "leaked_values": [],
         "expired_memory_ids": [],
         "token_budget": 128,
-        "estimated_tokens_used": 29,
+        "estimated_tokens_used": 22,
         "budget_ok": true
       }
     },
@@ -165,6 +198,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -178,7 +212,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-44dca5fbfcc9",
+          "expected_key": "sandbox_deploy_region",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "783fe7c2514616322c193ed8c2346993a05a2c3a70db6b86b380b007cd8dbaa4",
+            "response_sha256": "43aa6a5c78b612afea2552c425984d3eafb524ffa0d7abcb5de8127cfec8bed8",
+            "requested_at": "2026-07-11T02:32:48.481928+00:00",
+            "completed_at": "2026-07-11T02:32:51.496373+00:00",
+            "latency_ms": 3015,
+            "provider_request_id": "445724db-aba8-929f-b756-148da49ee980",
+            "response_id": "chatcmpl-445724db-aba8-929f-b756-148da49ee980"
+          },
+          "created_memory_id": "experience-memory-e862d0bd771f",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -188,7 +235,7 @@
             "completion_tokens": 94
           },
           "actual_memory": {
-            "memory_id": "experience-memory-44dca5fbfcc9",
+            "memory_id": "experience-memory-e862d0bd771f",
             "kind": "preference",
             "key": "sandbox_deploy_region",
             "value": "north-test",
@@ -202,7 +249,7 @@
           "sandbox_deploy_region"
         ],
         "expected_memory_ids": [
-          "experience-memory-44dca5fbfcc9"
+          "experience-memory-e862d0bd771f"
         ],
         "selected_keys": [
           "sandbox_deploy_region"
@@ -211,7 +258,7 @@
           "north-test"
         ],
         "selected_memory_ids": [
-          "experience-memory-44dca5fbfcc9"
+          "experience-memory-e862d0bd771f"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -231,6 +278,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -244,7 +292,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-05075bd383bd",
+          "expected_key": "test_execution_order",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "17bc7bcfff87e826e5d528e6c98b0c6aa02ec57a63da1c361189b1f181b2adf8",
+            "response_sha256": "7074ac23db9cbe349b85a51bdc254c9d9365b41faf79f95a33864ad4b31591e1",
+            "requested_at": "2026-07-11T02:32:51.765983+00:00",
+            "completed_at": "2026-07-11T02:32:55.043909+00:00",
+            "latency_ms": 3278,
+            "provider_request_id": "9fe2c387-768e-9b9b-880c-336bb1854578",
+            "response_id": "chatcmpl-9fe2c387-768e-9b9b-880c-336bb1854578"
+          },
+          "created_memory_id": "experience-memory-2fa95abaa2aa",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -254,7 +315,7 @@
             "completion_tokens": 107
           },
           "actual_memory": {
-            "memory_id": "experience-memory-05075bd383bd",
+            "memory_id": "experience-memory-2fa95abaa2aa",
             "kind": "preference",
             "key": "test_execution_order",
             "value": "Run focused tests before the full suite when changing DemoCorp services",
@@ -268,7 +329,7 @@
           "test_execution_order"
         ],
         "expected_memory_ids": [
-          "experience-memory-05075bd383bd"
+          "experience-memory-2fa95abaa2aa"
         ],
         "selected_keys": [
           "test_execution_order"
@@ -277,7 +338,7 @@
           "Run focused tests before the full suite when changing DemoCorp services"
         ],
         "selected_memory_ids": [
-          "experience-memory-05075bd383bd"
+          "experience-memory-2fa95abaa2aa"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -297,6 +358,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -310,7 +372,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-96876a0ed562",
+          "expected_key": "incident_update_cadence",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "36c00e8d772469a14ae3089eb4431b2728a1dfc56303fa57dad46efcac1d43bd",
+            "response_sha256": "e7820eff6733b45919fc95f97c861860ac31fd63a9740932d355d05b454a1452",
+            "requested_at": "2026-07-11T02:32:55.105449+00:00",
+            "completed_at": "2026-07-11T02:32:58.566032+00:00",
+            "latency_ms": 3461,
+            "provider_request_id": "91df1c79-c47e-985e-9e5c-f8d0522c2285",
+            "response_id": "chatcmpl-91df1c79-c47e-985e-9e5c-f8d0522c2285"
+          },
+          "created_memory_id": "experience-memory-9d4d1041cffa",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -320,7 +395,7 @@
             "completion_tokens": 107
           },
           "actual_memory": {
-            "memory_id": "experience-memory-96876a0ed562",
+            "memory_id": "experience-memory-9d4d1041cffa",
             "kind": "preference",
             "key": "incident_update_cadence",
             "value": "concise timeline update every 30 minutes during DemoCorp incidents",
@@ -334,7 +409,7 @@
           "incident_update_cadence"
         ],
         "expected_memory_ids": [
-          "experience-memory-96876a0ed562"
+          "experience-memory-9d4d1041cffa"
         ],
         "selected_keys": [
           "incident_update_cadence"
@@ -343,7 +418,7 @@
           "concise timeline update every 30 minutes during DemoCorp incidents"
         ],
         "selected_memory_ids": [
-          "experience-memory-96876a0ed562"
+          "experience-memory-9d4d1041cffa"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -363,6 +438,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -376,7 +452,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-666aa01645e0",
+          "expected_key": "analysis_output_format",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "bc7c0dc736889cc4d75bb8e91dbcf3aea3140803c14123fcf166d903259b6ec9",
+            "response_sha256": "9310ccbeab2e268c9a16e82bfc8e8fcf68372843f09fa50608c56a62d0ced8d8",
+            "requested_at": "2026-07-11T02:32:58.634403+00:00",
+            "completed_at": "2026-07-11T02:33:03.575099+00:00",
+            "latency_ms": 4941,
+            "provider_request_id": "0656a181-b07a-92c8-8c5e-85cb82dee174",
+            "response_id": "chatcmpl-0656a181-b07a-92c8-8c5e-85cb82dee174"
+          },
+          "created_memory_id": "experience-memory-b7afed66d8b2",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -386,7 +475,7 @@
             "completion_tokens": 99
           },
           "actual_memory": {
-            "memory_id": "experience-memory-666aa01645e0",
+            "memory_id": "experience-memory-b7afed66d8b2",
             "kind": "preference",
             "key": "analysis_output_format",
             "value": "Short human summary followed by machine-readable JSON",
@@ -400,7 +489,7 @@
           "analysis_output_format"
         ],
         "expected_memory_ids": [
-          "experience-memory-666aa01645e0"
+          "experience-memory-b7afed66d8b2"
         ],
         "selected_keys": [
           "analysis_output_format"
@@ -409,7 +498,7 @@
           "Short human summary followed by machine-readable JSON"
         ],
         "selected_memory_ids": [
-          "experience-memory-666aa01645e0"
+          "experience-memory-b7afed66d8b2"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -429,6 +518,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -442,7 +532,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-90168e650225",
+          "expected_key": "feature_branch_prefix",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "bd05681c3e92d7f1a2fc0e5b3a35aa943b4ebc006d57c3c61d7c42f9fd4cb288",
+            "response_sha256": "b2fae269e95c1197bc8da5ef3d631c7d2eff6b6c6334980e7e866945df401e99",
+            "requested_at": "2026-07-11T02:33:03.640612+00:00",
+            "completed_at": "2026-07-11T02:33:06.916319+00:00",
+            "latency_ms": 3276,
+            "provider_request_id": "a4e2e286-d82b-938f-8ec1-5e63ae952e15",
+            "response_id": "chatcmpl-a4e2e286-d82b-938f-8ec1-5e63ae952e15"
+          },
+          "created_memory_id": "experience-memory-a103dc9bb529",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -452,7 +555,7 @@
             "completion_tokens": 92
           },
           "actual_memory": {
-            "memory_id": "experience-memory-90168e650225",
+            "memory_id": "experience-memory-a103dc9bb529",
             "kind": "preference",
             "key": "feature_branch_prefix",
             "value": "demo-feature/",
@@ -466,7 +569,7 @@
           "feature_branch_prefix"
         ],
         "expected_memory_ids": [
-          "experience-memory-90168e650225"
+          "experience-memory-a103dc9bb529"
         ],
         "selected_keys": [
           "feature_branch_prefix"
@@ -475,7 +578,7 @@
           "demo-feature/"
         ],
         "selected_memory_ids": [
-          "experience-memory-90168e650225"
+          "experience-memory-a103dc9bb529"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -495,6 +598,7 @@
       "category": "cross_session_preference",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -508,7 +612,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-f22baad961d4",
+          "expected_key": "nonproduction_alerting",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "fe0e34749d7252746a9598368f0973fbf70315f70cdfd68e944788d48c6a4350",
+            "response_sha256": "c0ac68edea81bd0ac2011b879279c37581e86dee4b00c7282baef9adce9d8e3f",
+            "requested_at": "2026-07-11T02:33:06.985316+00:00",
+            "completed_at": "2026-07-11T02:33:10.320692+00:00",
+            "latency_ms": 3335,
+            "provider_request_id": "1c4b762f-1c34-9a77-978f-f8bd99078982",
+            "response_id": "chatcmpl-1c4b762f-1c34-9a77-978f-f8bd99078982"
+          },
+          "created_memory_id": "experience-memory-4215758b3898",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -518,9 +635,9 @@
             "completion_tokens": 107
           },
           "actual_memory": {
-            "memory_id": "experience-memory-f22baad961d4",
+            "memory_id": "experience-memory-4215758b3898",
             "kind": "preference",
-            "key": "nonprod_alerting_method",
+            "key": "nonprod_alerting_preference",
             "value": "Notify in team feed for DemoCorp nonproduction failures; do not page",
             "importance": 4,
             "valid_until": null
@@ -532,16 +649,16 @@
           "nonproduction_alerting"
         ],
         "expected_memory_ids": [
-          "experience-memory-f22baad961d4"
+          "experience-memory-4215758b3898"
         ],
         "selected_keys": [
-          "nonprod_alerting_method"
+          "nonprod_alerting_preference"
         ],
         "selected_values": [
           "Notify in team feed for DemoCorp nonproduction failures; do not page"
         ],
         "selected_memory_ids": [
-          "experience-memory-f22baad961d4"
+          "experience-memory-4215758b3898"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -552,7 +669,7 @@
         "leaked_values": [],
         "expired_memory_ids": [],
         "token_budget": 128,
-        "estimated_tokens_used": 30,
+        "estimated_tokens_used": 31,
         "budget_ok": true
       }
     },
@@ -561,6 +678,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -574,7 +692,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-b1899e3b5033",
+          "expected_key": "production_canary_size",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "ddc2c71f58923d930f879e15f8e6f9ee9dd238a41d9670ef15d706f9b0c00ab5",
+            "response_sha256": "bc6b62d377fceca06f917a1eb1d9ce184111bb79575ae84809b6fe388095d5a7",
+            "requested_at": "2026-07-11T02:33:10.381668+00:00",
+            "completed_at": "2026-07-11T02:33:13.349915+00:00",
+            "latency_ms": 2968,
+            "provider_request_id": "755f5408-1ead-9f7a-b10b-6dfd3b2ec230",
+            "response_id": "chatcmpl-755f5408-1ead-9f7a-b10b-6dfd3b2ec230"
+          },
+          "created_memory_id": "experience-memory-b43c0cb77b24",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -584,7 +715,7 @@
             "completion_tokens": 90
           },
           "actual_memory": {
-            "memory_id": "experience-memory-b1899e3b5033",
+            "memory_id": "experience-memory-b43c0cb77b24",
             "kind": "policy",
             "key": "production_canary_start_percent",
             "value": "5 percent",
@@ -604,17 +735,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-619de7bf8bef",
-          "target_memory_id": "experience-memory-b1899e3b5033",
+          "expected_key": "production_canary_size",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "490fcc4224afb596e98fff84bddbb352adcd625bc30823e37cf49314ab607488",
+            "response_sha256": "8f79afac9384289d2f8f9b327b4d325f8e53b0642692bb45bcd2ddd3b6902f01",
+            "requested_at": "2026-07-11T02:33:13.380339+00:00",
+            "completed_at": "2026-07-11T02:33:17.250156+00:00",
+            "latency_ms": 3870,
+            "provider_request_id": "7079d4fb-e774-9f0d-a9b3-400536578fec",
+            "response_id": "chatcmpl-7079d4fb-e774-9f0d-a9b3-400536578fec"
+          },
+          "created_memory_id": "experience-memory-471321a97fa3",
+          "target_memory_id": "experience-memory-b43c0cb77b24",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 716,
-            "total_tokens": 834,
-            "completion_tokens": 118
+            "prompt_tokens": 715,
+            "total_tokens": 832,
+            "completion_tokens": 117
           },
           "actual_memory": {
-            "memory_id": "experience-memory-619de7bf8bef",
+            "memory_id": "experience-memory-471321a97fa3",
             "kind": "policy",
             "key": "production_canary_start_percent",
             "value": "10 percent",
@@ -628,7 +772,7 @@
           "production_canary_size"
         ],
         "expected_memory_ids": [
-          "experience-memory-619de7bf8bef"
+          "experience-memory-471321a97fa3"
         ],
         "selected_keys": [
           "production_canary_start_percent"
@@ -637,7 +781,7 @@
           "10 percent"
         ],
         "selected_memory_ids": [
-          "experience-memory-619de7bf8bef"
+          "experience-memory-471321a97fa3"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -657,6 +801,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -670,7 +815,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-d8c3b9aad277",
+          "expected_key": "integration_test_workers",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "e6241640694108fea87a6ad3de58b846de5dde7fa7e18f0425efaa4384191c1d",
+            "response_sha256": "ec9960d8a099f5a8bc76f4c60baf89da932e06d39a328acce6eb5b0efe066e2f",
+            "requested_at": "2026-07-11T02:33:17.318455+00:00",
+            "completed_at": "2026-07-11T02:33:20.447321+00:00",
+            "latency_ms": 3129,
+            "provider_request_id": "1fd5d01f-8bc4-9f3e-bd23-c350a446288f",
+            "response_id": "chatcmpl-1fd5d01f-8bc4-9f3e-bd23-c350a446288f"
+          },
+          "created_memory_id": "experience-memory-8202af10431a",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -680,7 +838,7 @@
             "completion_tokens": 96
           },
           "actual_memory": {
-            "memory_id": "experience-memory-d8c3b9aad277",
+            "memory_id": "experience-memory-8202af10431a",
             "kind": "policy",
             "key": "ci_parallel_workers",
             "value": "Run integration tests with four parallel workers",
@@ -700,17 +858,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-1ac3aeb1c8f7",
-          "target_memory_id": "experience-memory-d8c3b9aad277",
+          "expected_key": "integration_test_workers",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "2a5e1966776502c34a5ce216313a8bca25b0cb5ccfa3f29e130587167ad9a9dd",
+            "response_sha256": "37fe5b8e9a461c3f3ea3491851ac72685c11e64f356b1875de39db0fec8d3f65",
+            "requested_at": "2026-07-11T02:33:20.470290+00:00",
+            "completed_at": "2026-07-11T02:33:23.776746+00:00",
+            "latency_ms": 3307,
+            "provider_request_id": "09bd6aa4-2b02-9593-a3f5-6fdf20e6a3d1",
+            "response_id": "chatcmpl-09bd6aa4-2b02-9593-a3f5-6fdf20e6a3d1"
+          },
+          "created_memory_id": "experience-memory-6104ee44058e",
+          "target_memory_id": "experience-memory-8202af10431a",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 711,
-            "total_tokens": 826,
-            "completion_tokens": 115
+            "prompt_tokens": 713,
+            "total_tokens": 830,
+            "completion_tokens": 117
           },
           "actual_memory": {
-            "memory_id": "experience-memory-1ac3aeb1c8f7",
+            "memory_id": "experience-memory-6104ee44058e",
             "kind": "policy",
             "key": "ci_parallel_workers",
             "value": "Run integration tests with eight parallel workers",
@@ -724,7 +895,7 @@
           "integration_test_workers"
         ],
         "expected_memory_ids": [
-          "experience-memory-1ac3aeb1c8f7"
+          "experience-memory-6104ee44058e"
         ],
         "selected_keys": [
           "ci_parallel_workers"
@@ -733,7 +904,7 @@
           "Run integration tests with eight parallel workers"
         ],
         "selected_memory_ids": [
-          "experience-memory-1ac3aeb1c8f7"
+          "experience-memory-6104ee44058e"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -753,6 +924,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -766,7 +938,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-89dbbdd82cb4",
+          "expected_key": "staging_release_approval",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "07e13dffbee497c5f972be29931e13c7ad7ea649acd56f0f1028af20e94eb0d3",
+            "response_sha256": "8fedad6d60eeba48cdc509bb651966f1333a7fec160038c03a01e36b9c22275d",
+            "requested_at": "2026-07-11T02:33:23.860527+00:00",
+            "completed_at": "2026-07-11T02:33:26.825302+00:00",
+            "latency_ms": 2965,
+            "provider_request_id": "e18ad665-846e-9cf7-b1ce-e2f25db721a3",
+            "response_id": "chatcmpl-e18ad665-846e-9cf7-b1ce-e2f25db721a3"
+          },
+          "created_memory_id": "experience-memory-efc779ed65f8",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -776,11 +961,11 @@
             "completion_tokens": 94
           },
           "actual_memory": {
-            "memory_id": "experience-memory-89dbbdd82cb4",
+            "memory_id": "experience-memory-efc779ed65f8",
             "kind": "policy",
             "key": "staging_release_approval",
             "value": "DemoCorp staging releases require service owner approval",
-            "importance": 4,
+            "importance": 5,
             "valid_until": null
           }
         },
@@ -796,21 +981,34 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-6fde3ce4e0e1",
-          "target_memory_id": "experience-memory-89dbbdd82cb4",
+          "expected_key": "staging_release_approval",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "bb93391fc9c6e2c64d825ea1a68e2380e031f6a0b40aa00fc1c58e4985b2b9eb",
+            "response_sha256": "6ac6527bbcd4b84c733ca298cfe0561964ebabc7fdebe7417fc8b95cb7e5576d",
+            "requested_at": "2026-07-11T02:33:26.846031+00:00",
+            "completed_at": "2026-07-11T02:33:30.043311+00:00",
+            "latency_ms": 3197,
+            "provider_request_id": "40a8e3e6-50a9-9566-85d8-b8edc83e55ad",
+            "response_id": "chatcmpl-40a8e3e6-50a9-9566-85d8-b8edc83e55ad"
+          },
+          "created_memory_id": "experience-memory-d5714440bb63",
+          "target_memory_id": "experience-memory-efc779ed65f8",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 708,
-            "total_tokens": 825,
-            "completion_tokens": 117
+            "prompt_tokens": 710,
+            "total_tokens": 829,
+            "completion_tokens": 119
           },
           "actual_memory": {
-            "memory_id": "experience-memory-6fde3ce4e0e1",
+            "memory_id": "experience-memory-d5714440bb63",
             "kind": "policy",
             "key": "staging_release_approval",
             "value": "DemoCorp staging releases require automated policy checks instead of service owner approval",
-            "importance": 4,
+            "importance": 5,
             "valid_until": null
           }
         }
@@ -820,7 +1018,7 @@
           "staging_release_approval"
         ],
         "expected_memory_ids": [
-          "experience-memory-6fde3ce4e0e1"
+          "experience-memory-d5714440bb63"
         ],
         "selected_keys": [
           "staging_release_approval"
@@ -829,7 +1027,7 @@
           "DemoCorp staging releases require automated policy checks instead of service owner approval"
         ],
         "selected_memory_ids": [
-          "experience-memory-6fde3ce4e0e1"
+          "experience-memory-d5714440bb63"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -849,6 +1047,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -862,17 +1061,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-d1bc28342da2",
+          "expected_key": "schema_migration_mode",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "74101227d1a5964f51accbe06f354e1f0f30a135e34c4b25234fd17f50df7a25",
+            "response_sha256": "675cbf30dd05b5a3dbe4fb96e5bd5b744c306dcb14c39da1ce105b82033b72ea",
+            "requested_at": "2026-07-11T02:33:30.127230+00:00",
+            "completed_at": "2026-07-11T02:33:33.103774+00:00",
+            "latency_ms": 2977,
+            "provider_request_id": "e4dd5ffb-cdf8-99a7-9fab-9208479bf7c5",
+            "response_id": "chatcmpl-e4dd5ffb-cdf8-99a7-9fab-9208479bf7c5"
+          },
+          "created_memory_id": "experience-memory-326cfbd852e5",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 641,
-            "total_tokens": 736,
-            "completion_tokens": 95
+            "total_tokens": 735,
+            "completion_tokens": 94
           },
           "actual_memory": {
-            "memory_id": "experience-memory-d1bc28342da2",
+            "memory_id": "experience-memory-326cfbd852e5",
             "kind": "policy",
             "key": "schema_migration_mode",
             "value": "Use a single maintenance migration for schema changes",
@@ -892,17 +1104,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-d9246427b86f",
-          "target_memory_id": "experience-memory-d1bc28342da2",
+          "expected_key": "schema_migration_mode",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "e09036189cbf8c0023698f9cf459e5df014b294e3ad931b7b9c4b93584894858",
+            "response_sha256": "ab31a267f1fb0733a6e144034fbf65f87025fb4df2442585fcfee97fdff89a39",
+            "requested_at": "2026-07-11T02:33:33.125236+00:00",
+            "completed_at": "2026-07-11T02:33:36.624515+00:00",
+            "latency_ms": 3499,
+            "provider_request_id": "203fbac2-7159-9bec-b957-710bdac54168",
+            "response_id": "chatcmpl-203fbac2-7159-9bec-b957-710bdac54168"
+          },
+          "created_memory_id": "experience-memory-8a747425da7d",
+          "target_memory_id": "experience-memory-326cfbd852e5",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 714,
-            "total_tokens": 834,
-            "completion_tokens": 120
+            "total_tokens": 828,
+            "completion_tokens": 114
           },
           "actual_memory": {
-            "memory_id": "experience-memory-d9246427b86f",
+            "memory_id": "experience-memory-8a747425da7d",
             "kind": "policy",
             "key": "schema_migration_mode",
             "value": "Use expand and contract migrations for schema changes",
@@ -916,7 +1141,7 @@
           "schema_migration_mode"
         ],
         "expected_memory_ids": [
-          "experience-memory-d9246427b86f"
+          "experience-memory-8a747425da7d"
         ],
         "selected_keys": [
           "schema_migration_mode"
@@ -925,7 +1150,7 @@
           "Use expand and contract migrations for schema changes"
         ],
         "selected_memory_ids": [
-          "experience-memory-d9246427b86f"
+          "experience-memory-8a747425da7d"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -945,6 +1170,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -958,7 +1184,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-35ab25013ffc",
+          "expected_key": "debug_log_retention",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "5b30994832e2f27243d41ec2faa7239ac17cb0948f99eb2a767279ae3a0ec6d3",
+            "response_sha256": "f1ff80a0bb8e86ddb2f1191914c76403a5d38df793cc8f70534e313999cff8da",
+            "requested_at": "2026-07-11T02:33:36.701225+00:00",
+            "completed_at": "2026-07-11T02:33:40.237230+00:00",
+            "latency_ms": 3536,
+            "provider_request_id": "808bf65c-39c0-913d-a1e8-b7556c374f4c",
+            "response_id": "chatcmpl-808bf65c-39c0-913d-a1e8-b7556c374f4c"
+          },
+          "created_memory_id": "experience-memory-e64a1c56c421",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -968,7 +1207,7 @@
             "completion_tokens": 99
           },
           "actual_memory": {
-            "memory_id": "experience-memory-35ab25013ffc",
+            "memory_id": "experience-memory-e64a1c56c421",
             "kind": "policy",
             "key": "debug_log_retention_days",
             "value": "Retain DemoCorp debug logs for 14 days",
@@ -988,17 +1227,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-e42b009f7c5b",
-          "target_memory_id": "experience-memory-35ab25013ffc",
+          "expected_key": "debug_log_retention",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "255110c7d8c6ad25bb1af6a9ca1768eeee9b8b7f8fc5ed0e0f6b36f6370e15b8",
+            "response_sha256": "f699d48e1249a1963cf24dd464c3eb562b54886725b1d0a8383461a5a6497874",
+            "requested_at": "2026-07-11T02:33:40.269400+00:00",
+            "completed_at": "2026-07-11T02:33:43.668258+00:00",
+            "latency_ms": 3399,
+            "provider_request_id": "370f76a2-348d-96a2-90e6-c6d523dcb273",
+            "response_id": "chatcmpl-370f76a2-348d-96a2-90e6-c6d523dcb273"
+          },
+          "created_memory_id": "experience-memory-e6c2f89c889c",
+          "target_memory_id": "experience-memory-e64a1c56c421",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 721,
-            "total_tokens": 848,
-            "completion_tokens": 127
+            "prompt_tokens": 723,
+            "total_tokens": 852,
+            "completion_tokens": 129
           },
           "actual_memory": {
-            "memory_id": "experience-memory-e42b009f7c5b",
+            "memory_id": "experience-memory-e6c2f89c889c",
             "kind": "policy",
             "key": "debug_log_retention_days",
             "value": "Retain debug logs for 7 days",
@@ -1012,7 +1264,7 @@
           "debug_log_retention"
         ],
         "expected_memory_ids": [
-          "experience-memory-e42b009f7c5b"
+          "experience-memory-e6c2f89c889c"
         ],
         "selected_keys": [
           "debug_log_retention_days"
@@ -1021,7 +1273,7 @@
           "Retain debug logs for 7 days"
         ],
         "selected_memory_ids": [
-          "experience-memory-e42b009f7c5b"
+          "experience-memory-e6c2f89c889c"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1041,6 +1293,7 @@
       "category": "conflict_supersede",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1053,21 +1306,34 @@
           "requested_action": "remember",
           "action_ok": true,
           "memory_ok": true,
-          "exact_key_ok": true,
-          "created_memory_id": "experience-memory-619e35517854",
+          "exact_key_ok": false,
+          "expected_key": "weekly_release_freeze_start",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "f26b627406281acd51fe3243f4c90916d1f8862528680e63406e99e384f14258",
+            "response_sha256": "fdcd3c4380797e970912c0e73cb33a6e4ff8be06781e07c79237222e8993be70",
+            "requested_at": "2026-07-11T02:33:43.752193+00:00",
+            "completed_at": "2026-07-11T02:33:47.278649+00:00",
+            "latency_ms": 3527,
+            "provider_request_id": "5a8beeb7-a0f1-9287-bb37-bddac845cfaa",
+            "response_id": "chatcmpl-5a8beeb7-a0f1-9287-bb37-bddac845cfaa"
+          },
+          "created_memory_id": "experience-memory-2afd71401fe6",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 646,
-            "total_tokens": 749,
-            "completion_tokens": 103
+            "total_tokens": 746,
+            "completion_tokens": 100
           },
           "actual_memory": {
-            "memory_id": "experience-memory-619e35517854",
+            "memory_id": "experience-memory-2afd71401fe6",
             "kind": "policy",
-            "key": "weekly_release_freeze_start",
-            "value": "Friday at 18:00 UTC",
+            "key": "release_freeze_schedule",
+            "value": "Weekly release freeze begins Friday at 18:00 UTC",
             "importance": 5,
             "valid_until": null
           }
@@ -1083,9 +1349,22 @@
           "requested_action": "supersede",
           "action_ok": true,
           "memory_ok": true,
-          "exact_key_ok": true,
-          "created_memory_id": "experience-memory-b19471e36e0c",
-          "target_memory_id": "experience-memory-619e35517854",
+          "exact_key_ok": false,
+          "expected_key": "weekly_release_freeze_start",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "401648d913020d21242cd1c988a3e858c9261b54969ae40d7dbf88f0901cea51",
+            "response_sha256": "6ef53b1585c659678c9000505210865f5291d66430cbd9bbf3fad02738187b15",
+            "requested_at": "2026-07-11T02:33:47.297500+00:00",
+            "completed_at": "2026-07-11T02:33:50.926266+00:00",
+            "latency_ms": 3629,
+            "provider_request_id": "8dcdb66a-54b5-9fb8-aa96-5310bb3afc80",
+            "response_id": "chatcmpl-8dcdb66a-54b5-9fb8-aa96-5310bb3afc80"
+          },
+          "created_memory_id": "experience-memory-e97ac45d57a6",
+          "target_memory_id": "experience-memory-2afd71401fe6",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
@@ -1094,10 +1373,10 @@
             "completion_tokens": 122
           },
           "actual_memory": {
-            "memory_id": "experience-memory-b19471e36e0c",
+            "memory_id": "experience-memory-e97ac45d57a6",
             "kind": "policy",
-            "key": "weekly_release_freeze_start",
-            "value": "Thursday at 20:00 UTC",
+            "key": "release_freeze_schedule",
+            "value": "Weekly release freeze begins Thursday at 20:00 UTC",
             "importance": 5,
             "valid_until": null
           }
@@ -1108,16 +1387,16 @@
           "weekly_release_freeze_start"
         ],
         "expected_memory_ids": [
-          "experience-memory-b19471e36e0c"
+          "experience-memory-e97ac45d57a6"
         ],
         "selected_keys": [
-          "weekly_release_freeze_start"
+          "release_freeze_schedule"
         ],
         "selected_values": [
-          "Thursday at 20:00 UTC"
+          "Weekly release freeze begins Thursday at 20:00 UTC"
         ],
         "selected_memory_ids": [
-          "experience-memory-b19471e36e0c"
+          "experience-memory-e97ac45d57a6"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1128,7 +1407,7 @@
         "leaked_values": [],
         "expired_memory_ids": [],
         "token_budget": 128,
-        "estimated_tokens_used": 18,
+        "estimated_tokens_used": 24,
         "budget_ok": true
       }
     },
@@ -1137,6 +1416,7 @@
       "category": "ttl_or_forget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1150,20 +1430,33 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-1bd998c62a30",
+          "expected_key": "temporary_release_window",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "6a71c4d3d1bbaa79df6e9dff8ecb91924f954932b51b8f22464b2764570c4e93",
+            "response_sha256": "5680e3135a20d5410aa90a6dfe6c9e285cda340576685b0b32656cbdcfffa9a8",
+            "requested_at": "2026-07-11T02:33:51.010177+00:00",
+            "completed_at": "2026-07-11T02:33:54.675866+00:00",
+            "latency_ms": 3666,
+            "provider_request_id": "6b859990-1db1-9375-9591-182632e92476",
+            "response_id": "chatcmpl-6b859990-1db1-9375-9591-182632e92476"
+          },
+          "created_memory_id": "experience-memory-a91ff67d2850",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 651,
-            "total_tokens": 764,
-            "completion_tokens": 113
+            "total_tokens": 763,
+            "completion_tokens": 112
           },
           "actual_memory": {
-            "memory_id": "experience-memory-1bd998c62a30",
+            "memory_id": "experience-memory-a91ff67d2850",
             "kind": "policy",
             "key": "prod_release_window_override",
-            "value": "DemoCorp production releases may start after 18:00 UTC for the next two days only",
+            "value": "DemoCorp production releases may start after 18:00 UTC for the next two days",
             "importance": 4,
             "valid_until": "2026-01-03T00:00:00+00:00"
           }
@@ -1183,7 +1476,7 @@
         ],
         "leaked_values": [],
         "expired_memory_ids": [
-          "experience-memory-1bd998c62a30"
+          "experience-memory-a91ff67d2850"
         ],
         "token_budget": 128,
         "estimated_tokens_used": 0,
@@ -1195,6 +1488,7 @@
       "category": "ttl_or_forget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1208,21 +1502,34 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-3ba5a80469c9",
+          "expected_key": "checkout_alert_route",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "eaeb62f83c264649932ca97581d1dfb688a1fd68cf5f012f1e74fa9075f3d9a7",
+            "response_sha256": "9d16a7d3f8212d89a1cf706c8edd62c3d0efa2a9d3cd47cb8fd3f7c4b66ac3b0",
+            "requested_at": "2026-07-11T02:33:54.732171+00:00",
+            "completed_at": "2026-07-11T02:33:57.793362+00:00",
+            "latency_ms": 3061,
+            "provider_request_id": "782684f9-4f1c-98ae-9344-ca5d5da30ec4",
+            "response_id": "chatcmpl-782684f9-4f1c-98ae-9344-ca5d5da30ec4"
+          },
+          "created_memory_id": "experience-memory-d87d83517323",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 646,
-            "total_tokens": 751,
-            "completion_tokens": 105
+            "total_tokens": 749,
+            "completion_tokens": 103
           },
           "actual_memory": {
-            "memory_id": "experience-memory-3ba5a80469c9",
+            "memory_id": "experience-memory-d87d83517323",
             "kind": "policy",
             "key": "incident_alert_routing",
             "value": "Route DemoCorp checkout alerts to the temporary response room",
-            "importance": 3,
+            "importance": 4,
             "valid_until": "2026-01-02T00:00:00+00:00"
           }
         }
@@ -1241,7 +1548,7 @@
         ],
         "leaked_values": [],
         "expired_memory_ids": [
-          "experience-memory-3ba5a80469c9"
+          "experience-memory-d87d83517323"
         ],
         "token_budget": 128,
         "estimated_tokens_used": 0,
@@ -1253,6 +1560,7 @@
       "category": "ttl_or_forget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1266,7 +1574,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-d0daf5c77783",
+          "expected_key": "package_build_cache_mode",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "3848f6e4192c0e3b4e04a09a451cfc2af149d6a30a4851ff24e8ba2aec885d33",
+            "response_sha256": "006ed4a813f5c222d43ffa0fe27c930b231ee1d667f6cda06e7efc147c3cfef3",
+            "requested_at": "2026-07-11T02:33:57.857229+00:00",
+            "completed_at": "2026-07-11T02:34:01.099455+00:00",
+            "latency_ms": 3242,
+            "provider_request_id": "9862da87-e1f8-9cf8-92af-8318e9a60c30",
+            "response_id": "chatcmpl-9862da87-e1f8-9cf8-92af-8318e9a60c30"
+          },
+          "created_memory_id": "experience-memory-2efce590b39e",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -1276,7 +1597,7 @@
             "completion_tokens": 103
           },
           "actual_memory": {
-            "memory_id": "experience-memory-d0daf5c77783",
+            "memory_id": "experience-memory-2efce590b39e",
             "kind": "policy",
             "key": "build_cache_bypass_diagnostics",
             "value": "DemoCorp package builds should bypass the shared cache while diagnostics are active",
@@ -1296,14 +1617,27 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
+          "expected_key": null,
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "b0043268150b9912a277433699dddd33172357dce2f55f521f6f118d9a8a0ca1",
+            "response_sha256": "1defaace389f3a9b790a5a0f4fd684ff188a4320a508c4ca23d62f4c17ace943",
+            "requested_at": "2026-07-11T02:34:01.120863+00:00",
+            "completed_at": "2026-07-11T02:34:04.201448+00:00",
+            "latency_ms": 3081,
+            "provider_request_id": "ae2b2d9b-e186-9bb9-98aa-0686d9ec2457",
+            "response_id": "chatcmpl-ae2b2d9b-e186-9bb9-98aa-0686d9ec2457"
+          },
           "created_memory_id": null,
-          "target_memory_id": "experience-memory-d0daf5c77783",
+          "target_memory_id": "experience-memory-2efce590b39e",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 721,
-            "total_tokens": 822,
-            "completion_tokens": 101
+            "prompt_tokens": 722,
+            "total_tokens": 824,
+            "completion_tokens": 102
           },
           "actual_memory": null
         }
@@ -1332,6 +1666,7 @@
       "category": "ttl_or_forget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1345,17 +1680,30 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-8825094c2c6e",
+          "expected_key": "artifact_validation_mirror",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "d97a4beca6206f85ce29dd39bf72cb35cddb8f7757b933569116f69b449f0c91",
+            "response_sha256": "742e03b7fbbd23d6f2f4286e3b31b98296a20c498e38983cac850c84bd02fdbe",
+            "requested_at": "2026-07-11T02:34:04.249182+00:00",
+            "completed_at": "2026-07-11T02:34:07.505200+00:00",
+            "latency_ms": 3256,
+            "provider_request_id": "2032cb32-4a0a-91ec-9f67-6bc7ca0d9e28",
+            "response_id": "chatcmpl-2032cb32-4a0a-91ec-9f67-6bc7ca0d9e28"
+          },
+          "created_memory_id": "experience-memory-36bfd9244946",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 650,
-            "total_tokens": 761,
-            "completion_tokens": 111
+            "total_tokens": 756,
+            "completion_tokens": 106
           },
           "actual_memory": {
-            "memory_id": "experience-memory-8825094c2c6e",
+            "memory_id": "experience-memory-36bfd9244946",
             "kind": "preference",
             "key": "staging_mirror",
             "value": "use blue staging mirror for DemoCorp artifact validation",
@@ -1375,14 +1723,27 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
+          "expected_key": null,
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "5ea96a0c5e4e9986c0972153104b24431794a5873c66148e08c863bca32d7349",
+            "response_sha256": "b271362fd0a9a292cdc40259d020c5f622d0f9412a31e33986ef6612554d7579",
+            "requested_at": "2026-07-11T02:34:07.524868+00:00",
+            "completed_at": "2026-07-11T02:34:10.671677+00:00",
+            "latency_ms": 3147,
+            "provider_request_id": "1f6a7820-91fa-970a-ad0f-484f881f01d9",
+            "response_id": "chatcmpl-1f6a7820-91fa-970a-ad0f-484f881f01d9"
+          },
           "created_memory_id": null,
-          "target_memory_id": "experience-memory-8825094c2c6e",
+          "target_memory_id": "experience-memory-36bfd9244946",
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 743,
-            "total_tokens": 842,
-            "completion_tokens": 99
+            "prompt_tokens": 741,
+            "total_tokens": 838,
+            "completion_tokens": 97
           },
           "actual_memory": null
         }
@@ -1411,6 +1772,7 @@
       "category": "limited_token_budget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1424,20 +1786,33 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-db3c311e2b30",
+          "expected_key": "production_delete_approval",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "3e0871edd32b44e643d497cb9da54f0470f22218ea7bf3c0ce90bc2cd9e6db06",
+            "response_sha256": "1fd713018147f024a9d51d06e8f627636a68b941c76f98350a932d1fd98b5a8c",
+            "requested_at": "2026-07-11T02:34:10.728950+00:00",
+            "completed_at": "2026-07-11T02:34:14.105572+00:00",
+            "latency_ms": 3377,
+            "provider_request_id": "72d2c54f-6196-90b3-9b1f-2bf3a9ac016f",
+            "response_id": "chatcmpl-72d2c54f-6196-90b3-9b1f-2bf3a9ac016f"
+          },
+          "created_memory_id": "experience-memory-82ccea80d3f2",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 644,
-            "total_tokens": 746,
-            "completion_tokens": 102
+            "total_tokens": 744,
+            "completion_tokens": 100
           },
           "actual_memory": {
-            "memory_id": "experience-memory-db3c311e2b30",
+            "memory_id": "experience-memory-82ccea80d3f2",
             "kind": "policy",
             "key": "production_data_deletion_approval",
-            "value": "Require approval from the on-call lead before any DemoCorp production data deletion",
+            "value": "Require on-call lead approval before any DemoCorp production data deletion",
             "importance": 5,
             "valid_until": null
           }
@@ -1454,19 +1829,32 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-da228ac89458",
+          "expected_key": "deletion_rehearsal_notes",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "f1d1b058e100df9058017a05691e66737e52ec5b8e172ecd6d95e132116e9284",
+            "response_sha256": "df1db85d6f9823c5c5cf1909cbbcb27590553bbfea7c97fef11a36d14c7bb1e3",
+            "requested_at": "2026-07-11T02:34:14.131694+00:00",
+            "completed_at": "2026-07-11T02:34:18.200986+00:00",
+            "latency_ms": 4069,
+            "provider_request_id": "ff4aa9b4-2973-9a08-9910-6b5af50c30dd",
+            "response_id": "chatcmpl-ff4aa9b4-2973-9a08-9910-6b5af50c30dd"
+          },
+          "created_memory_id": "experience-memory-cc3394d2b876",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 727,
-            "total_tokens": 843,
-            "completion_tokens": 116
+            "prompt_tokens": 725,
+            "total_tokens": 842,
+            "completion_tokens": 117
           },
           "actual_memory": {
-            "memory_id": "experience-memory-da228ac89458",
+            "memory_id": "experience-memory-cc3394d2b876",
             "kind": "episode",
-            "key": "deletion_rehearsal_optimization",
+            "key": "deletion_rehearsal_file_grouping",
             "value": "Group sample files by date before operators begin to speed up deletion rehearsals",
             "importance": 2,
             "valid_until": null
@@ -1478,16 +1866,16 @@
           "production_delete_approval"
         ],
         "expected_memory_ids": [
-          "experience-memory-db3c311e2b30"
+          "experience-memory-82ccea80d3f2"
         ],
         "selected_keys": [
           "production_data_deletion_approval"
         ],
         "selected_values": [
-          "Require approval from the on-call lead before any DemoCorp production data deletion"
+          "Require on-call lead approval before any DemoCorp production data deletion"
         ],
         "selected_memory_ids": [
-          "experience-memory-db3c311e2b30"
+          "experience-memory-82ccea80d3f2"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1498,7 +1886,7 @@
         "leaked_values": [],
         "expired_memory_ids": [],
         "token_budget": 40,
-        "estimated_tokens_used": 29,
+        "estimated_tokens_used": 31,
         "budget_ok": true
       }
     },
@@ -1507,6 +1895,7 @@
       "category": "limited_token_budget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1520,20 +1909,33 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-8c4fea52e4f2",
+          "expected_key": "production_rollback_checkpoint",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "9ffb960a5f51ab34546ae4caead59458555a96126b39b48135d2acd15a517682",
+            "response_sha256": "12fb4ad4d6e0eb7ac928c82b41d485a0a33ad10700f9b3843c0c5b0928ffcbd6",
+            "requested_at": "2026-07-11T02:34:18.274641+00:00",
+            "completed_at": "2026-07-11T02:34:21.646682+00:00",
+            "latency_ms": 3372,
+            "provider_request_id": "94268447-5811-93b0-bc9d-df04e08679ca",
+            "response_id": "chatcmpl-94268447-5811-93b0-bc9d-df04e08679ca"
+          },
+          "created_memory_id": "experience-memory-8b25fdabca33",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 640,
-            "total_tokens": 738,
-            "completion_tokens": 98
+            "total_tokens": 736,
+            "completion_tokens": 96
           },
           "actual_memory": {
-            "memory_id": "experience-memory-8c4fea52e4f2",
+            "memory_id": "experience-memory-8b25fdabca33",
             "kind": "policy",
             "key": "production_rollback_checkpoint",
-            "value": "Restore the last verified checkpoint during DemoCorp production rollbacks",
+            "value": "Restore the last verified checkpoint during production rollbacks",
             "importance": 5,
             "valid_until": null
           }
@@ -1550,20 +1952,33 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-c38102845074",
+          "expected_key": "rollback_retrospective_misc",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "a854bfa7878450bbd29e32d51630e1b1a095cd87f82da725c77777322cfc09a3",
+            "response_sha256": "627182f3cc99b9e06f302b964d1ad6d942f5a31422c3a527d6e71f1fa219b92f",
+            "requested_at": "2026-07-11T02:34:21.671504+00:00",
+            "completed_at": "2026-07-11T02:34:24.938508+00:00",
+            "latency_ms": 3267,
+            "provider_request_id": "8fa7cda9-a063-91a2-9bd7-6aaa5be7046b",
+            "response_id": "chatcmpl-8fa7cda9-a063-91a2-9bd7-6aaa5be7046b"
+          },
+          "created_memory_id": "experience-memory-8ca91c75297d",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 720,
-            "total_tokens": 825,
-            "completion_tokens": 105
+            "prompt_tokens": 717,
+            "total_tokens": 821,
+            "completion_tokens": 104
           },
           "actual_memory": {
-            "memory_id": "experience-memory-c38102845074",
+            "memory_id": "experience-memory-8ca91c75297d",
             "kind": "episode",
             "key": "rollback_review_graph_grouping",
-            "value": "Group graphs by service before DemoCorp rollback reviews to improve efficiency",
+            "value": "Group graphs by service before rollback review meetings to improve clarity",
             "importance": 1,
             "valid_until": null
           }
@@ -1574,16 +1989,16 @@
           "production_rollback_checkpoint"
         ],
         "expected_memory_ids": [
-          "experience-memory-8c4fea52e4f2"
+          "experience-memory-8b25fdabca33"
         ],
         "selected_keys": [
           "production_rollback_checkpoint"
         ],
         "selected_values": [
-          "Restore the last verified checkpoint during DemoCorp production rollbacks"
+          "Restore the last verified checkpoint during production rollbacks"
         ],
         "selected_memory_ids": [
-          "experience-memory-8c4fea52e4f2"
+          "experience-memory-8b25fdabca33"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1594,7 +2009,7 @@
         "leaked_values": [],
         "expired_memory_ids": [],
         "token_budget": 40,
-        "estimated_tokens_used": 30,
+        "estimated_tokens_used": 29,
         "budget_ok": true
       }
     },
@@ -1603,6 +2018,7 @@
       "category": "limited_token_budget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1616,7 +2032,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
-          "created_memory_id": "experience-memory-428271ef6380",
+          "expected_key": "customer_export_redaction",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "1f9f6e88911f83332e5b5de0015f2646a32b88603afd03e9a1accb7bf10f8794",
+            "response_sha256": "ac21d9b7eb8b853f23dfa0d66cabe4e5733595ca9c6e4b6b1da8d093662f6835",
+            "requested_at": "2026-07-11T02:34:25.847067+00:00",
+            "completed_at": "2026-07-11T02:34:28.761904+00:00",
+            "latency_ms": 2915,
+            "provider_request_id": "35691def-a730-923e-932d-3dd9c5658a67",
+            "response_id": "chatcmpl-35691def-a730-923e-932d-3dd9c5658a67"
+          },
+          "created_memory_id": "experience-memory-833e837746dc",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -1626,7 +2055,7 @@
             "completion_tokens": 103
           },
           "actual_memory": {
-            "memory_id": "experience-memory-428271ef6380",
+            "memory_id": "experience-memory-833e837746dc",
             "kind": "policy",
             "key": "customer_export_redaction",
             "value": "Redact personal fields from DemoCorp customer exports before leaving the controlled workspace",
@@ -1646,21 +2075,34 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-c2e0b772d51f",
+          "expected_key": "export_workshop_ideas",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "595039b5ad4d5b98cabeee32bac47041399779fc39315004feab6f8cf584c6db",
+            "response_sha256": "02d559f8204504354d6ec8fa2f0e806d3c72bdcc17fe114e18a6a4b4c7bdd861",
+            "requested_at": "2026-07-11T02:34:28.787658+00:00",
+            "completed_at": "2026-07-11T02:34:32.118154+00:00",
+            "latency_ms": 3331,
+            "provider_request_id": "6279a604-2f0b-98fa-9944-4d5e274c7aa2",
+            "response_id": "chatcmpl-6279a604-2f0b-98fa-9944-4d5e274c7aa2"
+          },
+          "created_memory_id": "experience-memory-2c1204c0f350",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 726,
-            "total_tokens": 833,
-            "completion_tokens": 107
+            "total_tokens": 831,
+            "completion_tokens": 105
           },
           "actual_memory": {
-            "memory_id": "experience-memory-c2e0b772d51f",
+            "memory_id": "experience-memory-2c1204c0f350",
             "kind": "episode",
             "key": "demo_export_review_optimization",
             "value": "Sort sample columns alphabetically before review to speed up DemoCorp export reviews",
-            "importance": 2,
+            "importance": 1,
             "valid_until": null
           }
         }
@@ -1670,7 +2112,7 @@
           "customer_export_redaction"
         ],
         "expected_memory_ids": [
-          "experience-memory-428271ef6380"
+          "experience-memory-833e837746dc"
         ],
         "selected_keys": [
           "customer_export_redaction"
@@ -1679,7 +2121,7 @@
           "Redact personal fields from DemoCorp customer exports before leaving the controlled workspace"
         ],
         "selected_memory_ids": [
-          "experience-memory-428271ef6380"
+          "experience-memory-833e837746dc"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1699,6 +2141,7 @@
       "category": "limited_token_budget",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1712,7 +2155,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-2c62eeac201e",
+          "expected_key": "artifact_publish_gate",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "ff7fd62e230c057265cb10e85e7cb004286ffd8f7ab99e056c375b3db7b6fa3b",
+            "response_sha256": "59eb75777180f35fb75035bf871c91981ac3851a0b2742c6e879fd2b69dccd4f",
+            "requested_at": "2026-07-11T02:34:32.183470+00:00",
+            "completed_at": "2026-07-11T02:34:35.439158+00:00",
+            "latency_ms": 3256,
+            "provider_request_id": "94289d22-6f8a-9eab-8c96-f829039d05b9",
+            "response_id": "chatcmpl-94289d22-6f8a-9eab-8c96-f829039d05b9"
+          },
+          "created_memory_id": "experience-memory-4748b5e30ec8",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -1722,7 +2178,7 @@
             "completion_tokens": 105
           },
           "actual_memory": {
-            "memory_id": "experience-memory-2c62eeac201e",
+            "memory_id": "experience-memory-4748b5e30ec8",
             "kind": "policy",
             "key": "artifact_provenance_requirement",
             "value": "Do not publish a DemoCorp release artifact unless its provenance is signed and verified.",
@@ -1742,21 +2198,34 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-e224b9cc771b",
+          "expected_key": "packaging_background_notes",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "e7bbd95197ce0cf01b8c89707367a925e8ff670d81f10835bff238baf091e91b",
+            "response_sha256": "d4cd5f8149a4704498ece039a3ca27c495c676f242b6aff990314b27ae37cec4",
+            "requested_at": "2026-07-11T02:34:35.496317+00:00",
+            "completed_at": "2026-07-11T02:34:38.800357+00:00",
+            "latency_ms": 3304,
+            "provider_request_id": "6b52ac5f-0c93-9ffd-9fac-63e4b1cc9de6",
+            "response_id": "chatcmpl-6b52ac5f-0c93-9ffd-9fac-63e4b1cc9de6"
+          },
+          "created_memory_id": "experience-memory-f2fee369381f",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 731,
-            "total_tokens": 841,
-            "completion_tokens": 110
+            "prompt_tokens": 732,
+            "total_tokens": 834,
+            "completion_tokens": 102
           },
           "actual_memory": {
-            "memory_id": "experience-memory-e224b9cc771b",
+            "memory_id": "experience-memory-f2fee369381f",
             "kind": "episode",
             "key": "archive_label_build_date",
             "value": "Include build date in archive labels based on repeated packaging review lessons.",
-            "importance": 3,
+            "importance": 2,
             "valid_until": null
           }
         }
@@ -1766,7 +2235,7 @@
           "artifact_publish_gate"
         ],
         "expected_memory_ids": [
-          "experience-memory-2c62eeac201e"
+          "experience-memory-4748b5e30ec8"
         ],
         "selected_keys": [
           "artifact_provenance_requirement"
@@ -1775,7 +2244,7 @@
           "Do not publish a DemoCorp release artifact unless its provenance is signed and verified."
         ],
         "selected_memory_ids": [
-          "experience-memory-2c62eeac201e"
+          "experience-memory-4748b5e30ec8"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1795,6 +2264,7 @@
       "category": "duplicate_or_ignore",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1808,7 +2278,20 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": false,
-          "created_memory_id": "experience-memory-eb415ec387cb",
+          "expected_key": "pull_request_merge_mode",
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "8d6aeac56a7f883f59516374d966486658b0b791bfd9afa7622754ad1f2e1a1e",
+            "response_sha256": "c501ee359336a2cf082d6050f73df9c050af771c561026416d3a5ab824b1d296",
+            "requested_at": "2026-07-11T02:34:38.867641+00:00",
+            "completed_at": "2026-07-11T02:34:42.104781+00:00",
+            "latency_ms": 3237,
+            "provider_request_id": "20ce5eba-66ee-9632-adbc-cc3f5bd2a9a1",
+            "response_id": "chatcmpl-20ce5eba-66ee-9632-adbc-cc3f5bd2a9a1"
+          },
+          "created_memory_id": "experience-memory-bc434244a265",
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
@@ -1818,7 +2301,7 @@
             "completion_tokens": 97
           },
           "actual_memory": {
-            "memory_id": "experience-memory-eb415ec387cb",
+            "memory_id": "experience-memory-bc434244a265",
             "kind": "preference",
             "key": "pr_merge_strategy",
             "value": "squash merging for DemoCorp pull requests",
@@ -1838,14 +2321,27 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
+          "expected_key": null,
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "d07a8686eaa32e34b018c258c2dd154f1141b15de89e011b334a95f52bd75917",
+            "response_sha256": "0a647c428f4d60705051eb50a0bc16ac30e5eea6a9381775eccdcd280bca97bb",
+            "requested_at": "2026-07-11T02:34:42.124603+00:00",
+            "completed_at": "2026-07-11T02:34:45.132531+00:00",
+            "latency_ms": 3008,
+            "provider_request_id": "b7cc50e0-7f3e-9ac8-85f1-72fb50453d98",
+            "response_id": "chatcmpl-b7cc50e0-7f3e-9ac8-85f1-72fb50453d98"
+          },
           "created_memory_id": null,
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
-            "prompt_tokens": 711,
-            "total_tokens": 799,
-            "completion_tokens": 88
+            "prompt_tokens": 713,
+            "total_tokens": 804,
+            "completion_tokens": 91
           },
           "actual_memory": null
         }
@@ -1855,7 +2351,7 @@
           "pull_request_merge_mode"
         ],
         "expected_memory_ids": [
-          "experience-memory-eb415ec387cb"
+          "experience-memory-bc434244a265"
         ],
         "selected_keys": [
           "pr_merge_strategy"
@@ -1864,7 +2360,7 @@
           "squash merging for DemoCorp pull requests"
         ],
         "selected_memory_ids": [
-          "experience-memory-eb415ec387cb"
+          "experience-memory-bc434244a265"
         ],
         "expected_hits": 1,
         "expected_total": 1,
@@ -1884,6 +2380,7 @@
       "category": "duplicate_or_ignore",
       "passed": true,
       "payload_diagnostic_pass": true,
+      "receipt_pass": true,
       "steps": [
         {
           "step": 1,
@@ -1897,14 +2394,27 @@
           "action_ok": true,
           "memory_ok": true,
           "exact_key_ok": true,
+          "expected_key": null,
+          "receipt_ok": true,
+          "llm_receipt": {
+            "schema_version": "llm-receipt-v1",
+            "endpoint_host": "ws-s9oq61k4p6mg1w76.ap-southeast-1.maas.aliyuncs.com",
+            "request_sha256": "92d817188440c403139d23df6733f9bf050ddc187862b5102cad927c5193f754",
+            "response_sha256": "38c3b191a45712642912a439270f326c0ca16ffd56c96d9c2c5363b610ce0f6b",
+            "requested_at": "2026-07-11T02:34:45.189975+00:00",
+            "completed_at": "2026-07-11T02:34:48.338554+00:00",
+            "latency_ms": 3149,
+            "provider_request_id": "fe23d9bc-3ac8-9b81-b09a-1dfbb2faa3c8",
+            "response_id": "chatcmpl-fe23d9bc-3ac8-9b81-b09a-1dfbb2faa3c8"
+          },
           "created_memory_id": null,
           "target_memory_id": null,
           "provider": "qwen-cloud",
           "model": "qwen3.7-plus",
           "token_usage": {
             "prompt_tokens": 651,
-            "total_tokens": 738,
-            "completion_tokens": 87
+            "total_tokens": 737,
+            "completion_tokens": 86
           },
           "actual_memory": null
         }

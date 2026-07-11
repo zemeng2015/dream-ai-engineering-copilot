@@ -204,6 +204,9 @@ def run_case(
                     "action_ok": False,
                     "memory_ok": False,
                     "exact_key_ok": False,
+                    "expected_key": expected.get("key"),
+                    "receipt_ok": policy_mode != "qwen-cloud",
+                    "llm_receipt": None,
                     "created_memory_id": None,
                     "target_memory_id": None,
                     "provider": provider.provider_name if provider else "deterministic-proposal",
@@ -235,6 +238,16 @@ def run_case(
                 "action_ok": action_ok,
                 "memory_ok": memory_ok,
                 "exact_key_ok": exact_key_ok,
+                "expected_key": expected.get("key"),
+                "receipt_ok": (
+                    policy_mode != "qwen-cloud"
+                    or capture.decision.llm_receipt is not None
+                ),
+                "llm_receipt": (
+                    capture.decision.llm_receipt.model_dump()
+                    if capture.decision.llm_receipt
+                    else None
+                ),
                 "created_memory_id": capture.decision.created_memory_id,
                 "target_memory_id": capture.decision.target_memory_id,
                 "provider": capture.decision.provider_name,
@@ -288,13 +301,22 @@ def run_case(
     recall_score = expected_hits / len(expected_keys) if expected_keys else 1.0
     steps_pass = all(item["proposal_ok"] and item["action_ok"] for item in step_results)
     payload_diagnostic_pass = all(item["memory_ok"] for item in step_results)
+    receipt_pass = all(item["receipt_ok"] for item in step_results)
     budget_ok = recall.estimated_tokens_used <= recall.token_budget
-    case_pass = steps_pass and recall_score == 1.0 and not leaked_values and budget_ok
+    case_pass = (
+        steps_pass
+        and payload_diagnostic_pass
+        and receipt_pass
+        and recall_score == 1.0
+        and not leaked_values
+        and budget_ok
+    )
     return {
         "id": str(case["id"]),
         "category": str(case.get("category") or "uncategorized"),
         "passed": case_pass,
         "payload_diagnostic_pass": payload_diagnostic_pass,
+        "receipt_pass": receipt_pass,
         "steps": step_results,
         "recall": {
             "expected_keys": expected_keys,
@@ -462,6 +484,45 @@ def aggregate_results(cases: list[dict[str, Any]]) -> dict[str, Any]:
     action_accuracy = sum(step["action_ok"] for step in steps) / max(1, len(steps))
     memory_accuracy = sum(step["memory_ok"] for step in steps) / max(1, len(steps))
     exact_key_accuracy = sum(step["exact_key_ok"] for step in steps) / max(1, len(steps))
+    qwen_steps = [step for step in steps if step["provider"] == "qwen-cloud"]
+    receipt_coverage = (
+        sum(step.get("receipt_ok", False) for step in qwen_steps) / len(qwen_steps)
+        if qwen_steps
+        else 1.0
+    )
+    repeated_key_groups = 0
+    stable_key_groups = 0
+    for case in cases:
+        grouped_keys: dict[str, list[str | None]] = {}
+        for step in case["steps"]:
+            expected_key = step.get("expected_key")
+            if not expected_key:
+                continue
+            actual_memory = step.get("actual_memory")
+            actual_key = actual_memory.get("key") if actual_memory else None
+            grouped_keys.setdefault(str(expected_key), []).append(actual_key)
+        for actual_keys in grouped_keys.values():
+            if len(actual_keys) < 2:
+                continue
+            repeated_key_groups += 1
+            if None not in actual_keys and len(set(actual_keys)) == 1:
+                stable_key_groups += 1
+    lifecycle_key_stability = (
+        stable_key_groups / repeated_key_groups if repeated_key_groups else 1.0
+    )
+    qwen_total_tokens = 0
+    for step in qwen_steps:
+        usage = step.get("token_usage") or {}
+        total = usage.get("total_tokens")
+        if isinstance(total, int):
+            qwen_total_tokens += total
+        else:
+            qwen_total_tokens += sum(
+                value
+                for key, value in usage.items()
+                if key in {"prompt_tokens", "completion_tokens"}
+                and isinstance(value, int)
+            )
     recall = expected_hits / expected_total if expected_total else 1.0
     leak_rate = leaked_total / forbidden_total if forbidden_total else 0.0
     budget_compliance = sum(case["recall"]["budget_ok"] for case in cases) / len(cases)
@@ -488,6 +549,13 @@ def aggregate_results(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "action_accuracy": round(action_accuracy, 4),
         "memory_payload_accuracy": round(memory_accuracy, 4),
         "exact_canonical_key_accuracy": round(exact_key_accuracy, 4),
+        "lifecycle_key_stability": round(lifecycle_key_stability, 4),
+        "qwen_receipt_coverage": round(receipt_coverage, 4),
+        "qwen_receipt_count": sum(
+            step.get("receipt_ok", False) for step in qwen_steps
+        ),
+        "qwen_decision_count": len(qwen_steps),
+        "qwen_total_tokens": qwen_total_tokens,
         "critical_memory_recall": round(recall, 4),
         "forbidden_memory_leak_rate": round(leak_rate, 4),
         "token_budget_compliance": round(budget_compliance, 4),
@@ -504,14 +572,30 @@ def rescore_report(report: dict[str, Any]) -> dict[str, Any]:
         case["payload_diagnostic_pass"] = all(
             step["memory_ok"] for step in case["steps"]
         )
+        requires_receipt = any(
+            step.get("provider") == "qwen-cloud" for step in case["steps"]
+        )
+        case["receipt_pass"] = (
+            all(step.get("llm_receipt") is not None for step in case["steps"])
+            if requires_receipt
+            else True
+        )
+        for step in case["steps"]:
+            step["receipt_ok"] = (
+                step.get("llm_receipt") is not None
+                if step.get("provider") == "qwen-cloud"
+                else True
+            )
         case["passed"] = (
             all(step["proposal_ok"] and step["action_ok"] for step in case["steps"])
+            and case["payload_diagnostic_pass"]
+            and case["receipt_pass"]
             and recall["recall"] == 1.0
             and not recall["leaked_values"]
             and recall["budget_ok"]
         )
     rescored["aggregate"] = aggregate_results(rescored["cases"])
-    rescored["scoring_revision"] = "experience-lifecycle-score-v1.1"
+    rescored["scoring_revision"] = "experience-lifecycle-score-v1.2"
     rescored["rescored_at"] = datetime.now(UTC).isoformat()
     rescored["run_id"] = f"{report['run_id']}-R1"
     return rescored
@@ -533,8 +617,9 @@ def write_reports(report: dict[str, Any], output_dir: Path) -> tuple[Path, Path]
         f"- Cases: {report['case_count']}",
         f"- Overall score: {aggregate['overall_score']:.1f}/100",
         f"- Passed cases: {aggregate['passed_cases']}/{report['case_count']}",
-        "- Case pass contract: proposal/action, memory identity recall, zero forbidden "
-        "leakage, and token-budget compliance; payload/key metrics remain diagnostic.",
+        "- Case pass contract: proposal/action, semantic payload, memory identity recall, "
+        "zero forbidden leakage, token-budget compliance, and a safe provider receipt "
+        "for every Qwen decision. Exact gold-key alias matching remains diagnostic.",
         "",
         "## Aggregate",
         "",
@@ -543,7 +628,10 @@ def write_reports(report: dict[str, Any], output_dir: Path) -> tuple[Path, Path]
         f"| Qwen curator proposal accuracy | {aggregate['proposal_accuracy']:.1%} |",
         f"| Action accuracy | {aggregate['action_accuracy']:.1%} |",
         f"| Memory payload accuracy | {aggregate['memory_payload_accuracy']:.1%} |",
-        f"| Exact canonical key accuracy | {aggregate['exact_canonical_key_accuracy']:.1%} |",
+        f"| Exact gold-key alias match | {aggregate['exact_canonical_key_accuracy']:.1%} |",
+        f"| Lifecycle key stability | {aggregate['lifecycle_key_stability']:.1%} |",
+        f"| Qwen receipt coverage | {aggregate['qwen_receipt_coverage']:.1%} |",
+        f"| Qwen tokens recorded | {aggregate['qwen_total_tokens']:,} |",
         f"| Critical memory recall | {aggregate['critical_memory_recall']:.1%} |",
         f"| Forbidden memory leak rate | {aggregate['forbidden_memory_leak_rate']:.1%} |",
         f"| Token budget compliance | {aggregate['token_budget_compliance']:.1%} |",

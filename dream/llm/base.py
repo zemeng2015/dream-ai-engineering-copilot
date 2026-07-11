@@ -5,11 +5,24 @@ from typing import Protocol
 from pydantic import BaseModel, Field
 
 
+class LLMReceipt(BaseModel):
+    schema_version: str = "llm-receipt-v1"
+    endpoint_host: str
+    request_sha256: str
+    response_sha256: str
+    requested_at: str
+    completed_at: str
+    latency_ms: int = Field(ge=0)
+    provider_request_id: str | None = None
+    response_id: str | None = None
+
+
 class LLMResponse(BaseModel):
     text: str
     model_name: str
     provider_name: str
     token_usage: dict[str, int] | None = Field(default=None)
+    receipt: LLMReceipt | None = None
 
 
 class LLMRequest(BaseModel):

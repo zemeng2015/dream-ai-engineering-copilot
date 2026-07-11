@@ -117,6 +117,10 @@ interface ApiQwenCloudExperienceBenchmark {
   token_budget_compliance: number;
   memory_payload_accuracy: number;
   exact_canonical_key_accuracy: number;
+  lifecycle_key_stability: number;
+  qwen_receipt_coverage: number;
+  qwen_receipt_count: number;
+  qwen_total_tokens: number;
   overall_score: number;
   report_path?: string | null;
   limitations: string[];
@@ -159,6 +163,18 @@ interface ApiExperienceMemory {
   correctness_total: number;
 }
 
+interface ApiLlmReceipt {
+  schema_version: string;
+  endpoint_host: string;
+  request_sha256: string;
+  response_sha256: string;
+  requested_at: string;
+  completed_at: string;
+  latency_ms: number;
+  provider_request_id?: string | null;
+  response_id?: string | null;
+}
+
 interface ApiExperienceDecision {
   decision_id: string;
   team_id: string;
@@ -172,6 +188,7 @@ interface ApiExperienceDecision {
   provider_name: string;
   model_name: string;
   token_usage?: Record<string, number> | null;
+  llm_receipt?: ApiLlmReceipt | null;
   created_at: string;
 }
 
@@ -1485,6 +1502,10 @@ export interface QwenCloudExperienceBenchmark {
   criticalMemoryRecall: number;
   forbiddenMemoryLeakRate: number;
   tokenBudgetCompliance: number;
+  lifecycleKeyStability: number;
+  qwenReceiptCoverage: number;
+  qwenReceiptCount: number;
+  qwenTotalTokens: number;
   overallScore: number;
   reportPath: string | null;
   limitations: string[];
@@ -1531,7 +1552,20 @@ export interface ExperienceDecision {
   providerName: string;
   modelName: string;
   tokenUsage: Record<string, number> | null;
+  llmReceipt: LlmReceipt | null;
   createdAt: string;
+}
+
+export interface LlmReceipt {
+  schemaVersion: string;
+  endpointHost: string;
+  requestSha256: string;
+  responseSha256: string;
+  requestedAt: string;
+  completedAt: string;
+  latencyMs: number;
+  providerRequestId: string | null;
+  responseId: string | null;
 }
 
 export interface ExperienceCaptureInput {
@@ -2405,6 +2439,10 @@ function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloud
       criticalMemoryRecall: response.experience_benchmark.critical_memory_recall,
       forbiddenMemoryLeakRate: response.experience_benchmark.forbidden_memory_leak_rate,
       tokenBudgetCompliance: response.experience_benchmark.token_budget_compliance,
+      lifecycleKeyStability: response.experience_benchmark.lifecycle_key_stability,
+      qwenReceiptCoverage: response.experience_benchmark.qwen_receipt_coverage,
+      qwenReceiptCount: response.experience_benchmark.qwen_receipt_count,
+      qwenTotalTokens: response.experience_benchmark.qwen_total_tokens,
       overallScore: response.experience_benchmark.overall_score,
       reportPath: response.experience_benchmark.report_path ?? null,
       limitations: response.experience_benchmark.limitations,
@@ -2460,6 +2498,19 @@ function mapExperienceDecision(decision: ApiExperienceDecision): ExperienceDecis
     providerName: decision.provider_name,
     modelName: decision.model_name,
     tokenUsage: decision.token_usage ?? null,
+    llmReceipt: decision.llm_receipt
+      ? {
+          schemaVersion: decision.llm_receipt.schema_version,
+          endpointHost: decision.llm_receipt.endpoint_host,
+          requestSha256: decision.llm_receipt.request_sha256,
+          responseSha256: decision.llm_receipt.response_sha256,
+          requestedAt: decision.llm_receipt.requested_at,
+          completedAt: decision.llm_receipt.completed_at,
+          latencyMs: decision.llm_receipt.latency_ms,
+          providerRequestId: decision.llm_receipt.provider_request_id ?? null,
+          responseId: decision.llm_receipt.response_id ?? null,
+        }
+      : null,
     createdAt: decision.created_at,
   };
 }

@@ -9,19 +9,20 @@ budget-excluded values.
 
 ## Run Configuration
 
-- Run ID: `20260710T045527Z`
+- Run ID: `20260711T023241Z`
 - Provider: `qwen-cloud`
 - Model: `qwen3.7-plus`
 - Temperature: `0`
 - Cases: `24`
 - Curator decisions: `37`
-- Qwen token usage: `28,730` total (`24,872` prompt, `3,858` completion)
-- Runtime: `122.365` seconds
+- Qwen token usage: `28,694` total (`24,874` prompt, `3,820` completion)
+- Runtime: `127.306` seconds
 - Dataset: `examples/experience-benchmark/scenarios.yaml`
 - Full report: `docs/assets/qwen-experience-memory-benchmark-report.json`
 
-No credentials, workspace URL, or secret-bearing model input is included in the
-public report.
+Every decision includes a safe receipt with provider/response IDs, endpoint
+host, timestamps, latency, token usage, and SHA-256 request/response hashes. No
+credentials or raw secret-bearing model input is included in the public report.
 
 ## Results
 
@@ -34,7 +35,9 @@ public report.
 | Forbidden memory leak rate | 0.0% |
 | Token-budget compliance | 100.0% |
 | Semantic payload diagnostic | 100.0% |
-| Exact canonical key diagnostic | 51.3% |
+| Exact gold-key alias diagnostic | 45.9% |
+| Lifecycle key stability | 100.0% |
+| Qwen receipt coverage | 37 / 37 |
 | Weighted score | 100.0 / 100 |
 | Stateless carryover recall | 0.0% |
 
@@ -56,12 +59,29 @@ A lifecycle case passes when:
 3. The required memory identity is present in budgeted recall.
 4. No forbidden old, expired, forgotten, or low-priority value is recalled.
 5. Estimated context use remains within the requested token budget.
+6. The Qwen response has a safe provider receipt.
 
-Payload and canonical-key metrics are deliberately reported separately. Qwen
+Exact-key matching is deliberately reported separately. Qwen
 can preserve the correct meaning while choosing a longer value or a different
-snake_case key. Semantic payload coverage contributes 10% of the weighted score;
-exact canonical-key accuracy is an unweighted diagnostic and does not turn a
-correct memory lifecycle into a failed case.
+snake_case key. Semantic payload coverage is required for case pass and
+contributes 10% of the weighted score; exact gold-key alias matching is an
+unweighted diagnostic and does not turn a correct memory lifecycle into a
+failed case.
+
+## Three-Run Stability
+
+The full 24-case suite was repeated three times with fresh Qwen requests:
+
+| Metric | Result |
+|---|---:|
+| Full runs passed | 3 / 3 |
+| Consistently passed cases | 24 / 24 |
+| Step proposal/action agreement | 100.0% |
+| Qwen receipt coverage | 111 / 111 |
+| Qwen tokens recorded | 86,147 |
+
+The machine-readable evidence is in
+`docs/assets/qwen-experience-memory-stability-report.json`.
 
 The weighted score is:
 
@@ -88,6 +108,12 @@ Run the same natural-language cases through Qwen Cloud:
 python scripts/qwencloud_experience_memory_benchmark.py --policy qwen-cloud
 ```
 
+Repeat the full suite three times and measure action stability:
+
+```powershell
+python scripts/qwencloud_experience_memory_stability.py --runs 3
+```
+
 Recompute scoring from a captured report without another model call:
 
 ```powershell
@@ -98,7 +124,8 @@ python scripts/qwencloud_experience_memory_benchmark.py `
 ## Limitations
 
 - The cases are synthetic and do not establish production effectiveness.
-- One deterministic Qwen completion was used per curator step.
+- The headline report uses one Qwen completion per curator step; the stability
+  report repeats every step three times.
 - Token-based semantic scoring does not replace human evaluation.
 - The stateless comparison is intentionally narrow: without persistent state,
   cross-session carryover recall is zero by definition.

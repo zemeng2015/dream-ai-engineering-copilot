@@ -147,6 +147,10 @@ class QwenCloudExperienceBenchmark(BaseModel):
     token_budget_compliance: float = 0
     memory_payload_accuracy: float = 0
     exact_canonical_key_accuracy: float = 0
+    lifecycle_key_stability: float = 0
+    qwen_receipt_coverage: float = 0
+    qwen_receipt_count: int = 0
+    qwen_total_tokens: int = 0
     report_path: str | None = None
     methodology_path: str | None = None
     limitations: list[str] = Field(default_factory=list)
@@ -451,8 +455,10 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
                 state="measured",
                 proof_paths=[
                     "docs/assets/qwen-experience-memory-benchmark-summary.json",
+                    "docs/assets/qwen-experience-memory-stability-report.json",
                     "examples/experience-benchmark/scenarios.yaml",
                     "scripts/qwencloud_experience_memory_benchmark.py",
+                    "scripts/qwencloud_experience_memory_stability.py",
                     "tests/test_qwencloud_experience_memory_benchmark.py",
                 ],
             ),
@@ -540,6 +546,19 @@ def _qwen_experience_benchmark_summary() -> QwenCloudExperienceBenchmark:
             memory_payload_accuracy=float(aggregate["memory_payload_accuracy"]),
             exact_canonical_key_accuracy=float(
                 aggregate["exact_canonical_key_accuracy"]
+            ),
+            lifecycle_key_stability=float(
+                aggregate.get("lifecycle_key_stability", 0)
+            ),
+            qwen_receipt_coverage=float(
+                aggregate.get("qwen_receipt_coverage", 0)
+            ),
+            qwen_receipt_count=int(aggregate.get("qwen_receipt_count", 0)),
+            qwen_total_tokens=int(
+                aggregate.get(
+                    "qwen_total_tokens",
+                    data.get("token_usage", {}).get("total_tokens", 0),
+                )
             ),
             report_path=str(data["report_path"]),
             methodology_path=str(data["methodology_path"]),

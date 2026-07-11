@@ -89,23 +89,33 @@
         </blockquote>
         <dl class="session-facts">
           <div>
-            <dt>Qwen action</dt>
+            <dt>Qwen proposal</dt>
+            <dd>{{ firstCapture()?.decision?.requestedAction ?? 'pending' }}</dd>
+          </div>
+          <div>
+            <dt>DREAM action</dt>
             <dd>{{ firstCapture()?.decision?.action ?? 'pending' }}</dd>
           </div>
           <div>
             <dt>Memory kind</dt>
             <dd>{{ firstCapture()?.memory?.kind ?? 'pending' }}</dd>
           </div>
-          <div>
-            <dt>Importance</dt>
-            <dd>{{ firstCapture()?.memory?.importance ?? '—' }}</dd>
-          </div>
         </dl>
         @if (firstCapture(); as capture) {
           <p class="decision-rationale">{{ capture.decision.rationale }}</p>
-          <small class="model-proof">
-            {{ capture.decision.modelName }} · {{ decisionTokens(capture.decision) }}
-          </small>
+          <div class="llm-receipt" aria-label="Qwen Cloud request receipt">
+            <strong>Qwen Cloud receipt</strong>
+            <span>{{ receiptReference(capture.decision) }}</span>
+            <small>
+              {{ capture.decision.llmReceipt?.endpointHost }} ·
+              {{ capture.decision.llmReceipt?.latencyMs }} ms ·
+              {{ decisionTokens(capture.decision) }}
+            </small>
+            <code>
+              req {{ shortHash(capture.decision.llmReceipt?.requestSha256) }} / res
+              {{ shortHash(capture.decision.llmReceipt?.responseSha256) }}
+            </code>
+          </div>
         }
       </article>
 
@@ -120,12 +130,12 @@
         </blockquote>
         <dl class="session-facts">
           <div>
-            <dt>Qwen action</dt>
-            <dd>{{ secondCapture()?.decision?.action ?? 'pending' }}</dd>
+            <dt>Qwen proposal</dt>
+            <dd>{{ secondCapture()?.decision?.requestedAction ?? 'pending' }}</dd>
           </div>
           <div>
-            <dt>Old status</dt>
-            <dd>{{ oldMemory()?.status ?? 'pending' }}</dd>
+            <dt>DREAM action</dt>
+            <dd>{{ secondCapture()?.decision?.action ?? 'pending' }}</dd>
           </div>
           <div>
             <dt>Active count</dt>
@@ -134,9 +144,19 @@
         </dl>
         @if (secondCapture(); as capture) {
           <p class="decision-rationale">{{ capture.decision.rationale }}</p>
-          <small class="model-proof">
-            {{ capture.decision.providerName }} / {{ capture.decision.modelName }}
-          </small>
+          <div class="llm-receipt" aria-label="Qwen Cloud request receipt">
+            <strong>Qwen Cloud receipt</strong>
+            <span>{{ receiptReference(capture.decision) }}</span>
+            <small>
+              {{ capture.decision.modelName }} ·
+              {{ capture.decision.llmReceipt?.latencyMs }} ms ·
+              {{ decisionTokens(capture.decision) }}
+            </small>
+            <code>
+              req {{ shortHash(capture.decision.llmReceipt?.requestSha256) }} / res
+              {{ shortHash(capture.decision.llmReceipt?.responseSha256) }}
+            </code>
+          </div>
         }
       </article>
 

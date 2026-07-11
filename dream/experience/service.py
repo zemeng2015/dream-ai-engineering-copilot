@@ -142,6 +142,7 @@ class ExperienceMemoryService:
             provider_name=policy_result.provider_name,
             model_name=policy_result.model_name,
             token_usage=policy_result.token_usage,
+            llm_receipt=policy_result.llm_receipt,
             created_at=current.isoformat(),
         )
         self.repository.append_decision(decision)

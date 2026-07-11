@@ -9,6 +9,8 @@ from dream.llm.qwen_cloud import QWEN_CLOUD_BASE_URL, QwenCloudProvider
 
 
 class FakeQwenResponse:
+    headers = {"x-request-id": "dashscope-request-123"}
+
     def __enter__(self) -> "FakeQwenResponse":
         return self
 
@@ -18,6 +20,7 @@ class FakeQwenResponse:
     def read(self) -> bytes:
         return json.dumps(
             {
+                "id": "chatcmpl-qwen-test-123",
                 "model": "qwen3.7-plus",
                 "choices": [{"message": {"content": "DREAM_QWEN_OK governed memory"}}],
                 "usage": {"prompt_tokens": 7, "completion_tokens": 5},
@@ -61,6 +64,12 @@ def test_qwen_cloud_provider_uses_dashscope_endpoint(monkeypatch) -> None:
     assert captured["payload"]["model"] == "qwen3.7-plus"
     assert captured["payload"]["enable_thinking"] is False
     assert response.token_usage == {"prompt_tokens": 7, "completion_tokens": 5}
+    assert response.receipt is not None
+    assert response.receipt.endpoint_host == "dashscope-intl.aliyuncs.com"
+    assert response.receipt.provider_request_id == "dashscope-request-123"
+    assert response.receipt.response_id == "chatcmpl-qwen-test-123"
+    assert len(response.receipt.request_sha256) == 64
+    assert len(response.receipt.response_sha256) == 64
 
 
 def test_qwen_cloud_provider_supports_bounded_thinking_mode(monkeypatch) -> None:

@@ -12,7 +12,7 @@ from dream.experience import (
     LLMExperienceMemoryPolicy,
     MemoryActionProposal,
 )
-from dream.llm.base import LLMResponse
+from dream.llm.base import LLMReceipt, LLMResponse
 
 
 class StaticPolicy:
@@ -50,6 +50,16 @@ class FakeQwenProvider:
             provider_name=self.provider_name,
             model_name=self.model_name,
             token_usage={"total_tokens": 180},
+            receipt=LLMReceipt(
+                endpoint_host="dashscope-intl.aliyuncs.com",
+                request_sha256="a" * 64,
+                response_sha256="b" * 64,
+                requested_at="2026-07-10T00:00:00+00:00",
+                completed_at="2026-07-10T00:00:01+00:00",
+                latency_ms=1000,
+                provider_request_id="dashscope-test-request",
+                response_id="chatcmpl-qwen-test",
+            ),
         )
 
 
@@ -356,6 +366,8 @@ def test_qwen_memory_policy_parses_fenced_structured_action() -> None:
     assert result.proposal.kind == "preference"
     assert result.proposal.importance == 5
     assert result.token_usage == {"total_tokens": 180}
+    assert result.llm_receipt is not None
+    assert result.llm_receipt.provider_request_id == "dashscope-test-request"
 
 
 def test_qwen_memory_policy_normalizes_irrelevant_ignore_bounds() -> None:

@@ -68,6 +68,34 @@ body {
   color: var(--dream-ink);
 }
 
+.llm-receipt {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  border: 1px solid #c8d9e5;
+  border-left: 4px solid #2c6f9f;
+  background: #f4f8fb;
+  color: #64717a;
+  font-size: 10px;
+  padding: 9px 10px;
+}
+
+.llm-receipt strong {
+  color: var(--dream-navy);
+  font-size: 11px;
+}
+
+.llm-receipt span,
+.llm-receipt small,
+.llm-receipt code {
+  overflow-wrap: anywhere;
+}
+
+.llm-receipt span {
+  color: #245a7d;
+  font-weight: 700;
+}
+
 button,
 input,
 select,

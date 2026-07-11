@@ -84,6 +84,8 @@ def test_deterministic_experience_benchmark_scores_full_lifecycle() -> None:
     assert report["aggregate"]["action_accuracy"] == 1.0
     assert report["aggregate"]["critical_memory_recall"] == 1.0
     assert report["aggregate"]["forbidden_memory_leak_rate"] == 0.0
+    assert report["aggregate"]["qwen_receipt_coverage"] == 1.0
+    assert report["aggregate"]["lifecycle_key_stability"] == 1.0
     assert report["aggregate"]["overall_score"] == 100.0
 
 
@@ -146,14 +148,14 @@ def test_semantic_payload_scores_gold_concept_coverage() -> None:
     ) < 0.5
 
 
-def test_rescore_keeps_payload_drift_diagnostic_not_lifecycle_blocking() -> None:
+def test_rescore_blocks_payload_drift_from_lifecycle_pass() -> None:
     report = run_benchmark(_cases(), policy_mode="deterministic")
     report["cases"][0]["steps"][0]["memory_ok"] = False
     report["cases"][0]["passed"] = False
 
     rescored = rescore_report(report)
 
-    assert rescored["cases"][0]["passed"] is True
+    assert rescored["cases"][0]["passed"] is False
     assert rescored["cases"][0]["payload_diagnostic_pass"] is False
     assert rescored["aggregate"]["memory_payload_accuracy"] < 1.0
-    assert rescored["aggregate"]["passed_cases"] == 2
+    assert rescored["aggregate"]["passed_cases"] == 1

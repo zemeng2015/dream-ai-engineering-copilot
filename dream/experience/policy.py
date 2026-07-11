@@ -46,6 +46,7 @@ class LLMExperienceMemoryPolicy:
             provider_name=response.provider_name,
             model_name=response.model_name,
             token_usage=response.token_usage,
+            llm_receipt=response.receipt,
         )
 
     @staticmethod

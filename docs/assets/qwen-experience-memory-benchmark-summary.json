@@ -1,29 +1,46 @@
 {
   "schema_version": "experience-benchmark-summary-v1",
-  "run_id": "20260710T045527Z",
-  "scoring_revision": "experience-lifecycle-score-v1.1",
+  "run_id": "20260711T023241Z",
+  "scoring_revision": "experience-lifecycle-score-v1.2",
   "provider": "qwen-cloud",
   "model": "qwen3.7-plus",
   "temperature": 0,
   "case_count": 24,
   "decision_count": 37,
-  "duration_seconds": 122.365,
+  "duration_seconds": 127.306,
   "token_usage": {
-    "prompt_tokens": 24872,
-    "completion_tokens": 3858,
-    "total_tokens": 28730
+    "prompt_tokens": 24874,
+    "completion_tokens": 3820,
+    "total_tokens": 28694
   },
   "aggregate": {
     "passed_cases": 24,
     "proposal_accuracy": 1.0,
     "action_accuracy": 1.0,
     "memory_payload_accuracy": 1.0,
-    "exact_canonical_key_accuracy": 0.5135,
+    "exact_canonical_key_accuracy": 0.4595,
+    "lifecycle_key_stability": 1.0,
+    "qwen_receipt_coverage": 1.0,
+    "qwen_receipt_count": 37,
+    "qwen_decision_count": 37,
+    "qwen_total_tokens": 28694,
     "critical_memory_recall": 1.0,
     "forbidden_memory_leak_rate": 0.0,
     "token_budget_compliance": 1.0,
     "stateless_baseline_carryover_recall": 0.0,
     "overall_score": 100.0
+  },
+  "stability": {
+    "run_id": "20260711T023507Z",
+    "run_count": 3,
+    "passed_run_count": 3,
+    "consistently_passed_cases": 24,
+    "step_action_agreement": 1.0,
+    "qwen_receipt_coverage": 1.0,
+    "qwen_decision_count": 111,
+    "qwen_receipt_count": 111,
+    "qwen_total_tokens": 86147,
+    "report_path": "docs/assets/qwen-experience-memory-stability-report.json"
   },
   "category_counts": {
     "cross_session_preference": 8,
@@ -39,14 +56,14 @@
     "limited_token_budget": 1.0,
     "duplicate_or_ignore": 1.0
   },
-  "case_pass_contract": "Correct curator proposal and governed action, required memory identity recalled, no forbidden value recalled, and token budget respected. Payload and exact-key metrics remain diagnostic and contribute to the weighted score.",
+  "case_pass_contract": "Correct curator proposal and governed action, semantic payload match, required memory identity recalled, no forbidden value recalled, token budget respected, and one safe provider receipt per Qwen decision. Exact gold-key alias matching remains diagnostic.",
   "dataset_path": "examples/experience-benchmark/scenarios.yaml",
   "runner_path": "scripts/qwencloud_experience_memory_benchmark.py",
   "report_path": "docs/assets/qwen-experience-memory-benchmark-report.json",
   "methodology_path": "docs/qwen-experience-memory-benchmark.md",
   "limitations": [
     "Synthetic engineering scenarios do not establish production effectiveness.",
-    "One Qwen curator decision was sampled per benchmark step.",
+    "The headline report samples one Qwen curator decision per benchmark step; the separate stability report repeats the full suite three times.",
     "The semantic payload scorer is token based and does not replace human evaluation.",
     "The stateless baseline has no cross-session memory and therefore zero carryover recall."
   ]

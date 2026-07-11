@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from dream.llm.base import LLMReceipt
+
 MemoryKind = Literal["preference", "policy", "episode"]
 MemoryStatus = Literal["active", "superseded", "expired", "forgotten"]
 MemoryAction = Literal["remember", "supersede", "forget", "ignore"]
@@ -35,6 +37,7 @@ class ExperiencePolicyResult(BaseModel):
     provider_name: str
     model_name: str
     token_usage: dict[str, int] | None = None
+    llm_receipt: LLMReceipt | None = None
 
 
 class ExperienceMemory(BaseModel):
@@ -76,6 +79,7 @@ class ExperienceDecisionRecord(BaseModel):
     provider_name: str
     model_name: str
     token_usage: dict[str, int] | None = None
+    llm_receipt: LLMReceipt | None = None
     created_at: str
 
 

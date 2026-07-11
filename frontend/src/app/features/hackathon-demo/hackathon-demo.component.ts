@@ -116,7 +116,10 @@ export class HackathonDemoComponent implements OnInit {
         label: 'Lifecycle cases',
         value: `${benchmark.lifecycleCasesPassed}/${benchmark.caseCount}`,
       },
-      { label: 'Qwen decisions', value: `${benchmark.curatorDecisionCount}` },
+      {
+        label: 'Qwen receipts',
+        value: `${benchmark.qwenReceiptCount}/${benchmark.curatorDecisionCount}`,
+      },
       { label: 'Critical recall', value: this.percent(benchmark.criticalMemoryRecall) },
       { label: 'Forbidden leak', value: this.percent(benchmark.forbiddenMemoryLeakRate) },
       { label: 'Budget compliance', value: this.percent(benchmark.tokenBudgetCompliance) },
@@ -173,10 +176,19 @@ export class HackathonDemoComponent implements OnInit {
   );
   readonly arenaPassed = computed(() => {
     const active = this.activeMemory();
+    const firstDecision = this.firstCapture()?.decision;
+    const secondDecision = this.secondCapture()?.decision;
     return (
       this.arenaStep() === 4 &&
-      this.firstCapture()?.decision.action === 'remember' &&
-      this.secondCapture()?.decision.action === 'supersede' &&
+      firstDecision?.requestedAction === 'remember' &&
+      firstDecision.action === 'remember' &&
+      firstDecision.providerName === 'qwen-cloud' &&
+      firstDecision.llmReceipt !== null &&
+      (secondDecision?.requestedAction === 'remember' ||
+        secondDecision?.requestedAction === 'supersede') &&
+      secondDecision.action === 'supersede' &&
+      secondDecision.providerName === 'qwen-cloud' &&
+      secondDecision.llmReceipt !== null &&
       this.oldMemory()?.status === 'superseded' &&
       active !== undefined &&
       this.selectedMemory()?.memoryId === active.memoryId &&
@@ -357,6 +369,18 @@ export class HackathonDemoComponent implements OnInit {
   decisionTokens(decision: ExperienceDecision | undefined): string {
     const total = decision?.tokenUsage?.['total_tokens'];
     return typeof total === 'number' ? `${total} tokens` : 'token usage recorded server-side';
+  }
+
+  receiptReference(decision: ExperienceDecision): string {
+    return (
+      decision.llmReceipt?.providerRequestId ??
+      decision.llmReceipt?.responseId ??
+      'receipt unavailable'
+    );
+  }
+
+  shortHash(value: string | undefined): string {
+    return value ? `${value.slice(0, 12)}...` : 'unavailable';
   }
 
   private resetArena(): void {

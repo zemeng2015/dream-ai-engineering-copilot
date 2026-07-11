@@ -9,6 +9,8 @@ from dream.llm.openai_compatible import OpenAICompatibleProvider
 
 
 class FakeResponse:
+    headers = {"x-request-id": "req-openai-compatible-123"}
+
     def __enter__(self) -> "FakeResponse":
         return self
 
@@ -18,6 +20,7 @@ class FakeResponse:
     def read(self) -> bytes:
         return json.dumps(
             {
+                "id": "chatcmpl-test-123",
                 "model": "demo-model",
                 "choices": [{"message": {"content": "DREAM_OK source-backed"}}],
                 "usage": {
@@ -62,3 +65,10 @@ def test_openai_compatible_provider_uses_openai_key_fallback(monkeypatch) -> Non
     assert captured["timeout"] == 5
     assert captured["payload"]["model"] == "demo-model"
     assert response.token_usage == {"prompt_tokens": 4, "completion_tokens": 3}
+    assert response.receipt is not None
+    assert response.receipt.endpoint_host == "api.openai.com"
+    assert response.receipt.provider_request_id == "req-openai-compatible-123"
+    assert response.receipt.response_id == "chatcmpl-test-123"
+    assert len(response.receipt.request_sha256) == 64
+    assert len(response.receipt.response_sha256) == 64
+    assert response.receipt.latency_ms >= 0

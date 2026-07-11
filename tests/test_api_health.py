@@ -118,6 +118,10 @@ def test_qwencloud_showcase_reports_static_evidence_without_live_backend(monkeyp
     assert payload["experience_benchmark"]["overall_score"] == 100.0
     assert payload["experience_benchmark"]["critical_memory_recall"] == 1.0
     assert payload["experience_benchmark"]["forbidden_memory_leak_rate"] == 0.0
+    assert payload["experience_benchmark"]["lifecycle_key_stability"] == 1.0
+    assert payload["experience_benchmark"]["qwen_receipt_coverage"] == 1.0
+    assert payload["experience_benchmark"]["qwen_receipt_count"] == 37
+    assert payload["experience_benchmark"]["qwen_total_tokens"] == 28694
     deployment_evidence = next(
         item
         for item in payload["evidence"]
