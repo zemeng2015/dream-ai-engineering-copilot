@@ -1117,8 +1117,8 @@ Add-Item -Name "architecture_diagram" -Path $ArchitectureUploadPath
 Add-Item -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
 Add-Item -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
 Add-Item -Name "video_thumbnail_png" -Path "docs/assets/qwencloud-video-thumbnail.png" -Required $false
-Add-Item -Name "video_thumbnail_svg" -Path "docs/assets/qwencloud-video-thumbnail.svg" -Required $false
-Add-Item -Name "video_thumbnail_export_script" -Path "scripts/qwencloud-export-video-thumbnail.ps1" -Required $false
+Add-Item -Name "video_thumbnail_v3_component" -Path "tools/submission-video-v2/src/v3/GalleryV3.tsx" -Required $false
+Add-Item -Name "video_thumbnail_v3_renderer" -Path "tools/submission-video-v2/scripts/render-v3-gallery.mjs" -Required $false
 Add-Item -Name "demo_video_captions_srt" -Path "docs/qwencloud-demo-video-captions.srt" -Required $false
 Add-Item -Name "demo_video_transcript" -Path "docs/qwencloud-demo-video-transcript.md" -Required $false
 Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false

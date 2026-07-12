@@ -16,19 +16,35 @@ def _png_dimensions(path: Path) -> tuple[int, int]:
 
 
 def test_video_thumbnail_asset_is_devpost_ready() -> None:
-    svg = ROOT / "docs" / "assets" / "qwencloud-video-thumbnail.svg"
     png = ROOT / "docs" / "assets" / "qwencloud-video-thumbnail.png"
-    exporter = ROOT / "scripts" / "qwencloud-export-video-thumbnail.ps1"
+    component = (
+        ROOT
+        / "tools"
+        / "submission-video-v2"
+        / "src"
+        / "v3"
+        / "GalleryV3.tsx"
+    )
+    renderer = (
+        ROOT
+        / "tools"
+        / "submission-video-v2"
+        / "scripts"
+        / "render-v3-gallery.mjs"
+    )
 
-    assert svg.exists()
     assert png.exists()
-    assert exporter.exists()
+    assert component.exists()
+    assert renderer.exists()
     assert _png_dimensions(png) == (1280, 720)
-    svg_text = svg.read_text(encoding="utf-8-sig")
-    assert "ONE CURRENT TRUTH" in svg_text
-    assert "24 / 24" in svg_text
-    assert "0% LEAK" in svg_text
-    assert "qwen3.7-plus" in svg_text
+    component_text = component.read_text(encoding="utf-8-sig")
+    assert "DreamV3Thumbnail" in component_text
+    assert "One current truth" in component_text
+    assert "generated/arena-final.png" in component_text
+    assert "Real Qwen / Function Compute / Tablestore" in component_text
+    renderer_text = renderer.read_text(encoding="utf-8-sig")
+    assert "canonicalThumbnailPath" in renderer_text
+    assert "docs', 'assets', 'qwencloud-video-thumbnail.png" in renderer_text
 
 
 def test_video_thumbnail_is_in_publication_and_bundle_flow() -> None:
@@ -40,8 +56,9 @@ def test_video_thumbnail_is_in_publication_and_bundle_flow() -> None:
     assert "thumbnailSha256" in publication
     assert "Selecting the custom thumbnail transmits" in publication
     assert "video_thumbnail_png" in final_bundle
-    assert "video_thumbnail_svg" in final_bundle
-    assert "scripts/qwencloud-export-video-thumbnail.ps1" in handoff
+    assert "video_thumbnail_v3_component" in final_bundle
+    assert "video_thumbnail_v3_renderer" in final_bundle
+    assert "npm run gallery:v3" in handoff
 
 
 def test_browser_export_scripts_use_safe_program_files_x86_syntax() -> None:

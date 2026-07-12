@@ -14,7 +14,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
-    [string]$ThumbnailPath = "artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png",
+    [string]$ThumbnailPath = "docs/assets/qwencloud-video-thumbnail.png",
     [Parameter(Mandatory = $false)]
     [string]$CaptionPath = "docs/qwencloud-demo-video-captions.srt",
     [Parameter(Mandatory = $false)]

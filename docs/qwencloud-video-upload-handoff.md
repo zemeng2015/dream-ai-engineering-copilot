@@ -42,9 +42,9 @@ Expected metadata:
 Use this optional 1280x720 thumbnail when the upload platform asks for a
 custom cover image:
 
-`artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png`
+`docs/assets/qwencloud-video-thumbnail.png`
 
-Refresh it from the source SVG with:
+Regenerate it from the V3 Remotion source with:
 
 ```powershell
 cd tools/submission-video-v2

@@ -83,7 +83,7 @@ Expected local upload file:
 
 Matching first-impression assets:
 
-- YouTube thumbnail: `artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png`
+- YouTube thumbnail: `docs/assets/qwencloud-video-thumbnail.png`
 - Devpost gallery: `artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/`
 - Gallery manifest: `devpost-gallery-v3/gallery-v3-manifest.json`
 
