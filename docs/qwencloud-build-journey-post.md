@@ -1,115 +1,239 @@
+---
+layout: default
+title: "Building DREAM: A Qwen Cloud MemoryAgent That Knows When to Forget"
+description: "How I combined Qwen semantic judgment with deterministic memory governance, measured a 23.4-point decision lift, and deployed the result on Alibaba Cloud Function Compute."
+---
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Build Journey Draft: DREAM on Qwen Cloud
+# Building DREAM: A Qwen Cloud MemoryAgent That Knows When to Forget
 
-Use this as the optional public blog or social post link for the Qwen Cloud
-Hackathon bonus. Replace the placeholders after deployment and video upload.
+Most AI assistants have two uncomfortable modes: they either forget everything
+between sessions, or they remember too much without knowing which truth is
+current.
 
-## Short Social Post
+Imagine that an engineer tells an agent, “Use a 10% canary for 30 minutes.” A
+week later, the engineer changes the rule to “Use a 20% canary for 45 minutes.”
+A naive memory system may retrieve both. A stateless assistant retrieves
+neither. In a deployment review, either failure can produce a confident but
+wrong recommendation.
 
-I built DREAM for the Qwen Cloud Hackathon as a Track 1 MemoryAgent for
-source-backed engineering intelligence.
+For the Global AI Hackathon Series with Qwen Cloud, I built **DREAM** as a
+Track 1 MemoryAgent around a stricter idea:
 
-The idea is simple: engineering teams do not just need another chatbot. They
-need an agent that remembers source truth across docs, code, incidents,
-runbooks, Jira history, PR reviews, and human-approved memory claims.
+> An agent should not merely remember more. It should maintain one current,
+> auditable truth, forget obsolete guidance on time, and recall only what fits
+> the decision budget.
 
-DREAM uses Qwen Cloud through an OpenAI-compatible provider, then wraps
-generation with deterministic retrieval, memory governance, audit logs,
-scorecards, and human review. The backend is packaged for Alibaba Cloud Function
-Compute as an ACR-free custom runtime code package, with reproducible release
-checks and public architecture proof.
+The result combines Qwen Cloud's semantic judgment with deterministic lifecycle
+governance, source provenance, constrained retrieval, feedback, and
+cryptographic request receipts. It runs publicly on Alibaba Cloud Function
+Compute.
 
-Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
-Demo video: <public video URL>
-Backend proof: <deployed /health URL>
+[Watch the 124-second demo](https://youtu.be/vh9k99YWXcQ) or
+[run the live Judge Arena](https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo).
 
-#QwenCloud #AIHackathon #MemoryAgent #AlibabaCloud #DeveloperTools #AIEngineering
+![DREAM Qwen Cloud architecture](assets/qwencloud-architecture.png)
 
-## Long Blog Draft
+## The Design Boundary That Made the System Work
 
-# Building DREAM: A Qwen Cloud MemoryAgent for Engineering Teams
+The hardest architectural decision was deciding what the model should control.
 
-For the Qwen Cloud Hackathon, I built DREAM as a Track 1 MemoryAgent focused on
-a real engineering problem: teams lose context faster than they lose code.
+Qwen is good at interpreting language. It can determine whether an observation
+is a durable preference, an operating policy, a reusable lesson, a conflict,
+an explicit forget request, or noise. But a model response alone should not be
+the database transaction that changes organizational truth.
 
-Requirements live in tickets. Architecture lives in docs. Operational truth
-lives in runbooks and incidents. Review rules live in old pull requests. Tests
-and code hold another layer of reality. When an AI assistant only sees a fresh
-prompt, it can sound fluent while missing the source-backed context that makes
-engineering decisions reliable.
+DREAM therefore separates **semantic proposal** from **governed action**:
 
-DREAM treats that context as governed memory.
+1. Qwen receives the observation and relevant active memories.
+2. Qwen returns a structured proposal: `remember`, `supersede`, `forget`, or
+   `ignore`, plus memory kind, key, value, confidence, and rationale.
+3. DREAM validates the proposal against deterministic invariants.
+4. DREAM applies the lifecycle transaction, or safely falls back when the
+   proposal is malformed or inconsistent.
+5. Recall filters inactive and expired values before ranking current memory
+   into a hard token budget.
 
-## What DREAM Does
+This boundary means Qwen supplies the understanding while DREAM supplies the
+state machine. The system can benefit from model intelligence without asking a
+probabilistic component to enforce uniqueness, expiry, or deletion guarantees.
 
-DREAM loads and indexes engineering knowledge sources such as:
+## Three Sessions, One Current Truth
 
-- runbooks and architecture docs
-- incident history
-- historical Jira and pull request notes
-- codebase files, symbols, concepts, and tests
-- approved memory claims and conflict records
+The public Judge Arena runs a fresh three-session proof:
 
-That memory is then used by workflow agents for requirement drafting, impact
-mapping, PR review assistance, context assembly, and evaluation.
+- **Session 1:** Qwen recognizes the 10% canary instruction as durable and
+  proposes `remember`.
+- **Session 2:** Qwen sees the new 20% instruction and proposes `supersede`.
+  DREAM retires the earlier value and keeps one active truth.
+- **Session 3:** With no chat history and a 64-token context budget, DREAM
+  recalls only the current 20% canary for 45 minutes. The obsolete 10% value is
+  explicitly checked for leakage.
 
-The important design choice is that memory is not magic prompt stuffing. DREAM
-keeps evidence visible. Memory can be promoted, rejected, reviewed, audited, and
-evaluated. Generated outputs are tied back to source paths and run records so a
-human reviewer can inspect why the agent said what it said.
+The UI deliberately shows “Qwen proposal” and “DREAM action” separately. It
+also shows the active/superseded ledger, budget use, selected memory, and
+feedback controls. This makes the critical logic visible instead of hiding it
+behind a chat bubble.
 
-## Where Qwen Cloud Fits
+## Proving the Calls Really Reached Qwen Cloud
 
-For the hackathon build, I added a first-class `qwen-cloud` provider that uses
-Qwen Cloud through the OpenAI-compatible API. DREAM can run with deterministic
-local behavior for tests and demos, then switch to Qwen-backed generation with:
+A polished demo can be faked accidentally by cached or seeded data, so every
+live curator decision can emit a safe receipt containing:
+
+- provider and model identity
+- provider request ID and response ID when available
+- endpoint host
+- request and response SHA-256 hashes
+- request/completion timestamps and latency
+
+The receipt never stores the API key or raw prompt. It proves that a particular
+request and response crossed the Qwen Cloud boundary while keeping sensitive
+content out of public evidence.
+
+The published lifecycle benchmark contains **37 receipts for 37 Qwen curator
+decisions**. Three repeated full runs produced **111 receipts for 111
+decisions**, with all 24 cases passing in every run.
+
+## Did Memory Actually Improve Decisions?
+
+Lifecycle correctness is necessary, but Track 1 also asks whether decisions
+become more accurate over time. I did not want to answer that with an anecdote,
+so I built a paired same-model benchmark.
+
+Both arms used `qwen3.7-plus`, temperature `0`, the same seven engineering
+requests, the same output contract, and the same deterministic scorer. The
+changed variable was the evidence available to Qwen:
+
+- **Stateless Qwen:** no organizational evidence.
+- **Qwen + DREAM:** evidence retrieved from DREAM's governed memory.
+
+| Metric | Stateless Qwen | Qwen + DREAM | Delta |
+|---|---:|---:|---:|
+| Deterministic reference score | 25.3 | 48.7 | **+23.4** |
+| Domain/risk recall | 18.8% | 43.8% | **+25.0 pp** |
+| Expected source recall | 0.0% | 40.2% | **+40.2 pp** |
+| Valid references | 0 | 105 | **+105** |
+| Unsupported references | 0 | 0 | 0 |
+
+DREAM scored higher in **7/7 paired cases**. The exact paired permutation test
+gave **p=0.0156**.
+
+This is a seven-case synthetic engineering benchmark, not a claim of production
+effectiveness. One deterministic completion per arm does not estimate sampling
+variance, and exact-term scoring misses semantic equivalence. Exact retrieval
+Recall@12 was 35.6%, which remains a measured bottleneck. Publishing those
+limitations matters: a benchmark should expose the next engineering problem,
+not only produce a winning number.
+
+## Testing Timely Forgetting and Limited Context
+
+A second benchmark focuses on memory lifecycle behavior across 24 scenarios:
+
+- durable preference carryover
+- policy and preference conflicts
+- TTL expiry
+- explicit forgetting
+- duplicate rejection
+- critical recall under small token budgets
+- exclusion of superseded, expired, and forgotten values
+
+The real Qwen run produced:
+
+| Lifecycle metric | Result |
+|---|---:|
+| Cases passed | **24/24** |
+| Qwen proposal accuracy | **100%** |
+| Governed action accuracy | **100%** |
+| Critical-memory recall | **100%** |
+| Forbidden-memory leak | **0%** |
+| Token-budget compliance | **100%** |
+| Qwen receipt coverage | **37/37** |
+
+The key lesson was that retrieval quality and lifecycle safety are different
+questions. A system can retrieve relevant items and still leak an obsolete
+truth. DREAM evaluates both.
+
+## From Personal Experience to Organizational Memory
+
+User preferences are only one memory layer. Engineering decisions also depend
+on architecture docs, code, incidents, runbooks, tickets, pull requests, and
+review rules.
+
+DREAM distills those sources into claims with source spans, hashes,
+classification, confidence, reviewer identity, and approval state. Conflicting
+or unreviewed claims are blocked before retrieval. Approved claims can then
+enter a Requirement Case, impact map, engineering brief, Jira draft, or PR
+review summary while their provenance stays attached.
+
+This is why DREAM is not designed as a generic chatbot. Its primary interface
+is a set of reviewable engineering workflows and evidence trails.
+
+## Deploying on Alibaba Cloud Function Compute
+
+The deployment journey changed the design in useful ways.
+
+I first explored Alibaba Container Registry, but the available console path was
+Enterprise Edition. To keep the public demo reproducible and avoid unnecessary
+infrastructure, I switched to an **ACR-free Function Compute code package**:
+
+- Python 3.12 dependencies are built for Linux `manylinux2014_x86_64`.
+- Angular production assets are included in the same package.
+- A custom Debian runtime starts FastAPI through a small `bootstrap` script.
+- Serverless Devs uploads the code directly to Function Compute.
+- `/health` and `/qwencloud/showcase` expose non-secret runtime evidence.
+
+The dedicated Model Studio workspace endpoint timed out from the Function
+Compute runtime, while Alibaba's official shared Singapore endpoint worked with
+the same workspace key. The deployed configuration therefore uses the shared
+Singapore endpoint and keeps the dedicated workspace URL private.
+
+The public runtime reports `qwen-cloud`, `qwen3.7-plus`, `ap-southeast-1`, the
+Function Compute service, and the checked-in deployment proof path without
+exposing credentials.
+
+## Reproducing the Evidence
+
+The repository is Apache-2.0 licensed. The most useful entry points are:
 
 ```powershell
-$env:DREAM_CONFIG_FILE="examples/config/dream.qwen.yaml"
-$env:DASHSCOPE_API_KEY="<qwen-cloud-key>"
-$env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-uvicorn dream.api.app:app --host 127.0.0.1 --port 8000
+# Lifecycle benchmark with a locally configured Qwen key
+python scripts/qwencloud_experience_memory_benchmark.py `
+  --cases examples/experience-benchmark/scenarios.yaml `
+  --policy qwen-cloud `
+  --env-file .env.qwencloud.local
+
+# Same-model paired grounding benchmark
+python scripts/qwencloud_memory_ab_benchmark.py `
+  --output-dir artifacts/qwencloud-benchmarks
+
+# Local proof and tests
+scripts/qwencloud-run-local-proof.ps1
+python -m pytest -q
 ```
 
-The public `/health` endpoint reports Track 1, `qwen-cloud`, model, deployment
-target, region, and the Alibaba Cloud proof file path without exposing secrets.
+Public evidence:
 
-## Deployment Proof
+- [Source repository](https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop)
+- [Live Judge Arena](https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo)
+- [Runtime health proof](https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/health)
+- [Machine-readable showcase](https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/qwencloud/showcase)
+- [A/B benchmark methodology](https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/qwen-memory-ab-benchmark.md)
+- [Lifecycle benchmark methodology](https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/qwen-experience-memory-benchmark.md)
+- [Alibaba deployment template](https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/deploy/alibaba/serverless-devs-runtime.yaml)
+- [Devpost submission](https://devpost.com/software/dream-qwen-cloud-memoryagent)
 
-The backend is packaged for Alibaba Cloud Function Compute as an ACR-free
-Python 3.12 code package on `custom.debian11`. The repo includes:
+## What I Would Build Next
 
-- `deploy/alibaba/serverless-devs-runtime.yaml`
-- `deploy/alibaba/README.md`
-- `scripts/qwencloud-deploy-preflight.ps1`
-- `scripts/qwencloud-hackathon-submit-gate.ps1`
+The next step is not “store more memories.” It is to improve retrieval quality
+without weakening governance: human-reviewed production scenarios, encrypted
+multi-tenant storage, semantic retrieval with exact provenance, and longer-term
+online evaluation of whether feedback improves decisions.
 
-The release audit checks local files, Serverless Devs config, required
-environment variables, the Linux code package, and a local runtime smoke test
-before the package is uploaded directly to Function Compute.
+The broader lesson is simple: useful agent memory is not a transcript database.
+It is a governed learning loop. Qwen supplies semantic judgment; deterministic
+software keeps time, truth, and accountability.
 
-## What I Learned
+---
 
-The biggest lesson from this build is that agent memory needs product-level
-controls, not just model-level intelligence. For engineering workflows, useful
-memory must be:
-
-- source-backed
-- reviewable
-- conflict-aware
-- auditable
-- small enough to fit into constrained context windows
-- safe to run in public demo mode without leaking secrets
-
-Qwen Cloud provides the reasoning layer. DREAM provides the memory governance
-and engineering workflow shell around it.
-
-## Links
-
-- Repository: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
-- Architecture: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/assets/qwencloud-architecture.svg
-- Architecture PNG: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/docs/assets/qwencloud-architecture.png
-- Deployment proof: https://github.com/zemeng2015/dream-ai-engineering-copilot/blob/codex/champion-memory-loop/deploy/alibaba/serverless-devs-runtime.yaml
-- Demo video: <public video URL>
-- Live backend: https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/
+Built for the **Global AI Hackathon Series with Qwen Cloud**, Track 1:
+MemoryAgent.
