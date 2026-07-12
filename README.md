@@ -238,7 +238,7 @@ Key submission artifacts:
 - [Qwen Cloud GitHub CI proof script](scripts/qwencloud-github-ci-proof.ps1)
 - [Qwen Cloud publish playbook](docs/qwencloud-publish-playbook.md)
 - [Qwen Cloud gap list](docs/qwencloud-gap-list.md)
-- [Qwen Cloud build journey post draft](docs/qwencloud-build-journey-post.md)
+- [Published Qwen Cloud build journey](https://zemeng2015.github.io/dream-ai-engineering-copilot/qwencloud-build-journey-post.html)
 - [Qwen Cloud testing and rights notes](docs/qwencloud-testing-and-rights-notes.md)
 - [Alibaba Cloud deployment proof](deploy/alibaba/README.md)
 - [Architecture diagram asset](docs/assets/qwencloud-architecture.svg)

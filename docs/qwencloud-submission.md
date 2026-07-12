@@ -150,5 +150,5 @@ and `deploy/alibaba/README.md` for Devpost.
 - Alibaba Cloud proof: `deploy/alibaba/serverless-devs-runtime.yaml`
 - Deploy preflight: `scripts/qwencloud-deploy-preflight.ps1`
 - Submission packet: `scripts/qwencloud-hackathon-submission-packet.ps1`
-- Blog/social bonus draft: `docs/qwencloud-build-journey-post.md`
+- Published build journey: <https://zemeng2015.github.io/dream-ai-engineering-copilot/qwencloud-build-journey-post.html>
 - Demo video: target under 3 minutes
