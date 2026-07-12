@@ -56,9 +56,26 @@ model: qwen3.7-plus
 - Showcase: <https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/qwencloud/showcase>
 
 The deployed runtime reports `qwen-cloud`, `qwen3.7-plus`,
-`ap-southeast-1`, and `Alibaba Cloud Function Compute custom runtime`. The
-automated live gate also requires a non-empty Qwen-generated requirement draft;
-the paired benchmark below intentionally makes no latency claim.
+`ap-southeast-1`, `Alibaba Cloud Function Compute custom runtime`, durable
+`tablestore` storage, and `partition-local-transaction` mode. The exact public
+runtime build is `cb6255b7a1565a631daec6215bd146f495d97df8`; benchmark claims
+below intentionally make no latency comparison.
+
+## Alibaba Cloud Durability Proof
+
+- One real Qwen-curated memory survived a same-source redeploy onto a different
+  Function Compute instance with the same memory ID, decision ID, and Qwen
+  provider request ID.
+- Twenty simultaneous public conflicting writes completed 20/20 with no errors
+  or 429s. Tablestore retained one active truth and 19 superseded histories.
+- Function Compute supplies temporary credentials through a narrow RAM execution
+  role; no deployment AccessKey is present in function configuration.
+
+Sanitized evidence:
+
+- `docs/assets/qwencloud-fc-persistence-proof-summary.json`
+- `docs/assets/qwencloud-fc-http-contention-proof-summary.json`
+- `docs/qwencloud-fc-runtime-proof.md`
 
 ## Experience Lifecycle Benchmark
 
@@ -114,10 +131,10 @@ per-case table are in `docs/qwen-memory-ab-benchmark.md`.
 2. Run the live three-session Arena.
 3. Show Qwen return `remember`, then `supersede` for a conflicting preference.
 4. Show Session 3 recall the current value in 19/64 tokens with old-value leak `no`.
-5. Record helpful/correct feedback and inspect the active/superseded ledger.
-6. Show the 24/24 reproducible lifecycle benchmark on the same page.
-7. Deep dive into approved source memory, requirement generation, context trail,
-   and audit/eval.
+5. Show the same memory, decision, and Qwen receipt after an FC instance change.
+6. Show 20/20 conflicting public writes leaving one active truth and 19 histories.
+7. Show the transparently scoped paired benchmark, lifecycle suite, and deployed
+   Qwen Cloud + Function Compute + Tablestore architecture.
 
 ## Judging Alignment
 
@@ -127,9 +144,10 @@ governance. The live demo proves cross-session conflict handling and constrained
 recall instead of presenting another stateless chatbot.
 
 Technical depth and engineering:
-FastAPI API, Angular Judge Arena, Qwen structured decisions, SQLite lifecycle
-repository, feedback ranking, token-budget recall, governed source claims,
-benchmark runner, tests, and Alibaba Cloud Function Compute deployment proof.
+FastAPI API, Angular Judge Arena, Qwen structured decisions, transactional
+Alibaba Tablestore lifecycle state, feedback ranking, token-budget recall,
+scoped temporary RAM credentials, benchmark runner, tests, and Alibaba Function
+Compute cross-instance deployment proof.
 
 Problem value and impact:
 Engineering teams lose time because AI assistants forget local history,

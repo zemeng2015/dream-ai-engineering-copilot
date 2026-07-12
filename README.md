@@ -299,10 +299,12 @@ Render the final under-3-minute Devpost upload video:
 scripts/qwencloud-render-demo-video.ps1
 ```
 
-The renderer uses the real three-session Judge Arena result, the 24/24 Qwen
-lifecycle benchmark, governed source-memory flows, and the verified Alibaba
-Function Compute proof screen. It emits a 160-second H.264/AAC video with timed
-narration and a SHA256 manifest.
+The canonical renderer delegates to the V3 Remotion pipeline. It combines a
+fresh continuous three-session Judge Arena run, real Qwen receipts, cross-instance
+Tablestore persistence, a 20/20 public contention proof, transparent synthetic
+benchmark limitations, and the verified Alibaba Function Compute architecture.
+It emits a 150-second 1080p H.264/AAC video with Qwen3-TTS narration, intentional
+silence, contact sheets, QA frames, and a SHA256 validation report.
 
 Generate the upload publication handoff with the final MP4 hash, thumbnail
 hash, title, description, tags, and action-time confirmation boundary:
@@ -424,9 +426,9 @@ scripts/qwencloud-frontend-build-proof.ps1
 Open `http://localhost:4300/`.
 
 For the Qwen Cloud submission demo, open `http://localhost:4300/hackathon-demo`
-first. It gives judges a guided route through Memory Hub, Jira drafting,
-context trail, codebase evidence, audit/eval, and the remaining external proof
-gates.
+first. It gives judges the focused three-session remember -> supersede -> recall
+flow with Qwen receipts, active/superseded lifecycle state, hard-budget recall,
+and runtime evidence.
 
 If local development ports are already occupied, build and serve the static
 bundle from `frontend/dist/frontend/browser` on any free local port. FastAPI

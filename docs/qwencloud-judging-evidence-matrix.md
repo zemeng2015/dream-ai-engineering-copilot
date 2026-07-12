@@ -105,8 +105,9 @@ External proof required:
 ### Technical Depth and Engineering
 
 Claim: DREAM includes provider abstraction, API/CLI surfaces, reproducible
-runtime packaging, ACR-free Alibaba Function Compute deployment, CI, proof
-automation, final readiness gates, and deterministic local verification.
+runtime packaging, Alibaba Function Compute deployment, transactional Tablestore
+durability, scoped temporary RAM credentials, CI, proof automation, final
+readiness gates, and deterministic local verification.
 
 Static evidence:
 
@@ -124,6 +125,9 @@ Static evidence:
 - `scripts/qwencloud-official-rules-gate.ps1`
 - `docs/qwencloud-architecture.md`
 - `docs/assets/qwencloud-architecture.png`
+- `docs/assets/qwencloud-fc-persistence-proof-summary.json`
+- `docs/assets/qwencloud-fc-http-contention-proof-summary.json`
+- `docs/qwencloud-fc-runtime-proof.md`
 
 External proof required:
 
@@ -168,6 +172,8 @@ Static evidence:
 - `docs/qwencloud-demo-video-transcript.md`
 - `scripts/qwencloud-frontend-build-proof.ps1`
 - `scripts/qwencloud-render-demo-video.ps1`
+- `tools/submission-video-v2/src/v3/DreamV3Full.tsx`
+- `tools/submission-video-v2/scripts/validate-v3.mjs`
 - `scripts/qwencloud-export-video-thumbnail.ps1`
 - `scripts/qwencloud-video-publication-handoff.ps1`
 - `scripts/qwencloud-video-upload-status.ps1`

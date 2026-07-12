@@ -79,6 +79,8 @@ DREAM is a source-backed MemoryAgent for engineering workflows. It unifies:
 - Qwen-curated cross-session experience (preferences, policies, and reusable lessons)
 - Governed remember / supersede / forget / ignore lifecycle decisions
 - TTL expiration, explicit forgetting, limited-context recall, and feedback ranking
+- Durable Alibaba Tablestore state with partition-local transactions that keep
+  exactly one current truth under conflicting writes
 - Knowledge packs (runbooks, incidents, architecture docs, historical Jira/PR context)
 - Codebase memory (files, symbols, concepts, tests, relationships)
 - Governed memory claims with human approval/rejection and conflict resolution
@@ -93,9 +95,27 @@ source paths for later review.
 
 - FastAPI + Typer backend with provider abstraction
 - OpenAI-compatible Qwen Cloud adapter (`qwen-cloud`)
-- Angular workbench and engineering workflow APIs
-- SQLite-based audit and eval ledgers
-- Docker-tested + Alibaba Cloud Function Compute custom runtime deployment
+- Angular Judge Arena and engineering workflow APIs
+- Alibaba Tablestore for durable governed experience, plus audit/eval ledgers
+- Docker-tested Alibaba Cloud Function Compute custom runtime deployment
+- Narrow RAM execution role with temporary, table-scoped credentials
+
+### Live Alibaba Cloud durability evidence
+
+The public Singapore runtime reports `qwen-cloud`, `qwen3.7-plus`, durable
+`tablestore` storage, and `partition-local-transaction` mode on exact build
+`cb6255b`.
+
+For the cross-instance proof, DREAM saved one real Qwen-curated memory, rebuilt
+and redeployed the same source, and verified from a different Function Compute
+instance that the same memory ID, decision ID, and Qwen provider request ID were
+still present. The sanitized proof is
+`docs/assets/qwencloud-fc-persistence-proof-summary.json`.
+
+For public HTTP contention, 20 simultaneous conflicting writes completed 20/20
+with no errors or 429s. Tablestore committed one active memory and retained 19
+superseded historical versions. The sanitized proof is
+`docs/assets/qwencloud-fc-http-contention-proof-summary.json`.
 
 ### Measured Qwen + DREAM evidence
 
@@ -157,7 +177,7 @@ from feedback, and enters later prompts under a controlled context budget.
 
 ## Video link
 
-Render and upload the <3-minute demo video:
+Render and upload the 150-second V3 demo video:
 
 ```powershell
 scripts/qwencloud-render-demo-video.ps1
@@ -169,10 +189,10 @@ Local upload file:
 
 The video covers:
 
-1) /health proof (Track 1 + qwen-cloud + model + proof file)
-2) Memory Hub intake + claim review
-3) Requirement case to brief/Jira draft
-4) Audit/eval with a human rating action
+1) a concrete stale-rollout failure and the Qwen/DREAM responsibility boundary
+2) a continuous public remember -> supersede -> recall run with real Qwen receipts
+3) cross-instance Tablestore persistence and the 20/20 public contention proof
+4) a transparently limited paired benchmark and the deployed Alibaba architecture
 
 ## Add these links in description or resources section
 
@@ -209,7 +229,7 @@ hackathon.
 - Alibaba backend proof recording: `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4`
   generated with `scripts/qwencloud-render-alibaba-proof-video.ps1 -BaseUrl "<deployed-backend-url>"`
 - Blog/social journey URL: optional; use a published copy of `docs/qwencloud-build-journey-post.md` if available
-- AI tools leveraged: `Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation.`
+- AI tools leveraged: `Qwen Cloud for the runtime LLM provider, Qwen3-TTS Instruct Flash for the demo narration, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation for evidence capture, render, deploy preflight, and submission packaging.`
 - Learning level: `Significant`
 
 ### Live field IDs

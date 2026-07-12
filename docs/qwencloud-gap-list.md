@@ -51,12 +51,15 @@
   health/showcase proof and a real remember/supersede/recall flow.
 - Reproducible 7-case paired benchmark and 24-case lifecycle benchmark with
   public methodology, limitations, Qwen request receipts, and stability data.
-- Full founder-led V2 video pipeline using real browser capture and Alibaba
-  Model Studio `qwen3-tts-vc-2026-01-22` narration. The local 146.73-second
-  candidate passes codec, duration, loudness, black-frame, evidence, and hash
-  validation.
-- Four local 1800x1200 Devpost gallery candidates covering positioning, live
-  proof, measured impact, and deployed architecture.
+- Founder-led V3 video pipeline using fresh continuous browser capture and
+  Alibaba Model Studio `qwen3-tts-instruct-flash-2026-01-26` narration. The
+  150-second candidate uses 243 words, 71.05% voice occupancy, and intentional
+  2-6 second pauses; it passes codec, loudness, black-frame, cloud-evidence,
+  privacy, and SHA256 validation.
+- Four V3 1800x1200 Devpost gallery candidates covering positioning, the fresh
+  live run, cross-instance durability plus 20/20 contention, and transparent
+  measurement with the deployed architecture. A matching 1280x720 thumbnail
+  uses the real Judge Arena as its visual source.
 - Durable Alibaba Cloud Tablestore repository using a Singapore CU-mode,
   high-performance ZRS instance, zero reserved throughput, scoped RAM role,
   and partition-local transactions.
@@ -74,18 +77,21 @@
 
 ## Must Finish Before Final Submission
 
-- Obtain user approval for the full V2 candidate, upload the approved cut to
+- Obtain user approval for the full V3 candidate, upload the approved cut to
   YouTube, replace the Devpost video, and verify the embedded public result.
 - Upload the four approved public gallery images to Devpost.
 - Remove evidence drift by making the deployment metadata, live showcase,
   repository docs, final bundle, and Devpost all reference the same current
   video URL and source commit.
-- Add a human-reviewed evaluation slice beside the synthetic deterministic
-  benchmarks. Keep `+23.4`, `24/24`, and `100.0/100` explicitly scoped to their
-  published synthetic benchmark contracts.
-- Produce the concise sponsor-facing presentation deck referenced by the Qwen
-  event page, even though it is not an explicit Official Rules requirement.
 - Require a current strict final-bundle manifest during post-submit verification.
+
+## Optional After The Required Submission Refresh
+
+- Add a human-reviewed evaluation slice beside the synthetic deterministic
+  benchmarks. This is useful corroboration, but it is not required to replace
+  the stale public video.
+- Produce a concise sponsor-facing presentation deck. The Official Rules do
+  not make it a submission requirement, so it must not block final refresh.
 
 ## Current Integrity Boundaries
 

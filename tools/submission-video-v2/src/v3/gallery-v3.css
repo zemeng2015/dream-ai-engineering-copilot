@@ -1,0 +1,92 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+.g3-hero, .g3-durable, .g3-thumbnail { background: #071820; color: #fff; overflow: hidden; }
+.g3-paper { background: #f4f7f6; color: #0f2f3a; overflow: hidden; }
+.g3-grid { position: absolute; inset: 0; opacity: .12; background-image: linear-gradient(#71939c 1px, transparent 1px), linear-gradient(90deg, #71939c 1px, transparent 1px); background-size: 96px 96px; }
+.g3-brand { position: absolute; z-index: 20; top: 52px; left: 68px; display: flex; align-items: center; gap: 12px; color: #0f2f3a; }
+.g3-brand > span { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 5px; background: #43b889; color: #fff; font-size: 20px; font-weight: 900; }
+.g3-brand strong { font-size: 25px; }
+.g3-brand small { color: #678087; font-size: 15px; font-weight: 700; }
+.g3-brand.inverse { color: #fff; }
+.g3-brand.inverse small { color: #a8bec4; }
+.g3-runtime { position: absolute; z-index: 20; top: 60px; right: 68px; display: flex; align-items: center; gap: 14px; color: #587178; font-size: 14px; }
+.g3-runtime i { width: 10px; height: 10px; border-radius: 50%; background: #43b889; box-shadow: 0 0 0 6px rgba(67,184,137,.14); }
+.g3-runtime b { color: #23815e; }
+.g3-runtime span { padding-left: 14px; border-left: 1px solid #ccd9d9; font-weight: 700; }
+.g3-runtime code { font-family: Consolas, monospace; color: #678087; }
+.g3-runtime.inverse { color: #a8bec4; }
+.g3-runtime.inverse span { border-color: #34515a; }
+.g3-hero-copy { position: absolute; top: 215px; left: 110px; width: 770px; }
+.g3-hero-copy > span, .g3-durable-title > span, .g3-heading > span, .g3-measurement > span, .g3-thumbnail-copy > span { color: #7ed5b2; font-size: 18px; font-weight: 900; }
+.g3-hero-copy h1 { margin: 20px 0 0; font-size: 52px; }
+.g3-hero-copy h2 { margin: 28px 0 22px; font-family: Georgia, serif; font-size: 82px; line-height: 1.02; }
+.g3-hero-copy p { width: 670px; color: #afc4c8; font-size: 26px; line-height: 1.45; }
+.g3-hero-memory { position: absolute; top: 220px; right: 110px; width: 690px; height: 720px; }
+.g3-hero-memory section { position: absolute; width: 560px; padding: 34px 38px; background: #f4f7f6; color: #0f2f3a; box-shadow: 0 25px 70px rgba(0,0,0,.28); }
+.g3-hero-memory section.old { top: 0; left: 0; border-left: 6px solid #4778d1; }
+.g3-hero-memory section.current { top: 240px; right: 0; border-left: 6px solid #43b889; }
+.g3-hero-memory section small { color: #678087; font-size: 14px; font-weight: 900; }
+.g3-hero-memory section strong { display: block; margin-top: 16px; font-size: 38px; }
+.g3-hero-memory section span { display: block; margin-top: 8px; color: #678087; font-size: 22px; }
+.g3-hero-memory section.old i { position: absolute; left: 28px; right: 28px; top: 86px; height: 5px; background: #ed6b58; }
+.g3-hero-memory > div { position: absolute; left: 45px; right: 0; bottom: 55px; padding: 28px 32px; border: 1px solid #36515a; background: #0d2731; }
+.g3-hero-memory > div b { display: block; color: #7ed5b2; font-size: 16px; }
+.g3-hero-memory > div span { display: block; margin-top: 12px; font-family: Georgia, serif; font-size: 31px; }
+.g3-heading { position: absolute; top: 150px; left: 78px; }
+.g3-heading > span { color: #23815e; }
+.g3-heading h1 { margin: 15px 0 8px; font-family: Georgia, serif; font-size: 58px; }
+.g3-heading p { margin: 0; color: #678087; font-size: 21px; }
+.g3-sessions { position: absolute; top: 315px; left: 70px; right: 70px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.g3-session { height: 650px; padding: 18px; border-top: 6px solid; background: #fff; box-shadow: 0 18px 55px rgba(15,47,58,.12); }
+.g3-session > span { display: block; margin-bottom: 10px; font-size: 14px; font-weight: 900; }
+.g3-session img { width: 100%; height: 590px; object-fit: contain; }
+.g3-live-facts { position: absolute; left: 210px; right: 210px; bottom: 58px; display: grid; grid-template-columns: repeat(4, 1fr); background: #071820; color: #fff; }
+.g3-live-facts div { padding: 20px 24px; border-left: 1px solid #34515a; text-align: center; }
+.g3-live-facts strong { font-family: Georgia, serif; color: #7ed5b2; font-size: 34px; }
+.g3-live-facts span { display: block; margin-top: 5px; color: #a8bec4; font-size: 13px; }
+.g3-durable-title { position: absolute; top: 150px; left: 80px; }
+.g3-durable-title h1 { margin: 17px 0 14px; font-family: Georgia, serif; font-size: 68px; line-height: 1.02; }
+.g3-durable-title em { color: #7ed5b2; font-style: normal; }
+.g3-durable-title p { margin: 0; color: #a8bec4; font-size: 22px; }
+.g3-instance-row { position: absolute; top: 390px; left: 80px; right: 80px; display: grid; grid-template-columns: 1fr 240px 1fr; align-items: center; }
+.g3-instance-row section { min-height: 180px; padding: 30px; border-top: 6px solid #4778d1; background: #102b35; }
+.g3-instance-row section.current { border-color: #43b889; }
+.g3-instance-row section small { color: #8fa8ae; font-size: 13px; font-weight: 900; }
+.g3-instance-row section strong { display: block; margin-top: 15px; font-family: Georgia, serif; font-size: 34px; }
+.g3-instance-row section code { display: block; margin-top: 20px; color: #a8bec4; font-family: Consolas, monospace; font-size: 17px; }
+.g3-instance-row > div { position: relative; min-height: 110px; text-align: center; color: #a8bec4; }
+.g3-instance-row > div i { position: absolute; top: 52px; left: 12px; right: 12px; height: 2px; background: #e4ad3d; }
+.g3-instance-row > div code { position: relative; top: 75px; color: #e4ad3d; }
+.g3-ledger { position: absolute; top: 610px; left: 80px; right: 80px; display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 12px; }
+.g3-ledger code { padding: 18px; border-left: 4px solid #43b889; background: #0d2731; color: #a8bec4; font-family: Consolas, monospace; font-size: 16px; }
+.g3-contention { position: absolute; left: 80px; right: 80px; bottom: 72px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.g3-contention div { padding: 24px; border-top: 5px solid #4778d1; background: #102b35; }
+.g3-contention div.active { border-color: #43b889; background: #123a33; }
+.g3-contention strong { font-family: Georgia, serif; font-size: 48px; }
+.g3-contention span { display: block; margin-top: 7px; color: #a8bec4; font-size: 14px; }
+.g3-contention p { grid-column: 1 / -1; margin: 0; padding: 15px 18px; border-left: 4px solid #e4ad3d; background: #0d2731; color: #a8bec4; font-size: 15px; }
+.g3-heading.evidence h1 { font-size: 52px; }
+.g3-architecture { position: absolute; top: 315px; left: 55px; width: 980px; height: 760px; }
+.g3-architecture img { width: 100%; height: 100%; object-fit: contain; }
+.g3-measurement { position: absolute; top: 320px; right: 75px; width: 650px; }
+.g3-measurement > span { color: #b74f41; }
+.g3-measurement h2 { margin: 18px 0 40px; font-family: Georgia, serif; font-size: 50px; line-height: 1.05; }
+.g3-score { display: grid; grid-template-columns: 170px 75px 1fr; gap: 14px; align-items: center; margin-bottom: 22px; }
+.g3-score b { color: #678087; font-size: 15px; }
+.g3-score strong { font-family: Georgia, serif; font-size: 34px; }
+.g3-score i { height: 48px; overflow: hidden; background: #dfe7e6; }
+.g3-score i em { display: block; height: 100%; background: #87999e; }
+.g3-score.dream strong { color: #23815e; }
+.g3-score.dream i em { background: #43b889; }
+.g3-delta { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 15px; margin-top: 36px; padding: 20px 22px; border: 2px solid #43b889; background: #fff; }
+.g3-delta strong { color: #23815e; font-family: Georgia, serif; font-size: 46px; }
+.g3-delta span { color: #678087; font-weight: 800; }
+.g3-delta b { padding: 8px 10px; background: #dff3ea; color: #23815e; }
+.g3-measurement p { margin-top: 30px; padding: 18px; border-left: 4px solid #ed6b58; background: #fff; color: #678087; font-size: 16px; line-height: 1.45; }
+.g3-thumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; opacity: .3; }
+.g3-thumbnail-shade { position: absolute; inset: 0; background: rgba(7,24,32,.58); }
+.g3-thumbnail .g3-brand { top: 34px; left: 42px; transform: scale(.82); transform-origin: left top; }
+.g3-thumbnail-copy { position: absolute; top: 145px; left: 70px; width: 730px; }
+.g3-thumbnail-copy h1 { margin: 12px 0 0; font-size: 58px; }
+.g3-thumbnail-copy h2 { margin: 17px 0 18px; font-family: Georgia, serif; font-size: 67px; line-height: 1.02; }
+.g3-thumbnail-copy p { margin: 0; color: #b8cccf; font-size: 22px; font-weight: 700; }

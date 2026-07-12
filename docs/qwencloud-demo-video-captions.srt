@@ -1,47 +1,99 @@
 1
-00:00:00,000 --> 00:00:07,000
-Most AI assistants start every session from zero.
+00:00:00,000 --> 00:00:03,667
+I changed a rollout from ten percent to twenty.
 
 2
-00:00:07,000 --> 00:00:15,000
-DREAM gives Qwen durable experience while deterministic governance controls conflicts, forgetting, budgets, provenance, and feedback.
+00:00:03,667 --> 00:00:05,500
+The scary part?
 
 3
-00:00:15,000 --> 00:00:26,000
-This is one continuous live run. Qwen Cloud recognizes a durable preference and returns remember with a provider receipt.
+00:00:05,500 --> 00:00:08,500
+An agent can confidently bring back the old answer.
 
 4
-00:00:26,000 --> 00:00:37,000
-When the preference changes, Qwen proposes supersede. DREAM retires the stale truth and recalls only the current value under 64 tokens.
+00:00:08,500 --> 00:00:11,200
+In production, stale truth is worse than no memory.
 
 5
-00:00:37,000 --> 00:00:51,000
-In a same-model paired benchmark, Qwen plus DREAM scores 48.7 versus 25.3 without memory, winning all seven cases with a 23.4 point lift.
+00:00:16,000 --> 00:00:19,667
+So I built DREAM.
 
 6
-00:00:51,000 --> 00:01:05,000
-Across 24 lifecycle cases and 37 real Qwen receipts, every case passes, forbidden leakage is zero, and token-budget compliance is 100 percent.
+00:00:19,667 --> 00:00:24,733
+Qwen understands what experience means; deterministic lifecycle rules decide what can come back.
 
 7
-00:01:05,000 --> 00:01:13,000
-Organizational claims retain source proof and human approval.
+00:00:27,000 --> 00:00:29,500
+This is the public build.
 
 8
-00:01:13,000 --> 00:01:21,000
-Unresolved conflicts are blocked before retrieval, not merely labeled after generation.
+00:00:29,500 --> 00:00:32,733
+It is running in Singapore, on Alibaba Function Compute.
 
 9
-00:01:21,000 --> 00:01:33,000
-Approved truth enters the requirement case, impact map, engineering brief, and Jira draft with reviewer and source provenance attached.
+00:00:35,000 --> 00:00:39,000
+First, I set the canary at ten percent, for thirty minutes.
 
 10
-00:01:33,000 --> 00:01:45,000
-DREAM runs publicly on Alibaba Cloud Function Compute in Singapore with qwen3.7-plus and verifiable runtime metadata.
+00:00:39,000 --> 00:00:41,167
+Qwen recognizes the preference.
 
 11
-00:01:45,000 --> 00:01:54,000
-The benchmark, tests, architecture, deployment template, and proof artifacts are public and reproducible.
+00:00:41,167 --> 00:00:43,567
+It gives me an inspectable receipt.
 
 12
-00:01:54,000 --> 00:02:04,000
-DREAM helps Qwen remember the right experience, replace old truth, forget safely, and explain every selected memory.
+00:00:47,000 --> 00:00:51,167
+Then I change it to twenty percent for forty-five minutes.
+
+13
+00:00:51,167 --> 00:00:55,333
+Qwen catches the conflict; DREAM keeps only the new value active.
+
+14
+00:01:00,000 --> 00:01:04,833
+In a fresh session, DREAM returns twenty percent in nineteen of sixty-four tokens.
+
+15
+00:01:04,833 --> 00:01:07,767
+The old instruction never enters context.
+
+16
+00:01:12,000 --> 00:01:15,000
+The test I cared about was persistence.
+
+17
+00:01:15,000 --> 00:01:22,667
+I saved a Qwen-curated memory, rebuilt the same source, and forced a new Function Compute instance.
+
+18
+00:01:22,667 --> 00:01:28,167
+The instance ID changed; the memory, decision, and Qwen receipt did not.
+
+19
+00:01:28,167 --> 00:01:33,933
+Twenty simultaneous conflicting writes also succeeded, leaving one active truth and nineteen historical versions.
+
+20
+00:01:40,000 --> 00:01:48,667
+In a clearly labeled synthetic evaluation, the same Qwen model improved from 25.3 to 48.7 across seven paired cases.
+
+21
+00:01:48,667 --> 00:01:57,600
+A separate twenty-four-case lifecycle suite passed every recall, stale-leak, and token-budget check.
+
+22
+00:02:00,000 --> 00:02:04,833
+Underneath: Angular and FastAPI on Function Compute; Qwen Cloud for meaning;
+
+23
+00:02:04,833 --> 00:02:10,333
+Tablestore transactions for one current truth; and temporary credentials from a narrow RAM role.
+
+24
+00:02:17,000 --> 00:02:20,000
+I do not want longer history.
+
+25
+00:02:20,000 --> 00:02:23,433
+I want one current, reviewable truth, for the next decision.

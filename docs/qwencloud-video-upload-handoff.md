@@ -18,10 +18,10 @@ scripts/qwencloud-video-publication-handoff.ps1
 scripts/qwencloud-video-upload-status.ps1 -AllowDraft
 ```
 
-The render command also writes `artifacts/qwencloud-proof/demo-video-render-*.md`
-and `.json` manifests with the final MP4 duration, resolution, codec, SHA256,
-and source asset hashes. Use the SHA256 to confirm the uploaded video came from
-the reviewed local file.
+The render command also writes a V3 validation JSON, contact sheet, narration
+manifest, capture manifest, and 12 QA frames under
+`artifacts/qwencloud-proof/video-v3/`. Use the SHA256 in the validation JSON to
+confirm the uploaded video came from the reviewed local file.
 
 The publication handoff command writes `video-publication-handoff-*.md` and
 `.json` with the final upload title, description, tags, local MP4 SHA256, and
@@ -30,27 +30,32 @@ third-party upload page.
 
 Expected metadata:
 
-- Duration: about 2:41 and under the 3-minute limit.
-- Resolution: at least 1280x720.
-- Format: MP4/H.264.
-- Story: live `remember -> supersede -> 19/64-token recall`, 24/24 lifecycle
-  benchmark, governed source memory, and verified Alibaba deployment proof.
+- Duration: 2:30 and under the 3-minute limit.
+- Resolution: 1920x1080.
+- Format: MP4/H.264 with 48 kHz stereo AAC.
+- Story: stale-rollout hook, continuous `remember -> supersede -> 19/64-token
+  recall`, cross-instance Tablestore durability, 20/20 public contention,
+  transparent synthetic measurement, and verified Alibaba architecture.
 
 ## Custom Thumbnail
 
 Use this optional 1280x720 thumbnail when the upload platform asks for a
 custom cover image:
 
-`docs/assets/qwencloud-video-thumbnail.png`
+`artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png`
 
 Refresh it from the source SVG with:
 
 ```powershell
-scripts/qwencloud-export-video-thumbnail.ps1
+cd tools/submission-video-v2
+npm run gallery:v3
 ```
 
 The publication handoff includes the thumbnail path and SHA256 next to the MP4
 hash, so the selected upload assets can be checked against the final bundle.
+
+The same command writes the four reviewed 1800x1200 Devpost gallery images to
+`artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/` with a SHA256 manifest.
 
 ## Captions
 
@@ -96,13 +101,17 @@ account/channel and visibility at action time before selecting any file.
 Title:
 
 ```text
-DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence
+DREAM MemoryAgent: One Current Truth Across Qwen Sessions | Qwen Cloud
 ```
 
 Description:
 
 ```text
-DREAM is a Qwen Cloud Track 1 MemoryAgent for source-backed engineering intelligence. It uses persistent, governed engineering memory, Qwen Cloud generation, and Alibaba Cloud deployment proof to turn codebase docs, incidents, and review context into auditable requirement and review outputs.
+DREAM is a Qwen Cloud Track 1 MemoryAgent that prevents stale cross-session guidance from quietly returning. Qwen understands whether experience should be remembered or superseded; DREAM and Alibaba Tablestore enforce one current, reviewable truth under a hard context budget.
+
+The public Singapore Function Compute build shows real Qwen receipts, durable recall after an FC instance replacement, and 20/20 successful conflicting writes with one active truth and 19 historical versions. The video also reports a transparently limited seven-case synthetic comparison: the same qwen3.7-plus model improved from 25.3 to 48.7 with DREAM (+23.4, 7/7 wins; Recall@12 remains 35.6%).
+
+Live demo: https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo
 
 Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
 Track: Track 1: MemoryAgent
@@ -111,7 +120,7 @@ Track: Track 1: MemoryAgent
 Optional tags:
 
 ```text
-Qwen Cloud, Alibaba Cloud, MemoryAgent, AI engineering, source-backed memory, hackathon
+Qwen Cloud, Alibaba Cloud, MemoryAgent, Tablestore, Function Compute, governed AI memory, hackathon
 ```
 
 ## Chrome Upload Troubleshooting

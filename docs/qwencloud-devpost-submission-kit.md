@@ -81,18 +81,35 @@ Expected local upload file:
 
 `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`
 
+Matching first-impression assets:
+
+- YouTube thumbnail: `artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png`
+- Devpost gallery: `artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/`
+- Gallery manifest: `devpost-gallery-v3/gallery-v3-manifest.json`
+
+Regenerate both from the V3-only Remotion entry with:
+
+```powershell
+cd tools/submission-video-v2
+npm run gallery:v3
+```
+
 Use `docs/qwencloud-video-upload-handoff.md` plus the latest
 `video-publication-handoff-*.md` report for the public upload title,
 description, accepted video platforms, visibility check, local MP4 SHA256,
 caption SHA256, and Chrome file upload troubleshooting.
 
-Recommended 4-shot order:
+V3 story order:
 
-1. `/hackathon-demo`: run the live three-session remember -> supersede -> recall Arena.
-2. Show the active/superseded ledger, 19/64-token recall, zero old-value leak,
-   feedback confirmation, and 24/24 benchmark on the same page.
-3. Seeded Memory Hub approval plus Requirement Case evidence propagation.
-4. Context trail, audit/eval, and Alibaba `/health` runtime proof.
+1. Make the stale-memory failure concrete: the rollout changed from 10% to 20%,
+   but an agent can still recall 10%.
+2. Run `/hackathon-demo` continuously: remember -> supersede -> fresh-session
+   recall, with Qwen receipts, one active truth, 19/64 tokens, and no old-value leak.
+3. Show the cloud proof: the same memory, decision, and Qwen receipt survive a
+   Function Compute instance replacement; 20/20 public conflicting writes leave
+   one active truth and 19 historical versions.
+4. Close with the transparently limited synthetic benchmark and the deployed
+   Qwen Cloud + Function Compute + Tablestore + RAM-role architecture.
 
 ## 4) Deployability Proof
 

@@ -14,7 +14,7 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$DemoVideoUrl = "",
     [Parameter(Mandatory = $false)]
-    [string]$ThumbnailPath = "docs/assets/qwencloud-video-thumbnail.png",
+    [string]$ThumbnailPath = "artifacts/qwencloud-proof/video-v3/dream-v3-thumbnail.png",
     [Parameter(Mandatory = $false)]
     [string]$CaptionPath = "docs/qwencloud-demo-video-captions.srt",
     [Parameter(Mandatory = $false)]
@@ -37,9 +37,12 @@ if ([string]::IsNullOrWhiteSpace($Description)) {
     $Description = @"
 DREAM gives Qwen governed cross-session experience. In three live sessions, Qwen remembers a durable preference, supersedes stale guidance, and recalls only the current truth in 19 of 64 tokens without leaking the old value.
 
-The reproducible benchmark runs 37 real Qwen curator decisions across 24 lifecycle cases: 24/24 passed, critical recall is 100%, forbidden leak is 0%, and token-budget compliance is 100%. Approved organizational claims retain reviewer and source provenance before entering requirement and Jira workflows.
+The persistence proof rebuilds the same source onto a different Function Compute instance while preserving the same memory, decision, and Qwen provider receipt in Alibaba Tablestore. A public 20-request contention run completed 20/20 writes with one active truth, 19 historical versions, and no errors.
 
-Runtime: Alibaba Cloud Function Compute, qwen3.7-plus, ap-southeast-1.
+In a clearly labeled seven-case synthetic comparison, the same qwen3.7-plus model improved from 25.3 to 48.7 with DREAM (+23.4, 7/7 paired wins). A separate lifecycle suite passed 24/24 cases across recall, stale-leak, and token-budget checks. These are reproducible synthetic results, not production-effectiveness claims.
+
+Runtime: Alibaba Cloud Function Compute + Qwen Cloud + Alibaba Tablestore, ap-southeast-1.
+Live judge flow: https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run/hackathon-demo
 
 Repo: https://github.com/zemeng2015/dream-ai-engineering-copilot/tree/codex/champion-memory-loop
 Track: Track 1: MemoryAgent
@@ -114,7 +117,10 @@ $captionExists = Test-Path -LiteralPath $CaptionPath
 $resolvedCaptionPath = if ($captionExists) { (Resolve-Path -LiteralPath $CaptionPath).Path } else { $CaptionPath }
 $captionSha256 = Get-FileSha256 -Path $CaptionPath
 $metadata = Get-VideoMetadata -Path $LocalVideoPath
-$render = Get-LatestJson -Filter "demo-video-render-*.json"
+$render = Get-LatestJson -Filter "dream-qwencloud-devpost-final-validation.json"
+if (-not $render) {
+    $render = Get-LatestJson -Filter "demo-video-render-*.json"
+}
 $urlCheck = Test-AcceptedVideoUrl -Url $DemoVideoUrl
 
 Add-Check -Name "local_video_exists" -Ok $fileExists -Details $(if ($fileExists) { $resolvedVideoPath } else { "missing: $LocalVideoPath" })
@@ -130,7 +136,12 @@ else {
 }
 
 if ($render) {
-    $renderHash = [string]$render.data.outputSha256
+    $renderHash = if ($render.data.sha256) {
+        [string]$render.data.sha256
+    }
+    else {
+        [string]$render.data.outputSha256
+    }
     Add-Check -Name "render_manifest_matches_video" -Ok ($renderHash -eq $videoSha256) -Details "render=$renderHash; video=$videoSha256"
 }
 else {

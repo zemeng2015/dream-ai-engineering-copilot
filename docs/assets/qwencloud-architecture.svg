@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
   <title id="title">DREAM Qwen Cloud MemoryAgent architecture</title>
-  <desc id="desc">Cross-session flow from the Judge Arena through Qwen experience curation, deterministic lifecycle governance, persistent experience memory, budgeted recall, source claims, feedback, and Alibaba Cloud Function Compute.</desc>
+  <desc id="desc">Cross-session flow from the Judge Arena through Qwen experience curation, deterministic lifecycle governance, Alibaba Tablestore local transactions, budgeted recall, source claims, feedback, and Alibaba Cloud Function Compute with a temporary execution role.</desc>
   <defs>
     <style>
       .bg { fill: #f4f7f9; }
@@ -59,8 +59,8 @@
   <rect x="675" y="108" width="290" height="510" rx="8" class="band" />
   <text x="699" y="142" class="band-title">Persistent Governed Memory</text>
   <rect x="699" y="184" width="242" height="82" rx="8" class="store" />
-  <text x="721" y="216" class="label">Experience Store</text>
-  <text x="721" y="240" class="small">preferences, policies, episodes</text>
+  <text x="721" y="216" class="label">Alibaba Tablestore</text>
+  <text x="721" y="240" class="small">local transactions / one active truth</text>
   <rect x="699" y="302" width="242" height="82" rx="8" class="store" />
   <text x="721" y="334" class="label">Approved Source Claims</text>
   <text x="721" y="358" class="small">human approval + conflict gate</text>
@@ -75,8 +75,11 @@
   <text x="1041" y="240" class="small">qwen3.7-plus curator</text>
   <rect x="1019" y="336" width="193" height="102" rx="8" class="qwen" />
   <text x="1041" y="370" class="label">Function Compute</text>
-  <text x="1041" y="394" class="small">FastAPI + Angular</text>
-  <text x="1041" y="416" class="small">custom runtime, Singapore</text>
+  <text x="1041" y="394" class="small">FastAPI + Angular / 20 concurrent</text>
+  <text x="1041" y="416" class="small">build + instance proof, Singapore</text>
+  <rect x="1019" y="466" width="193" height="72" rx="8" class="guard" />
+  <text x="1041" y="496" class="label">RAM Execution Role</text>
+  <text x="1041" y="520" class="small">temporary, table-scoped</text>
 
   <path class="arrow" d="M256 225 H334" />
   <path class="arrow" d="M621 205 H650 V165 H1115 V184" />
@@ -87,6 +90,7 @@
   <path class="arrow" d="M334 461 H292 V367 H256" />
   <path class="feedback" d="M621 365 H675 V461 H699" />
   <path class="feedback" d="M941 461 H953 V225 H941" />
+  <path class="arrow" d="M1115 438 V466" />
 
   <circle cx="292" cy="225" r="11" class="step" /><text x="292" y="229" text-anchor="middle" class="number">1</text>
   <circle cx="960" cy="225" r="11" class="step" /><text x="960" y="229" text-anchor="middle" class="number">2</text>
@@ -95,7 +99,7 @@
 
   <rect x="310" y="548" width="655" height="70" rx="8" class="benchmark" />
   <text x="334" y="577" class="metric">Qwen lifecycle benchmark: 24/24 passed</text>
-  <text x="334" y="601" class="metric-small">37 curator decisions · 100% critical recall · 0% forbidden leak · 100% token-budget compliance</text>
+  <text x="334" y="601" class="metric-small">37 curator decisions | 100% critical recall | 0% forbidden leak | 100% token-budget compliance</text>
 
-  <text x="640" y="670" text-anchor="middle" class="subtitle">Secrets stay in environment variables. Public health and showcase responses expose status and proof paths only.</text>
+  <text x="640" y="670" text-anchor="middle" class="subtitle">FC injects temporary role credentials. The public runtime exposes only non-secret build, instance, model, and storage proof.</text>
 </svg>

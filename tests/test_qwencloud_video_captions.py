@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 TIME_RE = re.compile(
     r"(?P<h>\d{2}):(?P<m>\d{2}):(?P<s>\d{2}),(?P<ms>\d{3})"
@@ -41,14 +43,20 @@ def test_demo_video_caption_file_is_upload_ready() -> None:
     text = captions.read_text(encoding="utf-8-sig")
     ranges = _caption_ranges(captions)
 
-    assert len(ranges) >= 10
+    assert len(ranges) == 25
     assert ranges[0][0] == 0
-    assert ranges[-1][1] <= 180
+    assert ranges[-1][1] == pytest.approx(143.433)
     assert all(start < end for start, end in ranges)
     assert all(ranges[index][1] <= ranges[index + 1][0] for index in range(len(ranges) - 1))
     assert "Qwen Cloud" in text
-    assert "Alibaba Cloud" in text
-    assert "DREAM" in transcript.read_text(encoding="utf-8-sig")
+    assert "Alibaba Function Compute" in text
+    assert "Tablestore transactions" in text
+    transcript_text = re.sub(
+        r"\s+", " ", transcript.read_text(encoding="utf-8-sig")
+    )
+    for block in text.strip().split("\n\n"):
+        cue = " ".join(block.splitlines()[2:])
+        assert cue in transcript_text
 
 
 def test_demo_video_captions_are_in_publication_and_bundle_flow() -> None:
@@ -59,7 +67,7 @@ def test_demo_video_captions_are_in_publication_and_bundle_flow() -> None:
 
     assert "CaptionPath = \"docs/qwencloud-demo-video-captions.srt\"" in publication
     assert "One Current Truth Across Qwen Sessions" in publication
-    assert "24/24 passed" in publication
+    assert "passed 24/24 cases" in publication
     assert "19 of 64 tokens" in publication
     assert "captionSha256" in publication
     assert "caption/subtitle file transmits" in publication
@@ -74,12 +82,25 @@ def test_demo_video_renderer_uses_timed_tts_narration() -> None:
         encoding="utf-8-sig"
     )
 
-    assert "NarrationCaptionPath" in renderer
-    assert "Add-TtsNarration" in renderer
-    assert "System.Speech" in renderer
-    assert "narrationGenerated" in renderer
-    assert "audioCodec" in renderer
-    assert "docs/assets/qwencloud-arena-success-detail.png" in renderer
-    assert "docs/assets/qwencloud-arena-benchmark.png" in renderer
-    assert "alibaba-deployment-screenshot.png" in renderer
-    assert "37 real Qwen decisions across 24 lifecycle cases" in renderer
+    v3_renderer = (
+        ROOT / "tools" / "submission-video-v2" / "render-v3.ps1"
+    ).read_text(encoding="utf-8-sig")
+    generator = (
+        ROOT
+        / "tools"
+        / "submission-video-v2"
+        / "scripts"
+        / "generate-v3-narration.py"
+    ).read_text(encoding="utf-8-sig")
+
+    assert "tools\\submission-video-v2\\render-v3.ps1" in renderer
+    assert "dream-qwencloud-devpost-final.mp4" in renderer
+    assert "-SkipNarration:$SkipNarration" in renderer
+    assert "-SkipCapture:$SkipCapture" in renderer
+    assert "validate-v3.mjs" in v3_renderer
+    assert "loudnorm=I=-14:TP=-1.5" in v3_renderer
+    assert "qwen3-tts-instruct-flash-2026-01-26" in generator
+    assert 'VOICE = "Ethan"' in generator
+    assert "optimize_instructions" in generator
+    assert "System.Speech" not in renderer
+    assert "edge-tts" not in renderer

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "hook",
+    "tempo": 0.92,
+    "text": "I changed a rollout from ten percent to twenty. The scary part? An agent can confidently bring back the old answer. In production, stale truth is worse than no memory.",
+    "delivery": "Begin like you are telling a colleague about a real incident. Take a full beat after the first sentence and after the question. Land 'stale truth' quietly, without drama."
+  },
+  {
+    "id": "thesis",
+    "text": "So I built DREAM. Qwen understands what experience means; deterministic lifecycle rules decide what can come back.",
+    "delivery": "Sound personally invested and clear. Give DREAM and Qwen light emphasis, then relax through the second clause."
+  },
+  {
+    "id": "live_intro",
+    "tempo": 0.92,
+    "text": "This is the public build. It is running in Singapore, on Alibaba Function Compute.",
+    "delivery": "Make this casual and concrete, like turning your laptop toward a colleague. Speak slowly, around 125 words per minute, with a clear pause between the sentences."
+  },
+  {
+    "id": "remember",
+    "tempo": 0.95,
+    "text": "First, I set the canary at ten percent, for thirty minutes. Qwen recognizes the preference. It gives me an inspectable receipt.",
+    "delivery": "Use an easy live-demo cadence at about 130 words per minute. Pause between all three sentences. Let the numbers sound natural rather than announced."
+  },
+  {
+    "id": "supersede",
+    "text": "Then I change it to twenty percent for forty-five minutes. Qwen catches the conflict; DREAM keeps only the new value active.",
+    "delivery": "Sound lightly curious on the change, then quietly satisfied when the conflict is resolved. Use a short pause after 'conflict'."
+  },
+  {
+    "id": "recall",
+    "text": "In a fresh session, DREAM returns twenty percent in nineteen of sixty-four tokens. The old instruction never enters context.",
+    "delivery": "Keep this concise and matter-of-fact. Put gentle emphasis on 'fresh session' and 'never'."
+  },
+  {
+    "id": "durability",
+    "text": "The test I cared about was persistence. I saved a Qwen-curated memory, rebuilt the same source, and forced a new Function Compute instance. The instance ID changed; the memory, decision, and Qwen receipt did not. Twenty simultaneous conflicting writes also succeeded, leaving one active truth and nineteen historical versions.",
+    "delivery": "This is the emotional proof point. Start personally, leave a real pause after 'persistence', then sound genuinely relieved at 'did not'. Keep the final concurrency result grounded, not triumphant."
+  },
+  {
+    "id": "benchmark",
+    "text": "In a clearly labeled synthetic evaluation, the same Qwen model improved from 25.3 to 48.7 across seven paired cases. A separate twenty-four-case lifecycle suite passed every recall, stale-leak, and token-budget check.",
+    "delivery": "Use a transparent, analytical tone. Clearly acknowledge 'synthetic' and avoid sales-style emphasis on the scores."
+  },
+  {
+    "id": "architecture",
+    "text": "Underneath: Angular and FastAPI on Function Compute; Qwen Cloud for meaning; Tablestore transactions for one current truth; and temporary credentials from a narrow RAM role.",
+    "delivery": "Explain this like a senior engineer sketching the stack for a peer: fluent, compact, and unforced."
+  },
+  {
+    "id": "close",
+    "tempo": 0.82,
+    "text": "I do not want longer history. I want one current, reviewable truth, for the next decision.",
+    "delivery": "Speak slowly, around 120 words per minute. Keep the ending personal, warm, and understated, with a full clean pause between the two sentences."
+  }
+]

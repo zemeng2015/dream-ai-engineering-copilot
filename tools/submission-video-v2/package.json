@@ -1,0 +1,28 @@
+{
+  "name": "dream-submission-video-v3",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "capture": "node scripts/capture-demo.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render:v3": "remotion render src/index.ts DreamV3Full out/dream-v3-full-raw.mp4 --codec h264 --crf 17 --audio-bitrate 192k --overwrite",
+    "preview:v3": "node scripts/render-v3-stills.mjs",
+    "gallery:v3": "node scripts/render-v3-gallery.mjs",
+    "validate:v3": "node scripts/validate-v3.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.488",
+    "@remotion/bundler": "4.0.488",
+    "@remotion/renderer": "4.0.488",
+    "playwright": "1.61.1",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "remotion": "4.0.488"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}
