@@ -14,6 +14,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$EnvFile = "",
     [Parameter(Mandatory = $false)]
+    [string]$ProjectStoryPath = "docs/qwencloud-devpost-story.md",
+    [Parameter(Mandatory = $false)]
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
     [string]$LocalDemoVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
@@ -28,6 +30,7 @@ $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-env.ps1")
+. (Join-Path $PSScriptRoot "qwencloud-devpost-copy.ps1")
 $importedEnvNames = @()
 if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
     $importedEnvNames = @(Import-QwenCloudEnvFile -Path $EnvFile)
@@ -37,8 +40,9 @@ $handoffJson = Join-Path $OutputDir "devpost-handoff-$timestamp.json"
 $handoffMd = Join-Path $OutputDir "devpost-handoff-$timestamp.md"
 $handoffHtml = Join-Path $OutputDir "devpost-handoff-$timestamp.html"
 
-$projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence"
-$track = "Track 1: MemoryAgent"
+$devpostCopy = Get-QwenCloudDevpostCopy -StoryPath $ProjectStoryPath
+$projectTitle = $devpostCopy.projectTitle
+$track = $devpostCopy.track
 $deadline = "July 20, 2026 at 2:00pm PDT / 5:00pm EDT"
 $devpostUrl = "https://qwencloud-hackathon.devpost.com/"
 $devpostPreviewUrl = "https://devpost.com/software/dream-qwen-cloud-memoryagent"
@@ -109,6 +113,7 @@ $uploadItems = @(
     Get-UploadItem -Name "demo_video_thumbnail" -Path "docs/assets/qwencloud-video-thumbnail.png" -Required $false
     Get-UploadItem -Name "demo_video_captions_srt" -Path "docs/qwencloud-demo-video-captions.srt" -Required $false
     Get-UploadItem -Name "demo_video_transcript" -Path "docs/qwencloud-demo-video-transcript.md" -Required $false
+    Get-UploadItem -Name "devpost_story_source" -Path $ProjectStoryPath
     Get-UploadItem -Name "video_upload_handoff" -Path "docs/qwencloud-video-upload-handoff.md"
     Get-UploadItem -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpost-video-url.ps1" -Required $false
     Get-UploadItem -Name "video_publication_handoff_script" -Path "scripts/qwencloud-video-publication-handoff.ps1" -Required $false
@@ -155,13 +160,9 @@ $videoValue = if ($DemoVideoUrl) { $DemoVideoUrl } else { "<paste public YouTube
 $backendValue = if ($BackendUrl) { $BackendUrl } else { "<paste Alibaba Function Compute backend URL>" }
 $blogValue = if ($BlogPostUrl) { $BlogPostUrl } else { "<optional public blog/social post URL>" }
 
-$description = @"
-Most assistants start every session from zero. DREAM gives Qwen governed cross-session experience: Qwen decides remember, supersede, forget, or ignore; DREAM enforces TTL, one current truth, provenance, feedback, and hard context budgets. In the live Arena, a changed rollout preference supersedes the old value and Session 3 recalls only the current 20% canary in 19/64 tokens. A real Qwen benchmark ran 37 curator decisions across 24 lifecycle cases: 24/24 passed, critical recall was 100%, forbidden leak was 0%, and token-budget compliance was 100%.
-
-Approved organizational source claims can enter the same requirement and Jira workflows only after governance. The public Alibaba Function Compute runtime exposes Track 1, qwen-cloud, qwen3.7-plus, benchmark proof, and deployment metadata without exposing secrets.
-"@
-
-$shortPitch = "DREAM gives Qwen governed cross-session experience that remembers durable preferences, supersedes stale truth, forgets on time, learns from feedback, and recalls safely under a hard context budget."
+$description = $devpostCopy.story
+$shortPitch = $devpostCopy.shortPitch
+$builtWith = $devpostCopy.builtWith
 
 $nextCommands = @(
     'scripts/qwencloud-render-demo-video.ps1',
@@ -203,7 +204,9 @@ $handoff = [ordered]@{
         track = $track
         shortPitch = $shortPitch
         description = $description
-        builtWith = "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript."
+        storyPath = $devpostCopy.storyPath
+        storySha256 = $devpostCopy.storySha256
+        builtWith = $builtWith
         submitterType = "Individual"
         country = "United States"
         projectStartDate = "06-21-26"
@@ -300,7 +303,7 @@ $md += @(
     "",
     "### Built with",
     "",
-    "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript.",
+    $builtWith,
     "",
     "### Additional info",
     "",

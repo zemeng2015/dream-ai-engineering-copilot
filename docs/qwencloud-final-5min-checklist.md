@@ -265,6 +265,9 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
 - Title: `DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence`
 - Track: `Track 1: MemoryAgent`
 - Description: paste from `docs/qwencloud-devpost-form-fields.md`
+- Confirm the generated `software_description` exactly matches
+  `docs/qwencloud-devpost-story.md` and mentions Tablestore, cross-instance
+  durability, 20/20 contention, and 19/64-token recall.
 - Add public repo link
 - Add Apache-2.0 link
 - Upload `docs/assets/qwencloud-architecture.png`

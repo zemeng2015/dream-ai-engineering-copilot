@@ -86,6 +86,7 @@ Matching first-impression assets:
 - YouTube thumbnail: `docs/assets/qwencloud-video-thumbnail.png`
 - Devpost gallery: `artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/`
 - Gallery manifest: `devpost-gallery-v3/gallery-v3-manifest.json`
+- Canonical Devpost story: `docs/qwencloud-devpost-story.md`
 
 Regenerate both from the V3-only Remotion entry with:
 

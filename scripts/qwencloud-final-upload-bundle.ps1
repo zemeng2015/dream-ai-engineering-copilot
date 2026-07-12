@@ -1192,6 +1192,8 @@ Add-Item -Name "devpost_handoff_html" -Path $handoff.html
 Add-Item -Name "devpost_handoff_json" -Path $handoff.json
 Add-Item -Name "devpost_draft_payload_markdown" -Path $draftPayload.markdown
 Add-Item -Name "devpost_draft_payload_json" -Path $draftPayload.json
+Add-Item -Name "devpost_story_source" -Path "docs/qwencloud-devpost-story.md"
+Add-Item -Name "devpost_copy_helper" -Path "scripts/qwencloud-devpost-copy.ps1" -Required $false
 Add-Item -Name "devpost_draft_payload_script" -Path "scripts/qwencloud-devpost-draft-payload.ps1" -Required $false
 Add-Item -Name "devpost_autofill_snippet_markdown" -Path $autofillSnippet.markdown
 Add-Item -Name "devpost_autofill_snippet_json" -Path $autofillSnippet.json

@@ -12,6 +12,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
+    [string]$ProjectStoryPath = "docs/qwencloud-devpost-story.md",
+    [Parameter(Mandatory = $false)]
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
@@ -22,58 +24,26 @@ $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
+. (Join-Path $PSScriptRoot "qwencloud-devpost-copy.ps1")
 
 $payloadJson = Join-Path $OutputDir "devpost-draft-payload-$timestamp.json"
 $payloadMd = Join-Path $OutputDir "devpost-draft-payload-$timestamp.md"
 $fields = @()
 $checks = @()
 
-$projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence"
-$track = "Track 1: MemoryAgent"
+$devpostCopy = Get-QwenCloudDevpostCopy -StoryPath $ProjectStoryPath
+$projectTitle = $devpostCopy.projectTitle
+$track = $devpostCopy.track
 $projectDetailsUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/project_details/edit"
 $additionalInfoUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/additional-info/edit"
 $finalizationUrl = "https://devpost.com/submit-to/29966-global-ai-hackathon-series-with-qwen-cloud/manage/submissions/1073064-dream-qwen-cloud-memoryagent/finalization"
 $sourceCodeUrl = if ($RepoRef -eq "main") { $RepoUrl } else { "$RepoUrl/tree/$RepoRef" }
 $deploymentProofUrl = "$RepoUrl/blob/$RepoRef/deploy/alibaba/serverless-devs-runtime.yaml"
 $tryItOutUrl = if (-not [string]::IsNullOrWhiteSpace($BackendUrl)) { $BackendUrl } else { "" }
-$builtWith = "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript"
+$builtWith = $devpostCopy.builtWith
 $aiTools = "Qwen Cloud for the runtime LLM provider, OpenAI Codex for implementation assistance, GitHub Actions for CI verification, and local automation scripts for audit, render, deploy preflight, and submission packet generation."
-$preExistingExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
-
-$projectStory = @"
-## Inspiration
-
-Most AI assistants start every session from zero. When a preference changes, old guidance may survive beside the new truth; temporary instructions may never expire; and useful experience must be pasted back into every prompt.
-
-## What it does
-
-DREAM gives Qwen governed cross-session experience. Qwen classifies natural-language observations as remember, supersede, forget, or ignore. DREAM enforces lifecycle state, TTL, explicit forgetting, provenance, feedback ranking, and recall under a hard token budget.
-
-The live Judge Arena proves three separate sessions: Qwen remembers a durable rollout preference, supersedes it when the user changes their mind, then recalls only the current value in 19 of 64 tokens without leaking the old one. Approved organizational source claims can enter the same Requirement Case, impact map, engineering brief, and Jira draft with reviewer and source provenance.
-
-## How we built it
-
-The backend uses FastAPI, a SQLite experience repository, Qwen structured decisions, deterministic lifecycle governance, feedback-aware ranking, and governed source-claim retrieval. Angular provides the live three-session Arena. The same package runs on Alibaba Cloud Function Compute with qwen3.7-plus, CI, reproducible benchmark tooling, and public proof endpoints.
-
-## Challenges
-
-The hardest part was separating semantic judgment from deterministic safety. Qwen must understand whether an observation is durable, conflicting, temporary, reusable, or noise; DREAM must ensure stale, expired, forgotten, and budget-excluded values never re-enter context.
-
-## Accomplishments
-
-We executed 37 real Qwen curator decisions across 24 synthetic lifecycle cases. All 24 passed; critical-memory recall was 100%, forbidden-memory leak was 0%, token-budget compliance was 100%, and the weighted score was 100.0/100. The deployed public API independently passed remember, supersede, 19/64-token recall, and feedback verification.
-
-## Judging alignment
-
-- Innovation and AI creativity: Qwen is the semantic experience curator; DREAM adds deterministic lifecycle truth, timely forgetting, constrained recall, provenance, and feedback.
-- Technical depth and engineering: the implementation includes persistent cross-session state, conflict supersession, TTL, feedback ranking, budgeted retrieval, approved source claims, FastAPI/Angular, Alibaba Function Compute, CI, and a public benchmark.
-- Problem value and impact: teams and agents repeatedly act on stale preferences and forgotten lessons; DREAM keeps one current, auditable truth available at the next decision.
-- Presentation and documentation: the submission includes architecture diagrams, generated demo/proof videos, deployment proof, field-level Devpost payloads, and a final upload bundle so judging artifacts stay reproducible.
-
-## What's next
-
-Next steps are expanding the benchmark with human-reviewed production scenarios, adding encrypted multi-tenant storage, and upstreaming only generic lifecycle primitives into the provider-neutral DREAM framework.
-"@
+$preExistingExplanation = $devpostCopy.preExistingExplanation
+$projectStory = $devpostCopy.story
 
 function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
     $script:checks += [ordered]@{
@@ -167,6 +137,7 @@ $architectureAsset = Get-AssetState -Path $ArchitectureUploadPath
 $alibabaScreenshotAsset = Get-AssetState -Path $AlibabaScreenshotPath
 
 Add-Check -Name "project_story_present" -Ok (-not [string]::IsNullOrWhiteSpace($projectStory)) -Details "software_description"
+Add-Check -Name "project_story_v3_cloud_proof" -Ok (($projectStory -match "Alibaba Tablestore") -and ($projectStory -match "cross-instance") -and ($projectStory -match "20/20") -and ($projectStory -notmatch "(?i)SQLite")) -Details "sha256=$($devpostCopy.storySha256)"
 Add-Check -Name "built_with_present" -Ok (-not [string]::IsNullOrWhiteSpace($builtWith)) -Details "software_tag_list"
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
 Add-Check -Name "working_project_url_present" -Ok (Is-HttpUrl $tryItOutUrl) -Details $(if ($tryItOutUrl) { $tryItOutUrl } else { "missing deployed Alibaba backend URL" })
@@ -205,6 +176,12 @@ $payload = [ordered]@{
     demoVideoUrl = $DemoVideoUrl
     backendUrl = $BackendUrl
     blogPostUrl = $BlogPostUrl
+    publicCopy = [ordered]@{
+        story = $projectStory
+        storyPath = $devpostCopy.storyPath
+        storySha256 = $devpostCopy.storySha256
+        builtWith = $builtWith
+    }
     liveDevpostDraft = [ordered]@{
         projectDetailsUrl = $projectDetailsUrl
         additionalInfoUrl = $additionalInfoUrl

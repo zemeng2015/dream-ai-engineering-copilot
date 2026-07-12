@@ -27,6 +27,8 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "function Invoke-VideoUploadStatus" in final_bundle
     assert 'Add-ExternalRequirement -Name "current_public_demo_video_ready"' in final_bundle
     assert 'Add-Item -Name "video_upload_status_json"' in final_bundle
+    assert 'Add-Item -Name "devpost_story_source"' in final_bundle
+    assert 'Add-Item -Name "devpost_copy_helper"' in final_bundle
     for gallery_item in [
         "devpost_gallery_01_current_truth",
         "devpost_gallery_02_live_qwen_sessions",

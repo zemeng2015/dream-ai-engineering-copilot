@@ -303,15 +303,19 @@ $handoff = Read-JsonFile -Path $HandoffJson -Name "handoff"
 $autofill = Read-JsonFile -Path $AutofillJson -Name "autofill"
 
 $packetProject = Get-Prop -Object $packet -Name "project"
+$packetPublicCopy = Get-Prop -Object $packet -Name "publicCopy"
 $packetInfo = Get-Prop -Object $packet -Name "devpostAdditionalInfo"
 $packetLinks = Get-Prop -Object $packet -Name "links"
 $packetUploads = Get-Prop -Object $packet -Name "uploadAssets"
 $payloadUploads = Get-Prop -Object $payload -Name "uploadAssets"
+$payloadPublicCopy = Get-Prop -Object $payload -Name "publicCopy"
 $payloadArchitecture = Get-Prop -Object $payloadUploads -Name "architectureDiagram"
 $payloadAlibabaScreenshot = Get-Prop -Object $payloadUploads -Name "alibabaDeploymentScreenshot"
 $handoffCopy = Get-Prop -Object $handoff -Name "copyFields"
 
 Add-ObjectPropertiesAsPublicText -Source "packet.project" -Object $packetProject -OptionalNames @("blogPostUrl")
+Add-PublicTextItem -Source "packet.publicCopy" -Name "story" -Value (Get-Prop -Object $packetPublicCopy -Name "story")
+Add-PublicTextItem -Source "packet.publicCopy" -Name "builtWith" -Value (Get-Prop -Object $packetPublicCopy -Name "builtWith")
 Add-ObjectPropertiesAsPublicText -Source "packet.devpostAdditionalInfo" -Object $packetInfo -OptionalNames @("blogSocialUrl", "blogPostUrl")
 Add-ObjectPropertiesAsPublicText -Source "packet.links" -Object $packetLinks -OptionalNames @("buildJourneyDraft")
 Add-ObjectPropertiesAsPublicText -Source "handoff.copyFields" -Object $handoffCopy -OptionalNames @("blogPostUrl")
@@ -359,9 +363,27 @@ Add-Check -Name "autofill_snippet_ready" -Ok ([bool](Get-Prop -Object $autofill 
 Add-Check -Name "project_title_mentions_dream_qwen_memoryagent" -Ok (($allPublicText -match "\bDREAM\b") -and ($allPublicText -match "Qwen Cloud") -and ($allPublicText -match "MemoryAgent")) -Details "public copy identity"
 Add-Check -Name "track_1_memoryagent_present" -Ok ($allPublicText -match "Track 1:\s*MemoryAgent") -Details "Track 1: MemoryAgent"
 Add-Check -Name "public_copy_mentions_alibaba_cloud" -Ok ($allPublicText -match "Alibaba Cloud") -Details "Alibaba Cloud deployment framing"
+Add-Check -Name "public_copy_mentions_v3_tablestore_proof" -Ok (($allPublicText -match "Alibaba Tablestore") -and ($allPublicText -match "cross-instance") -and ($allPublicText -match "20/20") -and ($allPublicText -match "19 of 64")) -Details "Tablestore, cross-instance, contention, and constrained-recall proof"
+Add-Check -Name "public_copy_excludes_retired_sqlite_story" -Ok ($allPublicText -notmatch "(?i)SQLite") -Details "competition copy uses the deployed Tablestore architecture"
 Add-Check -Name "required_public_copy_fields_present" -Ok ($requiredEmpty.Count -eq 0) -Details $(if ($requiredEmpty.Count -eq 0) { "all required public fields have values" } else { "empty=$(@($requiredEmpty | ForEach-Object { "$($_.source).$($_.name)" }) -join ', ')" })
 Add-Check -Name "placeholder_free_public_copy" -Ok ($placeholderHits.Count -eq 0) -Details $(if ($placeholderHits.Count -eq 0) { "no placeholder tokens in public copy" } else { "hits=$($placeholderHits -join ', ')" })
 Add-Check -Name "secret_free_public_copy" -Ok ($secretHits.Count -eq 0) -Details $(if ($secretHits.Count -eq 0) { "no secret-looking values in public copy" } else { "hits=$($secretHits -join ', ')" })
+
+$payloadStoryField = Get-PayloadField -Payload $payload -ElementId "software_description"
+$storyValues = @(
+    (Get-Prop -Object $packetPublicCopy -Name "story")
+    (Get-Prop -Object $payloadStoryField -Name "value")
+    (Get-Prop -Object $handoffCopy -Name "description")
+) | ForEach-Object { Convert-ToText -Value $_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+$storyHashes = @(
+    (Get-Prop -Object $packetPublicCopy -Name "storySha256")
+    (Get-Prop -Object $payloadPublicCopy -Name "storySha256")
+    (Get-Prop -Object $handoffCopy -Name "storySha256")
+) | ForEach-Object { Convert-ToText -Value $_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+$storyConsistent = ($storyValues.Count -eq 3) -and (@($storyValues | Sort-Object -Unique).Count -eq 1)
+$storyHashConsistent = ($storyHashes.Count -eq 3) -and (@($storyHashes | Sort-Object -Unique).Count -eq 1) -and ($storyHashes[0] -match "^[a-f0-9]{64}$")
+Add-Check -Name "public_story_consistent_across_materials" -Ok $storyConsistent -Details "storyCopies=$($storyValues.Count); unique=$(@($storyValues | Sort-Object -Unique).Count)"
+Add-Check -Name "public_story_hash_consistent_across_materials" -Ok $storyHashConsistent -Details "hashes=$(@($storyHashes | Sort-Object -Unique) -join ', ')"
 
 Add-Check -Name "repo_url_present" -Ok (Is-HttpUrl $RepoUrl) -Details $RepoUrl
 $repoConsistent = (@($repoValues | ForEach-Object { Normalize-Url $_ } | Sort-Object -Unique).Count -le 1)

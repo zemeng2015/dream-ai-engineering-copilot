@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
 import json
 import os
 import shutil
@@ -54,9 +55,16 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
         if unsafe
         else (
             "DREAM is a Qwen Cloud MemoryAgent for source-backed engineering "
-            "intelligence on Alibaba Cloud. Track 1: MemoryAgent."
+            "intelligence on Alibaba Cloud. Alibaba Tablestore preserves "
+            "cross-instance truth; 20/20 writes leave one active value, and "
+            "the live flow recalls it in 19 of 64 tokens. Track 1: MemoryAgent."
         )
     )
+    built_with = (
+        "Qwen Cloud, Alibaba Cloud Function Compute, Alibaba Cloud Tablestore, "
+        "FastAPI, Angular"
+    )
+    story_sha256 = hashlib.sha256(description.encode("utf-8")).hexdigest()
 
     packet = {
         "readyForDevpost": not unsafe,
@@ -67,6 +75,13 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
             "demoVideoUrl": demo_url,
             "backendUrl": backend_url,
             "blogPostUrl": "",
+        },
+        "publicCopy": {
+            "story": description,
+            "storyPath": "docs/qwencloud-devpost-story.md",
+            "storySha256": story_sha256,
+            "shortPitch": "DREAM keeps one current truth across Qwen sessions.",
+            "builtWith": built_with,
         },
         "uploadAssets": {
             "architectureDiagram": str(architecture),
@@ -104,7 +119,7 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
         {
             "elementId": "software_tag_list",
             "label": "Built with",
-            "value": "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Angular",
+            "value": built_with,
             "inputKind": "tag_list",
             "required": True,
             "safeForNonLegalDraftSave": True,
@@ -179,6 +194,12 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
         "repoUrl": REPO_URL,
         "demoVideoUrl": demo_url,
         "backendUrl": backend_url,
+        "publicCopy": {
+            "story": description,
+            "storyPath": "docs/qwencloud-devpost-story.md",
+            "storySha256": story_sha256,
+            "builtWith": built_with,
+        },
         "uploadAssets": {
             "architectureDiagram": {
                 "path": str(architecture),
@@ -219,7 +240,9 @@ def _base_materials(tmp_path: Path, *, unsafe: bool = False) -> dict[str, Path]:
                 "MemoryAgent workflows."
             ),
             "description": description,
-            "builtWith": "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Angular",
+            "storyPath": "docs/qwencloud-devpost-story.md",
+            "storySha256": story_sha256,
+            "builtWith": built_with,
             "repoUrl": REPO_URL,
             "demoVideoUrl": demo_url,
             "backendUrl": backend_url,
@@ -299,6 +322,10 @@ def test_devpost_materials_audit_accepts_ready_materials(tmp_path: Path) -> None
     assert _check(report, "placeholder_free_public_copy")["ok"] is True
     assert _check(report, "secret_free_public_copy")["ok"] is True
     assert _check(report, "demo_video_url_devpost_rules_platform")["ok"] is True
+    assert _check(report, "public_copy_mentions_v3_tablestore_proof")["ok"] is True
+    assert _check(report, "public_copy_excludes_retired_sqlite_story")["ok"] is True
+    assert _check(report, "public_story_consistent_across_materials")["ok"] is True
+    assert _check(report, "public_story_hash_consistent_across_materials")["ok"] is True
 
 
 def test_devpost_materials_audit_rejects_placeholders_and_secret_like_values(

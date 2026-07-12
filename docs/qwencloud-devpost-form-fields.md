@@ -33,6 +33,11 @@ Generate the current structured draft payload with:
 scripts/qwencloud-devpost-draft-payload.ps1 -AllowDraft
 ```
 
+The exact V3 `About the project` copy is sourced from
+`docs/qwencloud-devpost-story.md`. The payload, submission packet, handoff, and
+materials audit all use that file and its SHA256 so an older cloud narrative
+cannot silently re-enter the final form.
+
 This payload is local only. Saving it into Devpost is an external write action
 and still requires Zack action-time confirmation.
 

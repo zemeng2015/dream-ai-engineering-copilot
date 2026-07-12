@@ -12,6 +12,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$OutputDir = "artifacts/qwencloud-proof",
     [Parameter(Mandatory = $false)]
+    [string]$ProjectStoryPath = "docs/qwencloud-devpost-story.md",
+    [Parameter(Mandatory = $false)]
     [string]$LocalVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
@@ -28,13 +30,18 @@ $ErrorActionPreference = "Stop"
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 . (Join-Path $PSScriptRoot "qwencloud-devpost-video-url.ps1")
+. (Join-Path $PSScriptRoot "qwencloud-devpost-copy.ps1")
 $packetJson = Join-Path $OutputDir "devpost-submission-packet-$timestamp.json"
 $packetMd = Join-Path $OutputDir "devpost-submission-packet-$timestamp.md"
 $checks = @()
 $ready = $true
 
-$projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence"
-$track = "Track 1: MemoryAgent"
+$devpostCopy = Get-QwenCloudDevpostCopy -StoryPath $ProjectStoryPath
+$projectTitle = $devpostCopy.projectTitle
+$track = $devpostCopy.track
+$projectStory = $devpostCopy.story
+$shortPitch = $devpostCopy.shortPitch
+$builtWith = $devpostCopy.builtWith
 $defaultRepoUrl = "https://github.com/zemeng2015/dream-ai-engineering-copilot"
 
 function Add-Check([string]$Name, [bool]$Ok, [string]$Details, [bool]$Required = $true) {
@@ -461,6 +468,13 @@ $packet = [ordered]@{
         backendUrl = $BackendUrl
         blogPostUrl = $BlogPostUrl
     }
+    publicCopy = [ordered]@{
+        story = $projectStory
+        storyPath = $devpostCopy.storyPath
+        storySha256 = $devpostCopy.storySha256
+        shortPitch = $shortPitch
+        builtWith = $builtWith
+    }
     uploadAssets = [ordered]@{
         architectureDiagram = $ArchitectureUploadPath
         alibabaDeploymentScreenshot = $AlibabaScreenshotPath
@@ -472,7 +486,7 @@ $packet = [ordered]@{
         countryOfResidence = "United States"
         projectStatus = "New"
         projectStartDate = "06-21-26"
-        beforeMay26UpdateExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
+        beforeMay26UpdateExplanation = $devpostCopy.preExistingExplanation
         selectedTrack = $track
         repositoryUrl = $sourceCodeUrl
         alibabaProofCodeFile = $deploymentProofUrl
@@ -545,13 +559,11 @@ $md = @(
     "",
     "### Short pitch",
     "",
-    "DREAM gives Qwen governed cross-session experience that remembers durable preferences, supersedes stale truth, forgets on time, learns from feedback, and recalls safely under a hard context budget.",
+    $shortPitch,
     "",
     "### Description",
     "",
-    "Most assistants start every session from zero. DREAM combines Qwen semantic memory curation with deterministic lifecycle governance. In the live Arena, Qwen remembers a rollout preference, supersedes it when the user changes their mind, and Session 3 recalls only the current value in 19/64 tokens without leaking the old one.",
-    "",
-    "A real Qwen benchmark ran 37 curator decisions across 24 lifecycle cases: 24/24 passed, critical recall was 100%, forbidden leak was 0%, and token-budget compliance was 100%. Approved organizational claims can enter later requirement and Jira workflows only with source and reviewer provenance.",
+    $projectStory,
     "",
     "### Judging alignment",
     "",
@@ -562,7 +574,7 @@ $md = @(
     "",
     "### Built with",
     "",
-    "Qwen Cloud, Alibaba Cloud Function Compute, FastAPI, Typer, Angular, Docker, SQLite, Python, TypeScript.",
+    $builtWith,
     "",
     "## Devpost Additional Info",
     "",
@@ -570,7 +582,7 @@ $md = @(
     "- Country of residence: United States",
     "- Newly built or existing project: New",
     "- Project start date: 06-21-26",
-    "- If started/existed before May 26: Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period.",
+    "- If started/existed before May 26: $($devpostCopy.preExistingExplanation)",
     "- Track: $track",
     "- Code repository URL: $sourceCodeUrl",
     "- Alibaba Cloud deployment proof code file: $deploymentProofUrl",

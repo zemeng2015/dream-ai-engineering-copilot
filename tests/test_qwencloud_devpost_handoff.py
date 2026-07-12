@@ -90,3 +90,9 @@ def test_devpost_handoff_treats_env_placeholders_as_missing(tmp_path) -> None:
     assert report["sourceCodeUrl"].endswith(f"/tree/{REPO_REF}")
     assert report["copyFields"]["repoUrl"].endswith(f"/tree/{REPO_REF}")
     assert f"/blob/{REPO_REF}/LICENSE" in report["copyFields"]["licenseUrl"]
+    assert "Alibaba Tablestore" in report["copyFields"]["description"]
+    assert "cross-instance" in report["copyFields"]["description"]
+    assert "20/20" in report["copyFields"]["description"]
+    assert "SQLite" not in report["copyFields"]["description"]
+    assert "Alibaba Cloud Tablestore" in report["copyFields"]["builtWith"]
+    assert len(report["copyFields"]["storySha256"]) == 64
