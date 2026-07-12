@@ -5,7 +5,7 @@ name: dream-qwencloud-memoryagent-runtime
 access: default
 
 vars:
-  region: ${env(ALIBABA_CLOUD_RUNTIME_REGION, "ap-southeast-1")}
+  region: ${env('ALIBABA_CLOUD_RUNTIME_REGION', 'ap-southeast-1')}
   functionName: dream-api-runtime
 
 resources:
@@ -17,13 +17,13 @@ resources:
       description: DREAM Track 1 MemoryAgent API backed by Qwen Cloud, deployed in Singapore as an FC Python 3.12 custom runtime code package.
       runtime: custom.debian11
       handler: not-used
-      code: ${env(DREAM_FC_CODE_DIR, "../../artifacts/qwencloud-fc-code")}
+      code: ${env('DREAM_FC_CODE_DIR', '../../artifacts/qwencloud-fc-code')}
       timeout: 120
       memorySize: 2048
       cpu: 1
       diskSize: 512
       internetAccess: true
-      role: acs:ram::${env(ALIBABA_CLOUD_ACCOUNT_ID)}:role/dream-qwencloud-fc-role
+      role: acs:ram::${env('ALIBABA_CLOUD_ACCOUNT_ID')}:role/dream-qwencloud-fc-role
       instanceConcurrency: 4
       concurrencyConfig:
         reservedConcurrency: 1
@@ -50,10 +50,10 @@ resources:
         ALIBABA_TABLESTORE_INSTANCE: dreammem
         ALIBABA_TABLESTORE_TABLE: dream_experience_v1
         DREAM_TABLESTORE_TRANSACTION_ATTEMPTS: "30"
-        DREAM_BUILD_SHA: ${env(DREAM_BUILD_SHA, "uncommitted")}
-        DASHSCOPE_API_KEY: ${env(DASHSCOPE_API_KEY)}
+        DREAM_BUILD_SHA: ${env('DREAM_BUILD_SHA')}
+        DASHSCOPE_API_KEY: ${env('DASHSCOPE_API_KEY')}
         QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-        QWEN_MODEL: ${env(QWEN_MODEL, "qwen3.7-plus")}
+        QWEN_MODEL: ${env('QWEN_MODEL', 'qwen3.7-plus')}
         QWEN_ENABLE_THINKING: "false"
         QWEN_MAX_COMPLETION_TOKENS: "1200"
         QWEN_TIMEOUT_SECONDS: "45"

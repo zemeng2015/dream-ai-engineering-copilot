@@ -367,11 +367,12 @@ def test_fc_runtime_uses_temporary_role_credentials_for_one_tablestore_table() -
     )
 
     assert (
-        "role: acs:ram::${env(ALIBABA_CLOUD_ACCOUNT_ID)}:"
+        "role: acs:ram::${env('ALIBABA_CLOUD_ACCOUNT_ID')}:"
         "role/dream-qwencloud-fc-role"
     ) in template
     assert "DREAM_EXPERIENCE_STORE: tablestore" in template
-    assert "DREAM_BUILD_SHA:" in template
+    assert "DREAM_BUILD_SHA: ${env('DREAM_BUILD_SHA')}" in template
+    assert "DREAM_BUILD_SHA: uncommitted" not in template
     assert "ALIBABA_CLOUD_ACCESS_KEY_ID:" not in template
     assert "ALIBABA_CLOUD_ACCESS_KEY_SECRET:" not in template
 
