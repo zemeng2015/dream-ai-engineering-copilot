@@ -42,6 +42,13 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "function Protect-BundledTextFile" in final_bundle
     assert "Get-PortableManifestPath -Path $dest" in final_bundle
     assert "portableRedactionApplied" in final_bundle
+    assert (
+        '$remoteCommit = Invoke-GitText -Arguments '
+        '@("rev-parse", "origin/$RepoRef")' in final_bundle
+    )
+    assert "($gitCommit -eq $remoteCommit)" in final_bundle
+    assert "gitRemoteCommit = $remoteCommit" in final_bundle
+    assert 'Invoke-GitText -Arguments @("status", "-sb")' not in final_bundle
     assert '"scripts/qwencloud-final-action-board.ps1"' in final_bundle
     assert '"scripts/qwencloud-final-external-handoff.ps1"' in final_bundle
     assert '"-RepoName", $RepoName' in final_bundle

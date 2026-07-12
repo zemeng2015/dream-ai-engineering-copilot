@@ -1243,11 +1243,11 @@ $ready = $missing.Count -eq 0
 $gitCommit = Invoke-GitText -Arguments @("rev-parse", "HEAD")
 $gitBranch = Invoke-GitText -Arguments @("rev-parse", "--abbrev-ref", "HEAD")
 $gitStatus = Invoke-GitText -Arguments @("status", "--porcelain")
-$gitBranchLine = (Invoke-GitText -Arguments @("status", "-sb") -split "`r?`n" | Select-Object -First 1)
+$remoteCommit = Invoke-GitText -Arguments @("rev-parse", "origin/$RepoRef")
 $gitWorktreeClean = [string]::IsNullOrWhiteSpace($gitStatus)
-$gitRemoteSynced = (-not [string]::IsNullOrWhiteSpace($gitBranchLine)) -and
-    ($gitBranchLine -match "\.\.\.") -and
-    ($gitBranchLine -notmatch "\[(ahead|behind)")
+$gitRemoteSynced = (-not [string]::IsNullOrWhiteSpace($gitCommit)) -and
+    (-not [string]::IsNullOrWhiteSpace($remoteCommit)) -and
+    ($gitCommit -eq $remoteCommit)
 
 $manifest = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")
@@ -1256,6 +1256,7 @@ $manifest = [ordered]@{
     repoUrl = $RepoUrl
     repoRef = $RepoRef
     gitCommit = $gitCommit
+    gitRemoteCommit = $remoteCommit
     gitBranch = $gitBranch
     gitWorktreeClean = $gitWorktreeClean
     gitRemoteSynced = $gitRemoteSynced
