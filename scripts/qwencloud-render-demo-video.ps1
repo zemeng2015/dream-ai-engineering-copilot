@@ -14,6 +14,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
     [Parameter(Mandatory = $false)]
+    [string]$LiveArenaVideoPath = "artifacts/qwencloud-proof/qwencloud-live-arena-receipt.mp4",
+    [Parameter(Mandatory = $false)]
     [string]$OutputVideo = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
     [string]$WorkDir = "artifacts/qwencloud-proof/video-render",
@@ -201,6 +203,24 @@ function Render-ImageSegment {
     if ($LASTEXITCODE -ne 0) { throw "Failed to render image segment: $OutputPath" }
 }
 
+function Render-VideoSegment {
+    param(
+        [Parameter(Mandatory = $true)][string]$InputPath,
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][double]$Duration,
+        [Parameter(Mandatory = $true)][string]$AssPath
+    )
+    $assFilterPath = $AssPath.Replace("\", "/")
+    $filters = @(
+        "scale=1280:720:force_original_aspect_ratio=decrease",
+        "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=0x062b3a",
+        "fps=24",
+        "subtitles='$assFilterPath'"
+    )
+    & ffmpeg -hide_banner -loglevel error -y -i $InputPath -t $Duration -vf ($filters -join ",") -c:v libx264 -pix_fmt yuv420p -an $OutputPath
+    if ($LASTEXITCODE -ne 0) { throw "Failed to render video segment: $OutputPath" }
+}
+
 if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
     throw "ffmpeg is required to render the final Devpost demo video."
 }
@@ -218,6 +238,7 @@ $sourceAssets = @(
     Get-AssetRecord -Name "retrieval_trace" -Path $retrievalTracePath
     Get-AssetRecord -Name "jira_draft" -Path $jiraDraftPath
     Get-AssetRecord -Name "alibaba_deployment_screenshot" -Path $AlibabaScreenshotPath
+    Get-AssetRecord -Name "live_qwen_arena_video" -Path $LiveArenaVideoPath
     Get-AssetRecord -Name "narration_captions" -Path $NarrationCaptionPath
 )
 $missingAssets = @($sourceAssets | Where-Object { -not $_.exists })
@@ -235,33 +256,26 @@ $segments = @(
         "Dialogue: 0,0:00:00.00,0:00:07.00,Body,,0,0,0,,{\pos(640,370)}DREAM keeps one governed truth across sessions.",
         "Dialogue: 0,0:00:00.00,0:00:07.00,Body,,0,0,0,,{\pos(640,455)}Track 1 MemoryAgent | Qwen Cloud | Alibaba Function Compute"
     ) }
-    [ordered]@{ name = "architecture"; duration = 9; kind = "image"; asset = $ArchitecturePath; crop = ""; dialogues = @() }
-    [ordered]@{ name = "arena-initial"; duration = 10; kind = "image"; asset = $ArenaInitialPath; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:10.00,TopBar,,0,0,0,,Session 1 | Qwen recognizes a durable preference and returns remember"
+    [ordered]@{ name = "architecture"; duration = 8; kind = "image"; asset = $ArchitecturePath; crop = ""; dialogues = @() }
+    [ordered]@{ name = "live-arena"; duration = 22; kind = "video"; asset = $LiveArenaVideoPath; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:22.00,TopBar,,0,0,0,,Continuous live run | real Qwen Cloud receipts | no cuts"
     ) }
-    [ordered]@{ name = "arena-supersede"; duration = 12; kind = "image"; asset = $ArenaSuccessTopPath; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:12.00,TopBar,,0,0,0,,Session 2 | Qwen returns supersede and DREAM retires the stale truth"
+    [ordered]@{ name = "decision-impact"; duration = 14; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Title,,0,0,0,,{\pos(640,145)}Measured decision impact",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(350,270)}Stateless Qwen  25.3",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(930,270)}Qwen + DREAM  48.7",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(350,380)}Quality lift  +23.4",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(930,380)}Paired wins  7 / 7",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(640,490)}Same model and output contract | p = 0.0156"
     ) }
-    [ordered]@{ name = "arena-budget"; duration = 10; kind = "image"; asset = $ArenaSuccessDetailPath; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:10.00,LowerThird,,0,0,0,,Session 3 | No prompt history | hard recall budget: 64 tokens"
-    ) }
-    [ordered]@{ name = "arena-recall"; duration = 11; kind = "image"; asset = $ArenaSuccessDetailPath; crop = "crop=430:565:835:65"; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:11.00,TopBar,,0,0,0,,Current truth recalled in 19 / 64 tokens",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,LowerThird,,0,0,0,,20% canary for 45 minutes | old value leaked: no"
-    ) }
-    [ordered]@{ name = "feedback"; duration = 7; kind = "image"; asset = $ArenaSuccessDetailPath; crop = "crop=430:565:835:65"; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:07.00,TopBar,,0,0,0,,Helpful + correct feedback returns to future ranking"
-    ) }
-    [ordered]@{ name = "benchmark"; duration = 18; kind = "image"; asset = $ArenaBenchmarkPath; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:18.00,TopBar,,0,0,0,,37 real Qwen decisions across 24 lifecycle cases"
-    ) }
-    [ordered]@{ name = "benchmark-proof"; duration = 16; kind = "color"; asset = ""; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Title,,0,0,0,,{\pos(640,155)}Reproducible lifecycle proof",
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(360,270)}24 / 24 cases passed",
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(920,270)}100% critical recall",
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(360,365)}0% forbidden leak",
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(920,365)}100% budget compliance",
-        "Dialogue: 0,0:00:00.00,0:00:16.00,Body,,0,0,0,,{\pos(640,485)}Conflict | TTL | explicit forgetting | duplicates | limited context"
+    [ordered]@{ name = "benchmark-proof"; duration = 14; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Title,,0,0,0,,{\pos(640,155)}Reproducible lifecycle safety",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(360,270)}24 / 24 cases passed",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(920,270)}37 Qwen receipts",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(360,365)}0% forbidden leak",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(920,365)}100% budget compliance",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(640,455)}Conflict | TTL | forgetting | duplicates | limited context",
+        "Dialogue: 0,0:00:00.00,0:00:14.00,Body,,0,0,0,,{\pos(640,520)}37 real Qwen decisions across 24 lifecycle cases"
     ) }
     [ordered]@{ name = "memory-hub"; duration = 8; kind = "image"; asset = $memoryHubPath; crop = ""; dialogues = @(
         "Dialogue: 0,0:00:00.00,0:00:08.00,TopBar,,0,0,0,,Organizational claims retain source proof and human approval"
@@ -284,13 +298,13 @@ $segments = @(
         "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,420)}github.com/zemeng2015/dream-ai-engineering-copilot",
         "Dialogue: 0,0:00:00.00,0:00:09.00,Body,,0,0,0,,{\pos(640,475)}branch: codex/champion-memory-loop"
     ) }
-    [ordered]@{ name = "outro"; duration = 11; kind = "color"; asset = ""; crop = ""; dialogues = @(
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Title,,0,0,0,,{\pos(640,175)}DREAM remembers the right experience",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,280)}Replace old truth",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,335)}Forget safely",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,390)}Recall under a hard budget",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,445)}Explain every selected memory",
-        "Dialogue: 0,0:00:00.00,0:00:11.00,Body,,0,0,0,,{\pos(640,525)}Qwen Cloud Track 1 MemoryAgent"
+    [ordered]@{ name = "outro"; duration = 10; kind = "color"; asset = ""; crop = ""; dialogues = @(
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Title,,0,0,0,,{\pos(640,175)}DREAM remembers the right experience",
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,280)}Replace old truth",
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,335)}Forget safely",
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,390)}Recall under a hard budget",
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,445)}Explain every selected memory",
+        "Dialogue: 0,0:00:00.00,0:00:10.00,Body,,0,0,0,,{\pos(640,525)}Qwen Cloud Track 1 MemoryAgent"
     ) }
 )
 
@@ -301,6 +315,9 @@ foreach ($segment in $segments) {
     Write-AssFile -Path $assPath -Dialogues $segment.dialogues
     if ($segment.kind -eq "color") {
         Render-ColorSegment -OutputPath $videoPath -Duration $segment.duration -AssPath $assPath
+    }
+    elseif ($segment.kind -eq "video") {
+        Render-VideoSegment -InputPath $segment.asset -OutputPath $videoPath -Duration $segment.duration -AssPath $assPath
     }
     else {
         Render-ImageSegment -InputPath $segment.asset -OutputPath $videoPath -Duration $segment.duration -AssPath $assPath -Crop $segment.crop

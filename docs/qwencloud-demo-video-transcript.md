@@ -6,36 +6,29 @@ This transcript matches `docs/qwencloud-demo-video-captions.srt`.
 
 ## Transcript
 
-Most AI assistants start every session from zero. DREAM gives Qwen Cloud durable
-experience, then governs conflicts, forgetting, context budgets, provenance,
-and feedback.
+Most AI assistants start every session from zero. DREAM gives Qwen durable
+experience while deterministic governance controls conflicts, forgetting,
+budgets, provenance, and feedback.
 
-In Session 1, Qwen recognizes a durable rollout preference and returns
-remember. In Session 2, the user changes the same preference. Qwen returns
-supersede, and DREAM marks the old value inactive instead of keeping two
-conflicting truths.
+This is one continuous live run. Qwen Cloud recognizes a durable preference and
+returns remember with a provider receipt. When the preference changes, Qwen
+proposes supersede. DREAM retires the stale truth and recalls only the current
+value under 64 tokens.
 
-Session 3 starts with no prompt history. Under a 64-token budget, DREAM recalls
-only the current 20 percent canary for 45 minutes. The old 10 percent value does
-not leak. Helpful and correct feedback is written back to future ranking.
+In a same-model paired benchmark, Qwen plus DREAM scores 48.7 versus 25.3
+without memory, winning all seven cases with a 23.4 point lift. Across 24
+lifecycle cases and 37 real Qwen receipts, every case passes, forbidden leakage
+is zero, and token-budget compliance is 100 percent.
 
-The same lifecycle is tested beyond one polished demo. We ran 37 real Qwen
-curator decisions across 24 synthetic cases covering cross-session preference,
-conflict supersession, TTL, explicit forgetting, duplicate rejection, and
-limited context.
+Organizational claims retain source proof and human approval. Unresolved
+conflicts are blocked before retrieval, not merely labeled after generation.
+Approved truth enters the requirement case, impact map, engineering brief, and
+Jira draft with reviewer and source provenance attached.
 
-All 24 lifecycle cases passed. Critical recall was 100 percent, forbidden leak
-was zero, and token-budget compliance was 100 percent.
-
-Experience is only one memory layer. Organizational claims must retain source
-proof and human approval. Unresolved conflicts are blocked from retrieval.
-
-The approved current truth enters the same Requirement Case prompt, impact map,
-engineering brief, and Jira draft with reviewer and source provenance.
-
-DREAM runs on Alibaba Cloud Function Compute with qwen3.7-plus. The live
-runtime, public benchmark, full report, tests, and deployment template are in
-the repository.
+DREAM runs publicly on Alibaba Cloud Function Compute in Singapore with
+qwen3.7-plus and verifiable runtime metadata. The benchmark, tests,
+architecture, deployment template, and proof artifacts are public and
+reproducible.
 
 DREAM helps Qwen remember the right experience, replace old truth, forget
-safely, and explain what it used.
+safely, and explain every selected memory.
