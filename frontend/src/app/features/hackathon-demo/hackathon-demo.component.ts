@@ -127,6 +127,30 @@ export class HackathonDemoComponent implements OnInit {
     ];
   });
 
+  readonly decisionBenchmarkFacts = computed<HealthFact[]>(() => {
+    const benchmark = this.showcase()?.benchmark;
+    if (!benchmark || benchmark.status !== 'ready') {
+      return [{ label: 'Decision benchmark', value: 'loading evidence' }];
+    }
+    return [
+      { label: 'Stateless Qwen', value: benchmark.baselineScore.toFixed(1) },
+      { label: 'Qwen + DREAM', value: benchmark.dreamScore.toFixed(1) },
+      { label: 'Quality lift', value: `+${benchmark.scoreDelta.toFixed(1)}` },
+      { label: 'Paired wins', value: `${benchmark.dreamWins}/${benchmark.caseCount}` },
+      {
+        label: 'Paired significance',
+        value:
+          benchmark.exactPairedPermutationP === null
+            ? 'not reported'
+            : `p=${benchmark.exactPairedPermutationP.toFixed(4)}`,
+      },
+      {
+        label: 'Same-model control',
+        value: benchmark.model ?? this.health()?.llmModel ?? 'Qwen Cloud',
+      },
+    ];
+  });
+
   readonly runtimeSignals = computed<DemoSignal[]>(() => {
     const health = this.health();
     const benchmark = this.showcase()?.experienceBenchmark;

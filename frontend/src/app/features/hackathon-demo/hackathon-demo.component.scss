@@ -395,6 +395,15 @@
   font-size: 24px;
 }
 
+.impact-grid strong {
+  color: #0f5f8a;
+}
+
+.impact-grid div:nth-child(3) strong,
+.impact-grid div:nth-child(4) strong{
+  color: #17633f;
+}
+
 .evidence-layout {
   grid-template-columns: minmax(280px, 0.45fr) minmax(0, 1.55fr);
   align-items: start;

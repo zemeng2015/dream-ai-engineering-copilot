@@ -135,6 +135,13 @@ describe('HackathonDemoComponent', () => {
     expect(text).toContain('Qwen + Alibaba runtime verified');
     expect(text).toContain('ap-southeast-1');
     expect(text).toContain('Three sessions. One current truth.');
+    expect(text).toContain('Memory makes the same Qwen model more useful.');
+    expect(text).toContain('Stateless Qwen');
+    expect(text).toContain('25.3');
+    expect(text).toContain('48.7');
+    expect(text).toContain('+23.4');
+    expect(text).toContain('7/7');
+    expect(text).toContain('p=0.0156');
     expect(text).toContain('24 / 24');
     expect(text).toContain('24/24');
     expect(text).toContain('37');

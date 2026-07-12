@@ -230,10 +230,29 @@
     }
   </section>
 
+  <section class="benchmark-band impact-band" aria-labelledby="impact-title">
+    <div class="benchmark-heading">
+      <span class="eyebrow">Measured decision impact</span>
+      <h2 id="impact-title">Memory makes the same Qwen model more useful.</h2>
+      <p>
+        A controlled paired benchmark holds the model and prompt contract constant. DREAM adds
+        retrieved organizational memory; the stateless arm receives none.
+      </p>
+    </div>
+    <div class="benchmark-grid impact-grid">
+      @for (fact of decisionBenchmarkFacts(); track fact.label) {
+        <div>
+          <span>{{ fact.label }}</span>
+          <strong>{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+  </section>
+
   <section class="benchmark-band" aria-labelledby="benchmark-title">
     <div class="benchmark-heading">
-      <span class="eyebrow">Reproducible Qwen Cloud benchmark</span>
-      <h2 id="benchmark-title">The live proof scales beyond one polished demo.</h2>
+      <span class="eyebrow">Reproducible lifecycle safety</span>
+      <h2 id="benchmark-title">Better decisions without stale-memory leakage.</h2>
       <p>
         24 synthetic lifecycle cases and 37 real Qwen curator decisions cover conflict,
         TTL, explicit forgetting, duplicate rejection, and limited-context recall.
