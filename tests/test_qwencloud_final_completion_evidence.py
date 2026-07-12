@@ -47,6 +47,30 @@ def test_final_completion_evidence_packages_ready_artifacts(tmp_path) -> None:
     )
     post_md.write_text("# Post submit\n", encoding="utf-8")
 
+    rules_json = output_dir / "official-rules-gate-20260707-120000.json"
+    rules_md = output_dir / "official-rules-gate-20260707-120000.md"
+    rules_json.write_text(
+        json.dumps({"status": "READY", "readyForOfficialRules": True}),
+        encoding="utf-8",
+    )
+    rules_md.write_text("# Official rules\n", encoding="utf-8")
+
+    scorecard_json = output_dir / "judging-scorecard-20260707-120000.json"
+    scorecard_md = output_dir / "judging-scorecard-20260707-120000.md"
+    scorecard_json.write_text(
+        json.dumps({"status": "READY", "readyForJudgingNarrative": True}),
+        encoding="utf-8",
+    )
+    scorecard_md.write_text("# Judging scorecard\n", encoding="utf-8")
+
+    packet_json = output_dir / "devpost-submission-packet-20260707-120000.json"
+    packet_md = output_dir / "devpost-submission-packet-20260707-120000.md"
+    packet_json.write_text(
+        json.dumps({"readyForDevpost": True}),
+        encoding="utf-8",
+    )
+    packet_md.write_text("# Submission packet\n", encoding="utf-8")
+
     summary_json = output_dir / "release-summary-20260707-120001.json"
     summary_md = output_dir / "release-summary-20260707-120001.md"
     summary_json.write_text(
@@ -91,6 +115,10 @@ def test_final_completion_evidence_packages_ready_artifacts(tmp_path) -> None:
             str(SCRIPT),
             "-OutputDir",
             str(output_dir),
+            "-ReleaseSummaryJson",
+            str(summary_json),
+            "-FinalBundleManifest",
+            str(manifest_json),
         ],
         cwd=ROOT,
         capture_output=True,
@@ -114,6 +142,9 @@ def test_final_completion_evidence_packages_ready_artifacts(tmp_path) -> None:
         names = archive.namelist()
     assert any(name.endswith("manifest.json") for name in names)
     assert any(name.endswith(post_json.name) for name in names)
+    assert any(name.endswith(rules_json.name) for name in names)
+    assert any(name.endswith(scorecard_json.name) for name in names)
+    assert any(name.endswith(packet_json.name) for name in names)
     assert any(name.endswith(summary_json.name) for name in names)
     assert any(name.endswith(bundle_zip.name) for name in names)
 
@@ -151,8 +182,11 @@ def test_final_completion_evidence_stays_draft_until_post_submit_ready(tmp_path)
     assert report["status"] == "DRAFT"
     assert report["readyForGoalCompletionArchive"] is False
     assert "post_submit_verification_ready" in report["requiredFailures"]
-    assert "release_summary_present" in report["requiredFailures"]
-    assert "final_bundle_manifest_present" in report["requiredFailures"]
+    assert "official_rules_gate_ready" in report["requiredFailures"]
+    assert "judging_scorecard_ready" in report["requiredFailures"]
+    assert "submission_packet_ready" in report["requiredFailures"]
+    assert "release_summary_present" not in report["requiredFailures"]
+    assert "final_bundle_manifest_present" not in report["requiredFailures"]
 
 
 def test_final_completion_evidence_registered_in_submission_flow() -> None:

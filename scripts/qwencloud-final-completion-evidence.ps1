@@ -6,6 +6,12 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$PostSubmitVerificationJson = "",
     [Parameter(Mandatory = $false)]
+    [string]$OfficialRulesGateJson = "",
+    [Parameter(Mandatory = $false)]
+    [string]$JudgingScorecardJson = "",
+    [Parameter(Mandatory = $false)]
+    [string]$SubmissionPacketJson = "",
+    [Parameter(Mandatory = $false)]
     [string]$FinalBundleManifest = "",
     [Parameter(Mandatory = $false)]
     [string]$ReleaseSummaryJson = "",
@@ -53,15 +59,6 @@ function Get-LatestBundleManifest {
     if (-not [string]::IsNullOrWhiteSpace($FinalBundleManifest)) {
         return $FinalBundleManifest
     }
-
-    $candidate = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        ForEach-Object {
-            $manifest = Join-Path $_.FullName "manifest.json"
-            if (Test-Path -LiteralPath $manifest) { Get-Item -LiteralPath $manifest }
-        } |
-        Select-Object -First 1
-    if ($candidate) { return $candidate.FullName }
     return ""
 }
 
@@ -113,7 +110,7 @@ function Add-EvidenceItem([string]$Name, [string]$Path, [bool]$Required = $true)
         sizeBytes = $size
         sha256 = $sha256
     }
-    Add-Check -Name "evidence_item.$Name" -Ok $exists -Details $(if ($exists) { "$Path sha256=$sha256" } else { "missing: $Path" }) -Required $Required
+    Add-Check -Name "evidence_item.$Name" -Ok ($exists -or -not $Required) -Details $(if ($exists) { "$Path sha256=$sha256" } elseif ($Required) { "missing: $Path" } else { "not requested" }) -Required $Required
 }
 
 function First-Text([object[]]$Values) {
@@ -127,10 +124,16 @@ function First-Text([object[]]$Values) {
 }
 
 $postPath = if ($PostSubmitVerificationJson) { $PostSubmitVerificationJson } else { $latest = Get-LatestFile -Filter "devpost-post-submit-verification-*.json"; if ($latest) { $latest.FullName } else { "" } }
-$summaryPath = if ($ReleaseSummaryJson) { $ReleaseSummaryJson } else { $latest = Get-LatestFile -Filter "release-summary-*.json"; if ($latest) { $latest.FullName } else { "" } }
+$rulesPath = if ($OfficialRulesGateJson) { $OfficialRulesGateJson } else { $latest = Get-LatestFile -Filter "official-rules-gate-*.json"; if ($latest) { $latest.FullName } else { "" } }
+$scorecardPath = if ($JudgingScorecardJson) { $JudgingScorecardJson } else { $latest = Get-LatestFile -Filter "judging-scorecard-*.json"; if ($latest) { $latest.FullName } else { "" } }
+$packetPath = if ($SubmissionPacketJson) { $SubmissionPacketJson } else { $latest = Get-LatestFile -Filter "devpost-submission-packet-*.json"; if ($latest) { $latest.FullName } else { "" } }
+$summaryPath = $ReleaseSummaryJson
 $bundleManifestPath = Get-LatestBundleManifest
 
 $postSubmit = Read-JsonOrNull -Path $postPath
+$officialRules = Read-JsonOrNull -Path $rulesPath
+$judgingScorecard = Read-JsonOrNull -Path $scorecardPath
+$submissionPacket = Read-JsonOrNull -Path $packetPath
 $releaseSummary = Read-JsonOrNull -Path $summaryPath
 $bundleManifest = Read-JsonOrNull -Path $bundleManifestPath
 
@@ -149,26 +152,40 @@ $effectiveBackendUrl = First-Text -Values @($BackendUrl, $(if ($postSubmit) { $p
 
 Add-Check -Name "post_submit_verification_present" -Ok ($null -ne $postSubmit) -Details $(if ($postSubmit) { $postPath } else { "missing devpost-post-submit-verification-*.json" })
 Add-Check -Name "post_submit_verification_ready" -Ok ($postSubmit -and [bool]$postSubmit.readyForGoalCompletionEvidence) -Details $(if ($postSubmit) { "status=$($postSubmit.status); readyForGoalCompletionEvidence=$($postSubmit.readyForGoalCompletionEvidence)" } else { "missing" })
-Add-Check -Name "release_summary_present" -Ok ($null -ne $releaseSummary) -Details $(if ($releaseSummary) { $summaryPath } else { "missing release-summary-*.json" })
-Add-Check -Name "release_summary_ready" -Ok ($releaseSummary -and [bool]$releaseSummary.readyForFinalSubmit) -Details $(if ($releaseSummary) { "status=$($releaseSummary.status); readyForFinalSubmit=$($releaseSummary.readyForFinalSubmit)" } else { "missing" })
-Add-Check -Name "final_bundle_manifest_present" -Ok ($null -ne $bundleManifest) -Details $(if ($bundleManifest) { $bundleManifestPath } else { "missing final-upload-bundle-*/manifest.json" })
-Add-Check -Name "final_bundle_ready_for_upload" -Ok ($bundleManifest -and [bool]$bundleManifest.readyForUpload) -Details $(if ($bundleManifest) { "readyForUpload=$($bundleManifest.readyForUpload)" } else { "missing" })
-Add-Check -Name "final_bundle_zip_present" -Ok (-not [string]::IsNullOrWhiteSpace($bundleZipPath) -and (Test-Path -LiteralPath $bundleZipPath)) -Details $(if ($bundleZipPath) { $bundleZipPath } else { "missing zip path" })
+Add-Check -Name "official_rules_gate_ready" -Ok ($officialRules -and [bool]$officialRules.readyForOfficialRules) -Details $(if ($officialRules) { "status=$($officialRules.status); readyForOfficialRules=$($officialRules.readyForOfficialRules)" } else { "missing official-rules-gate-*.json" })
+Add-Check -Name "judging_scorecard_ready" -Ok ($judgingScorecard -and [bool]$judgingScorecard.readyForJudgingNarrative) -Details $(if ($judgingScorecard) { "status=$($judgingScorecard.status); readyForJudgingNarrative=$($judgingScorecard.readyForJudgingNarrative)" } else { "missing judging-scorecard-*.json" })
+Add-Check -Name "submission_packet_ready" -Ok ($submissionPacket -and [bool]$submissionPacket.readyForDevpost) -Details $(if ($submissionPacket) { "readyForDevpost=$($submissionPacket.readyForDevpost)" } else { "missing devpost-submission-packet-*.json" })
+$releaseRequired = -not [string]::IsNullOrWhiteSpace($ReleaseSummaryJson)
+$bundleRequired = -not [string]::IsNullOrWhiteSpace($FinalBundleManifest)
+Add-Check -Name "release_summary_present" -Ok (-not $releaseRequired -or $null -ne $releaseSummary) -Details $(if ($releaseSummary) { $summaryPath } else { "not requested" }) -Required $releaseRequired
+Add-Check -Name "release_summary_ready" -Ok (-not $releaseRequired -or ($releaseSummary -and [bool]$releaseSummary.readyForFinalSubmit)) -Details $(if ($releaseSummary) { "status=$($releaseSummary.status); readyForFinalSubmit=$($releaseSummary.readyForFinalSubmit)" } else { "not requested" }) -Required $releaseRequired
+Add-Check -Name "final_bundle_manifest_present" -Ok (-not $bundleRequired -or $null -ne $bundleManifest) -Details $(if ($bundleManifest) { $bundleManifestPath } else { "not requested" }) -Required $bundleRequired
+Add-Check -Name "final_bundle_ready_for_upload" -Ok (-not $bundleRequired -or ($bundleManifest -and [bool]$bundleManifest.readyForUpload)) -Details $(if ($bundleManifest) { "readyForUpload=$($bundleManifest.readyForUpload)" } else { "not requested" }) -Required $bundleRequired
+Add-Check -Name "final_bundle_zip_present" -Ok (-not $bundleRequired -or (-not [string]::IsNullOrWhiteSpace($bundleZipPath) -and (Test-Path -LiteralPath $bundleZipPath))) -Details $(if ($bundleZipPath) { $bundleZipPath } else { "not requested" }) -Required $bundleRequired
 Add-Check -Name "devpost_project_url_present" -Ok ($effectiveDevpostUrl -match "^https://devpost\.com/software/[^/?#]+") -Details $(if ($effectiveDevpostUrl) { $effectiveDevpostUrl } else { "missing" })
 Add-Check -Name "demo_video_url_present" -Ok ($effectiveVideoUrl -match "^https?://") -Details $(if ($effectiveVideoUrl) { $effectiveVideoUrl } else { "missing" })
 Add-Check -Name "backend_url_present" -Ok ($effectiveBackendUrl -match "^https?://") -Details $(if ($effectiveBackendUrl) { $effectiveBackendUrl } else { "missing" })
 
 $postMd = if ($postPath) { [System.IO.Path]::ChangeExtension($postPath, ".md") } else { "" }
+$rulesMd = if ($rulesPath) { [System.IO.Path]::ChangeExtension($rulesPath, ".md") } else { "" }
+$scorecardMd = if ($scorecardPath) { [System.IO.Path]::ChangeExtension($scorecardPath, ".md") } else { "" }
+$packetMd = if ($packetPath) { [System.IO.Path]::ChangeExtension($packetPath, ".md") } else { "" }
 $summaryMd = if ($summaryPath) { [System.IO.Path]::ChangeExtension($summaryPath, ".md") } else { "" }
 $bundleMd = if ($bundleManifestPath) { [System.IO.Path]::ChangeExtension($bundleManifestPath, ".md") } else { "" }
 
 Add-EvidenceItem -Name "post_submit_verification_json" -Path $postPath
 Add-EvidenceItem -Name "post_submit_verification_markdown" -Path $postMd
-Add-EvidenceItem -Name "release_summary_json" -Path $summaryPath
-Add-EvidenceItem -Name "release_summary_markdown" -Path $summaryMd
-Add-EvidenceItem -Name "final_bundle_manifest_json" -Path $bundleManifestPath
-Add-EvidenceItem -Name "final_bundle_manifest_markdown" -Path $bundleMd
-Add-EvidenceItem -Name "final_upload_bundle_zip" -Path $bundleZipPath
+Add-EvidenceItem -Name "official_rules_gate_json" -Path $rulesPath
+Add-EvidenceItem -Name "official_rules_gate_markdown" -Path $rulesMd
+Add-EvidenceItem -Name "judging_scorecard_json" -Path $scorecardPath
+Add-EvidenceItem -Name "judging_scorecard_markdown" -Path $scorecardMd
+Add-EvidenceItem -Name "submission_packet_json" -Path $packetPath
+Add-EvidenceItem -Name "submission_packet_markdown" -Path $packetMd
+Add-EvidenceItem -Name "release_summary_json" -Path $summaryPath -Required $releaseRequired
+Add-EvidenceItem -Name "release_summary_markdown" -Path $summaryMd -Required $releaseRequired
+Add-EvidenceItem -Name "final_bundle_manifest_json" -Path $bundleManifestPath -Required $bundleRequired
+Add-EvidenceItem -Name "final_bundle_manifest_markdown" -Path $bundleMd -Required $bundleRequired
+Add-EvidenceItem -Name "final_upload_bundle_zip" -Path $bundleZipPath -Required $bundleRequired
 
 $requiredFailures = @($checks | Where-Object { $_.required -and -not $_.ok })
 $ready = $requiredFailures.Count -eq 0
@@ -182,6 +199,9 @@ $archiveManifest = [ordered]@{
     demoVideoUrl = $effectiveVideoUrl
     backendUrl = $effectiveBackendUrl
     postSubmitVerificationJson = $postPath
+    officialRulesGateJson = $rulesPath
+    judgingScorecardJson = $scorecardPath
+    submissionPacketJson = $packetPath
     releaseSummaryJson = $summaryPath
     finalBundleManifest = $bundleManifestPath
     finalBundleZip = $bundleZipPath
