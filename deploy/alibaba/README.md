@@ -25,6 +25,11 @@ tokens, and each runtime process accepts at most `6` Qwen-backed API requests
 per minute. These are hackathon cost-abuse controls, not a substitute for
 production authentication or a shared distributed rate limiter.
 
+The function reserves at most `20` concurrent requests and allows one 2 GiB
+instance to process up to `20` requests concurrently. DREAM's public path is
+I/O-bound on Qwen and Tablestore, so this absorbs a judge/demo burst without
+scaling into multiple processes that would each own a separate Qwen limiter.
+
 Function code remains immutable under `/code`; disposable artifacts and the
 legacy audit ledger use `/tmp`. Experience memory is stored durably in the
 `dreammem` Tablestore instance and `dream_experience_v1` table. The table uses

@@ -24,9 +24,9 @@ resources:
       diskSize: 512
       internetAccess: true
       role: acs:ram::${env('ALIBABA_CLOUD_ACCOUNT_ID')}:role/dream-qwencloud-fc-role
-      instanceConcurrency: 4
+      instanceConcurrency: 20
       concurrencyConfig:
-        reservedConcurrency: 1
+        reservedConcurrency: 20
       customRuntimeConfig:
         command:
           - /bin/bash

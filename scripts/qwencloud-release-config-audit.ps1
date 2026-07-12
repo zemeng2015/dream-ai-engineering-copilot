@@ -301,7 +301,28 @@ if ($UseCodePackage) {
     Add-Check -Name "serverless_runtime_template.no_unvalidated_endpoint_override" -Ok ($runtimeTemplateText -notmatch "QWEN_RUNTIME_BASE_URL") -Details "public runtime cannot redirect the Qwen bearer token through an unchecked environment override"
     Add-Check -Name "serverless_runtime_template.no_acr_image_dependency" -Ok ($runtimeTemplateText -notmatch "ALIBABA_CLOUD_CONTAINER_IMAGE") -Details "ACR image env is not referenced"
     Add-Check -Name "serverless_runtime_template.uses_writable_ephemeral_paths" -Ok ($runtimeTemplateText -match "DREAM_ARTIFACT_ROOT:\s*/tmp/" -and $runtimeTemplateText -match "DREAM_AUDIT_DB_PATH:\s*/tmp/") -Details "generated artifacts and SQLite use writable /tmp paths"
-    Add-Check -Name "serverless_runtime_template.caps_function_concurrency" -Ok ($runtimeTemplateText -match "concurrencyConfig:\s*\r?\n\s*reservedConcurrency:\s*1") -Details "function-level reserved concurrency is capped at one for the anonymous judge demo"
+    $instanceConcurrencyMatch = [regex]::Match(
+        $runtimeTemplateText,
+        "(?m)^\s*instanceConcurrency:\s*(\d+)\s*$"
+    )
+    $reservedConcurrencyMatch = [regex]::Match(
+        $runtimeTemplateText,
+        "(?m)^\s*reservedConcurrency:\s*(\d+)\s*$"
+    )
+    $instanceConcurrency = if ($instanceConcurrencyMatch.Success) {
+        [int]$instanceConcurrencyMatch.Groups[1].Value
+    }
+    else { 0 }
+    $reservedConcurrency = if ($reservedConcurrencyMatch.Success) {
+        [int]$reservedConcurrencyMatch.Groups[1].Value
+    }
+    else { 0 }
+    $boundedConcurrency = (
+        $instanceConcurrency -ge 1 -and
+        $reservedConcurrency -eq $instanceConcurrency -and
+        $reservedConcurrency -le 20
+    )
+    Add-Check -Name "serverless_runtime_template.caps_function_concurrency" -Ok $boundedConcurrency -Details "single-instance and function concurrency match at $reservedConcurrency, capped at 20 for the anonymous judge demo"
 
     $runtimePackageScriptText = Read-TextOrEmpty -Path $RuntimePackageScriptPath
     Add-Check -Name "runtime_package_script_present" -Ok (-not [string]::IsNullOrWhiteSpace($runtimePackageScriptText)) -Details $(if ($runtimePackageScriptText) { $RuntimePackageScriptPath } else { "missing: $RuntimePackageScriptPath" })
