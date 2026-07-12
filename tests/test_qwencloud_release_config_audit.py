@@ -335,6 +335,11 @@ def test_fc_code_package_includes_same_origin_angular_build() -> None:
     assert 'docs/assets/qwen-experience-memory-benchmark-report.json' in package_script
     assert 'docs/qwen-experience-memory-benchmark.md' in package_script
     assert 'deploy/alibaba/requirements-fc312.lock.txt' in package_script
+    assert 'docs/assets/qwencloud-tablestore-proof-summary.json' in package_script
+    assert 'docs/qwencloud-tablestore-architecture.md' in package_script
+    assert 'deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json' in package_script
+    assert 'deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json' in package_script
+    assert 'tablestore/__init__.py' in package_script
     assert 'requirementsLockSha256' in package_script
     assert 'deploy/alibaba/serverless-devs-runtime.yaml' in package_script
     assert 'deploymentProof = "deploy/alibaba/serverless-devs-runtime.yaml"' in package_script
@@ -345,15 +350,70 @@ def test_fc_code_package_includes_same_origin_angular_build() -> None:
     assert '/var/fc/lang/python3.12/bin/python3' in package_script
 
 
+def test_fc_runtime_uses_temporary_role_credentials_for_one_tablestore_table() -> None:
+    template = (ROOT / "deploy/alibaba/serverless-devs-runtime.yaml").read_text(
+        encoding="utf-8-sig"
+    )
+    data_policy = json.loads(
+        (
+            ROOT
+            / "deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json"
+        ).read_text(encoding="utf-8-sig")
+    )
+    trust_policy = json.loads(
+        (
+            ROOT / "deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json"
+        ).read_text(encoding="utf-8-sig")
+    )
+
+    assert (
+        "role: acs:ram::${env(ALIBABA_CLOUD_ACCOUNT_ID)}:"
+        "role/dream-qwencloud-fc-role"
+    ) in template
+    assert "DREAM_EXPERIENCE_STORE: tablestore" in template
+    assert "DREAM_BUILD_SHA:" in template
+    assert "ALIBABA_CLOUD_ACCESS_KEY_ID:" not in template
+    assert "ALIBABA_CLOUD_ACCESS_KEY_SECRET:" not in template
+
+    statement = data_policy["Statement"]
+    assert len(statement) == 1
+    assert statement[0]["Effect"] == "Allow"
+    assert set(statement[0]["Action"]) == {
+        "ots:GetRow",
+        "ots:GetRange",
+        "ots:PutRow",
+        "ots:StartLocalTransaction",
+        "ots:CommitTransaction",
+        "ots:AbortTransaction",
+    }
+    assert statement[0]["Resource"].endswith(
+        ":instance/dreammem/table/dream_experience_v1"
+    )
+    assert trust_policy["Statement"] == [
+        {
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Principal": {"Service": ["fc.aliyuncs.com"]},
+        }
+    ]
+
+
 def test_runtime_release_validates_workspace_url_before_deploy() -> None:
     release_script = (
         ROOT / "scripts/qwencloud-alibaba-runtime-release.ps1"
     ).read_text(encoding="utf-8-sig")
 
-    assert (
-        '$requiredEnv = @("DASHSCOPE_API_KEY", "QWEN_BASE_URL", "QWEN_MODEL")'
-        in release_script
-    )
+    assert "$requiredEnv = @(" in release_script
+    for required_env in (
+        "DASHSCOPE_API_KEY",
+        "QWEN_BASE_URL",
+        "QWEN_MODEL",
+        "ALIBABA_CLOUD_ACCOUNT_ID",
+    ):
+        assert f'"{required_env}"' in release_script
+    assert '"deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json"' in release_script
+    assert '"deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json"' in release_script
+    assert "DREAM_BUILD_SHA" in release_script
     assert '"scripts/qwencloud-release-config-audit.ps1"' in release_script
     assert '-Name "release-config-audit"' in release_script
     assert "$AllowDraftPacket -or" not in release_script

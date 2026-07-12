@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -36,6 +37,24 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def add_runtime_evidence_headers(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        response = await call_next(request)
+        response.headers["X-Dream-Storage-Backend"] = os.getenv(
+            "DREAM_EXPERIENCE_STORE", "sqlite"
+        ).strip().lower()
+        instance_id = os.getenv("FC_INSTANCE_ID", "").strip()
+        if instance_id:
+            response.headers["X-Dream-FC-Instance-Id"] = instance_id
+        build_sha = os.getenv("DREAM_BUILD_SHA", "").strip()
+        if build_sha:
+            response.headers["X-Dream-Build-Sha"] = build_sha
+        return response
+
     app.include_router(router)
     _mount_frontend(app)
     return app

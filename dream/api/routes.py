@@ -27,13 +27,13 @@ from dream.experience import (
     ExperienceFeedbackRequest,
     ExperienceMemory,
     ExperienceMemoryPolicy,
-    ExperienceMemoryRepository,
     ExperienceMemoryService,
     ExperienceObservation,
     ExperienceRecallRequest,
     ExperienceRecallResult,
     LLMExperienceMemoryPolicy,
     RuleBasedExperienceMemoryPolicy,
+    create_experience_memory_repository,
 )
 from dream.extensions import build_llm_provider
 from dream.extensions.models import LLMProvider
@@ -71,6 +71,11 @@ class HealthResponse(BaseModel):
     llm_model: str | None = None
     llm_base_url: str | None = None
     llm_api_key_configured: bool = False
+    experience_storage_backend: str = "sqlite"
+    experience_storage_durable: bool = False
+    experience_transaction_mode: str = "sqlite-immediate"
+    runtime_instance_id: str | None = None
+    build_sha: str | None = None
     proof_file: str = "deploy/alibaba/serverless-devs-runtime.yaml"
 
 
@@ -84,6 +89,11 @@ class QwenCloudShowcaseRuntime(BaseModel):
     llm_provider: str
     llm_model: str | None = None
     llm_api_key_configured: bool
+    experience_storage_backend: str
+    experience_storage_durable: bool
+    experience_transaction_mode: str
+    runtime_instance_id: str | None = None
+    build_sha: str | None = None
     proof_file: str
     qwen_cloud_ready: bool
     alibaba_runtime_ready: bool
@@ -269,6 +279,7 @@ class RequirementQuestionWaiveRequest(BaseModel):
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     config = resolve_config()
+    storage_backend = os.getenv("DREAM_EXPERIENCE_STORE", "sqlite").strip().lower()
     deployment_target = "local"
     alibaba_service = os.getenv("ALIBABA_CLOUD_SERVICE")
     if (
@@ -287,6 +298,15 @@ def health() -> HealthResponse:
         llm_model=config.llm.model,
         llm_base_url=config.llm.base_url,
         llm_api_key_configured=config.llm.api_key_configured,
+        experience_storage_backend=storage_backend,
+        experience_storage_durable=storage_backend == "tablestore",
+        experience_transaction_mode=(
+            "partition-local-transaction"
+            if storage_backend == "tablestore"
+            else "sqlite-immediate"
+        ),
+        runtime_instance_id=os.getenv("FC_INSTANCE_ID"),
+        build_sha=os.getenv("DREAM_BUILD_SHA"),
         proof_file=os.getenv("ALIBABA_CLOUD_PROOF_FILE")
         or "deploy/alibaba/serverless-devs-runtime.yaml",
     )
@@ -336,6 +356,11 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
             llm_provider=health_payload.llm_provider,
             llm_model=health_payload.llm_model,
             llm_api_key_configured=health_payload.llm_api_key_configured,
+            experience_storage_backend=health_payload.experience_storage_backend,
+            experience_storage_durable=health_payload.experience_storage_durable,
+            experience_transaction_mode=health_payload.experience_transaction_mode,
+            runtime_instance_id=health_payload.runtime_instance_id,
+            build_sha=health_payload.build_sha,
             proof_file=health_payload.proof_file,
             qwen_cloud_ready=qwen_cloud_ready,
             alibaba_runtime_ready=alibaba_runtime_ready,
@@ -430,6 +455,20 @@ def qwencloud_showcase() -> QwenCloudShowcaseResponse:
                     "deploy/alibaba/serverless-devs-runtime.yaml",
                     "scripts/qwencloud-build-fc-code-package.ps1",
                     "scripts/qwencloud-alibaba-runtime-release.ps1",
+                ],
+            ),
+            QwenCloudShowcaseEvidenceItem(
+                name="Durable transactional experience memory",
+                state=(
+                    "live"
+                    if health_payload.experience_storage_durable
+                    else "cloud-verified"
+                ),
+                proof_paths=[
+                    "dream/experience/tablestore_repository.py",
+                    "docs/assets/qwencloud-tablestore-proof-summary.json",
+                    "docs/qwencloud-tablestore-architecture.md",
+                    "tests/test_tablestore_experience_repository.py",
                 ],
             ),
             QwenCloudShowcaseEvidenceItem(
@@ -935,7 +974,7 @@ def list_experience_decisions(
     team_id: str,
     user_id: str,
 ) -> list[ExperienceDecisionRecord]:
-    return ExperienceMemoryRepository().list_decisions(
+    return create_experience_memory_repository().list_decisions(
         team_id=team_id,
         user_id=user_id,
     )

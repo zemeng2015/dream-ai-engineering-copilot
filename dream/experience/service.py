@@ -18,7 +18,11 @@ from dream.experience.models import (
     ExperienceRecallResult,
 )
 from dream.experience.policy import ExperienceMemoryPolicy, RuleBasedExperienceMemoryPolicy
-from dream.experience.repository import ExperienceMemoryRepository
+from dream.experience.repository import (
+    ExperienceMemoryRepositoryProtocol,
+    ExperienceMemoryStore,
+    create_experience_memory_repository,
+)
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9_-]*", flags=re.IGNORECASE)
 MAX_CONTEXT_VALUE_CHARS = 72
@@ -28,10 +32,10 @@ class ExperienceMemoryService:
     def __init__(
         self,
         *,
-        repository: ExperienceMemoryRepository | None = None,
+        repository: ExperienceMemoryRepositoryProtocol | None = None,
         policy: ExperienceMemoryPolicy | None = None,
     ) -> None:
-        self.repository = repository or ExperienceMemoryRepository()
+        self.repository = repository or create_experience_memory_repository()
         self.policy = policy or RuleBasedExperienceMemoryPolicy()
 
     def capture(
@@ -58,6 +62,25 @@ class ExperienceMemoryService:
         now: datetime | None = None,
     ) -> ExperienceCaptureResult:
         current = _utc(now)
+        with self.repository.transaction(
+            team_id=observation.team_id,
+            user_id=observation.user_id,
+        ) as store:
+            return self._apply_policy_result_in_store(
+                observation,
+                policy_result,
+                current=current,
+                store=store,
+            )
+
+    def _apply_policy_result_in_store(
+        self,
+        observation: ExperienceObservation,
+        policy_result: ExperiencePolicyResult,
+        *,
+        current: datetime,
+        store: ExperienceMemoryStore,
+    ) -> ExperienceCaptureResult:
         proposal = policy_result.proposal
         requested_action = proposal.action
         action = proposal.action
@@ -65,7 +88,13 @@ class ExperienceMemoryService:
         memory: ExperienceMemory | None = None
         affected: list[ExperienceMemory] = []
 
-        active = self.repository.list_memories(
+        self._expire_due_in_store(
+            observation.team_id,
+            observation.user_id,
+            current,
+            store=store,
+        )
+        active = store.list_memories(
             team_id=observation.team_id,
             user_id=observation.user_id,
             include_inactive=False,
@@ -93,6 +122,7 @@ class ExperienceMemoryService:
                 matching,
                 observation.team_id,
                 observation.user_id,
+                store=store,
             )
         elif action == "forget":
             target = self._resolve_target(
@@ -100,6 +130,7 @@ class ExperienceMemoryService:
                 [],
                 observation.team_id,
                 observation.user_id,
+                store=store,
             )
 
         if action in {"remember", "supersede"}:
@@ -112,15 +143,15 @@ class ExperienceMemoryService:
                         "updated_at": current.isoformat(),
                     }
                 )
-                self.repository.save_memory(target)
+                store.save_memory(target)
                 affected.append(target)
-            self.repository.save_memory(memory)
+            store.save_memory(memory)
             affected.append(memory)
         elif action == "forget" and target:
             target = target.model_copy(
                 update={"status": "forgotten", "updated_at": current.isoformat()}
             )
-            self.repository.save_memory(target)
+            store.save_memory(target)
             affected.append(target)
 
         rationale = proposal.rationale
@@ -145,9 +176,9 @@ class ExperienceMemoryService:
             llm_receipt=policy_result.llm_receipt,
             created_at=current.isoformat(),
         )
-        self.repository.append_decision(decision)
+        store.append_decision(decision)
         active_count = len(
-            self.repository.list_memories(
+            store.list_memories(
                 team_id=observation.team_id,
                 user_id=observation.user_id,
                 include_inactive=False,
@@ -167,47 +198,61 @@ class ExperienceMemoryService:
         now: datetime | None = None,
     ) -> ExperienceRecallResult:
         current = _utc(now)
-        expired_ids = self._expire_due(request.team_id, request.user_id, current)
-        memories = self.repository.list_memories(
+        with self.repository.transaction(
             team_id=request.team_id,
             user_id=request.user_id,
-            include_inactive=False,
-        )
-        candidates = sorted(
-            (self._candidate(memory, request.query, current) for memory in memories),
-            key=lambda item: (-item.score, item.memory.memory_id),
-        )[: request.limit]
+        ) as store:
+            expired_ids = self._expire_due_in_store(
+                request.team_id,
+                request.user_id,
+                current,
+                store=store,
+            )
+            memories = store.list_memories(
+                team_id=request.team_id,
+                user_id=request.user_id,
+                include_inactive=False,
+            )
+            candidates = sorted(
+                (self._candidate(memory, request.query, current) for memory in memories),
+                key=lambda item: (-item.score, item.memory.memory_id),
+            )[: request.limit]
 
-        selected: list[ExperienceRecallCandidate] = []
-        excluded: list[ExperienceRecallCandidate] = []
-        used = 0
-        for candidate in candidates:
-            if used + candidate.estimated_tokens <= request.token_budget:
-                chosen = candidate.model_copy(
-                    update={"selected": True, "reason": f"{candidate.reason} Fits token budget."}
-                )
-                selected.append(chosen)
-                used += candidate.estimated_tokens
-            else:
-                excluded.append(
-                    candidate.model_copy(
+            selected: list[ExperienceRecallCandidate] = []
+            excluded: list[ExperienceRecallCandidate] = []
+            used = 0
+            for candidate in candidates:
+                if used + candidate.estimated_tokens <= request.token_budget:
+                    chosen = candidate.model_copy(
                         update={
-                            "reason": f"{candidate.reason} Excluded by token budget."
+                            "selected": True,
+                            "reason": f"{candidate.reason} Fits token budget.",
                         }
                     )
-                )
+                    selected.append(chosen)
+                    used += candidate.estimated_tokens
+                else:
+                    excluded.append(
+                        candidate.model_copy(
+                            update={
+                                "reason": (
+                                    f"{candidate.reason} Excluded by token budget."
+                                )
+                            }
+                        )
+                    )
 
-        recalled_at = current.isoformat()
-        for candidate in selected:
-            updated = candidate.memory.model_copy(
-                update={
-                    "last_recalled_at": recalled_at,
-                    "recall_count": candidate.memory.recall_count + 1,
-                    "updated_at": recalled_at,
-                }
-            )
-            self.repository.save_memory(updated)
-            candidate.memory = updated
+            recalled_at = current.isoformat()
+            for candidate in selected:
+                updated = candidate.memory.model_copy(
+                    update={
+                        "last_recalled_at": recalled_at,
+                        "recall_count": candidate.memory.recall_count + 1,
+                        "updated_at": recalled_at,
+                    }
+                )
+                store.save_memory(updated)
+                candidate.memory = updated
 
         return ExperienceRecallResult(
             team_id=request.team_id,
@@ -223,18 +268,30 @@ class ExperienceMemoryService:
         )
 
     def record_feedback(self, request: ExperienceFeedbackRequest) -> ExperienceMemory:
-        memory = self.repository.get_memory(request.memory_id)
-        if memory.team_id != request.team_id or memory.user_id != request.user_id:
-            raise NotFoundError(f"Experience memory not found: {request.memory_id}")
-        updated = memory.model_copy(
-            update={
-                "feedback_count": memory.feedback_count + 1,
-                "helpful_total": memory.helpful_total + (1 if request.helpful else -1),
-                "correctness_total": memory.correctness_total + (1 if request.correct else -1),
-                "updated_at": datetime.now(UTC).isoformat(),
-            }
-        )
-        return self.repository.save_memory(updated)
+        with self.repository.transaction(
+            team_id=request.team_id,
+            user_id=request.user_id,
+        ) as store:
+            memory = store.get_memory(
+                request.memory_id,
+                team_id=request.team_id,
+                user_id=request.user_id,
+            )
+            if memory.team_id != request.team_id or memory.user_id != request.user_id:
+                raise NotFoundError(f"Experience memory not found: {request.memory_id}")
+            updated = memory.model_copy(
+                update={
+                    "feedback_count": memory.feedback_count + 1,
+                    "helpful_total": (
+                        memory.helpful_total + (1 if request.helpful else -1)
+                    ),
+                    "correctness_total": (
+                        memory.correctness_total + (1 if request.correct else -1)
+                    ),
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+            )
+            return store.save_memory(updated)
 
     def list_memories(
         self,
@@ -282,8 +339,24 @@ class ExperienceMemoryService:
         )
 
     def _expire_due(self, team_id: str, user_id: str, current: datetime) -> list[str]:
+        with self.repository.transaction(team_id=team_id, user_id=user_id) as store:
+            return self._expire_due_in_store(
+                team_id,
+                user_id,
+                current,
+                store=store,
+            )
+
+    @staticmethod
+    def _expire_due_in_store(
+        team_id: str,
+        user_id: str,
+        current: datetime,
+        *,
+        store: ExperienceMemoryStore,
+    ) -> list[str]:
         expired: list[str] = []
-        for memory in self.repository.list_memories(
+        for memory in store.list_memories(
             team_id=team_id,
             user_id=user_id,
             include_inactive=False,
@@ -292,7 +365,7 @@ class ExperienceMemoryService:
                 updated = memory.model_copy(
                     update={"status": "expired", "updated_at": current.isoformat()}
                 )
-                self.repository.save_memory(updated)
+                store.save_memory(updated)
                 expired.append(memory.memory_id)
         return expired
 
@@ -321,8 +394,22 @@ class ExperienceMemoryService:
         matching: list[ExperienceMemory],
         team_id: str,
         user_id: str,
+        *,
+        store: ExperienceMemoryStore,
     ) -> ExperienceMemory:
-        target = self.repository.get_memory(target_memory_id) if target_memory_id else None
+        target = (
+            store.get_memory(
+                target_memory_id,
+                team_id=team_id,
+                user_id=user_id,
+            )
+            if target_memory_id
+            else None
+        )
+        if target is not None and (target.team_id != team_id or target.user_id != user_id):
+            raise DreamError("Memory action target must be an active memory in the same scope.")
+        if target is not None and target.status != "active":
+            target = None
         if target is None and matching:
             target = matching[0]
         if (

@@ -1,0 +1,67 @@
+{
+  "backend": "tablestore",
+  "concurrency": {
+    "activeCount": 1,
+    "decisionCount": 20,
+    "durationSeconds": 42.856,
+    "memoryCount": 20,
+    "rememberActions": 1,
+    "requestsAttempted": 20,
+    "requestsSucceeded": 20,
+    "scope": {
+      "teamId": "cloud-concurrency-proof",
+      "userId": "barrier-20260712t055936z"
+    },
+    "supersedeActions": 19,
+    "supersededCount": 19,
+    "transactionStartAttempts": 20,
+    "transactionStartConflictsRetried": 0,
+    "winningMemoryId": "experience-memory-d08d7aef14df",
+    "winningValue": "candidate-01"
+  },
+  "credentials": {
+    "source": "environment-or-local-ignored-env-file",
+    "valuesRecorded": false
+  },
+  "durable": true,
+  "durationSeconds": 47.646,
+  "endpoint": "https://dreammem.ap-southeast-1.ots.aliyuncs.com",
+  "generatedAt": "2026-07-12T06:00:24.449016+00:00",
+  "instance": "dreammem",
+  "region": "ap-southeast-1",
+  "roundTrip": {
+    "activeCount": 1,
+    "decisionCount": 1,
+    "memoryCount": 1,
+    "memoryId": "experience-memory-142fa5a8aaca",
+    "scope": {
+      "teamId": "cloud-roundtrip-proof",
+      "userId": "roundtrip-20260712t055936z"
+    },
+    "value": "tablestore-partition-transaction"
+  },
+  "runId": "20260712T055936Z",
+  "schemaVersion": "dream-tablestore-proof-v1",
+  "table": "dream_experience_v1",
+  "tableDescription": {
+    "allowUpdates": true,
+    "localTransactionVerifiedBySuccessfulCommit": true,
+    "maxVersions": 1,
+    "primaryKey": [
+      {
+        "name": "scope_id",
+        "type": "STRING"
+      },
+      {
+        "name": "record_id",
+        "type": "STRING"
+      }
+    ],
+    "requestId": "00065663-add5-0f58-6e45-4a1a2378de79",
+    "reservedReadCU": 0,
+    "reservedWriteCU": 0,
+    "secondaryIndexCount": 0,
+    "timeToLive": -1
+  },
+  "transactionMode": "partition-local-transaction"
+}

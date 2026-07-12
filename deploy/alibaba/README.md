@@ -25,10 +25,18 @@ tokens, and each runtime process accepts at most `6` Qwen-backed API requests
 per minute. These are hackathon cost-abuse controls, not a substitute for
 production authentication or a shared distributed rate limiter.
 
-Function code remains immutable under `/code`; generated artifacts and the
-SQLite audit ledger use `/tmp`. Function Compute may recycle that ephemeral
-storage, so durable production deployments should replace it with an external
-database and object store.
+Function code remains immutable under `/code`; disposable artifacts and the
+legacy audit ledger use `/tmp`. Experience memory is stored durably in the
+`dreammem` Tablestore instance and `dream_experience_v1` table. The table uses
+`scope_id` and `record_id` string primary keys, permanent TTL, one cell version,
+zero reserved read/write CUs, and partition-scoped local transactions. A
+single transaction atomically supersedes the previous fact, writes the new
+fact, and appends the decision receipt.
+
+Function Compute assumes `dream-qwencloud-fc-role`. FC injects temporary role
+credentials into the runtime; no long-lived Alibaba AccessKey is copied into
+the function configuration. The role is limited to the six Tablestore data and
+transaction operations declared under `ram/` for this one table.
 
 ## Required Environment
 
@@ -45,9 +53,21 @@ Equivalent explicit environment variables:
 
 ```powershell
 $env:ALIBABA_CLOUD_RUNTIME_REGION="ap-southeast-1"
+$env:ALIBABA_CLOUD_ACCOUNT_ID="<account-id>"
 $env:DASHSCOPE_API_KEY="<qwen-cloud-api-key>"
 $env:QWEN_BASE_URL="https://<workspace-id>.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 $env:QWEN_MODEL="qwen3.7-plus"
+```
+
+The deployed storage resources are:
+
+```text
+Region:       ap-southeast-1
+Instance:     dreammem (CU mode, high-performance, ZRS)
+Table:        dream_experience_v1
+Primary key:  scope_id STRING, record_id STRING
+Throughput:   0 reserved read CUs, 0 reserved write CUs
+Transaction:  local transaction enabled
 ```
 
 For a Model Studio key beginning with `sk-ws`, copy the dedicated workspace URL
@@ -115,7 +135,8 @@ curl -X POST https://<function-compute-endpoint>/requirements/draft `
 ```
 
 The `/health` payload intentionally exposes provider, model, region, and this
-proof file path, but never exposes API keys.
+proof file path. It also exposes the non-secret storage backend, transaction
+mode, build SHA, and FC instance ID, but never exposes API keys or role tokens.
 
 Validate the deployed endpoint quickly:
 

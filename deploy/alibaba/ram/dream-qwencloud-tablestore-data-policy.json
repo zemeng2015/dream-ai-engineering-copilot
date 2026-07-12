@@ -1,0 +1,17 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ots:GetRow",
+        "ots:GetRange",
+        "ots:PutRow",
+        "ots:StartLocalTransaction",
+        "ots:CommitTransaction",
+        "ots:AbortTransaction"
+      ],
+      "Resource": "acs:ots:ap-southeast-1:*:instance/dreammem/table/dream_experience_v1"
+    }
+  ]
+}

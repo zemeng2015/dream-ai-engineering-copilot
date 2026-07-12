@@ -23,6 +23,7 @@ resources:
       cpu: 1
       diskSize: 512
       internetAccess: true
+      role: acs:ram::${env(ALIBABA_CLOUD_ACCOUNT_ID)}:role/dream-qwencloud-fc-role
       instanceConcurrency: 4
       concurrencyConfig:
         reservedConcurrency: 1
@@ -44,7 +45,12 @@ resources:
         DREAM_CONFIG_FILE: /code/examples/config/dream.qwen.yaml
         DREAM_ARTIFACT_ROOT: /tmp/dream-artifacts
         DREAM_AUDIT_DB_PATH: /tmp/dream.sqlite
-        DREAM_EXPERIENCE_DB_PATH: /tmp/dream-experience.sqlite
+        DREAM_EXPERIENCE_STORE: tablestore
+        ALIBABA_TABLESTORE_ENDPOINT: https://dreammem.ap-southeast-1.ots.aliyuncs.com
+        ALIBABA_TABLESTORE_INSTANCE: dreammem
+        ALIBABA_TABLESTORE_TABLE: dream_experience_v1
+        DREAM_TABLESTORE_TRANSACTION_ATTEMPTS: "30"
+        DREAM_BUILD_SHA: ${env(DREAM_BUILD_SHA, "uncommitted")}
         DASHSCOPE_API_KEY: ${env(DASHSCOPE_API_KEY)}
         QWEN_BASE_URL: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
         QWEN_MODEL: ${env(QWEN_MODEL, "qwen3.7-plus")}

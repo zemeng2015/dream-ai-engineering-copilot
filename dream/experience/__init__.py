@@ -17,7 +17,11 @@ from dream.experience.policy import (
     LLMExperienceMemoryPolicy,
     RuleBasedExperienceMemoryPolicy,
 )
-from dream.experience.repository import ExperienceMemoryRepository
+from dream.experience.repository import (
+    ExperienceMemoryRepository,
+    ExperienceMemoryRepositoryProtocol,
+    create_experience_memory_repository,
+)
 from dream.experience.service import ExperienceMemoryService
 
 __all__ = [
@@ -27,6 +31,7 @@ __all__ = [
     "ExperienceMemory",
     "ExperienceMemoryPolicy",
     "ExperienceMemoryRepository",
+    "ExperienceMemoryRepositoryProtocol",
     "ExperienceMemoryService",
     "ExperienceObservation",
     "ExperiencePolicyResult",
@@ -36,4 +41,5 @@ __all__ = [
     "LLMExperienceMemoryPolicy",
     "MemoryActionProposal",
     "RuleBasedExperienceMemoryPolicy",
+    "create_experience_memory_repository",
 ]

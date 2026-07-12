@@ -10,6 +10,7 @@ def test_api_health_endpoint(monkeypatch) -> None:
     monkeypatch.delenv("DREAM_ARTIFACT_ROOT", raising=False)
     monkeypatch.delenv("ALIBABA_CLOUD_REGION", raising=False)
     monkeypatch.delenv("ALIBABA_CLOUD_SERVICE", raising=False)
+    monkeypatch.delenv("DREAM_EXPERIENCE_STORE", raising=False)
 
     client = TestClient(create_app())
 
@@ -21,7 +22,39 @@ def test_api_health_endpoint(monkeypatch) -> None:
     assert payload["service"] == "dream-memoryagent-api"
     assert payload["track"] == "Track 1: MemoryAgent"
     assert payload["llm_provider"] == "mock"
+    assert payload["experience_storage_backend"] == "sqlite"
+    assert payload["experience_storage_durable"] is False
+    assert response.headers["X-Dream-Storage-Backend"] == "sqlite"
     assert payload["proof_file"] == "deploy/alibaba/serverless-devs-runtime.yaml"
+
+
+def test_api_health_exposes_non_secret_tablestore_runtime_evidence(
+    monkeypatch, tmp_path
+) -> None:
+    config_path = tmp_path / "dream.yaml"
+    config_path.write_text(
+        "mode: public-demo\nllm:\n  provider: qwen-cloud\n  model: qwen3.7-plus\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("DREAM_CONFIG_FILE", str(config_path))
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "qwen-demo-key")
+    monkeypatch.setenv("DREAM_EXPERIENCE_STORE", "tablestore")
+    monkeypatch.setenv("FC_INSTANCE_ID", "fc-instance-proof-7")
+    monkeypatch.setenv("DREAM_BUILD_SHA", "abc1234")
+
+    response = TestClient(create_app()).get("/health")
+    payload = response.json()
+
+    assert response.status_code == 200
+    assert payload["experience_storage_backend"] == "tablestore"
+    assert payload["experience_storage_durable"] is True
+    assert payload["experience_transaction_mode"] == "partition-local-transaction"
+    assert payload["runtime_instance_id"] == "fc-instance-proof-7"
+    assert payload["build_sha"] == "abc1234"
+    assert response.headers["X-Dream-Storage-Backend"] == "tablestore"
+    assert response.headers["X-Dream-FC-Instance-Id"] == "fc-instance-proof-7"
+    assert response.headers["X-Dream-Build-Sha"] == "abc1234"
+    assert "ACCESS_KEY" not in str(payload)
 
 
 def test_api_health_reflects_alibaba_deployment_when_env_set(
@@ -142,6 +175,16 @@ def test_qwencloud_showcase_reports_static_evidence_without_live_backend(monkeyp
     assert "examples/experience-benchmark/scenarios.yaml" in experience_evidence[
         "proof_paths"
     ]
+    storage_evidence = next(
+        item
+        for item in payload["evidence"]
+        if item["name"] == "Durable transactional experience memory"
+    )
+    assert storage_evidence["state"] == "cloud-verified"
+    assert (
+        "docs/assets/qwencloud-tablestore-proof-summary.json"
+        in storage_evidence["proof_paths"]
+    )
     assert [step["route"] for step in payload["judge_flow"]] == [
         "/memory",
         "/requirements",

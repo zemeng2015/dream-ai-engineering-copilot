@@ -137,11 +137,17 @@ Copy-RepoItem -Source "docs/assets/qwen-experience-memory-benchmark-report.json"
 Copy-RepoItem -Source "docs/assets/qwen-experience-memory-stability-report.json" -Destination $docsAssetsPackage
 Copy-RepoItem -Source "docs/qwen-experience-memory-benchmark.md" -Destination (Join-Path $outputPath "docs")
 Copy-RepoItem -Source "docs/qwen-experience-memory-stability.md" -Destination (Join-Path $outputPath "docs")
+Copy-RepoItem -Source "docs/assets/qwencloud-tablestore-proof-summary.json" -Destination $docsAssetsPackage
+Copy-RepoItem -Source "docs/qwencloud-tablestore-architecture.md" -Destination (Join-Path $outputPath "docs")
 
 $deployPackage = Join-Path $outputPath "deploy/alibaba"
 New-Item -ItemType Directory -Path $deployPackage -Force | Out-Null
 Copy-RepoItem -Source "deploy/alibaba/requirements-fc312.lock.txt" -Destination $deployPackage
 Copy-RepoItem -Source "deploy/alibaba/serverless-devs-runtime.yaml" -Destination $deployPackage
+$ramPackage = Join-Path $deployPackage "ram"
+New-Item -ItemType Directory -Path $ramPackage -Force | Out-Null
+Copy-RepoItem -Source "deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json" -Destination $ramPackage
+Copy-RepoItem -Source "deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json" -Destination $ramPackage
 
 $bootstrapPath = Join-Path $outputPath "bootstrap"
 $bootstrapLines = @(
@@ -198,8 +204,13 @@ foreach ($requiredPackagePath in @(
     "docs/assets/qwen-experience-memory-stability-report.json",
     "docs/qwen-experience-memory-benchmark.md",
     "docs/qwen-experience-memory-stability.md",
+    "docs/assets/qwencloud-tablestore-proof-summary.json",
+    "docs/qwencloud-tablestore-architecture.md",
     "deploy/alibaba/requirements-fc312.lock.txt",
     "deploy/alibaba/serverless-devs-runtime.yaml",
+    "deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json",
+    "deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json",
+    "tablestore/__init__.py",
     "bootstrap",
     "dream-fc-package.json"
 )) {

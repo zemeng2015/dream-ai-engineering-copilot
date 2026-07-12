@@ -48,6 +48,11 @@ describe('HackathonDemoComponent', () => {
       llm_model: 'qwen3.7-plus',
       llm_base_url: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
       llm_api_key_configured: true,
+      experience_storage_backend: 'tablestore',
+      experience_storage_durable: true,
+      experience_transaction_mode: 'partition-local-transaction',
+      runtime_instance_id: 'fc-instance-test',
+      build_sha: 'abc1234567890',
       proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
     });
     const showcaseRequest = httpTesting.expectOne('http://127.0.0.1:8000/qwencloud/showcase');
@@ -69,6 +74,11 @@ describe('HackathonDemoComponent', () => {
         llm_provider: 'qwen-cloud',
         llm_model: 'qwen3.7-plus',
         llm_api_key_configured: true,
+        experience_storage_backend: 'tablestore',
+        experience_storage_durable: true,
+        experience_transaction_mode: 'partition-local-transaction',
+        runtime_instance_id: 'fc-instance-test',
+        build_sha: 'abc1234567890',
         proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
         qwen_cloud_ready: true,
         alibaba_runtime_ready: true,
@@ -134,6 +144,8 @@ describe('HackathonDemoComponent', () => {
     expect(text).toContain('qwen3.7-plus');
     expect(text).toContain('Qwen + Alibaba runtime verified');
     expect(text).toContain('ap-southeast-1');
+    expect(text).toContain('tablestore / partition transaction');
+    expect(text).toContain('abc123456789');
     expect(text).toContain('Three sessions. One current truth.');
     expect(text).toContain('Memory makes the same Qwen model more useful.');
     expect(text).toContain('Stateless Qwen');
@@ -269,6 +281,11 @@ function flushMinimalBoot(httpTesting: HttpTestingController): void {
     llm_provider: 'qwen-cloud',
     llm_model: 'qwen3.7-plus',
     llm_api_key_configured: true,
+    experience_storage_backend: 'tablestore',
+    experience_storage_durable: true,
+    experience_transaction_mode: 'partition-local-transaction',
+    runtime_instance_id: 'fc-instance-test',
+    build_sha: 'abc1234567890',
     proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
   });
   httpTesting.expectOne('http://127.0.0.1:8000/qwencloud/showcase').flush({
@@ -286,6 +303,11 @@ function flushMinimalBoot(httpTesting: HttpTestingController): void {
       llm_provider: 'qwen-cloud',
       llm_model: 'qwen3.7-plus',
       llm_api_key_configured: true,
+      experience_storage_backend: 'tablestore',
+      experience_storage_durable: true,
+      experience_transaction_mode: 'partition-local-transaction',
+      runtime_instance_id: 'fc-instance-test',
+      build_sha: 'abc1234567890',
       proof_file: 'deploy/alibaba/serverless-devs-runtime.yaml',
       qwen_cloud_ready: true,
       alibaba_runtime_ready: true,

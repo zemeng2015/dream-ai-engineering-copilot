@@ -103,6 +103,13 @@ export class HackathonDemoComponent implements OnInit {
       },
       { label: 'Runtime', value: health.alibabaCloudService ?? health.deploymentTarget },
       { label: 'Region', value: health.alibabaCloudRegion ?? 'not set' },
+      {
+        label: 'Memory',
+        value: health.experienceStorageDurable
+          ? `${health.experienceStorageBackend} / partition transaction`
+          : health.experienceStorageBackend,
+      },
+      { label: 'Build', value: health.buildSha?.slice(0, 12) ?? 'not stamped' },
     ];
   });
 
@@ -443,6 +450,7 @@ export class HackathonDemoComponent implements OnInit {
       health.track === 'Track 1: MemoryAgent' &&
       health.llmProvider === 'qwen-cloud' &&
       health.llmApiKeyConfigured &&
+      health.experienceStorageDurable &&
       health.deploymentTarget.toLowerCase().includes('alibaba cloud function compute')
     );
   }

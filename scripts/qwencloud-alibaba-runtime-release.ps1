@@ -223,14 +223,14 @@ function Write-ReleaseReport([string]$EffectiveBackendUrl) {
 
 $effectiveBackendUrl = $BackendUrl
 try {
-    foreach ($path in @($ServerlessTemplate, "scripts/qwencloud-build-fc-code-package.ps1", "scripts/qwencloud-release-config-audit.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-validate-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-devpost-handoff.ps1", "scripts/qwencloud-devpost-materials-audit.ps1")) {
+    foreach ($path in @($ServerlessTemplate, "deploy/alibaba/ram/dream-qwencloud-fc-assume-role-policy.json", "deploy/alibaba/ram/dream-qwencloud-tablestore-data-policy.json", "scripts/qwencloud-build-fc-code-package.ps1", "scripts/qwencloud-release-config-audit.ps1", "scripts/qwencloud-hackathon-verify.ps1", "scripts/qwencloud-capture-alibaba-proof.ps1", "scripts/qwencloud-render-alibaba-proof-video.ps1", "scripts/qwencloud-validate-alibaba-proof.ps1", "scripts/qwencloud-hackathon-submission-packet.ps1", "scripts/qwencloud-devpost-handoff.ps1", "scripts/qwencloud-devpost-materials-audit.ps1")) {
         if (-not (Test-Path $path)) {
             throw "Required runtime release file missing: $path"
         }
     }
     Add-Step -Name "required_files" -Status "pass" -Details "runtime release scripts and deployment template found"
 
-    $requiredTools = @("s", "python")
+    $requiredTools = @("git", "s", "python")
     if (-not $SkipProofVideo) {
         $requiredTools += "ffmpeg"
     }
@@ -249,6 +249,21 @@ try {
         [Environment]::SetEnvironmentVariable("ALIBABA_CLOUD_REGION", [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION"), "Process")
         $env:ALIBABA_CLOUD_REGION = [Environment]::GetEnvironmentVariable("ALIBABA_CLOUD_RUNTIME_REGION")
     }
+    if (-not (Has-Env "DREAM_BUILD_SHA")) {
+        $gitSha = (& git rev-parse HEAD 2>$null).Trim()
+        if ([string]::IsNullOrWhiteSpace($gitSha)) {
+            throw "Unable to resolve DREAM_BUILD_SHA from git."
+        }
+        $dirtyState = (& git status --porcelain) -join "`n"
+        $buildSha = if ([string]::IsNullOrWhiteSpace($dirtyState)) {
+            $gitSha
+        }
+        else {
+            "$gitSha-dirty"
+        }
+        [Environment]::SetEnvironmentVariable("DREAM_BUILD_SHA", $buildSha, "Process")
+        $env:DREAM_BUILD_SHA = $buildSha
+    }
 
     $resolvedCodeDir = if ([System.IO.Path]::IsPathRooted($CodeDir)) {
         [System.IO.Path]::GetFullPath($CodeDir)
@@ -263,7 +278,12 @@ try {
         Add-Step -Name "required_env" -Status "skipped" -Details "SkipDeploy with explicit BackendUrl"
     }
     else {
-        $requiredEnv = @("DASHSCOPE_API_KEY", "QWEN_BASE_URL", "QWEN_MODEL")
+        $requiredEnv = @(
+            "ALIBABA_CLOUD_ACCOUNT_ID",
+            "DASHSCOPE_API_KEY",
+            "QWEN_BASE_URL",
+            "QWEN_MODEL"
+        )
         $missingEnv = $requiredEnv | Where-Object { -not (Has-Env $_) }
         if ($missingEnv.Count -gt 0) {
             if ($PlanOnly) {

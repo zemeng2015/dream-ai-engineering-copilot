@@ -43,6 +43,11 @@ interface ApiHealthResponse {
   llm_model?: string | null;
   llm_base_url?: string | null;
   llm_api_key_configured: boolean;
+  experience_storage_backend?: string;
+  experience_storage_durable?: boolean;
+  experience_transaction_mode?: string;
+  runtime_instance_id?: string | null;
+  build_sha?: string | null;
   proof_file: string;
 }
 
@@ -56,6 +61,11 @@ interface ApiQwenCloudShowcaseRuntime {
   llm_provider: string;
   llm_model?: string | null;
   llm_api_key_configured: boolean;
+  experience_storage_backend?: string;
+  experience_storage_durable?: boolean;
+  experience_transaction_mode?: string;
+  runtime_instance_id?: string | null;
+  build_sha?: string | null;
   proof_file: string;
   qwen_cloud_ready: boolean;
   alibaba_runtime_ready: boolean;
@@ -1429,6 +1439,11 @@ export interface DreamHealth {
   llmModel: string | null;
   llmBaseUrl: string | null;
   llmApiKeyConfigured: boolean;
+  experienceStorageBackend: string;
+  experienceStorageDurable: boolean;
+  experienceTransactionMode: string;
+  runtimeInstanceId: string | null;
+  buildSha: string | null;
   proofFile: string;
 }
 
@@ -1442,6 +1457,11 @@ export interface QwenCloudShowcaseRuntime {
   llmProvider: string;
   llmModel: string | null;
   llmApiKeyConfigured: boolean;
+  experienceStorageBackend: string;
+  experienceStorageDurable: boolean;
+  experienceTransactionMode: string;
+  runtimeInstanceId: string | null;
+  buildSha: string | null;
   proofFile: string;
   qwenCloudReady: boolean;
   alibabaRuntimeReady: boolean;
@@ -2369,6 +2389,11 @@ function mapHealth(response: ApiHealthResponse): DreamHealth {
     llmModel: response.llm_model ?? null,
     llmBaseUrl: response.llm_base_url ?? null,
     llmApiKeyConfigured: response.llm_api_key_configured,
+    experienceStorageBackend: response.experience_storage_backend ?? 'sqlite',
+    experienceStorageDurable: response.experience_storage_durable ?? false,
+    experienceTransactionMode: response.experience_transaction_mode ?? 'sqlite-immediate',
+    runtimeInstanceId: response.runtime_instance_id ?? null,
+    buildSha: response.build_sha ?? null,
     proofFile: response.proof_file,
   };
 }
@@ -2389,6 +2414,12 @@ function mapQwenCloudShowcase(response: ApiQwenCloudShowcaseResponse): QwenCloud
       llmProvider: response.runtime.llm_provider,
       llmModel: response.runtime.llm_model ?? null,
       llmApiKeyConfigured: response.runtime.llm_api_key_configured,
+      experienceStorageBackend: response.runtime.experience_storage_backend ?? 'sqlite',
+      experienceStorageDurable: response.runtime.experience_storage_durable ?? false,
+      experienceTransactionMode:
+        response.runtime.experience_transaction_mode ?? 'sqlite-immediate',
+      runtimeInstanceId: response.runtime.runtime_instance_id ?? null,
+      buildSha: response.runtime.build_sha ?? null,
       proofFile: response.runtime.proof_file,
       qwenCloudReady: response.runtime.qwen_cloud_ready,
       alibabaRuntimeReady: response.runtime.alibaba_runtime_ready,

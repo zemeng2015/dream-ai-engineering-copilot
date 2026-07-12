@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from threading import Barrier
 
 from dream.experience import (
     ExperienceFeedbackRequest,
@@ -180,6 +182,49 @@ def test_conflicting_preference_automatically_supersedes_old_memory(tmp_path) ->
     assert old.status == "superseded"
     assert old.superseded_by == second.memory.memory_id
     assert [memory.value for memory in active] == ["retry only failed tasks"]
+
+
+def test_concurrent_conflicting_writes_leave_exactly_one_active_truth(tmp_path) -> None:
+    repository = ExperienceMemoryRepository(tmp_path / "experience.sqlite")
+    worker_count = 20
+    barrier = Barrier(worker_count)
+    current = datetime(2026, 7, 10, tzinfo=UTC)
+
+    def capture(index: int):
+        service = ExperienceMemoryService(
+            repository=repository,
+            policy=StaticPolicy(
+                _remember(
+                    key="deployment_canary_default",
+                    value=f"use {index + 1}% canary for {30 + index} minutes",
+                )
+            ),
+        )
+        barrier.wait()
+        return service.capture(
+            _observation(f"concurrent-session-{index}", f"Set canary value {index}."),
+            now=current + timedelta(microseconds=index),
+        )
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        results = list(executor.map(capture, range(worker_count)))
+
+    memories = repository.list_memories(
+        team_id="demo_team", user_id="zack", include_inactive=True
+    )
+    matching = [
+        memory for memory in memories if memory.key == "deployment_canary_default"
+    ]
+    active = [memory for memory in matching if memory.status == "active"]
+    superseded = [memory for memory in matching if memory.status == "superseded"]
+    decisions = repository.list_decisions(team_id="demo_team", user_id="zack")
+
+    assert len(matching) == worker_count
+    assert len(active) == 1
+    assert len(superseded) == worker_count - 1
+    assert active[0].value in {result.memory.value for result in results}
+    assert all(result.active_memory_count == 1 for result in results)
+    assert len(decisions) == worker_count
 
 
 def test_expired_memory_never_leaks_into_recall(tmp_path) -> None:
