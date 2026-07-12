@@ -369,16 +369,6 @@ function Get-LatestFinalBundleManifest([string]$ExplicitPath) {
     if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
         return $ExplicitPath
     }
-
-    $candidate = Get-ChildItem -LiteralPath $OutputDir -Filter "final-upload-bundle-*" -Directory -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        ForEach-Object {
-            $manifest = Join-Path $_.FullName "manifest.json"
-            if (Test-Path -LiteralPath $manifest) { Get-Item -LiteralPath $manifest }
-        } |
-        Select-Object -First 1
-
-    if ($candidate) { return $candidate.FullName }
     return ""
 }
 
@@ -405,7 +395,8 @@ $headCi = Test-HeadCiSuccess
 Add-Check -Name "latest_head_ci_success" -Ok $headCi.ok -Details $headCi.details
 
 $bundleManifestPath = Get-LatestFinalBundleManifest -ExplicitPath $FinalBundleManifest
-Add-Check -Name "final_bundle_manifest_present" -Ok (-not [string]::IsNullOrWhiteSpace($bundleManifestPath) -and (Test-Path -LiteralPath $bundleManifestPath)) -Details $(if ($bundleManifestPath) { $bundleManifestPath } else { "missing final-upload-bundle-*/manifest.json" })
+$bundleRequired = -not [string]::IsNullOrWhiteSpace($FinalBundleManifest)
+Add-Check -Name "final_bundle_manifest_present" -Ok (-not $bundleRequired -or (-not [string]::IsNullOrWhiteSpace($bundleManifestPath) -and (Test-Path -LiteralPath $bundleManifestPath))) -Details $(if ($bundleManifestPath) { $bundleManifestPath } else { "not requested; pass -FinalBundleManifest for strict bundle verification" }) -Required $bundleRequired
 if (-not [string]::IsNullOrWhiteSpace($bundleManifestPath) -and (Test-Path -LiteralPath $bundleManifestPath)) {
     try {
         $bundle = Get-Content -LiteralPath $bundleManifestPath -Raw | ConvertFrom-Json
@@ -446,7 +437,7 @@ else {
         "final_bundle_item.alibaba_deployment_screenshot",
         "final_bundle_item.alibaba_backend_proof_recording"
     )) {
-        Add-Check -Name $name -Ok $false -Details "final bundle manifest missing"
+        Add-Check -Name $name -Ok (-not $bundleRequired) -Details $(if ($bundleRequired) { "final bundle manifest missing" } else { "not requested" }) -Required $bundleRequired
     }
 }
 

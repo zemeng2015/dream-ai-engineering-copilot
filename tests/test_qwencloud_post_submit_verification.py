@@ -194,3 +194,11 @@ def test_post_submit_verification_has_fixtureable_ci_selection() -> None:
     assert "repo_license_apache_2_0" in text
     assert "devpost_public_project_mentions_repo" in text
     assert "devpost_public_project_mentions_demo_video" in text
+
+
+def test_post_submit_verification_only_requires_explicit_bundle() -> None:
+    text = SCRIPT.read_text(encoding="utf-8-sig")
+
+    assert "$bundleRequired = -not [string]::IsNullOrWhiteSpace($FinalBundleManifest)" in text
+    assert "not requested; pass -FinalBundleManifest for strict bundle verification" in text
+    assert "-Required $bundleRequired" in text
