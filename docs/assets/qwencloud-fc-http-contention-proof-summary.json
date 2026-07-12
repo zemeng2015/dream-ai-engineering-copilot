@@ -1,0 +1,40 @@
+{
+  "activeCount": 1,
+  "baseUrl": "https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run",
+  "buildSha": "cb6255b7a1565a631daec6215bd146f495d97df8",
+  "credentials": {
+    "valuesRecorded": false
+  },
+  "decisionCount": 20,
+  "durationSeconds": 7.494,
+  "fcInstanceIds": [
+    "c-6a537f3b-01459c63-95f653d85f5f"
+  ],
+  "generatedAt": "2026-07-12T11:50:02.089644+00:00",
+  "latencyMs": {
+    "max": 7485,
+    "median": 3385,
+    "min": 2193,
+    "p95": 6084
+  },
+  "memoryCount": 20,
+  "rememberActions": 1,
+  "requestErrors": [],
+  "requestsAttempted": 20,
+  "requestsSucceeded": 20,
+  "runId": "20260712T114952Z",
+  "schemaVersion": "dream-fc-http-contention-proof-v1",
+  "scope": {
+    "teamId": "fc-http-contention-proof",
+    "userId": "run-20260712t114952z"
+  },
+  "status": "pass",
+  "storage": {
+    "backend": "tablestore",
+    "transactionMode": "partition-local-transaction"
+  },
+  "supersedeActions": 19,
+  "supersededCount": 19,
+  "winningMemoryId": "experience-memory-ffdcd3e9cb72",
+  "winningValue": "candidate-13"
+}

@@ -149,6 +149,24 @@ Validate the deployed endpoint quickly:
 scripts/qwencloud-hackathon-verify.ps1 -BaseUrl "https://<function-compute-endpoint>"
 ```
 
+Prove that a real Qwen-created memory survives an FC instance replacement:
+
+```powershell
+$sha = (git rev-parse HEAD).Trim()
+python scripts/qwencloud_fc_persistence_proof.py seed `
+  --base-url "https://<function-compute-endpoint>" `
+  --expected-build $sha
+
+# Rebuild and redeploy the same source commit so FC replaces the instance.
+
+python scripts/qwencloud_fc_persistence_proof.py verify `
+  --base-url "https://<function-compute-endpoint>"
+```
+
+The committed sanitized acceptance receipts are under `docs/assets/`; they
+record Qwen request/response hashes, instance IDs, memory and decision IDs,
+counts, timings, and the deployed commit, but no credentials.
+
 Generate the Devpost-required Alibaba deployment screenshot:
 
 ```powershell

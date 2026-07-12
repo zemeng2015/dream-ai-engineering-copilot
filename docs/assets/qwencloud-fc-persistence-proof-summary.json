@@ -1,0 +1,53 @@
+{
+  "baseUrl": "https://dream-a-runtime-mdvperjjet.ap-southeast-1.fcapp.run",
+  "buildSha": "cb6255b7a1565a631daec6215bd146f495d97df8",
+  "credentials": {
+    "valuesRecorded": false
+  },
+  "generatedAt": "2026-07-12T11:51:54.515105+00:00",
+  "persistence": {
+    "decisionCount": 1,
+    "decisionId": "experience-decision-ac20b106c383",
+    "memoryCount": 1,
+    "memoryId": "experience-memory-6c31f019d6da",
+    "memoryKey": "pre_migration_verification",
+    "memoryStatus": "active",
+    "memoryValue": "Run and verify database migrations before shifting production traffic",
+    "recallSelectedMemoryIds": [
+      "experience-memory-6c31f019d6da"
+    ],
+    "scope": {
+      "teamId": "fc-persistence-proof",
+      "userId": "run-20260712t115017z-0018f3eb"
+    }
+  },
+  "qwen": {
+    "action": "remember",
+    "latencyMs": 2352,
+    "model": "qwen3.7-plus",
+    "provider": "qwen-cloud",
+    "providerRequestId": "f2d4a51b-3e0a-9734-ac6a-20bf45dac397",
+    "requestSha256": "6b650e43617e1dabb3b74653630abba72f67f0451d098472bfacdbb6eabb0761",
+    "responseSha256": "256c217defd911d6ec6debaa8bf8747d157292e0a6ebc555802580327e856965",
+    "tokenUsage": {
+      "completion_tokens": 98,
+      "prompt_tokens": 682,
+      "total_tokens": 780
+    }
+  },
+  "runId": "20260712T115017Z-0018f3eb",
+  "runtimeTransition": {
+    "instanceChanged": true,
+    "seedInstanceId": "c-6a537f3b-01459c63-95f653d85f5f",
+    "verifyInstanceId": "c-6a537fcc-01459c63-9d10c45d0864"
+  },
+  "schemaVersion": "dream-fc-persistence-proof-v1",
+  "status": "pass",
+  "storage": {
+    "backend": "tablestore",
+    "durable": true,
+    "region": "ap-southeast-1",
+    "service": "Function Compute custom runtime",
+    "transactionMode": "partition-local-transaction"
+  }
+}

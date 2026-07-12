@@ -101,10 +101,22 @@ decision_count=20
 ```
 
 All 20 transaction starts completed under Tablestore's partition lock. No
-write, history row, or decision receipt was lost. The next acceptance step is
-to repeat this contract through the deployed Function Compute HTTP endpoint
-and prove recall from a different FC instance ID after scale-to-zero or
-redeployment.
+write, history row, or decision receipt was lost.
+
+The deployed Function Compute path subsequently passed both remaining gates.
+A 20-request HTTP burst completed with 20 successes, one active truth, 19
+superseded histories, and 20 decision receipts in 7.494 seconds. A separate
+Qwen-created memory was then recalled after the FC instance changed from
+`c-6a537f3b-01459c63-95f653d85f5f` to
+`c-6a537fcc-01459c63-9d10c45d0864` while the runtime source stayed at
+`cb6255b7a1565a631daec6215bd146f495d97df8`.
+
+The sanitized receipts are committed as
+[`qwencloud-fc-http-contention-proof-summary.json`](assets/qwencloud-fc-http-contention-proof-summary.json)
+and
+[`qwencloud-fc-persistence-proof-summary.json`](assets/qwencloud-fc-persistence-proof-summary.json).
+See [`qwencloud-fc-runtime-proof.md`](qwencloud-fc-runtime-proof.md) for the
+end-to-end acceptance narrative and reproduction commands.
 
 ## Runtime Identity
 
