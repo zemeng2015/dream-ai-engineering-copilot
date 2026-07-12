@@ -16,6 +16,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$ArchitectureUploadPath = "docs/assets/qwencloud-architecture.png",
     [Parameter(Mandatory = $false)]
+    [string]$DevpostGalleryDir = "artifacts/qwencloud-proof/video-v3/devpost-gallery-v3",
+    [Parameter(Mandatory = $false)]
     [string]$LocalDemoVideoPath = "artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4",
     [Parameter(Mandatory = $false)]
     [string]$AlibabaScreenshotPath = "artifacts/qwencloud-proof/alibaba-deployment-screenshot.png",
@@ -1119,6 +1121,12 @@ Add-Item -Name "devpost_video_url_policy_script" -Path "scripts/qwencloud-devpos
 Add-Item -Name "video_thumbnail_png" -Path "docs/assets/qwencloud-video-thumbnail.png" -Required $false
 Add-Item -Name "video_thumbnail_v3_component" -Path "tools/submission-video-v2/src/v3/GalleryV3.tsx" -Required $false
 Add-Item -Name "video_thumbnail_v3_renderer" -Path "tools/submission-video-v2/scripts/render-v3-gallery.mjs" -Required $false
+Add-Item -Name "devpost_gallery_01_current_truth" -Path (Join-Path $DevpostGalleryDir "01-dream-one-current-truth.png")
+Add-Item -Name "devpost_gallery_02_live_qwen_sessions" -Path (Join-Path $DevpostGalleryDir "02-live-qwen-three-sessions.png")
+Add-Item -Name "devpost_gallery_03_fc_tablestore_durability" -Path (Join-Path $DevpostGalleryDir "03-fc-tablestore-durability.png")
+Add-Item -Name "devpost_gallery_04_alibaba_architecture" -Path (Join-Path $DevpostGalleryDir "04-alibaba-architecture-measurement.png")
+Add-Item -Name "devpost_gallery_manifest" -Path (Join-Path $DevpostGalleryDir "gallery-v3-manifest.json")
+Add-Item -Name "devpost_gallery_contact_sheet" -Path (Join-Path $DevpostGalleryDir "gallery-v3-contact-sheet.png") -Required $false
 Add-Item -Name "demo_video_captions_srt" -Path "docs/qwencloud-demo-video-captions.srt" -Required $false
 Add-Item -Name "demo_video_transcript" -Path "docs/qwencloud-demo-video-transcript.md" -Required $false
 Add-Item -Name "video_upload_status_script" -Path "scripts/qwencloud-video-upload-status.ps1" -Required $false

@@ -152,6 +152,8 @@ scripts/qwencloud-video-publication-handoff.ps1
 ```
 
 - Upload `artifacts/qwencloud-proof/dream-qwencloud-devpost-final.mp4`.
+- Apply `docs/assets/qwencloud-video-thumbnail.png` as the YouTube thumbnail
+  and upload `docs/qwencloud-demo-video-captions.srt` as English captions.
 - Use `docs/qwencloud-video-upload-handoff.md` and the latest
   `video-publication-handoff-*.md` for the title, description, MP4 hash,
   thumbnail hash, caption hash, platform rules, and Chrome upload troubleshooting.
@@ -267,6 +269,9 @@ scripts/qwencloud-final-external-handoff.ps1 -EnvFile .env.qwencloud.local -Demo
 - Add Apache-2.0 link
 - Upload `docs/assets/qwencloud-architecture.png`
 - Upload `artifacts/qwencloud-proof/alibaba-deployment-screenshot.png`
+- Upload the four numbered PNGs from
+  `artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/` in filename order;
+  confirm their hashes against `gallery-v3-manifest.json` before selection.
 - Upload or link `artifacts/qwencloud-proof/alibaba-deployment-proof.mp4` if
   Devpost requests the separate Alibaba backend recording.
 - Add demo video link

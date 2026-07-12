@@ -12,6 +12,11 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
 
     assert '[string]$RepoName = "zemeng2015/dream-ai-engineering-copilot"' in final_bundle
     assert '[string]$RepoRef = "codex/champion-memory-loop"' in final_bundle
+    assert (
+        '[string]$DevpostGalleryDir = '
+        '"artifacts/qwencloud-proof/video-v3/devpost-gallery-v3"'
+        in final_bundle
+    )
     assert "function Invoke-PowerShellProcess" in final_bundle
     assert "-ArgumentList $quotedArguments" in final_bundle
     assert "-ArgumentList $args" not in final_bundle
@@ -22,6 +27,15 @@ def test_final_upload_bundle_refreshes_action_board_for_each_bundle() -> None:
     assert "function Invoke-VideoUploadStatus" in final_bundle
     assert 'Add-ExternalRequirement -Name "current_public_demo_video_ready"' in final_bundle
     assert 'Add-Item -Name "video_upload_status_json"' in final_bundle
+    for gallery_item in [
+        "devpost_gallery_01_current_truth",
+        "devpost_gallery_02_live_qwen_sessions",
+        "devpost_gallery_03_fc_tablestore_durability",
+        "devpost_gallery_04_alibaba_architecture",
+        "devpost_gallery_manifest",
+        "devpost_gallery_contact_sheet",
+    ]:
+        assert f'Add-Item -Name "{gallery_item}"' in final_bundle
     assert "releaseSummaryPackaging" in final_bundle
     assert "not_bundled_generate_after_zip_hash" in final_bundle
     assert "function Protect-ManifestText" in final_bundle

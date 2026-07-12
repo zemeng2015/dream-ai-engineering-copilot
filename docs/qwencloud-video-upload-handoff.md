@@ -56,6 +56,9 @@ hash, so the selected upload assets can be checked against the final bundle.
 
 The same command writes the four reviewed 1800x1200 Devpost gallery images to
 `artifacts/qwencloud-proof/video-v3/devpost-gallery-v3/` with a SHA256 manifest.
+The final upload bundle copies all four numbered images, the manifest, and the
+contact sheet so the reviewed gallery can be selected without consulting an
+older render directory.
 
 ## Captions
 
