@@ -9,6 +9,7 @@ function Get-QwenCloudDevpostCopy {
     }
 
     $story = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath $StoryPath).Path).Trim()
+    $story = $story.Replace("`r`n", "`n").Replace("`r", "`n")
     $requiredFragments = @(
         "Alibaba Tablestore",
         "cross-instance",
@@ -24,6 +25,15 @@ function Get-QwenCloudDevpostCopy {
         throw "Canonical Devpost story still contains the retired SQLite competition narrative."
     }
 
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $storyHashBytes = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($story))
+        $storySha256 = -join ($storyHashBytes | ForEach-Object { $_.ToString("x2") })
+    }
+    finally {
+        $sha256.Dispose()
+    }
+
     return [pscustomobject]@{
         projectTitle = "DREAM: Qwen Cloud MemoryAgent for Source-Backed Engineering Intelligence"
         track = "Track 1: MemoryAgent"
@@ -32,6 +42,6 @@ function Get-QwenCloudDevpostCopy {
         preExistingExplanation = "Not applicable. The public DREAM memory platform release started on 06-21-26; Qwen Cloud Track 1 integration, Alibaba packaging, CI audit, architecture assets, and demo/submission materials were added during the hackathon submission period."
         story = $story
         storyPath = $StoryPath
-        storySha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $StoryPath).Hash.ToLowerInvariant()
+        storySha256 = $storySha256
     }
 }

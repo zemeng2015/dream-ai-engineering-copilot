@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
 import json
 import os
 import shutil
@@ -78,7 +79,8 @@ def test_structured_payload_uses_canonical_devpost_story(tmp_path: Path) -> None
     assert "Alibaba Cloud Tablestore" in fields["software_tag_list"]["value"]
     assert "SQLite" not in fields["software_tag_list"]["value"]
     assert report["publicCopy"]["story"] == story
-    assert len(report["publicCopy"]["storySha256"]) == 64
+    expected_hash = hashlib.sha256(story.encode("utf-8")).hexdigest()
+    assert report["publicCopy"]["storySha256"] == expected_hash
     assert "project_story_v3_cloud_proof" not in report["requiredFailures"]
 
 
