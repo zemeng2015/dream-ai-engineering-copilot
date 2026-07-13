@@ -1,0 +1,53 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="panel comparison-panel" aria-labelledby="comparison-title">
+  <header class="comparison-header">
+    <div>
+      <span class="eyebrow">Why DREAM</span>
+      <h2 id="comparison-title">The missing layer between a model and enterprise delivery</h2>
+      <p>Same request. A different level of organizational evidence and control.</p>
+    </div>
+    <div class="comparison-thesis" aria-label="Comparison thesis">
+      <app-ui-icon name="spark" />
+      <span>From plausible output to reviewable decision</span>
+    </div>
+  </header>
+
+  <div class="comparison-table" role="table" aria-label="Stateless assistant and DREAM comparison">
+    <div class="comparison-heading" role="row">
+      <span role="columnheader">Decision dimension</span>
+      <span role="columnheader">
+        <small>Without governed context</small>
+        <strong>Stateless assistant</strong>
+      </span>
+      <span class="direction-heading" role="columnheader" aria-label="Compared with"></span>
+      <span class="dream-heading" role="columnheader">
+        <small>With governed context</small>
+        <strong>DREAM</strong>
+      </span>
+    </div>
+
+    @for (row of rows; track row.dimension; let index = $index) {
+      <article class="comparison-row" role="row">
+        <div class="dimension-cell" role="cell">
+          <span>{{ index + 1 }}</span>
+          <strong>{{ row.dimension }}</strong>
+        </div>
+        <div class="baseline-cell" role="cell">
+          <small>Likely response</small>
+          <p>{{ row.stateless }}</p>
+        </div>
+        <div class="comparison-direction" role="cell" aria-hidden="true">
+          <app-ui-icon name="chevron-right" />
+        </div>
+        <div class="dream-cell" role="cell">
+          <span class="dream-check"><app-ui-icon name="shield" /></span>
+          <div>
+            <small>Governed response</small>
+            <p>{{ row.dream }}</p>
+          </div>
+        </div>
+      </article>
+    }
+  </div>
+</section>

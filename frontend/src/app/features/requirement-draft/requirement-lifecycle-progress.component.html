@@ -15,7 +15,7 @@
             @if (state === 'complete') {
               Ready for review
               @if (totalDurationLabel(); as totalDuration) {
-                · total {{ totalDuration }}
+                | total {{ totalDuration }}
               }
             } @else {
               {{ step.runningLabel }}

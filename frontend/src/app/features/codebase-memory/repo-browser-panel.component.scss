@@ -15,83 +15,78 @@
 .repo-tree {
   display: grid;
   max-height: 590px;
-  gap: 10px;
   overflow: auto;
-  padding: 14px;
+  background: #fbfcfd;
+  padding: 8px 6px 14px;
 }
 
-.repo-pathbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  border-top: 1px solid var(--dream-border);
-  border-bottom: 1px solid var(--dream-border);
-  background: var(--dream-surface-muted);
-  color: var(--dream-muted);
-  font-size: 12px;
-  padding: 10px 14px;
-}
-
-.repo-crumb {
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--dream-blue);
-  font-weight: 800;
-  padding: 3px 5px;
-}
-
-.repo-crumb:hover,
-.repo-crumb.active {
-  background: #ffffff;
-  color: var(--dream-navy);
-}
-
-.repo-folder-row,
-.repo-file {
+.tree-row {
   display: grid;
   width: 100%;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  min-height: 34px;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 5px;
   background: transparent;
   color: var(--dream-navy);
-  padding: 7px 8px;
+  padding-block: 4px;
+  padding-right: 7px;
   text-align: left;
 }
 
-.repo-folder-row {
-  border-color: var(--dream-border);
-  background: var(--dream-surface-muted);
+.folder-row {
+  grid-template-columns: 18px 20px minmax(0, 1fr) auto;
 }
 
-.repo-folder-row span,
-.repo-file span {
+.file-row {
+  grid-template-columns: 18px 20px minmax(0, 1fr);
+}
+
+.tree-row:hover {
+  border-color: rgb(12 119 186 / 18%);
+  background: var(--dream-info-bg);
+}
+
+.tree-row.active {
+  border-color: rgb(12 119 186 / 32%);
+  background: #e4f3ff;
+  box-shadow: inset 3px 0 0 var(--dream-blue);
+}
+
+.root-row {
+  border-bottom: 1px solid var(--dream-border);
+  border-radius: 0;
+  font-weight: 800;
+  padding-left: 8px;
+  padding-bottom: 7px;
+  margin-bottom: 4px;
+}
+
+.folder-row > app-ui-icon:nth-of-type(2) {
+  color: #d69218;
+}
+
+.file-row > app-ui-icon {
+  color: var(--dream-teal);
+}
+
+.tree-spacer {
+  width: 18px;
+}
+
+.tree-row > span:nth-last-of-type(1),
+.tree-row > span:nth-of-type(2) {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.repo-folder-row small {
+.tree-row small {
   color: var(--dream-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  text-align: right;
-  text-transform: uppercase;
-}
-
-.repo-folder-row:hover,
-.repo-file:hover,
-.repo-file.active {
-  border-color: var(--dream-blue);
-  background: var(--dream-info-bg);
-}
-
-.repo-file.active {
-  box-shadow: inset 3px 0 0 var(--dream-blue);
 }
 
 @media (width <= 1100px) {

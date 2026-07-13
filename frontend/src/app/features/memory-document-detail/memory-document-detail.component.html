@@ -1,345 +1,386 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <section class="page memory-detail-page reveal-page">
-  <header class="page-header command-header">
-    <div>
-      <span class="eyebrow">Memory source</span>
-      <h1>{{ detail()?.document?.title || 'Source Detail' }}</h1>
-      @if (detail(); as current) {
-        <p>{{ current.document.teamId }} / {{ current.document.documentType }} / {{ current.document.documentId }}</p>
-      }
-    </div>
-    @if (detail(); as current) {
-      <div class="index-beacon">
-        <span></span>
-        <strong>{{ verificationLabel(current.sourceHashVerified) }}</strong>
-        <small>{{ shortHash(current.document.sourceHash) }}</small>
-      </div>
-    }
-  </header>
-
-  <div class="detail-toolbar">
-    <a class="back-link" routerLink="/memory">Back to Memory Hub</a>
-    <button class="secondary-button" type="button" (click)="loadDetail()" [disabled]="isLoading()">Refresh</button>
-  </div>
+  <nav class="page-breadcrumb" aria-label="Memory navigation">
+    <a routerLink="/memory">
+      <app-ui-icon name="chevron-left" />
+      Memory Hub
+    </a>
+    <span>Source review</span>
+  </nav>
 
   @if (apiError(); as message) {
     <div class="warning-callout">{{ message }}</div>
   }
 
   @if (isLoading() && !detail()) {
-    <div class="info-callout">Loading source detail...</div>
+    <div class="info-callout">Loading source review...</div>
   }
 
   @if (detail(); as current) {
-    <section class="detail-grid" aria-label="Source provenance">
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Provenance</h2>
-            <p>{{ sourceFileName(current.document.originalPath) }}</p>
-          </div>
-          <span class="status-pill" [class]="statusClass(current.document.status)">
-            {{ formatLabel(current.document.status) }}
-          </span>
+    <header class="source-hero">
+      <div class="source-title">
+        <span class="eyebrow">Distilled memory source</span>
+        <h1>{{ current.document.title }}</h1>
+        <div class="source-meta" aria-label="Source summary">
+          <span>{{ sourceFileName(current.document.originalPath) }}</span>
+          <span>{{ formatLabel(current.document.documentType) }}</span>
+          <span>{{ current.document.teamId }}</span>
         </div>
-        <div class="panel-body">
-          <dl class="metadata-list">
-            <div>
-              <dt>Original</dt>
-              <dd>{{ current.document.originalPath }}</dd>
-            </div>
-            <div>
-              <dt>Stored</dt>
-              <dd>{{ current.document.storedPath }}</dd>
-            </div>
-            <div>
-              <dt>Source Hash</dt>
-              <dd>{{ current.document.sourceHash || 'unknown' }}</dd>
-            </div>
-            <div>
-              <dt>Hash Check</dt>
-              <dd>
-                <span class="status-pill" [class]="verificationClass(current.sourceHashVerified)">
-                  {{ verificationLabel(current.sourceHashVerified) }}
-                </span>
-              </dd>
-            </div>
-            <div>
-              <dt>Raw Size</dt>
-              <dd>{{ sizeLabel(current.rawSizeBytes) }}</dd>
-            </div>
-            @if (current.document.promotedPath) {
-              <div>
-                <dt>Promoted</dt>
-                <dd>{{ current.document.promotedPath }}</dd>
-              </div>
-            }
-          </dl>
-        </div>
-      </article>
+      </div>
 
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Review State</h2>
-            <p>{{ draft()?.draftId || 'Draft not parsed yet' }}</p>
-          </div>
-          @if (draft(); as draft) {
-            <span class="status-pill" [class]="statusClass(draft.reviewStatus)">
-              {{ formatLabel(draft.reviewStatus) }}
-            </span>
-          }
+      <aside class="availability-card" aria-label="Source availability">
+        <span class="availability-icon"><app-ui-icon name="shield" /></span>
+        <div>
+          <small>Current state</small>
+          <strong>{{ availabilityLabel(current.document.status) }}</strong>
+          <p>{{ availabilityDetail(current.document.status) }}</p>
         </div>
-        <div class="panel-body">
+      </aside>
+
+      <button class="secondary-button refresh-action" type="button" (click)="loadDetail()" [disabled]="isLoading()">
+        {{ isLoading() ? 'Refreshing...' : 'Refresh' }}
+      </button>
+    </header>
+
+    <section class="panel distillation-summary" aria-labelledby="distillation-summary-title">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Document journey</span>
+          <h2 id="distillation-summary-title">From raw source to governed memory</h2>
+          <p>Each completed stage makes the document safer and more useful to downstream AI workflows.</p>
+        </div>
+        <span class="status-pill" [class]="statusClass(current.document.status)">
+          {{ formatLabel(current.document.status) }}
+        </span>
+      </div>
+
+      <ol class="lifecycle" aria-label="Document lifecycle">
+        @for (stage of lifecycleStages(); track stage.label) {
+          <li [class.complete]="stage.complete" [class.current]="stage.current">
+            <span><app-ui-icon [name]="stage.icon" /></span>
+            <div>
+              <strong>{{ stage.label }}</strong>
+              <small>{{ stage.detail }}</small>
+            </div>
+          </li>
+        }
+      </ol>
+
+      <div class="summary-grid">
+        <article>
+          <span>Memory destination</span>
           @if (draft(); as draft) {
-            <dl class="metadata-list">
-              <div>
-                <dt>Target</dt>
-                <dd>{{ draft.targetDocType }} / {{ draft.app || 'Unknown app' }} / {{ draft.component || 'Unknown component' }}</dd>
-              </div>
-              <div>
-                <dt>Sections</dt>
-                <dd>{{ draft.sections.length }} parsed / {{ draft.concepts.length }} concepts</dd>
-              </div>
-              <div>
-                <dt>Reviewer</dt>
-                <dd>{{ draft.reviewer || 'Pending' }}</dd>
-              </div>
-              <div>
-                <dt>Notes</dt>
-                <dd>{{ draft.reviewNotes || 'None' }}</dd>
-              </div>
-              <div>
-                <dt>Draft JSON</dt>
-                <dd>{{ draft.jsonPath || 'Not saved yet' }}</dd>
-              </div>
-              <div>
-                <dt>Draft Markdown</dt>
-                <dd>{{ draft.markdownPath || 'Not saved yet' }}</dd>
-              </div>
-            </dl>
-            @if (draft.concepts.length) {
-              <div class="concept-list">
-                @for (concept of draft.concepts; track concept.concept) {
-                  <span>{{ concept.concept }}</span>
-                }
-              </div>
-            }
+            <strong>{{ formatLabel(draft.targetDocType) }}</strong>
+            <p>{{ draft.app || 'App not assigned' }} / {{ formatLabel(draft.component || 'Component not assigned') }}</p>
           } @else {
-            <div class="info-callout">Parse this source before structured draft details are available.</div>
+            <strong>Not distilled yet</strong>
+            <p>Parse the source to generate structured memory.</p>
           }
+        </article>
+        <article>
+          <span>Knowledge extracted</span>
+          <strong>{{ parsedSections().length }} sections</strong>
+          <p>{{ draft()?.concepts?.length || 0 }} concepts available for review</p>
+        </article>
+        <article>
+          <span>Human review</span>
+          <strong>{{ draft()?.reviewer || 'Pending review' }}</strong>
+          <p>{{ draft() ? formatLabel(draft()!.reviewStatus) : 'No decision recorded' }}</p>
+        </article>
+        <article>
+          <span>Workflow usage</span>
+          <strong>{{ downstreamUsages().length }} runs</strong>
+          <p>{{ downstreamUsages().length ? 'Used after promotion' : 'Not consumed by a workflow yet' }}</p>
+        </article>
+      </div>
+
+      @if (draft()?.reviewNotes; as notes) {
+        <div class="review-note">
+          <app-ui-icon name="clipboard" />
+          <div>
+            <strong>Reviewer note</strong>
+            <p>{{ notes }}</p>
+          </div>
         </div>
-      </article>
+      }
     </section>
 
-    <section class="source-grid" aria-label="Raw and normalized source">
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Raw Source</h2>
-            <p>{{ current.rawTextAvailable ? sizeLabel(current.rawSizeBytes) : 'Preview unavailable' }}</p>
-          </div>
-          @if (current.rawTextTruncated) {
-            <span class="status-pill status-warning">Truncated</span>
-          }
+    <section class="panel transformation-workspace" aria-labelledby="transformation-title">
+      <div class="panel-header transformation-header">
+        <div>
+          <span class="eyebrow">Distillation workspace</span>
+          <h2 id="transformation-title">Compare the original with DREAM's structured memory</h2>
+          <p>Review what was retained, organized, and made available for retrieval.</p>
         </div>
-        <div class="panel-body">
+        <div class="transformation-flow" aria-label="Transformation direction">
+          <span>Raw document</span>
+          <app-ui-icon name="chevron-right" />
+          <strong>Governed memory</strong>
+        </div>
+      </div>
+
+      <div class="source-grid">
+        <article class="document-preview original-preview">
+          <header>
+            <div>
+              <span>Original document</span>
+              <strong>{{ sourceFileName(current.document.originalPath) }}</strong>
+            </div>
+            <small>{{ current.rawTextAvailable ? sizeLabel(current.rawSizeBytes) : 'Preview unavailable' }}</small>
+          </header>
           @if (current.rawTextAvailable) {
             <pre class="code-preview">{{ current.rawText }}</pre>
+            @if (current.rawTextTruncated) {
+              <div class="preview-warning">Preview truncated because the source is large.</div>
+            }
           } @else {
             <div class="info-callout">{{ current.rawTextWarning || 'Raw preview is unavailable.' }}</div>
           }
-        </div>
-      </article>
+        </article>
 
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Structured Markdown</h2>
-            <p>{{ draft()?.promotedPath || draft()?.markdownPath || 'Draft output pending' }}</p>
-          </div>
-        </div>
-        <div class="panel-body">
+        <article class="document-preview distilled-preview">
+          <header>
+            <div>
+              <span>DREAM structured memory</span>
+              <strong>{{ draft()?.title || 'Distillation pending' }}</strong>
+            </div>
+            @if (draft(); as draft) {
+              <small>{{ draft.sections.length }} sections</small>
+            }
+          </header>
           @if (draft(); as draft) {
-            <pre class="code-preview">{{ draft.normalizedMarkdown }}</pre>
+            <div class="distilled-document">
+              <div class="distilled-context">
+                <span>{{ formatLabel(draft.targetDocType) }}</span>
+                <span>{{ draft.app || 'App not assigned' }}</span>
+                <span>{{ formatLabel(draft.component || 'Component not assigned') }}</span>
+              </div>
+              @for (section of draft.sections; track section.sectionId) {
+                <section>
+                  <h3>{{ section.heading }}</h3>
+                  <p>{{ section.text }}</p>
+                </section>
+              }
+            </div>
           } @else {
-            <div class="info-callout">No normalized markdown has been generated yet.</div>
+            <div class="info-callout">No structured memory has been generated yet.</div>
           }
-        </div>
-      </article>
+        </article>
+      </div>
     </section>
 
-    <section class="panel" aria-label="Parsed sections">
+    <section class="panel knowledge-review" aria-labelledby="knowledge-review-title">
       <div class="panel-header">
         <div>
-          <h2>Parsed Sections</h2>
-          <p>{{ parsedSections().length }} source-linked sections</p>
+          <span class="eyebrow">Extracted knowledge</span>
+          <h2 id="knowledge-review-title">Review the structure DREAM inferred</h2>
+          <p>Open a section to compare its distilled text with the recorded source lines.</p>
         </div>
+        <span class="status-pill status-info">{{ parsedSections().length }} sections</span>
       </div>
-      <div class="section-list">
-        @for (section of parsedSections(); track section.sectionId) {
-          <article class="section-row">
-            <div class="section-heading">
-              <div>
-                <h3>{{ section.heading }}</h3>
-                <p>{{ section.sectionId }} / {{ sectionSpan(section) }}</p>
-              </div>
-              <span class="status-pill status-info">{{ shortHash(section.sectionHash) }}</span>
-            </div>
-            <p>{{ section.text }}</p>
-            @if (section.concepts.length) {
-              <div class="concept-list">
-                @for (concept of section.concepts; track concept) {
-                  <span>{{ concept }}</span>
-                }
-              </div>
+
+      @if (draft()?.concepts?.length) {
+        <div class="concept-summary" aria-label="Extracted concepts">
+          <strong>Key concepts</strong>
+          <div class="concept-list">
+            @for (concept of draft()!.concepts.slice(0, 10); track concept.concept) {
+              <span>{{ concept.concept }}</span>
             }
-          </article>
+            @if (draft()!.concepts.length > 10) {
+              <span>+{{ draft()!.concepts.length - 10 }} more</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="section-list">
+        @for (section of parsedSections(); track section.sectionId; let first = $first) {
+          <details class="section-card" [open]="first">
+            <summary>
+              <div>
+                <strong>{{ section.heading }}</strong>
+                <small>Source {{ sectionSpan(section) }}</small>
+              </div>
+              <span>{{ section.concepts.length }} concepts</span>
+            </summary>
+            <div class="section-content">
+              <p>{{ section.text }}</p>
+              @if (section.concepts.length) {
+                <div class="concept-list">
+                  @for (concept of section.concepts; track concept) {
+                    <span>{{ concept }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </details>
         } @empty {
           <div class="info-callout">No parsed sections are available yet.</div>
         }
       </div>
     </section>
 
-    <section class="panel" aria-label="Draft review events">
-      <div class="panel-header">
-        <div>
-          <h2>Review Events</h2>
-          <p>{{ reviewEvents().length }} structured draft decisions recorded.</p>
+    <section class="activity-grid" aria-label="Review and usage activity">
+      <article class="panel activity-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Review history</h2>
+            <p>Human decisions that changed this source.</p>
+          </div>
         </div>
-      </div>
-      <div class="audit-list">
-        @for (event of reviewEvents(); track event.eventId) {
-          <article class="audit-row">
-            <div>
-              <strong>{{ reviewEventTitle(event) }}</strong>
-              <span>{{ event.eventId }}</span>
-            </div>
-            <span class="status-pill" [class]="statusClass(event.newStatus)">
-              {{ formatLabel(event.previousStatus) }} -> {{ formatLabel(event.newStatus) }}
-            </span>
-            <p>{{ event.reviewer || 'anonymous' }} / {{ event.createdAt }}</p>
-            <small>Audit run: {{ event.auditRunId }}</small>
-            <small>Source hash: {{ shortHash(event.sourceHash) }}</small>
-            <small>Section hashes: {{ event.sectionHashes.length }}</small>
-            @if (event.notes) {
-              <small>Notes: {{ event.notes }}</small>
-            }
-            @if (event.metadataDiff.length) {
-              <div class="diff-list" aria-label="Metadata diff">
-                @for (diff of event.metadataDiff; track diff.field) {
-                  <span>
-                    <strong>{{ formatLabel(diff.field) }}</strong>
-                    {{ diffValue(diff.before) }} -> {{ diffValue(diff.after) }}
-                  </span>
+        <div class="activity-list">
+          @for (event of reviewEvents(); track event.eventId) {
+            <article class="activity-row">
+              <span class="activity-marker"><app-ui-icon name="shield" /></span>
+              <div>
+                <strong>{{ formatLabel(event.newStatus) }}</strong>
+                <p>{{ event.reviewer || 'Anonymous reviewer' }} / {{ dateLabel(event.createdAt) }}</p>
+                @if (event.notes) {
+                  <small>{{ event.notes }}</small>
                 }
-              </div>
-            } @else {
-              <small>No metadata changes recorded.</small>
-            }
-            @if (event.warnings.length) {
-              <small>Warnings: {{ event.warnings.join(', ') }}</small>
-            }
-          </article>
-        } @empty {
-          <div class="info-callout">No structured review events were recorded for this draft.</div>
-        }
-      </div>
-    </section>
-
-    <section class="panel" aria-label="Audit trail">
-      <div class="panel-header">
-        <div>
-          <h2>Audit Trail</h2>
-          <p>{{ auditEvents().length }} intake events recorded for this source.</p>
-        </div>
-      </div>
-      <div class="audit-list">
-        @for (event of auditEvents(); track event.runId) {
-          <article class="audit-row">
-            <div>
-              <strong>{{ formatLabel(event.useCase) }}</strong>
-              <span>{{ event.runId }}</span>
-            </div>
-            <span class="status-pill" [class]="statusClass(event.status)">
-              {{ formatLabel(event.status) }}
-            </span>
-            <p>{{ event.modelProvider }} / {{ event.modelName }}</p>
-            <small>{{ event.outputPath }}</small>
-            @if (event.sourcesUsed.length) {
-              <small>Sources: {{ event.sourcesUsed.join(', ') }}</small>
-            }
-            @if (event.warnings.length) {
-              <small>Warnings: {{ event.warnings.join(', ') }}</small>
-            }
-          </article>
-        } @empty {
-          <div class="info-callout">No audit events were recorded for this source.</div>
-        }
-      </div>
-    </section>
-
-    <section class="panel" aria-label="Downstream usage">
-      <div class="panel-header">
-        <div>
-          <h2>Downstream Usage</h2>
-          <p>{{ downstreamUsages().length }} workflow runs consumed this source after promotion.</p>
-        </div>
-      </div>
-      <div class="audit-list">
-        @for (usage of downstreamUsages(); track usage.auditRun.runId) {
-          <article class="audit-row">
-            <div>
-              <strong>{{ formatLabel(usage.auditRun.useCase) }}</strong>
-              <span>{{ usage.auditRun.runId }}</span>
-            </div>
-            <span class="status-pill" [class]="statusClass(usage.auditRun.status)">
-              {{ formatLabel(usage.auditRun.status) }}
-            </span>
-            <p>{{ usage.matchReason }}</p>
-            <small>{{ usage.auditRun.modelProvider }} / {{ usage.auditRun.modelName }}</small>
-            <small>{{ usage.auditRun.outputPath }}</small>
-            @if (usage.matchedSourcePaths.length) {
-              <small>Matched sources: {{ usage.matchedSourcePaths.join(', ') }}</small>
-            }
-            @if (usage.matchProofs.length) {
-              <div class="proof-list" aria-label="Source match proof">
-                @for (proof of usage.matchProofs; track proof.retrievedSourcePath) {
-                  <div class="proof-card">
-                    <span class="status-pill" [class]="verificationClass(proof.sourceHashVerified)">
-                      {{ verificationLabel(proof.sourceHashVerified) }}
-                    </span>
-                    <strong>{{ proof.matchedLabel }}</strong>
-                    <small>Retrieved: {{ proof.retrievedSourcePath }}</small>
-                    <small>Matched: {{ proof.matchedPath }}</small>
-                    <small>Source hash: {{ shortHash(proof.sourceHash) }}</small>
-                    @if (proof.sectionProofs.length) {
-                      <div class="proof-sections">
-                        @for (section of proof.sectionProofs.slice(0, 3); track section.sectionId) {
-                          <span>
-                            {{ section.heading }} / {{ spanLabel(section.sourceSpan) }} / {{ shortHash(section.sectionHash) }}
-                          </span>
-                        }
-                      </div>
+                @if (reviewDiffs(event).length) {
+                  <div class="diff-list">
+                    @for (diff of reviewDiffs(event); track diff.field) {
+                      <span>{{ formatLabel(diff.field) }}: {{ diffValue(diff.before) }} -> {{ diffValue(diff.after) }}</span>
                     }
                   </div>
                 }
               </div>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <strong>No human review yet.</strong>
+              <span>This source remains outside governed memory until reviewed.</span>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="panel activity-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Downstream usage</h2>
+            <p>Where this source influenced a later workflow.</p>
+          </div>
+        </div>
+        <div class="activity-list">
+          @for (usage of downstreamUsages(); track usage.auditRun.runId) {
+            <article class="activity-row">
+              <span class="activity-marker"><app-ui-icon name="timeline" /></span>
+              <div>
+                <strong>{{ formatLabel(usage.auditRun.useCase) }}</strong>
+                <p>{{ usage.matchReason }}</p>
+                <small>{{ dateLabel(usage.auditRun.startedAt) }}</small>
+                @if (usage.detailRoute) {
+                  <a class="link-button" [routerLink]="usage.detailRoute">Open workflow evidence</a>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <strong>Not used yet.</strong>
+              <span>Promoted sources appear here after a Requirement Case or PR Review selects them.</span>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+
+    <details class="panel technical-disclosure">
+      <summary>
+        <span>
+          <strong>Technical details</strong>
+          <small>Integrity proof, internal identifiers, storage paths, and raw audit records</small>
+        </span>
+        <span class="status-pill" [class]="verificationClass(current.sourceHashVerified)">
+          Integrity {{ verificationLabel(current.sourceHashVerified) }}
+        </span>
+      </summary>
+
+      <div class="technical-body">
+        <section>
+          <h3>Source and artifact locations</h3>
+          <dl class="technical-facts">
+            <div><dt>Document ID</dt><dd>{{ current.document.documentId }}</dd></div>
+            <div><dt>Original</dt><dd>{{ current.document.originalPath }}</dd></div>
+            <div><dt>Stored</dt><dd>{{ current.document.storedPath }}</dd></div>
+            <div><dt>Promoted</dt><dd>{{ current.document.promotedPath || 'Not promoted' }}</dd></div>
+            <div><dt>Source hash</dt><dd>{{ current.document.sourceHash || 'Unknown' }}</dd></div>
+            @if (draft(); as draft) {
+              <div><dt>Draft ID</dt><dd>{{ draft.draftId }}</dd></div>
+              <div><dt>Draft JSON</dt><dd>{{ draft.jsonPath || 'Not saved' }}</dd></div>
+              <div><dt>Draft Markdown</dt><dd>{{ draft.markdownPath || 'Not saved' }}</dd></div>
             }
-            @if (usage.detailRoute) {
-              <a class="secondary-button row-link" [routerLink]="usage.detailRoute">
-                Open Audit Detail
-              </a>
+          </dl>
+        </section>
+
+        <section>
+          <h3>Raw intake audit</h3>
+          <div class="technical-events">
+            @for (event of auditEvents(); track event.runId) {
+              <article>
+                <div>
+                  <strong>{{ formatLabel(event.useCase) }}</strong>
+                  <span class="status-pill" [class]="statusClass(event.status)">{{ formatLabel(event.status) }}</span>
+                </div>
+                <small>{{ event.runId }}</small>
+                <small>{{ event.modelProvider }} / {{ event.modelName }}</small>
+                <small>{{ event.outputPath }}</small>
+                @if (event.sourcesUsed.length) {
+                  <small>Sources: {{ event.sourcesUsed.join(', ') }}</small>
+                }
+                @if (event.warnings.length) {
+                  <small>Warnings: {{ event.warnings.join(', ') }}</small>
+                }
+              </article>
+            } @empty {
+              <div class="info-callout">No audit records are available.</div>
             }
-            @if (usage.auditRun.warnings.length) {
-              <small>Warnings: {{ usage.auditRun.warnings.join(', ') }}</small>
-            }
-          </article>
-        } @empty {
-          <div class="info-callout">No downstream workflow usage has been recorded for this source yet.</div>
+          </div>
+        </section>
+
+        @if (downstreamUsages().length) {
+          <section class="technical-wide">
+            <h3>Downstream source-match proof</h3>
+            <div class="technical-events">
+              @for (usage of downstreamUsages(); track usage.auditRun.runId) {
+                @for (proof of usage.matchProofs; track proof.retrievedSourcePath) {
+                  <article>
+                    <div>
+                      <strong>{{ proof.matchedLabel }}</strong>
+                      <span class="status-pill" [class]="verificationClass(proof.sourceHashVerified)">
+                        {{ verificationLabel(proof.sourceHashVerified) }}
+                      </span>
+                    </div>
+                    <small>Retrieved: {{ proof.retrievedSourcePath }}</small>
+                    <small>Matched: {{ proof.matchedPath }}</small>
+                    <small>Source hash: {{ shortHash(proof.sourceHash) }}</small>
+                    @if (proof.sectionProofs.length) {
+                      <small>
+                        Sections:
+                        @for (section of proof.sectionProofs.slice(0, 3); track section.sectionId) {
+                          {{ section.heading }} ({{ spanLabel(section.sourceSpan) }})
+                        }
+                      </small>
+                    }
+                  </article>
+                }
+              }
+            </div>
+          </section>
+        }
+
+        @if (draft(); as draft) {
+          <section class="technical-wide">
+            <h3>Generated normalized Markdown</h3>
+            <details class="raw-output-disclosure">
+              <summary>Open raw generated artifact</summary>
+              <pre class="code-preview">{{ draft.normalizedMarkdown }}</pre>
+            </details>
+          </section>
         }
       </div>
-    </section>
+    </details>
   }
 </section>

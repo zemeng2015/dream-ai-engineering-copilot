@@ -12,6 +12,7 @@ import { CodebaseSearchItem } from '../../core/dream-api.service';
 })
 export class EvidenceSearchPanelComponent {
   @Input() results: CodebaseSearchItem[] = [];
+  @Input() query = '';
 
   @Output() readonly sourceSelected = new EventEmitter<string>();
 

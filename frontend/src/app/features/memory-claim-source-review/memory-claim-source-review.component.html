@@ -1,0 +1,108 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="page source-review-page reveal-page">
+  <header class="page-header command-header">
+    <div>
+      <span class="eyebrow">Claim evidence review</span>
+      <h1>{{ source()?.fileName || 'Source Review' }}</h1>
+      @if (source(); as current) {
+        <p>{{ current.sourcePath }}</p>
+      } @else {
+        <p>Open the exact file referenced by a memory claim before making a governance decision.</p>
+      }
+    </div>
+    @if (source(); as current) {
+      <div class="index-beacon">
+        <span></span>
+        <strong>{{ current.trustLevel }} trust</strong>
+        <small>{{ current.sourceType }}</small>
+      </div>
+    }
+  </header>
+
+  <div class="detail-toolbar">
+    <a class="back-link" routerLink="/memory" [queryParams]="{ tab: 'claims' }">
+      Back to Claim Review
+    </a>
+    <button class="secondary-button" type="button" (click)="loadSource()" [disabled]="isLoading()">
+      Refresh
+    </button>
+  </div>
+
+  @if (apiError(); as message) {
+    <div class="warning-callout">{{ message }}</div>
+  }
+  @if (isLoading() && !source()) {
+    <div class="info-callout">Loading claim source...</div>
+  }
+
+  @if (source(); as current) {
+    <div class="review-guidance">
+      <strong>Review before deciding</strong>
+      <span>
+        This is the exact scan source attached to the claim. Highlighted lines are the recorded
+        evidence spans; verify that they support the claim before approving, rejecting, or quarantining it.
+      </span>
+    </div>
+
+    <section class="source-facts" aria-label="Claim source facts">
+      <article>
+        <span>Claim</span>
+        <strong>{{ current.claimId }}</strong>
+        <small>{{ current.scanId }}</small>
+      </article>
+      <article>
+        <span>Integrity</span>
+        <strong>{{ shortHash(current.contentHash) }}</strong>
+        <small>{{ current.indexedAt }}</small>
+      </article>
+      <article>
+        <span>File</span>
+        <strong>{{ current.lineCount }} lines</strong>
+        <small>{{ sizeLabel(current.sizeBytes) }} / {{ current.spans.length }} evidence spans</small>
+      </article>
+      <article>
+        <span>Repository state</span>
+        <strong>{{ current.commitSha || 'Working tree snapshot' }}</strong>
+        <small>{{ current.sourceId }}</small>
+      </article>
+    </section>
+
+    <section class="source-review-grid">
+      <article class="panel source-file-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Actual Source File</h2>
+            <p>{{ current.fileName }}</p>
+          </div>
+          @if (current.contentTruncated) {
+            <span class="status-pill status-warning">Preview truncated</span>
+          } @else {
+            <span class="status-pill status-success">Complete preview</span>
+          }
+        </div>
+        <pre class="source-code" aria-label="Claim source file contents">@for (line of sourceLines(); track $index) {<span class="source-line" [class.evidence-line]="isEvidenceLine($index + 1)"><span class="line-number">{{ $index + 1 }}</span><code>{{ line }}</code></span>}</pre>
+      </article>
+
+      <aside class="panel evidence-spans-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Recorded Evidence</h2>
+            <p>{{ current.spans.length }} claim-linked spans</p>
+          </div>
+        </div>
+        <div class="span-list">
+          @for (span of current.spans; track span.spanId) {
+            <article>
+              <span class="status-pill status-info">{{ spanLabel(span.startLine, span.endLine) }}</span>
+              <strong>{{ span.spanId }}</strong>
+              <small>{{ shortHash(span.excerptHash) }}</small>
+            </article>
+          } @empty {
+            <div class="info-callout">No line-level spans were recorded for this source.</div>
+          }
+        </div>
+      </aside>
+    </section>
+  }
+</section>

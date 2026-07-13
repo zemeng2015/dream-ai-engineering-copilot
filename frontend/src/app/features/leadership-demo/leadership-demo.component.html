@@ -4,10 +4,10 @@
   <header class="leadership-hero">
     <div class="hero-copy">
       <span class="eyebrow">DREAM Engineering Memory</span>
-      <h1>Turn ambiguous requests into source-backed delivery decisions.</h1>
+      <h1>Turn rough requests into trusted decisions.</h1>
       <p>
-        DREAM gives existing AI workflows governed organizational context, preserves
-        uncertainty, and makes every recommendation reviewable before teams act on it.
+        DREAM grounds AI workflows in approved engineering context, exposes uncertainty,
+        and keeps every recommendation reviewable.
       </p>
       <div class="hero-actions" aria-label="Leadership demo starting points">
         <a class="primary-button" routerLink="/requirements">
@@ -29,7 +29,7 @@
       </p>
       <div class="thesis-boundary">
         <app-ui-icon name="shield" />
-        <span>Provider-neutral 路 human-gated 路 auditable</span>
+        <span>Provider-neutral | human-gated | auditable</span>
       </div>
     </aside>
   </header>
@@ -44,56 +44,36 @@
     }
   </section>
 
-  <section class="panel comparison-panel" aria-labelledby="comparison-title">
-    <div class="panel-header">
-      <div>
-        <span class="eyebrow">Why DREAM</span>
-        <h2 id="comparison-title">The missing layer between a model and enterprise delivery</h2>
-        <p>Same request. Different access to organizational evidence and governance.</p>
-      </div>
-    </div>
-    <div class="comparison-table" role="table" aria-label="Stateless assistant and DREAM comparison">
-      <div class="comparison-row comparison-heading" role="row">
-        <span role="columnheader">Decision dimension</span>
-        <span role="columnheader">Stateless assistant</span>
-        <span role="columnheader">DREAM</span>
-      </div>
-      @for (row of comparisonRows; track row.dimension) {
-        <div class="comparison-row" role="row">
-          <strong role="cell">{{ row.dimension }}</strong>
-          <span role="cell">{{ row.stateless }}</span>
-          <span class="dream-cell" role="cell">{{ row.dream }}</span>
-        </div>
-      }
-    </div>
-  </section>
+  <app-leadership-comparison />
 
   <section class="evidence-layout">
-    <article class="panel benchmark-card" aria-labelledby="evidence-title">
+    <article class="panel proof-card" aria-labelledby="evidence-title">
       <div class="panel-header">
         <div>
-          <span class="eyebrow">Early technical evidence</span>
-          <h2 id="evidence-title">Governed context improved the paired synthetic baseline</h2>
+          <span class="eyebrow">Current product proof</span>
+          <h2 id="evidence-title">What the live workflow demonstrates today</h2>
         </div>
       </div>
-      <div class="benchmark-grid">
-        <div>
-          <span>Paired cases improved</span>
-          <strong>7 / 7</strong>
-        </div>
-        <div>
-          <span>Reference-score delta</span>
-          <strong>+23.4</strong>
-        </div>
-        <div class="constraint-metric">
-          <span>Measured Recall&#64;12</span>
-          <strong>35.6%</strong>
-        </div>
+      <div class="proof-grid">
+        <article>
+          <span>Governance</span>
+          <strong>Approved memory gates generation</strong>
+          <p>Candidate, rejected, quarantined, and conflicted claims remain outside the prompt.</p>
+        </article>
+        <article>
+          <span>Decision workflow</span>
+          <strong>Ambiguity remains visible</strong>
+          <p>Open questions block Jira-ready status until a reviewer answers or waives them.</p>
+        </article>
+        <article>
+          <span>Traceability</span>
+          <strong>Every conclusion retains evidence</strong>
+          <p>Source spans, claim decisions, context selection, eval, and audit stay connected.</p>
+        </article>
       </div>
       <p class="evidence-caveat">
-        Seven synthetic cases, one deterministic completion per arm. This supports a
-        technical hypothesis, not a production ROI claim. Retrieval recall remains a
-        measured bottleneck.
+        <strong>No production performance claim.</strong>
+        The controlled pilot will establish the operational baseline and measurable targets.
       </p>
     </article>
 
@@ -155,14 +135,26 @@
         </div>
       }
     </dl>
-    <div class="pilot-metrics">
-      <strong>Proposed success measures</strong>
-      <span>Time to first engineering draft</span>
-      <span>Critical questions found before implementation</span>
-      <span>Valid source-citation rate</span>
-      <span>SME impact-map recall</span>
-      <span>Human edit distance before handoff</span>
-      <span>Zero data-boundary violations</span>
-    </div>
+    <section class="pilot-measures" aria-labelledby="pilot-measures-title">
+      <div>
+        <span class="eyebrow">Pilot measurement</span>
+        <h3 id="pilot-measures-title">How success will be judged</h3>
+      </div>
+      <div class="pilot-measure-grid">
+        <article>
+          <span>Speed</span>
+          <strong>Time to a reviewable first engineering draft</strong>
+        </article>
+        <article>
+          <span>Quality</span>
+          <strong>Critical questions found and human editing required</strong>
+        </article>
+        <article>
+          <span>Trust</span>
+          <strong>Valid source citations and zero data-boundary violations</strong>
+        </article>
+      </div>
+      <p>Baseline first. Pilot targets are agreed with subject-matter reviewers, not invented for the demo.</p>
+    </section>
   </section>
 </section>

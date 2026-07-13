@@ -17,6 +17,14 @@ export const routes: Routes = [
     title: 'DREAM Mission Control',
   },
   {
+    path: 'memory/source',
+    loadComponent: () =>
+      import('./features/memory-claim-source-review/memory-claim-source-review.component').then(
+        (module) => module.MemoryClaimSourceReviewComponent,
+      ),
+    title: 'DREAM Claim Source Review',
+  },
+  {
     path: 'memory/:documentId',
     loadComponent: () =>
       import('./features/memory-document-detail/memory-document-detail.component').then(

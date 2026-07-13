@@ -264,7 +264,8 @@ apply the acceptance gates in
   not model-quality evidence. No Fannie-facing live-model result is claimed yet.
 - The Qwen paired benchmark is competition evidence and remains separate from
   the leadership product evidence baseline.
-- Exact retrieval Recall@12 is 35.6% and remains a known bottleneck.
+- No live-provider retrieval quality result is claimed on the leadership page;
+  establish the baseline and targets inside the controlled Pilot.
 - Enterprise SSO, ACL-aware retrieval, connectors, redaction policy, data
   residency, and production storage belong to the controlled Pilot boundary.
 - Human ratings are stored but do not yet change future retrieval or policy.

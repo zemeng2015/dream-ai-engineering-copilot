@@ -177,6 +177,32 @@ class MemoryScanRequest(BaseModel):
     repo_name: str | None = None
 
 
+class MemoryClaimSourceSpanResponse(BaseModel):
+    span_id: str
+    start_line: int | None = None
+    end_line: int | None = None
+    excerpt_hash: str
+
+
+class MemoryClaimSourceResponse(BaseModel):
+    team_id: str
+    scan_id: str
+    claim_id: str
+    source_id: str
+    source_type: str
+    source_path: str
+    file_name: str
+    content: str
+    content_truncated: bool
+    size_bytes: int
+    line_count: int
+    content_hash: str
+    indexed_at: str
+    trust_level: str
+    commit_sha: str | None = None
+    spans: list[MemoryClaimSourceSpanResponse]
+
+
 class MemoryEvalRequest(BaseModel):
     team_id: str
     scan_id: str = "latest"
@@ -948,6 +974,89 @@ def get_latest_memory_scan(team_id: str) -> dict[str, object]:
             detail=f"Memory scan not found: {team_id}/latest",
         )
     return scan.model_dump()
+
+
+@router.get(
+    "/memory/claims/{claim_id}/source",
+    response_model=MemoryClaimSourceResponse,
+)
+@private_acl_route
+def get_memory_claim_source(
+    claim_id: str,
+    team_id: str,
+    scan_id: str,
+    source_path: str,
+    access_context: AccessContextDep,
+) -> MemoryClaimSourceResponse:
+    try:
+        scan = MemoryDistillationRepository().load_scan(team_id, scan_id)
+        claim = next((item for item in scan.claims if item.claim_id == claim_id), None)
+        if claim is None:
+            raise NotFoundError(f"Memory claim not found: {team_id}/{scan_id}/{claim_id}")
+
+        claim_spans = [span for span in claim.evidence.spans if span.path == source_path]
+        if not claim_spans:
+            raise NotFoundError("Source path is not evidence for this memory claim.")
+
+        source_ids = {span.source_id for span in claim_spans}
+        source = next(
+            (
+                item
+                for item in scan.sources
+                if item.path == source_path and item.source_id in source_ids
+            ),
+            None,
+        )
+        if source is None:
+            raise NotFoundError("Claim source is not present in the memory scan manifest.")
+
+        resource_access = source.access.restrictive_merge(claim.security.resource_access())
+        DefaultAccessPolicy().require(
+            context=access_context,
+            team_id=team_id,
+            action="memory_review",
+            resource_access=resource_access,
+            resource_id=f"{claim.claim_id}:{source.source_id}",
+        )
+
+        target_path = resolve_project_path(source.path, must_exist=True)
+        if not target_path.is_file():
+            raise NotFoundError(f"Claim source is not a file: {source.path}")
+
+        raw_content = target_path.read_bytes()
+        preview_limit = 256 * 1024
+        preview_bytes = raw_content[:preview_limit]
+        content = preview_bytes.decode("utf-8", errors="replace")
+        return MemoryClaimSourceResponse(
+            team_id=team_id,
+            scan_id=scan.scan_id,
+            claim_id=claim.claim_id,
+            source_id=source.source_id,
+            source_type=source.source_type,
+            source_path=source.path,
+            file_name=target_path.name,
+            content=content,
+            content_truncated=len(raw_content) > preview_limit,
+            size_bytes=len(raw_content),
+            line_count=len(raw_content.splitlines()),
+            content_hash=source.content_hash,
+            indexed_at=source.indexed_at,
+            trust_level=source.trust_level,
+            commit_sha=source.commit_sha,
+            spans=[
+                MemoryClaimSourceSpanResponse(
+                    span_id=span.span_id,
+                    start_line=span.start_line,
+                    end_line=span.end_line,
+                    excerpt_hash=span.excerpt_hash,
+                )
+                for span in claim_spans
+            ],
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except (DreamError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/memory/diff")

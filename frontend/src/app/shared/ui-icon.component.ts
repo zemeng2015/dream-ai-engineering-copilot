@@ -13,6 +13,7 @@ export type UiIconName =
   | 'dashboard'
   | 'database'
   | 'document'
+  | 'folder'
   | 'menu'
   | 'search'
   | 'settings'
@@ -67,6 +68,7 @@ const ICON_PATHS: Record<UiIconName, string> = {
   database:
     'M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3Zm0 0v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5',
   document: 'M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 0v5h5M8.5 12h7M8.5 16h7',
+  folder: 'M3.5 6.5h6l2 2h9v9.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V6.5Z',
   menu: 'M4 7h16M4 12h16M4 17h16',
   search: 'M10.5 18a7.5 7.5 0 1 1 5.3-2.2L21 21l-2.8-2.8',
   settings:

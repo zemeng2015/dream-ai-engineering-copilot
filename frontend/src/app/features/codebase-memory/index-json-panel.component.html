@@ -3,15 +3,78 @@
 <article class="panel index-json-panel">
   <div class="panel-header">
     <div>
-      <h2>JSON Index</h2>
-      <p [title]="repoIndexPath">{{ repoIndexPath }}</p>
+      <h2>Repository Memory Record</h2>
+      <p>How the selected file becomes usable engineering context</p>
     </div>
   </div>
-  <details class="json-card" open>
+
+  @if (selectedFile; as file) {
+    <div class="memory-flow" aria-label="Code file to repository memory flow">
+      <article>
+        <span class="flow-step">1</span>
+        <div>
+          <strong>Source file</strong>
+          <small>{{ file.path }}</small>
+        </div>
+      </article>
+      <span class="flow-arrow" aria-hidden="true">-&gt;</span>
+      <article>
+        <span class="flow-step">2</span>
+        <div>
+          <strong>Structured memory node</strong>
+          <small>{{ file.symbols.length }} symbols, {{ file.concepts.length }} concepts, {{ file.role }} role</small>
+        </div>
+      </article>
+      <span class="flow-arrow" aria-hidden="true">-&gt;</span>
+      <article>
+        <span class="flow-step">3</span>
+        <div>
+          <strong>Retrieval and graph input</strong>
+          <small>Available for evidence search, graph construction, and task analysis</small>
+        </div>
+      </article>
+    </div>
+
+    <div class="record-grid">
+      <article>
+        <span>File identity</span>
+        <strong>{{ file.language }} / {{ file.role }}</strong>
+        <small>{{ file.lineCount }} lines and {{ file.sizeBytes }} bytes</small>
+      </article>
+      <article>
+        <span>Extracted structure</span>
+        <strong>{{ file.symbols.length }} symbols</strong>
+        <small>{{ file.concepts.length }} concept links</small>
+      </article>
+      <article>
+        <span>Graph behavior</span>
+        <strong>Graph-ready repository node</strong>
+        <small>Converted into a code or test node when the evidence graph is built</small>
+      </article>
+      <article>
+        <span>Task behavior</span>
+        <strong>Retrievable evidence</strong>
+        <small>Can be selected for a Requirement Case or PR Review when relevant</small>
+      </article>
+    </div>
+  } @else {
+    <div class="empty-record">
+      <strong>No repository memory record selected.</strong>
+      <span>Select a file to inspect how DREAM represents it.</span>
+    </div>
+  }
+
+  <details class="json-card">
     <summary>
-      <strong>Selected file record</strong>
-      <span>highlighted index node</span>
+      <span>
+        <strong>Developer details</strong>
+        <small>Optional raw index record</small>
+      </span>
     </summary>
+    <div class="artifact-path">
+      <span>Stored artifact</span>
+      <code [title]="repoIndexPath">{{ repoIndexPath }}</code>
+    </div>
     <pre class="json-block selected-json-block">{{ selectedFileJson }}</pre>
   </details>
 </article>

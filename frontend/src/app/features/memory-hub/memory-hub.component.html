@@ -4,7 +4,7 @@
   <header class="memory-hero">
     <div>
       <h1>Memory Hub</h1>
-      <p>Manage source documents and codebase index memory used by the live backend.</p>
+      <p>Manage new source intake, extracted claim governance, and codebase memory used by the live backend.</p>
     </div>
   </header>
 
@@ -46,7 +46,11 @@
         <div class="panel-header">
           <div>
             <h2>Source Intake</h2>
-            <p>{{ intakeDocuments().length }} registered docs: {{ sourceReviewQueue().length }} need action / {{ approvedSourceItems().length }} in memory.</p>
+            <p>
+              {{ intakeDocuments().length }} new submissions: {{ sourceReviewQueue().length }} need action /
+              {{ approvedSourceItems().length }} promoted through intake. The latest scan references
+              {{ scanSourceCount() }} total sources.
+            </p>
           </div>
           <button class="link-button" type="button" (click)="loadMemory()">Refresh</button>
         </div>
@@ -154,8 +158,8 @@
         <section class="structured-docs-section" aria-label="Structured docs in memory">
           <div class="section-subheader">
             <div>
-              <h3>Structured Docs in Memory</h3>
-              <p>{{ approvedSourceItems().length }} promoted docs available to retrieval and generation workflows.</p>
+                <h3>Structured Intake Docs in Memory</h3>
+                <p>{{ approvedSourceItems().length }} intake-promoted docs available to retrieval and generation workflows.</p>
             </div>
           </div>
           <div class="structured-doc-list">
@@ -248,7 +252,13 @@
         <div class="panel-header">
           <div>
             <h2>Claim Review</h2>
-            <p>{{ claimReviewRows().length }} claims from {{ memoryScan()?.scanId || memoryDiff()?.scanId || 'latest scan' }} / {{ reviewableClaimCount() }} candidates.</p>
+            <p>
+              {{ claimReviewRows().length }} extracted claims from
+              {{ memoryScan()?.scanId || memoryDiff()?.scanId || 'latest scan' }} /
+              {{ reviewableClaimCount() }} awaiting decision /
+              {{ governedClaimCount() }} governed /
+              {{ conflictPairCount() }} active conflicts.
+            </p>
           </div>
           <div class="row-actions">
             <button class="secondary-button" type="button" (click)="loadMemory()">Refresh</button>
@@ -358,14 +368,25 @@
         }
 
         <div class="claim-list">
-          @for (row of claimReviewRows(); track row.claim.claimId) {
+          @for (row of pagedClaimReviewRows(); track row.claim.claimId) {
             <article class="review-row memory-claim-row">
               <span class="row-icon">
                 <app-ui-icon name="document" />
               </span>
               <div class="row-main">
                 <div class="row-title">
-                  <strong>{{ row.claim.entity.canonicalName }}</strong>
+                  @if (claimHasReviewSource(row.claim)) {
+                    <a
+                      class="link-button"
+                      [routerLink]="claimSourceRoute(row.claim)"
+                      [queryParams]="claimSourceQueryParams(row.claim)"
+                      [attr.aria-label]="'Open source evidence for ' + row.claim.entity.canonicalName"
+                    >
+                      {{ row.claim.entity.canonicalName }}
+                    </a>
+                  } @else {
+                    <strong>{{ row.claim.entity.canonicalName }}</strong>
+                  }
                   <span
                     class="status-pill"
                     [class.status-warning]="row.effectiveStatus === 'candidate'"
@@ -578,6 +599,38 @@
             </div>
           }
         </div>
+
+        @if (claimReviewRows().length > claimPageSize()) {
+          <nav class="claim-pagination claim-pagination-bottom" aria-label="Claim review pagination at end of page">
+            <div>
+              <strong>{{ claimRangeStart() }}-{{ claimRangeEnd() }}</strong>
+              <span>of {{ claimReviewRows().length }} claims</span>
+            </div>
+            <label>
+              <span>Rows per page</span>
+              <select [value]="claimPageSize()" (change)="setClaimPageSize($event)">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+            <div class="pagination-actions">
+              <button class="secondary-button" type="button" [disabled]="claimPage() === 1" (click)="setClaimPage(1)">
+                First
+              </button>
+              <button class="secondary-button" type="button" [disabled]="claimPage() === 1" (click)="setClaimPage(claimPage() - 1)">
+                Previous
+              </button>
+              <span class="page-indicator">Page {{ claimPage() }} of {{ claimTotalPages() }}</span>
+              <button class="secondary-button" type="button" [disabled]="claimPage() === claimTotalPages()" (click)="setClaimPage(claimPage() + 1)">
+                Next
+              </button>
+              <button class="secondary-button" type="button" [disabled]="claimPage() === claimTotalPages()" (click)="setClaimPage(claimTotalPages())">
+                Last
+              </button>
+            </div>
+          </nav>
+        }
       </article>
     } @else {
       <article class="tab-panel codebase-tab-panel">

@@ -12,11 +12,20 @@ import {
   ParsedSection,
   SourceSpan,
 } from '../../core/dream-api.service';
+import { UiIconComponent, UiIconName } from '../../shared/ui-icon.component';
+
+interface LifecycleStage {
+  label: string;
+  detail: string;
+  complete: boolean;
+  current: boolean;
+  icon: UiIconName;
+}
 
 @Component({
   selector: 'app-memory-document-detail',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, UiIconComponent],
   templateUrl: './memory-document-detail.component.html',
   styleUrl: './memory-document-detail.component.scss',
 })
@@ -38,6 +47,46 @@ export class MemoryDocumentDetailComponent {
   readonly reviewEvents = computed(() => this.detail()?.reviewEvents ?? []);
   readonly downstreamEvents = computed(() => this.detail()?.downstreamEvents ?? []);
   readonly downstreamUsages = computed(() => this.detail()?.downstreamUsages ?? []);
+  readonly lifecycleStages = computed<LifecycleStage[]>(() => {
+    const document = this.detail()?.document;
+    const draft = this.draft();
+    const documentStatus = document?.status || '';
+    const reviewStatus = draft?.reviewStatus || '';
+    const rank = ['uploaded', 'parsed', 'approved', 'promoted'].indexOf(documentStatus);
+    const reviewed = rank >= 2 || ['approved', 'promoted'].includes(reviewStatus) || Boolean(draft?.reviewer);
+    const available = documentStatus === 'promoted' || reviewStatus === 'promoted';
+    const currentStage = available ? 3 : reviewed ? 2 : rank >= 1 ? 1 : 0;
+    return [
+      {
+        label: 'Source received',
+        detail: 'Raw file preserved',
+        complete: Boolean(document),
+        current: currentStage === 0,
+        icon: 'document',
+      },
+      {
+        label: 'Structure extracted',
+        detail: 'Sections and concepts identified',
+        complete: rank >= 1 || Boolean(draft),
+        current: currentStage === 1,
+        icon: 'spark',
+      },
+      {
+        label: 'Human reviewed',
+        detail: 'Metadata and knowledge approved',
+        complete: reviewed,
+        current: currentStage === 2,
+        icon: 'clipboard',
+      },
+      {
+        label: 'Available to workflows',
+        detail: 'Published to governed memory',
+        complete: available,
+        current: currentStage === 3,
+        icon: 'shield',
+      },
+    ];
+  });
 
   constructor() {
     effect(() => {
@@ -83,6 +132,24 @@ export class MemoryDocumentDetailComponent {
       return 'status-warning';
     }
     return 'status-info';
+  }
+
+  availabilityLabel(status: string): string {
+    if (status === 'promoted') return 'Available to AI workflows';
+    if (status === 'approved') return 'Approved and ready to publish';
+    if (status === 'parsed') return 'Ready for human review';
+    if (status === 'uploaded') return 'Ready to distill';
+    if (status === 'quarantined') return 'Blocked from use';
+    return this.formatLabel(status);
+  }
+
+  availabilityDetail(status: string): string {
+    if (status === 'promoted') return 'This reviewed source may now support generated engineering decisions.';
+    if (status === 'approved') return 'The structured draft passed review but is not published yet.';
+    if (status === 'parsed') return 'Review the extracted structure before approving this source.';
+    if (status === 'uploaded') return 'Parse the file to create reviewable structured memory.';
+    if (status === 'quarantined') return 'This source cannot influence generation until the block is resolved.';
+    return 'Review the source state before using it in a workflow.';
   }
 
   verificationLabel(value: boolean | null | undefined): string {
@@ -134,6 +201,19 @@ export class MemoryDocumentDetailComponent {
     return `${bytes} B`;
   }
 
+  dateLabel(value: string | null | undefined): string {
+    if (!value) return 'Date unavailable';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
   sourceFileName(sourcePath: string): string {
     const normalized = sourcePath.replace(/\\/g, '/');
     return normalized.split('/').filter(Boolean).at(-1) || sourcePath;
@@ -141,6 +221,18 @@ export class MemoryDocumentDetailComponent {
 
   reviewEventTitle(event: DraftReviewEvent): string {
     return `${this.formatLabel(event.eventType)} / ${this.formatLabel(event.newStatus)}`;
+  }
+
+  reviewDiffs(event: DraftReviewEvent): DraftReviewEvent['metadataDiff'] {
+    const technicalFields = new Set([
+      'promoted_path',
+      'json_path',
+      'markdown_path',
+      'source_hash',
+      'document_id',
+      'draft_id',
+    ]);
+    return event.metadataDiff.filter((diff) => !technicalFields.has(diff.field));
   }
 
   diffValue(value: unknown): string {

@@ -3,9 +3,17 @@
 <article class="panel concept-panel">
   <div class="panel-header">
     <div>
-      <h2>Impact Map</h2>
-      <p>{{ concepts.length }} visible concepts</p>
+      <h2>Repository Concept Coverage</h2>
+      <p>{{ conceptScopeLabel() }}</p>
     </div>
+  </div>
+  <div class="panel-context">
+    <strong>Index diagnostic, not task impact</strong>
+    <span>
+      This view groups indexed files and tests by concept. A task impact map is calculated only
+      after a Requirement Case or PR Review supplies a specific task.
+    </span>
+    <a routerLink="/workbench">Open task-scoped analysis</a>
   </div>
   <div class="concept-list">
     @for (concept of concepts; track concept.concept) {
@@ -25,8 +33,8 @@
       </details>
     } @empty {
       <div class="empty-state">
-        <strong>No concepts found.</strong>
-        <span>Refresh the repo index to derive concept mappings.</span>
+        <strong>No concept coverage found.</strong>
+        <span>Refresh the repository index to derive concept-to-file mappings.</span>
       </div>
     }
   </div>

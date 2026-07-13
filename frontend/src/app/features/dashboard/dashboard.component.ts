@@ -9,6 +9,8 @@ import {
   CodebaseIndexFile,
   DreamApiService,
   IntakeDocument,
+  MemoryLedgerSnapshot,
+  MemoryScanResult,
 } from '../../core/dream-api.service';
 import { UiIconComponent } from '../../shared/ui-icon.component';
 
@@ -30,6 +32,7 @@ interface WorkQueueItem {
   meta: string;
   tone: 'info' | 'warning' | 'success' | 'neutral';
   actionLabel: string;
+  queryParams?: Record<string, string>;
 }
 
 interface StartAction {
@@ -63,6 +66,8 @@ export class DashboardComponent {
   readonly requirementCases = signal<RequirementCase[]>([]);
   readonly auditRuns = signal<AuditRun[]>([]);
   readonly scorecards = signal<EvaluationScorecard[]>([]);
+  readonly memoryScan = signal<MemoryScanResult | null>(null);
+  readonly memoryLedger = signal<MemoryLedgerSnapshot | null>(null);
 
   readonly sourceReviewQueue = computed(() =>
     this.intakeDocuments().filter((document) => this.sourceNeedsReview(document)),
@@ -92,39 +97,79 @@ export class DashboardComponent {
   readonly evalsNeedReview = computed(() =>
     this.latestScorecards().filter((scorecard) => scorecard.passStatus !== 'pass'),
   );
+  readonly latestMemoryReviewByClaim = computed(() => {
+    const latest = new Map<string, string>();
+    for (const event of this.memoryLedger()?.events ?? []) {
+      latest.set(event.claimId, event.newStatus);
+    }
+    return latest;
+  });
+  readonly memorySourceCount = computed(
+    () =>
+      new Set(
+        (this.memoryScan()?.claims ?? []).flatMap((claim) => claim.evidence.sourceIds),
+      ).size,
+  );
+  readonly memoryClaimsAwaitingDecision = computed(
+    () =>
+      (this.memoryScan()?.claims ?? []).filter(
+        (claim) =>
+          (this.latestMemoryReviewByClaim().get(claim.claimId) ?? claim.governanceStatus) ===
+          'candidate',
+      ).length,
+  );
+  readonly governedMemoryClaims = computed(
+    () => (this.memoryScan()?.claims.length ?? 0) - this.memoryClaimsAwaitingDecision(),
+  );
 
   readonly summaryMetrics = computed<DashboardMetric[]>(() => [
     {
-      label: 'Docs in Memory',
-      value: this.approvedSourceItems().length,
-      note: `${this.intakeDocuments().length} source records from FastAPI`,
-      tone: this.approvedSourceItems().length ? 'info' : 'neutral',
+      label: 'Memory Sources',
+      value: this.memorySourceCount(),
+      note: `${this.intakeDocuments().length} new intake submissions`,
+      tone: this.memorySourceCount() ? 'info' : 'neutral',
       variant: 'sources',
     },
     {
-      label: 'Docs Need Review',
-      value: this.sourceReviewQueue().length,
-      note: `${this.approvedSourceItems().length} already promoted`,
-      tone: this.sourceReviewQueue().length ? 'warning' : 'success',
+      label: 'Claims Need Review',
+      value: this.memoryClaimsAwaitingDecision(),
+      note: `${this.governedMemoryClaims()} governed / ${this.memoryScan()?.claims.length ?? 0} extracted`,
+      tone: this.memoryClaimsAwaitingDecision() ? 'warning' : 'success',
       variant: 'sources',
     },
     {
-      label: 'Jira Drafts',
-      value: this.jiraDraftsNeedReview().length,
-      note: `${this.requirementCases().length} raw records / ${this.approvedJiraDrafts().length} ready`,
+      label: 'Requirement Cases',
+      value: this.latestRequirementCases().length,
+      note: `${this.jiraDraftsNeedReview().length} need review / ${this.approvedJiraDrafts().length} Jira-ready`,
       tone: this.jiraDraftsNeedReview().length ? 'warning' : 'success',
       variant: 'jira',
     },
     {
       label: 'PR Reviews',
-      value: this.prReviewsNeedReview().length,
-      note: `${this.approvedPrReviews().length} generated successfully`,
+      value: this.prReviewRuns().length,
+      note: `${this.prReviewsNeedReview().length} need review / ${this.approvedPrReviews().length} completed`,
       tone: this.prReviewsNeedReview().length ? 'warning' : 'success',
       variant: 'pr',
     },
   ]);
 
   readonly workQueue = computed<WorkQueueItem[]>(() => [
+    ...(this.memoryClaimsAwaitingDecision()
+      ? [
+          {
+            id: 'memory-claim-review',
+            type: 'Memory Claims',
+            title: `${this.memoryClaimsAwaitingDecision()} claims need governance decisions`,
+            status: 'Needs Review',
+            route: '/memory',
+            queryParams: { tab: 'claims' },
+            note: `${this.governedMemoryClaims()} claims have already been governed in the current scan.`,
+            meta: `${this.memorySourceCount()} scan sources`,
+            tone: 'warning' as const,
+            actionLabel: 'Review claims',
+          },
+        ]
+      : []),
     ...this.sourceReviewQueue().map((document) => ({
       id: document.documentId,
       type: 'Source Doc',
@@ -215,13 +260,25 @@ export class DashboardComponent {
       requirementCases: this.api.listRequirementCases().pipe(catchError(() => of([]))),
       auditRuns: this.api.listAuditRuns('DREAM').pipe(catchError(() => of([]))),
       scorecards: this.api.listEvaluationRuns().pipe(catchError(() => of([]))),
+      memoryScan: this.api.getLatestMemoryScan('demo_team').pipe(catchError(() => of(null))),
+      memoryLedger: this.api.getMemoryLedger('demo_team').pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ intakeDocuments, codebaseFiles, requirementCases, auditRuns, scorecards }) => {
+      next: ({
+        intakeDocuments,
+        codebaseFiles,
+        requirementCases,
+        auditRuns,
+        scorecards,
+        memoryScan,
+        memoryLedger,
+      }) => {
         this.intakeDocuments.set(intakeDocuments);
         this.codebaseFiles.set(codebaseFiles);
         this.requirementCases.set(requirementCases);
         this.auditRuns.set(auditRuns);
         this.scorecards.set(scorecards);
+        this.memoryScan.set(memoryScan);
+        this.memoryLedger.set(memoryLedger);
         this.isLoading.set(false);
       },
       error: () => {

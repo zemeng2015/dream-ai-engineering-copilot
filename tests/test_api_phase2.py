@@ -182,6 +182,31 @@ def test_memory_distillation_endpoints() -> None:
         if claim["governance"]["status"] == "candidate"
         and claim["extraction"]["method"] == "heuristic_semantic"
     )
+    claim_source_path = candidate_claim["evidence"]["spans"][0]["path"]
+    source_response = client.get(
+        f"/memory/claims/{candidate_claim['claim_id']}/source",
+        params={
+            "team_id": "demo_team",
+            "scan_id": scan_payload["scan_id"],
+            "source_path": claim_source_path,
+        },
+    )
+    assert source_response.status_code == 200
+    source_payload = source_response.json()
+    assert source_payload["claim_id"] == candidate_claim["claim_id"]
+    assert source_payload["source_path"] == claim_source_path
+    assert source_payload["content"]
+    assert source_payload["spans"]
+
+    unrelated_source_response = client.get(
+        f"/memory/claims/{candidate_claim['claim_id']}/source",
+        params={
+            "team_id": "demo_team",
+            "scan_id": scan_payload["scan_id"],
+            "source_path": "README.md",
+        },
+    )
+    assert unrelated_source_response.status_code == 404
 
     diff_response = client.get("/memory/diff", params={"team_id": "demo_team"})
     assert diff_response.status_code == 200

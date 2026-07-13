@@ -17,7 +17,6 @@ import {
 import { CodePreviewPanelComponent } from './code-preview-panel.component';
 import { CodebaseIndexControlsComponent } from './codebase-index-controls.component';
 import { CodebaseSummaryCardsComponent } from './codebase-summary-cards.component';
-import { RepoBreadcrumb, RepoFolderEntry } from './codebase-memory.types';
 import { EvidenceSearchPanelComponent } from './evidence-search-panel.component';
 import { ImpactMapPanelComponent } from './impact-map-panel.component';
 import { IndexJsonPanelComponent } from './index-json-panel.component';
@@ -54,7 +53,6 @@ export class CodebaseMemoryComponent {
   readonly results = signal<CodebaseSearchItem[]>([]);
   readonly selectedFilePath = signal<string | null>(null);
   readonly selectedFileContent = signal<CodebaseFileContent | null>(null);
-  readonly currentFolderPath = signal('');
 
   readonly form = this.fb.nonNullable.group({
     teamId: ['demo_team', Validators.required],
@@ -76,53 +74,6 @@ export class CodebaseMemoryComponent {
   readonly selectedFile = computed(() => {
     const selectedPath = this.selectedFilePath();
     return this.files().find((file) => file.path === selectedPath) ?? this.files()[0] ?? null;
-  });
-  readonly repoBreadcrumbs = computed<RepoBreadcrumb[]>(() => {
-    const repoName = this.form.controls.repoName.value || 'repo';
-    const parts = this.currentFolderPath().split('/').filter(Boolean);
-    const breadcrumbs: RepoBreadcrumb[] = [{ label: repoName, path: '' }];
-    let path = '';
-    for (const part of parts) {
-      path = path ? `${path}/${part}` : part;
-      breadcrumbs.push({ label: part, path });
-    }
-    return breadcrumbs;
-  });
-  readonly currentFolderEntries = computed<RepoFolderEntry[]>(() => {
-    const folderPath = this.currentFolderPath();
-    const prefix = folderPath ? `${folderPath}/` : '';
-    const folders = new Map<string, RepoFolderEntry>();
-    for (const file of this.files()) {
-      if (prefix && !file.path.startsWith(prefix)) {
-        continue;
-      }
-      const remainder = prefix ? file.path.slice(prefix.length) : file.path;
-      const [folderName, ...nested] = remainder.split('/');
-      if (!folderName || !nested.length) {
-        continue;
-      }
-      const childPath = prefix ? `${prefix}${folderName}` : folderName;
-      const existing = folders.get(childPath);
-      folders.set(childPath, {
-        name: folderName,
-        path: childPath,
-        fileCount: (existing?.fileCount ?? 0) + 1,
-      });
-    }
-    return [...folders.values()].sort((left, right) => left.name.localeCompare(right.name));
-  });
-  readonly currentFolderFiles = computed(() => {
-    const folderPath = this.currentFolderPath();
-    const prefix = folderPath ? `${folderPath}/` : '';
-    return this.files()
-      .filter((file) => {
-        if (prefix && !file.path.startsWith(prefix)) {
-          return false;
-        }
-        const remainder = prefix ? file.path.slice(prefix.length) : file.path;
-        return remainder.length > 0 && !remainder.includes('/');
-      })
-      .sort((left, right) => this.fileName(left.path).localeCompare(this.fileName(right.path)));
   });
   readonly topConcepts = computed(() =>
     [...this.concepts()].sort((a, b) => b.relatedFiles.length - a.relatedFiles.length).slice(0, 10),
@@ -182,7 +133,6 @@ export class CodebaseMemoryComponent {
         const nextPath = requestedFileExists ? requestedPath : currentFileExists ? currentPath : files[0]?.path ?? null;
         this.selectedFilePath.set(nextPath);
         if (nextPath) {
-          this.currentFolderPath.set(this.folderPath(nextPath));
           this.loadFileContent(nextPath);
         } else {
           this.selectedFileContent.set(null);
@@ -242,27 +192,7 @@ export class CodebaseMemoryComponent {
       return;
     }
     this.selectedFilePath.set(path);
-    this.currentFolderPath.set(this.folderPath(path));
     this.loadFileContent(path);
-  }
-
-  navigateFolder(path: string): void {
-    this.currentFolderPath.set(path);
-    const selectedPath = this.selectedFilePath();
-    if (selectedPath && this.folderPath(selectedPath) === path) {
-      return;
-    }
-    const directFile = this.files()
-      .filter((file) => this.folderPath(file.path) === path)
-      .sort((left, right) => this.fileName(left.path).localeCompare(this.fileName(right.path)))[0];
-    const descendantFile = this.files()
-      .filter((file) => !path || file.path.startsWith(`${path}/`))
-      .sort((left, right) => left.path.localeCompare(right.path))[0];
-    const nextFile = directFile ?? descendantFile;
-    if (nextFile) {
-      this.selectedFilePath.set(nextFile.path);
-      this.loadFileContent(nextFile.path);
-    }
   }
 
   loadFileContent(path: string): void {
@@ -285,19 +215,6 @@ export class CodebaseMemoryComponent {
     });
   }
 
-  fileName(path: string): string {
-    return path.split('/').pop() || path;
-  }
-
-  folderName(path: string): string {
-    return this.folderPath(path) || 'repo root';
-  }
-
-  folderPath(path: string): string {
-    const parts = path.split('/');
-    parts.pop();
-    return parts.join('/');
-  }
 }
 
 function apiErrorMessage(error: unknown, fallback: string): string {

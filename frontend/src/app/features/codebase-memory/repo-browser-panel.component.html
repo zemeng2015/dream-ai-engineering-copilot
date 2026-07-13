@@ -3,55 +3,66 @@
 <article class="panel repo-panel">
   <div class="panel-header">
     <div>
-      <h2>Repo Files</h2>
-      <p>{{ repoPath }} / {{ files.length }} indexed files</p>
+      <h2>Repository Explorer</h2>
+      <p [title]="repoPath">{{ files.length }} indexed files</p>
     </div>
+    <span class="status-pill status-info">IDE tree</span>
   </div>
-  <nav class="repo-pathbar" aria-label="Current repo path">
-    @for (crumb of breadcrumbs; track crumb.path) {
-      <button
-        type="button"
-        class="repo-crumb"
-        [class.active]="crumb.path === currentFolderPath"
-        (click)="folderSelected.emit(crumb.path)"
-      >
-        {{ crumb.label }}
-      </button>
-      @if (!$last) {
-        <span>/</span>
+
+  <div class="repo-tree" role="tree" aria-label="Repository file tree">
+    <button
+      type="button"
+      role="treeitem"
+      class="tree-row folder-row root-row"
+      [attr.aria-expanded]="isExpanded('')"
+      aria-level="1"
+      (click)="toggleFolder('')"
+      [title]="repoPath"
+    >
+      <app-ui-icon [name]="isExpanded('') ? 'chevron-down' : 'chevron-right'" />
+      <app-ui-icon name="folder" />
+      <span>{{ repoName }}</span>
+      <small>{{ files.length }}</small>
+    </button>
+
+    @for (row of treeRows; track row.type + ':' + row.path) {
+      @if (row.type === 'folder') {
+        <button
+          type="button"
+          role="treeitem"
+          class="tree-row folder-row"
+          [style.padding-left.px]="10 + row.depth * 14"
+          [attr.aria-expanded]="isExpanded(row.path)"
+          [attr.aria-level]="row.depth + 1"
+          (click)="toggleFolder(row.path)"
+          [title]="row.path"
+        >
+          <app-ui-icon [name]="isExpanded(row.path) ? 'chevron-down' : 'chevron-right'" />
+          <app-ui-icon name="folder" />
+          <span>{{ row.name }}</span>
+          <small>{{ row.fileCount }}</small>
+        </button>
+      } @else {
+        <button
+          type="button"
+          role="treeitem"
+          class="tree-row file-row"
+          [class.active]="selectedFilePath === row.path"
+          [style.padding-left.px]="16 + row.depth * 14"
+          [attr.aria-level]="row.depth + 1"
+          [attr.aria-selected]="selectedFilePath === row.path"
+          (click)="fileSelected.emit(row.file)"
+          [title]="row.path"
+        >
+          <span class="tree-spacer" aria-hidden="true"></span>
+          <app-ui-icon name="document" />
+          <span>{{ row.name }}</span>
+        </button>
       }
-    }
-  </nav>
-  <div class="repo-tree">
-    @for (folder of folders; track folder.path) {
-      <button
-        type="button"
-        class="repo-folder-row"
-        (click)="folderSelected.emit(folder.path)"
-        [title]="folder.path"
-      >
-        <app-ui-icon name="chevron-right" />
-        <span>{{ folder.name }}</span>
-        <small>{{ folder.fileCount }} files</small>
-      </button>
-    }
-    @for (file of files; track file.fileId) {
-      <button
-        type="button"
-        class="repo-file"
-        [class.active]="selectedFilePath === file.path"
-        (click)="fileSelected.emit(file)"
-        [title]="file.path"
-      >
-        <app-ui-icon name="document" />
-        <span>{{ fileName(file.path) }}</span>
-        <small class="status-pill {{ roleClass(file.role) }}">{{ file.role }}</small>
-      </button>
-    }
-    @if (!folders.length && !files.length) {
+    } @empty {
       <div class="empty-state">
-        <strong>No files in this folder.</strong>
-        <span>Use the breadcrumb above to move to another path.</span>
+        <strong>No indexed files.</strong>
+        <span>Refresh repository memory to build the file tree.</span>
       </div>
     }
   </div>

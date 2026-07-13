@@ -42,7 +42,12 @@
 
       <div class="work-list">
         @for (item of workQueue(); track item.type + item.id) {
-          <a class="work-row" [routerLink]="item.route" [attr.data-tone]="item.tone">
+          <a
+            class="work-row"
+            [routerLink]="item.route"
+            [queryParams]="item.queryParams || null"
+            [attr.data-tone]="item.tone"
+          >
             <span class="work-type">{{ item.type }}</span>
             <div class="row-main">
               <div class="row-title">

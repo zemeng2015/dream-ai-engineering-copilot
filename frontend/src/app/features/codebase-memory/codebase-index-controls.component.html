@@ -1,31 +1,68 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<section class="panel index-controls" aria-label="Codebase index controls">
+<section class="panel index-controls" aria-label="Repository memory search and settings">
+  <div class="control-intro">
+    <div>
+      <span class="eyebrow">Use repository memory</span>
+      <h2>Find code evidence</h2>
+      <p>
+        Describe a behavior, risk, or engineering question. DREAM searches its read-only
+        representation of the repository for relevant files, symbols, and tests.
+      </p>
+    </div>
+    <div class="control-flow" aria-label="Repository memory workflow">
+      <span><strong>1</strong> Connect repo</span>
+      <span><strong>2</strong> Find evidence</span>
+      <span><strong>3</strong> Use in a task</span>
+    </div>
+  </div>
+
   <form class="control-grid" [formGroup]="form" (ngSubmit)="searchRequested.emit()">
-    <div class="form-field">
-      <label for="code-team">Team</label>
-      <input id="code-team" formControlName="teamId" />
-    </div>
-    <div class="form-field">
-      <label for="code-repo">Repo name</label>
-      <input id="code-repo" formControlName="repoName" />
-    </div>
-    <div class="form-field">
-      <label for="code-path">Repo path</label>
-      <input id="code-path" formControlName="repoPath" />
-    </div>
-    <div class="form-field">
-      <label for="code-top-k">Top K</label>
-      <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
-    </div>
     <div class="form-field-full search-line">
-      <label for="code-query">Evidence search</label>
+      <label for="code-query">What code evidence do you need?</label>
+      <small>Use task language, for example: status tracking, output collection, and related tests.</small>
       <div>
         <input id="code-query" formControlName="query" />
         <button class="primary-button" type="submit" [disabled]="isLoading">
           <app-ui-icon name="search" />
-          Search
+          Preview matching evidence
         </button>
+      </div>
+    </div>
+
+    <details class="advanced-settings form-field-full">
+      <summary>
+        <span>
+          <strong>Repository settings</strong>
+          <small>Advanced setup and index maintenance</small>
+        </span>
+        <span class="active-repo">{{ form.controls['repoName'].value }}</span>
+      </summary>
+
+      <div class="advanced-grid">
+        <div class="form-field">
+          <label for="code-team">Team scope</label>
+          <input id="code-team" formControlName="teamId" />
+        </div>
+        <div class="form-field">
+          <label for="code-repo">Repository key</label>
+          <input id="code-repo" formControlName="repoName" />
+        </div>
+        <div class="form-field">
+          <label for="code-path">Source path</label>
+          <input id="code-path" formControlName="repoPath" />
+        </div>
+        <div class="form-field">
+          <label for="code-top-k">Result limit</label>
+          <input id="code-top-k" type="number" min="1" max="20" formControlName="topK" />
+        </div>
+      </div>
+
+      <div class="index-maintenance">
+        <p>
+          Refreshing repository memory reads the configured source and rebuilds DREAM's internal
+          file, symbol, test, and concept records. It does not modify source code.
+        </p>
         <button
           class="secondary-button"
           type="button"
@@ -33,9 +70,9 @@
           [disabled]="isIndexing"
         >
           <app-ui-icon name="branch" />
-          {{ isIndexing ? 'Indexing...' : 'Index Repo' }}
+          {{ isIndexing ? 'Refreshing...' : 'Refresh repository memory' }}
         </button>
       </div>
-    </div>
+    </details>
   </form>
 </section>

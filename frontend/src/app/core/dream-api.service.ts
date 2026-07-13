@@ -298,6 +298,30 @@ interface ApiMemoryScanResult {
   warnings: string[];
 }
 
+interface ApiMemoryClaimSourceResponse {
+  team_id: string;
+  scan_id: string;
+  claim_id: string;
+  source_id: string;
+  source_type: string;
+  source_path: string;
+  file_name: string;
+  content: string;
+  content_truncated: boolean;
+  size_bytes: number;
+  line_count: number;
+  content_hash: string;
+  indexed_at: string;
+  trust_level: string;
+  commit_sha?: string | null;
+  spans: Array<{
+    span_id: string;
+    start_line?: number | null;
+    end_line?: number | null;
+    excerpt_hash: string;
+  }>;
+}
+
 interface ApiMemoryReviewFieldDiff {
   field_path: string;
   before?: string | null;
@@ -1050,6 +1074,30 @@ export interface MemoryClaim {
   updatedAt: string;
 }
 
+export interface MemoryClaimSource {
+  teamId: string;
+  scanId: string;
+  claimId: string;
+  sourceId: string;
+  sourceType: string;
+  sourcePath: string;
+  fileName: string;
+  content: string;
+  contentTruncated: boolean;
+  sizeBytes: number;
+  lineCount: number;
+  contentHash: string;
+  indexedAt: string;
+  trustLevel: string;
+  commitSha?: string | null;
+  spans: Array<{
+    spanId: string;
+    startLine?: number | null;
+    endLine?: number | null;
+    excerptHash: string;
+  }>;
+}
+
 export interface MemoryDiffResult {
   teamId: string;
   scanId: string;
@@ -1559,6 +1607,23 @@ export class DreamApiService {
         params: { team_id: teamId },
       })
       .pipe(map(mapMemoryScanResult));
+  }
+
+  getMemoryClaimSource(
+    teamId: string,
+    scanId: string,
+    claimId: string,
+    sourcePath: string,
+  ): Observable<MemoryClaimSource> {
+    return this.http
+      .get<ApiMemoryClaimSourceResponse>(`${this.baseUrl}/memory/claims/${claimId}/source`, {
+        params: {
+          team_id: teamId,
+          scan_id: scanId,
+          source_path: sourcePath,
+        },
+      })
+      .pipe(map(mapMemoryClaimSource));
   }
 
   getMemoryDiff(
@@ -2438,6 +2503,32 @@ function mapMemoryClaim(claim: ApiMemoryClaim): MemoryClaim {
     riskLevel: claim.governance.risk_level,
     createdAt: claim.audit.created_at,
     updatedAt: claim.audit.updated_at,
+  };
+}
+
+function mapMemoryClaimSource(source: ApiMemoryClaimSourceResponse): MemoryClaimSource {
+  return {
+    teamId: source.team_id,
+    scanId: source.scan_id,
+    claimId: source.claim_id,
+    sourceId: source.source_id,
+    sourceType: source.source_type,
+    sourcePath: source.source_path,
+    fileName: source.file_name,
+    content: source.content,
+    contentTruncated: source.content_truncated,
+    sizeBytes: source.size_bytes,
+    lineCount: source.line_count,
+    contentHash: source.content_hash,
+    indexedAt: source.indexed_at,
+    trustLevel: source.trust_level,
+    commitSha: source.commit_sha,
+    spans: source.spans.map((span) => ({
+      spanId: span.span_id,
+      startLine: span.start_line,
+      endLine: span.end_line,
+      excerptHash: span.excerpt_hash,
+    })),
   };
 }
 

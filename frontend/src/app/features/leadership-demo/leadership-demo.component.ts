@@ -4,18 +4,13 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { UiIconComponent, UiIconName } from '../../shared/ui-icon.component';
+import { LeadershipComparisonComponent } from './leadership-comparison.component';
 
 interface TrustSignal {
   label: string;
   value: string;
   detail: string;
   tone: 'trust' | 'control' | 'evidence';
-}
-
-interface ComparisonRow {
-  dimension: string;
-  stateless: string;
-  dream: string;
 }
 
 interface DemoStep {
@@ -36,7 +31,7 @@ interface PilotBoundary {
 @Component({
   selector: 'app-leadership-demo',
   standalone: true,
-  imports: [RouterLink, UiIconComponent],
+  imports: [RouterLink, UiIconComponent, LeadershipComparisonComponent],
   templateUrl: './leadership-demo.component.html',
   styleUrl: './leadership-demo.component.scss',
 })
@@ -65,29 +60,6 @@ export class LeadershipDemoComponent {
       value: 'No automatic external writes',
       detail: 'The leadership scenario produces reviewable drafts without changing Jira or GitHub.',
       tone: 'control',
-    },
-  ];
-
-  readonly comparisonRows: ComparisonRow[] = [
-    {
-      dimension: 'Organizational context',
-      stateless: 'Starts from the prompt and general model knowledge.',
-      dream: 'Uses approved architecture, runbooks, incidents, tests, and code evidence.',
-    },
-    {
-      dimension: 'Ambiguity handling',
-      stateless: 'Often fills gaps with plausible assumptions.',
-      dream: 'Creates role-specific questions and preserves unresolved decisions.',
-    },
-    {
-      dimension: 'Impact analysis',
-      stateless: 'Suggests generic components and test areas.',
-      dream: 'Binds the request to concrete files, historical risks, and test references.',
-    },
-    {
-      dimension: 'Trust and review',
-      stateless: 'The reviewer must reconstruct why the answer was produced.',
-      dream: 'Shows source proof, selection reasons, governance status, eval, and audit.',
     },
   ];
 
@@ -140,7 +112,7 @@ export class LeadershipDemoComponent {
   ];
 
   readonly pilotBoundaries: PilotBoundary[] = [
-    { label: 'Scope', value: 'One team 路 one application 路 one repository' },
+    { label: 'Scope', value: 'One team | one application | one repository' },
     { label: 'Duration', value: 'Proposed six-week controlled pilot' },
     { label: 'Sources', value: 'Read-only, explicitly approved engineering content' },
     { label: 'Actions', value: 'Draft generation only; no automatic Jira or PR writes' },

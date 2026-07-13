@@ -10,6 +10,40 @@
   display: grid;
 }
 
+.panel-context {
+  display: grid;
+  gap: 5px;
+  border-bottom: 1px solid var(--dream-border);
+  background: var(--dream-warning-bg);
+  padding: 13px 18px;
+}
+
+.panel-context strong {
+  color: var(--dream-navy);
+  font-size: 13px;
+}
+
+.panel-context span,
+.panel-context a {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.panel-context span {
+  color: var(--dream-muted);
+}
+
+.panel-context a {
+  width: fit-content;
+  color: var(--dream-blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.panel-context a:hover {
+  text-decoration: underline;
+}
+
 .concept-list {
   gap: 10px;
   padding: 14px;

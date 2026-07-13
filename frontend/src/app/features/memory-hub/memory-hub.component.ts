@@ -2,7 +2,7 @@
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of, switchMap } from 'rxjs';
 
 import {
@@ -51,6 +51,7 @@ interface MemoryClaimReviewRow {
 export class MemoryHubComponent {
   private readonly api = inject(DreamApiService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isLoading = signal(false);
   readonly uploadInFlight = signal(false);
@@ -72,7 +73,9 @@ export class MemoryHubComponent {
   readonly memoryConflictResolutions = signal<MemoryConflictResolutionLedger | null>(null);
   readonly memoryScan = signal<MemoryScanResult | null>(null);
   readonly memoryLedger = signal<MemoryLedgerSnapshot | null>(null);
-  readonly activeTab = signal<MemoryTab>('sources');
+  readonly activeTab = signal<MemoryTab>(this.initialTab());
+  readonly claimPage = signal(1);
+  readonly claimPageSize = signal(20);
 
   readonly uploadForm = this.fb.nonNullable.group({
     teamId: ['demo_team', Validators.required],
@@ -148,6 +151,29 @@ export class MemoryHubComponent {
   readonly reviewableClaimCount = computed(
     () => this.claimReviewRows().filter((row) => row.effectiveStatus === 'candidate').length,
   );
+  readonly governedClaimCount = computed(
+    () => this.claimReviewRows().length - this.reviewableClaimCount(),
+  );
+  readonly scanSourceCount = computed(
+    () =>
+      new Set(
+        this.claimReviewRows().flatMap((row) => row.claim.evidence.sourceIds),
+      ).size,
+  );
+  readonly claimTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.claimReviewRows().length / this.claimPageSize())),
+  );
+  readonly pagedClaimReviewRows = computed(() => {
+    const page = Math.min(this.claimPage(), this.claimTotalPages());
+    const start = (page - 1) * this.claimPageSize();
+    return this.claimReviewRows().slice(start, start + this.claimPageSize());
+  });
+  readonly claimRangeStart = computed(() =>
+    this.claimReviewRows().length ? (this.claimPage() - 1) * this.claimPageSize() + 1 : 0,
+  );
+  readonly claimRangeEnd = computed(() =>
+    Math.min(this.claimPage() * this.claimPageSize(), this.claimReviewRows().length),
+  );
   readonly conflictPairCount = computed(() => this.memoryConflicts()?.conflictCount ?? 0);
 
   readonly memoryTabs = computed<MemoryTabItem[]>(() => [
@@ -155,7 +181,7 @@ export class MemoryHubComponent {
       id: 'sources',
       label: 'Source Intake',
       count: this.intakeDocuments().length,
-      note: `${this.sourceReviewQueue().length} need review / ${this.approvedSourceItems().length} promoted`,
+      note: `${this.intakeDocuments().length} new submissions / ${this.scanSourceCount()} scanned sources`,
       status: this.sourceReviewQueue().length ? 'Review pending' : 'Current',
       tone: this.sourceReviewQueue().length ? 'warning' : 'success',
     },
@@ -163,7 +189,7 @@ export class MemoryHubComponent {
       id: 'claims',
       label: 'Claim Review',
       count: this.claimReviewRows().length,
-      note: `${this.reviewableClaimCount()} candidates / ${this.conflictPairCount()} conflicts`,
+      note: `${this.reviewableClaimCount()} awaiting decision / ${this.governedClaimCount()} governed`,
       status: this.reviewableClaimCount() || this.conflictPairCount() ? 'Needs review' : 'Current',
       tone: this.reviewableClaimCount() || this.conflictPairCount() ? 'warning' : 'success',
     },
@@ -211,6 +237,7 @@ export class MemoryHubComponent {
         this.memoryConflicts.set(memoryConflicts);
         this.memoryConflictResolutions.set(memoryConflictResolutions);
         this.memoryLedger.set(memoryLedger);
+        this.setClaimPage(this.claimPage());
         this.isLoading.set(false);
       },
       error: () => {
@@ -393,6 +420,43 @@ export class MemoryHubComponent {
     this.activeTab.set(tab);
   }
 
+  setClaimPage(page: number): void {
+    const normalized = Number.isFinite(page) ? Math.trunc(page) : 1;
+    this.claimPage.set(Math.min(Math.max(normalized, 1), this.claimTotalPages()));
+  }
+
+  setClaimPageSize(event: Event): void {
+    const select = event.target instanceof HTMLSelectElement ? event.target : null;
+    const pageSize = Number(select?.value ?? 20);
+    this.claimPageSize.set([10, 20, 50].includes(pageSize) ? pageSize : 20);
+    this.claimPage.set(1);
+  }
+
+  claimHasReviewSource(claim: MemoryClaim): boolean {
+    return Boolean(claim.evidence.intakeProofs[0]?.documentId || claim.evidence.spans[0]?.path);
+  }
+
+  claimSourceRoute(claim: MemoryClaim): string[] {
+    const proof = claim.evidence.intakeProofs[0];
+    return proof?.documentId ? ['/memory', proof.documentId] : ['/memory/source'];
+  }
+
+  claimSourceQueryParams(claim: MemoryClaim): Record<string, string> | null {
+    if (claim.evidence.intakeProofs[0]?.documentId) {
+      return null;
+    }
+    const sourcePath = claim.evidence.spans[0]?.path;
+    if (!sourcePath) {
+      return null;
+    }
+    return {
+      teamId: claim.teamId,
+      scanId: claim.scanId,
+      claimId: claim.claimId,
+      sourcePath,
+    };
+  }
+
   runMemoryScan(): void {
     this.scanInFlight.set(true);
     this.apiError.set(null);
@@ -423,6 +487,7 @@ export class MemoryHubComponent {
           this.memoryConflicts.set(conflicts);
           this.memoryConflictResolutions.set(conflictResolutions);
           this.memoryLedger.set(ledger);
+          this.claimPage.set(1);
           this.uploadMessage.set(`Memory scan ${scan.scanId} ready for review.`);
           this.scanInFlight.set(false);
         },
@@ -655,6 +720,11 @@ export class MemoryHubComponent {
       latestReview,
       effectiveStatus: latestReview?.newStatus ?? claim.governanceStatus,
     };
+  }
+
+  private initialTab(): MemoryTab {
+    const requested = this.route.snapshot.queryParamMap.get('tab');
+    return requested === 'claims' || requested === 'codebase' ? requested : 'sources';
   }
 
 }

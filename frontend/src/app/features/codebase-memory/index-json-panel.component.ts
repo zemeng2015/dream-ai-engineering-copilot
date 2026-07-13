@@ -2,6 +2,8 @@
 
 import { Component, Input } from '@angular/core';
 
+import { CodebaseIndexFile } from '../../core/dream-api.service';
+
 @Component({
   selector: 'app-index-json-panel',
   standalone: true,
@@ -10,5 +12,6 @@ import { Component, Input } from '@angular/core';
 })
 export class IndexJsonPanelComponent {
   @Input() repoIndexPath = 'No index artifact loaded';
+  @Input() selectedFile: CodebaseIndexFile | null = null;
   @Input() selectedFileJson = '{}';
 }

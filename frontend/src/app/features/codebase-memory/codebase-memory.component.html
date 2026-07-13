@@ -3,9 +3,12 @@
 <section class="page code-memory-page">
   <header class="page-header command-header">
     <div>
-      <span class="eyebrow">Live codebase memory</span>
-      <h1>Repo Browser & Index JSON</h1>
-      <p>Browse actual repo files and inspect the selected JSON index record used by memory and eval workflows.</p>
+      <span class="eyebrow">Repository intelligence</span>
+      <h1>Codebase Index</h1>
+      <p>
+        Inspect repository indexing and preview the evidence available to downstream workflows.
+        Task-specific impact analysis is generated inside a Requirement Case or PR Review.
+      </p>
     </div>
     <div class="index-beacon">
       <span></span>
@@ -36,13 +39,10 @@
 
   <section class="repo-workspace" aria-label="Repository browser and index JSON">
     <app-repo-browser-panel
+      [repoName]="form.controls.repoName.value"
       [repoPath]="form.controls.repoPath.value"
-      [breadcrumbs]="repoBreadcrumbs()"
-      [folders]="currentFolderEntries()"
-      [files]="currentFolderFiles()"
+      [files]="files()"
       [selectedFilePath]="selectedFilePath()"
-      [currentFolderPath]="currentFolderPath()"
-      (folderSelected)="navigateFolder($event)"
       (fileSelected)="selectFile($event)"
     />
 
@@ -54,18 +54,21 @@
 
     <app-index-json-panel
       [repoIndexPath]="repoIndexPath()"
+      [selectedFile]="selectedFile()"
       [selectedFileJson]="selectedFileJson()"
     />
   </section>
 
-  <section class="support-layout" aria-label="Search evidence and impact map">
+  <section class="support-layout" aria-label="Repository retrieval preview and concept coverage">
     <app-evidence-search-panel
       [results]="results()"
+      [query]="form.controls.query.value"
       (sourceSelected)="selectPath($event)"
     />
 
     <app-impact-map-panel
       [concepts]="selectedImpactConcepts().length ? selectedImpactConcepts() : topConcepts()"
+      [selectedFilePath]="selectedImpactConcepts().length ? selectedFilePath() : null"
       (sourceSelected)="selectPath($event)"
     />
   </section>

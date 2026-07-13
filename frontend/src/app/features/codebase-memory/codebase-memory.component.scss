@@ -8,8 +8,12 @@
 }
 
 .repo-workspace {
-  grid-template-columns: minmax(340px, 0.36fr) minmax(0, 1fr) minmax(380px, 0.48fr);
+  grid-template-columns: minmax(300px, 0.42fr) minmax(0, 1fr);
   align-items: start;
+}
+
+app-index-json-panel {
+  grid-column: 1 / -1;
 }
 
 .support-layout {
@@ -19,11 +23,7 @@
 
 @media (width <= 1320px) {
   .repo-workspace {
-    grid-template-columns: minmax(260px, 0.4fr) minmax(0, 1fr);
-  }
-
-  app-index-json-panel {
-    grid-column: 1 / -1;
+    grid-template-columns: minmax(330px, 0.48fr) minmax(0, 1fr);
   }
 }
 

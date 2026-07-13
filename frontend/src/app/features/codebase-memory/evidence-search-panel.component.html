@@ -3,9 +3,19 @@
 <article class="panel search-panel">
   <div class="panel-header">
     <div>
-      <h2>Evidence Search</h2>
-      <p>{{ results.length }} matches from the retriever.</p>
+      <h2>Repository Retrieval Preview</h2>
+      <p>{{ results.length }} ranked candidates for the current repository query</p>
     </div>
+  </div>
+  <div class="panel-context">
+    <strong>What this shows</strong>
+    <span>
+      Files, symbols, and tests that the retriever could offer as evidence to a downstream task.
+      These are candidates, not task conclusions.
+    </span>
+    @if (query) {
+      <small>Current query: <code>{{ query }}</code></small>
+    }
   </div>
   <div class="result-list">
     @for (result of results; track result.sourcePath + result.resultType + result.title) {
@@ -13,12 +23,12 @@
         <span class="status-pill status-info">{{ result.resultType }}</span>
         <strong>{{ result.title }}</strong>
         <small [title]="result.sourcePath">{{ result.sourcePath }}</small>
-        <p>{{ result.reason }} Score {{ scoreLabel(result.score) }}</p>
+        <p>{{ result.reason }} Retrieval score {{ scoreLabel(result.score) }}</p>
       </button>
     } @empty {
       <div class="empty-state">
-        <strong>No search results yet.</strong>
-        <span>Run a search or refresh the repo index.</span>
+        <strong>No retrieval candidates yet.</strong>
+        <span>Enter a repository query or refresh the index.</span>
       </div>
     }
   </div>

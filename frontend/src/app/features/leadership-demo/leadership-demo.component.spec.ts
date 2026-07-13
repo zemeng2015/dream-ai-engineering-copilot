@@ -19,14 +19,17 @@ describe('LeadershipDemoComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     expect(compiled.textContent).toContain(
-      'Turn ambiguous requests into source-backed delivery decisions.',
+      'Turn rough requests into trusted decisions.',
     );
     expect(compiled.textContent).toContain('Approved sources only');
     expect(compiled.textContent).toContain('No automatic external writes');
-    expect(compiled.textContent).toContain('Seven synthetic cases');
-    expect(compiled.textContent).toContain('One team 路 one application 路 one repository');
+    expect(compiled.textContent).toContain('What the live workflow demonstrates today');
+    expect(compiled.textContent).toContain('How success will be judged');
+    expect(compiled.textContent).toContain('One team | one application | one repository');
     expect(compiled.textContent).not.toContain('Qwen');
     expect(compiled.textContent).not.toContain('Alibaba');
+    expect(compiled.textContent).not.toContain('+23.4');
+    expect(compiled.textContent).not.toContain('35.6%');
   });
 
   it('links the narrative to live product workflows', () => {
