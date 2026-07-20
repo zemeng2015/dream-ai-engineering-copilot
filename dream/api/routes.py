@@ -25,7 +25,12 @@ from dream.extensions import build_llm_provider
 from dream.extensions.models import LLMProvider
 from dream.graph import EvidenceGraphBuilder, EvidenceGraphRetriever
 from dream.intake import DraftMetadataUpdate, KnowledgeIntakeService, ReviewDecision
-from dream.llm import MockLLMProvider, OpenAICompatibleProvider, QwenCloudProvider
+from dream.llm import (
+    MockLLMProvider,
+    OpenAICompatibleProvider,
+    OpenAIResponsesProvider,
+    QwenCloudProvider,
+)
 from dream.memory import (
     MemoryClaimRetriever,
     MemoryDistillationEvaluator,
@@ -40,6 +45,7 @@ from dream.requirements import (
 )
 from dream.review import PRReviewAssistant, PRReviewRequest, PRReviewResponse
 from dream.testgen import JTestGenAdapter, MockTestGenProvider, TestGenRequest, TestGenResult
+from dream.workflow import EngineeringLoopRequest, EngineeringLoopResult, EngineeringLoopService
 
 router = APIRouter()
 _PUBLIC_QWEN_REQUEST_TIMES: deque[float] = deque()
@@ -130,6 +136,7 @@ class QwenCloudShowcaseResponse(BaseModel):
 
 class TestGenRunRequest(TestGenRequest):
     provider: str = Field(default="mock")
+    llm_provider: str = Field(default="openai-responses")
 
 
 class CodebaseIndexRequest(BaseModel):
@@ -1040,9 +1047,19 @@ def get_requirement_case_jira_readiness(case_id: str) -> dict[str, object]:
 
 @router.post("/testgen/run", response_model=TestGenResult)
 def run_testgen(request: TestGenRunRequest) -> TestGenResult:
-    provider = _testgen_provider(request.provider)
+    provider = _testgen_provider(request.provider, request.llm_provider)
     try:
         return provider.run(TestGenRequest.model_validate(request.model_dump()))
+    except DreamError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/engineering-loop/run", response_model=EngineeringLoopResult)
+def run_engineering_loop(request: EngineeringLoopRequest) -> EngineeringLoopResult:
+    try:
+        return EngineeringLoopService(
+            llm_provider=_llm_provider(request.llm_provider)
+        ).run(request)
     except DreamError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -1142,11 +1159,16 @@ def get_evaluation_run(evaluation_id: str) -> dict[str, object]:
     return payload
 
 
-def _testgen_provider(provider: str) -> MockTestGenProvider | JTestGenAdapter:
+def _testgen_provider(
+    provider: str, llm_provider: str = "openai-responses"
+) -> MockTestGenProvider | JTestGenAdapter:
     if provider == "mock":
         return MockTestGenProvider()
     if provider == "jtestgen":
-        return JTestGenAdapter()
+        configured_provider = None if llm_provider in {"none", "deterministic"} else _llm_provider(
+            llm_provider
+        )
+        return JTestGenAdapter(llm_provider=configured_provider)
     raise HTTPException(status_code=400, detail=f"Unsupported testgen provider: {provider}")
 
 
@@ -1155,6 +1177,8 @@ def _llm_provider(provider: str) -> LLMProvider:
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"openai-responses", "gpt-5.6"}:
+        return OpenAIResponsesProvider()
     if provider == "qwen-cloud":
         _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()
@@ -1173,6 +1197,8 @@ def _optional_llm_provider(
         return MockLLMProvider()
     if provider == "openai-compatible":
         return OpenAICompatibleProvider()
+    if provider in {"openai-responses", "gpt-5.6"}:
+        return OpenAIResponsesProvider()
     if provider == "qwen-cloud":
         _enforce_public_qwen_rate_limit()
         return QwenCloudProvider()

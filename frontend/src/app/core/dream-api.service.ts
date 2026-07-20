@@ -11,6 +11,7 @@ import {
   ContextEvidence,
   EvaluationDimension,
   EvaluationScorecard,
+  EngineeringLoopResult,
   EvidenceSourceType,
   HumanRating,
   ImpactItem,
@@ -29,6 +30,32 @@ interface ApiGenerationResponse {
   run_id: string;
   markdown: string;
   sources_used: string[];
+  warnings: string[];
+}
+
+interface ApiEngineeringLoopResult {
+  workflow_id: string;
+  status: string;
+  team_id: string;
+  repo_name: string;
+  case_id: string;
+  created_at: string;
+  stages: Array<{
+    stage: 'memory' | 'jira' | 'pr_review' | 'testgen' | 'eval';
+    status: string;
+    summary: string;
+    artifact_paths: string[];
+    score?: number | null;
+    model_provider?: string | null;
+    model_name?: string | null;
+    warnings: string[];
+  }>;
+  overall_eval_score: number;
+  evidence_count: number;
+  generated_test_files: string[];
+  summary_markdown: string;
+  json_path: string;
+  markdown_path: string;
   warnings: string[];
 }
 
@@ -1426,6 +1453,28 @@ export class DreamApiService {
       .pipe(map(mapQwenCloudShowcase));
   }
 
+  runEngineeringLoop(input: {
+    rawRequest: string;
+    liveGpt56: boolean;
+  }): Observable<EngineeringLoopResult> {
+    return this.http
+      .post<ApiEngineeringLoopResult>(`${this.baseUrl}/engineering-loop/run`, {
+        team_id: 'demo_team',
+        repo_path: 'examples/java-demo-repo',
+        repo_name: 'java-demo-repo',
+        raw_request: input.rawRequest,
+        pr_diff_path: 'examples/fake_pr_diff.diff',
+        target_files: [
+          'src/main/java/com/democorp/demo/JobExecutionService.java',
+        ],
+        llm_provider: input.liveGpt56 ? 'openai-responses' : 'mock',
+        testgen_dry_run: !input.liveGpt56,
+        strict_eval: false,
+        run_llm_judge: input.liveGpt56,
+      })
+      .pipe(map(mapEngineeringLoop));
+  }
+
   draftRequirementWithOpenAI(
     input: RequirementDraftInput,
     onProgress?: (progress: RequirementDraftLifecycleProgress) => void,
@@ -2059,6 +2108,34 @@ export class DreamApiService {
       scorecard,
     };
   }
+}
+
+function mapEngineeringLoop(response: ApiEngineeringLoopResult): EngineeringLoopResult {
+  return {
+    workflowId: response.workflow_id,
+    status: response.status,
+    teamId: response.team_id,
+    repoName: response.repo_name,
+    caseId: response.case_id,
+    createdAt: response.created_at,
+    stages: response.stages.map((stage) => ({
+      stage: stage.stage,
+      status: stage.status,
+      summary: stage.summary,
+      artifactPaths: stage.artifact_paths,
+      score: stage.score ?? undefined,
+      modelProvider: stage.model_provider ?? undefined,
+      modelName: stage.model_name ?? undefined,
+      warnings: stage.warnings,
+    })),
+    overallEvalScore: response.overall_eval_score,
+    evidenceCount: response.evidence_count,
+    generatedTestFiles: response.generated_test_files,
+    summaryMarkdown: response.summary_markdown,
+    jsonPath: response.json_path,
+    markdownPath: response.markdown_path,
+    warnings: response.warnings,
+  };
 }
 
 function mapHealth(response: ApiHealthResponse): DreamHealth {

@@ -12,8 +12,10 @@ class TestGenRequest(BaseModel):
     repo_path: str
     target_language: str = "java"
     target_files: list[str] | None = None
+    change_context: str | None = None
     coverage_report_path: str | None = None
     dry_run: bool = True
+    max_targets: int = Field(default=3, ge=1, le=8)
 
 
 class TestGenPlan(BaseModel):
@@ -35,6 +37,9 @@ class TestGenResult(BaseModel):
     generated_files: list[str]
     report_markdown: str
     warnings: list[str] = Field(default_factory=list)
+    artifact_path: str | None = None
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class TestGenReport(BaseModel):
