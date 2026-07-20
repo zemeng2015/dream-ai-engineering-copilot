@@ -317,6 +317,10 @@ def test_release_config_audit_registered_in_final_flow() -> None:
     assert "release-config-audit" in final_action_board
     assert "releaseConfigReady" in final_action_board
     assert "Fix release config audit" in final_action_board
+    assert "function Quote-ProcessArg" in final_action_board
+    assert "function Invoke-PowerShellProcess" in final_action_board
+    assert "-ArgumentList $quotedArguments" in final_action_board
+    assert "-ArgumentList $Arguments" not in final_action_board
 
 
 def test_fc_code_package_includes_same_origin_angular_build() -> None:
