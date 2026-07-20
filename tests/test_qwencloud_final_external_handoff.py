@@ -83,6 +83,7 @@ def test_qwencloud_final_external_handoff_builds_safe_pack(tmp_path) -> None:
 
 def test_qwencloud_final_external_handoff_registered_in_submission_flow() -> None:
     script_path = "scripts/qwencloud-final-external-handoff.ps1"
+    script = SCRIPT.read_text(encoding="utf-8-sig")
 
     for path in [
         "README.md",
@@ -95,6 +96,11 @@ def test_qwencloud_final_external_handoff_registered_in_submission_flow() -> Non
         "scripts/qwencloud-hackathon-submission-packet.ps1",
     ]:
         assert script_path in (ROOT / path).read_text(encoding="utf-8-sig")
+
+    assert "function Quote-ProcessArg" in script
+    assert "function Invoke-PowerShellProcess" in script
+    assert "-ArgumentList $quotedArguments" in script
+    assert "-ArgumentList $Arguments" not in script
 
 
 def test_final_action_board_uses_env_driven_serverless_devs_access() -> None:

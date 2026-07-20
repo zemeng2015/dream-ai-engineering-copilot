@@ -52,6 +52,22 @@ function Get-PowerShellExe {
     throw "PowerShell executable not found."
 }
 
+function Quote-ProcessArg([string]$Value) {
+    if ($null -eq $Value) { return '""' }
+    return '"' + ($Value -replace '"', '\"') + '"'
+}
+
+function Invoke-PowerShellProcess {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$Stdout,
+        [Parameter(Mandatory = $true)][string]$Stderr
+    )
+
+    $quotedArguments = @($Arguments | ForEach-Object { Quote-ProcessArg $_ })
+    return Start-Process -FilePath (Get-PowerShellExe) -ArgumentList $quotedArguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr
+}
+
 function Add-Step {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
@@ -107,14 +123,7 @@ function Invoke-HandoffStep {
     $safeName = $Name -replace "[^A-Za-z0-9_.-]", "-"
     $stdout = Join-Path $OutputDir "external-handoff-$safeName-$timestamp.out"
     $stderr = Join-Path $OutputDir "external-handoff-$safeName-$timestamp.err"
-    $proc = Start-Process `
-        -FilePath (Get-PowerShellExe) `
-        -ArgumentList $Arguments `
-        -NoNewWindow `
-        -Wait `
-        -PassThru `
-        -RedirectStandardOutput $stdout `
-        -RedirectStandardError $stderr
+    $proc = Invoke-PowerShellProcess -Arguments $Arguments -Stdout $stdout -Stderr $stderr
 
     if ($AllowedExitCodes -notcontains $proc.ExitCode) {
         Add-Step -Name $Name -Status "fail" -Details "exit=$($proc.ExitCode); stdout=$stdout; stderr=$stderr"
