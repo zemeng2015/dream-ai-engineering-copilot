@@ -43,9 +43,16 @@ and all consequential actions require a human.
 - Responsive Angular control room with live and credential-free demo modes.
 - Integration tests, safety validation, audit artifacts, and submission docs.
 
-Before submitting, replace this paragraph with the exact post-July-13 commit
-range and the Codex `/feedback` Session ID. Do not claim pre-existing DREAM
-features as newly built; judge the integration and files in that commit range.
+Build Week implementation branch: `codex/openai-build-week`  
+Pre-build baseline: `d3f8a9f`  
+Primary implementation commit: `353e0fa`  
+Review range: `d3f8a9f..codex/openai-build-week`
+
+Before submitting, add the Codex `/feedback` Session ID below. Do not claim
+pre-existing DREAM features as newly built; judge the new integration and files
+in the review range above.
+
+Codex Session ID: **PENDING — run `/feedback` in the build thread**
 
 ## Three-minute video script
 
