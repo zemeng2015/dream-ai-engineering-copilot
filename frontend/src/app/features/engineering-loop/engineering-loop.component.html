@@ -1,0 +1,152 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<section class="loop-page">
+  <header class="loop-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">OpenAI Build Week · Developer Tools</span>
+      <h1>Engineering changes,<br /><em>closed-loop.</em></h1>
+      <p>
+        DREAM turns one change request into governed memory, a Jira draft, a source-backed PR
+        review, JTestGen candidates, and measurable eval evidence.
+      </p>
+    </div>
+    <div class="model-card" aria-label="Model runtime">
+      <span class="model-pulse" aria-hidden="true"></span>
+      <small>Native Responses API</small>
+      <strong>GPT‑5.6 Sol</strong>
+      <span>Reasoning · tool workflows · eval judge</span>
+    </div>
+  </header>
+
+  <ol class="loop-rail" aria-label="Engineering change loop stages">
+    @for (stage of stageOrder; track stage; let index = $index) {
+      <li>
+        <span class="stage-index">0{{ index + 1 }}</span>
+        <strong>{{ stageLabel(stage) }}</strong>
+      </li>
+    }
+  </ol>
+
+  <div class="loop-grid">
+    <article class="request-panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">One governed input</span>
+          <h2>Change request</h2>
+        </div>
+        <span class="safety-chip">No external writes</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="run()">
+        <label for="loop-request">Describe the engineering outcome</label>
+        <textarea
+          id="loop-request"
+          formControlName="rawRequest"
+          rows="8"
+          aria-describedby="request-help"
+        ></textarea>
+        <p id="request-help" class="field-help">
+          The demo uses a synthetic Java repository and an existing PR diff. Jira and generated
+          tests stay as reviewable drafts.
+        </p>
+
+        <label class="runtime-toggle" for="live-gpt56">
+          <input id="live-gpt56" type="checkbox" formControlName="liveGpt56" />
+          <span>
+            <strong>Run live GPT‑5.6</strong>
+            <small>Turn off for an offline, dry-run walkthrough.</small>
+          </span>
+        </label>
+
+        <button class="run-button" type="submit" [disabled]="running() || form.invalid">
+          @if (running()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Running governed loop…
+          } @else {
+            Run engineering loop
+            <span aria-hidden="true">↗</span>
+          }
+        </button>
+      </form>
+
+      <div class="safety-note">
+        <strong>Human-in-the-loop by design.</strong>
+        DREAM drafts Jira, advises reviewers, and isolates generated tests. It never publishes,
+        merges, or modifies the target repository.
+      </div>
+    </article>
+
+    <section class="result-panel" aria-live="polite" [attr.aria-busy]="running()">
+      @if (running()) {
+        <div class="running-state">
+          <div class="orbit" aria-hidden="true"><span></span></div>
+          <h2>Building the evidence chain</h2>
+          <p>Each stage persists its sources, model identity, artifacts, warnings, and score.</p>
+        </div>
+      } @else if (error()) {
+        <div class="error-state" role="alert">
+          <span>Run blocked</span>
+          <h2>Check the runtime configuration</h2>
+          <p>{{ error() }}</p>
+          <small>For live mode, configure OPENAI_API_KEY on the FastAPI service.</small>
+        </div>
+      } @else if (result()) {
+        @let loop = result()!;
+        <div class="result-heading">
+          <div>
+            <span class="eyebrow">{{ loop.status }}</span>
+            <h2>Evidence chain complete</h2>
+            <p>{{ loop.workflowId }}</p>
+          </div>
+          <div class="score-ring">
+            <strong>{{ loop.overallEvalScore.toFixed(1) }}</strong>
+            <small>/ 10 eval</small>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div><strong>{{ loop.evidenceCount }}</strong><span>evidence items</span></div>
+          <div><strong>{{ loop.generatedTestFiles.length }}</strong><span>test candidates</span></div>
+          <div><strong>5</strong><span>audited stages</span></div>
+        </div>
+
+        <ol class="result-stages">
+          @for (stage of loop.stages; track stage.stage; let index = $index) {
+            <li>
+              <span class="result-index">0{{ index + 1 }}</span>
+              <div>
+                <div class="stage-title">
+                  <strong>{{ stageLabel(stage.stage) }}</strong>
+                  <span>{{ stage.status }}</span>
+                </div>
+                <p>{{ stage.summary }}</p>
+                @if (stage.modelName) {
+                  <small>{{ stage.modelProvider }} · {{ stage.modelName }}</small>
+                }
+              </div>
+              @if (stage.score !== undefined) {
+                <b>{{ stage.score.toFixed(1) }}</b>
+              }
+            </li>
+          }
+        </ol>
+
+        <footer class="artifact-footer">
+          <span>Audit artifact</span>
+          <code>{{ loop.markdownPath }}</code>
+        </footer>
+      } @else {
+        <div class="empty-state">
+          <span class="empty-mark">D</span>
+          <h2>One request. Five governed stages.</h2>
+          <p>
+            Start the loop to watch engineering memory become executable, reviewable evidence.
+          </p>
+          <div class="empty-legend">
+            <span>Source-backed</span><span>Human-reviewed</span><span>Eval-scored</span>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+</section>

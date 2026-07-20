@@ -34,12 +34,13 @@ def test_mock_testgen_provider_does_not_modify_repo(tmp_path) -> None:
     assert "Human review required: true" in result.report_markdown
 
 
-def test_jtestgen_adapter_stub_safe_behavior() -> None:
+def test_jtestgen_adapter_dry_run_safe_behavior() -> None:
     result = JTestGenAdapter().run(
         TestGenRequest(team_id="demo_team", repo_path="examples/java-demo-repo", dry_run=True)
     )
 
-    assert result.status == "stub_not_executed"
+    assert result.status == "dry_run"
     assert result.generated_files == []
-    assert "No external command was executed" in result.warnings[0]
+    assert "no files were modified" in result.warnings[0].lower()
+    assert result.artifact_path is not None
 

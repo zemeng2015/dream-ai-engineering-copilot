@@ -22,6 +22,14 @@ export const routes: Routes = [
     title: 'DREAM Memory Hub',
   },
   {
+    path: 'engineering-loop',
+    loadComponent: () =>
+      import('./features/engineering-loop/engineering-loop.component').then(
+        (module) => module.EngineeringLoopComponent,
+      ),
+    title: 'DREAM · OpenAI Engineering Loop',
+  },
+  {
     path: 'hackathon-demo',
     loadComponent: () =>
       import('./features/hackathon-demo/hackathon-demo.component').then((module) => module.HackathonDemoComponent),

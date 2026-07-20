@@ -407,3 +407,33 @@ export interface TestGenStubResult {
   warnings: string[];
   scorecard: EvaluationScorecard;
 }
+
+export type EngineeringLoopStageName = 'memory' | 'jira' | 'pr_review' | 'testgen' | 'eval';
+
+export interface EngineeringLoopStage {
+  stage: EngineeringLoopStageName;
+  status: string;
+  summary: string;
+  artifactPaths: string[];
+  score?: number;
+  modelProvider?: string;
+  modelName?: string;
+  warnings: string[];
+}
+
+export interface EngineeringLoopResult {
+  workflowId: string;
+  status: string;
+  teamId: string;
+  repoName: string;
+  caseId: string;
+  createdAt: string;
+  stages: EngineeringLoopStage[];
+  overallEvalScore: number;
+  evidenceCount: number;
+  generatedTestFiles: string[];
+  summaryMarkdown: string;
+  jsonPath: string;
+  markdownPath: string;
+  warnings: string[];
+}

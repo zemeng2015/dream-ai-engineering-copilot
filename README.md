@@ -18,6 +18,37 @@ quality scorecards. The platform layer is intentionally general so other
 domain-specific memory workflows can be added without becoming a generic
 chatbot.
 
+## OpenAI Build Week: Governed Engineering Loop
+
+The Build Week entry connects five previously separate engineering activities
+into one evidence-backed workflow:
+
+`Memory governance -> Jira draft -> PR review -> JTestGen -> Eval`
+
+Codex was used to build and integrate the workflow. GPT-5.6 runs through the
+native OpenAI Responses API (`gpt-5.6-sol`) for requirement synthesis, review,
+isolated JUnit 5 candidate generation, and optional LLM-as-judge evaluation.
+Every stage produces an artifact and audit trail; all consequential outputs
+remain drafts for human review.
+
+Run the API and Angular workbench:
+
+```powershell
+$env:OPENAI_API_KEY="your-key"
+python -m uvicorn dream.api.app:app --reload
+Set-Location frontend
+npm ci
+npm start
+```
+
+Open `http://localhost:4200/engineering-loop`. Leave **Live GPT-5.6** off for a
+credential-free deterministic demo, or enable it to exercise the Responses API
+and generate isolated JTestGen candidates. The equivalent API entry point is
+`POST /engineering-loop/run`.
+
+- [Build Week submission kit](docs/openai-build-week-submission.md)
+- [Architecture and safety evidence](docs/openai-build-week-architecture.md)
+
 This repository uses synthetic DemoCorp examples only. For enterprise use, keep
 company-specific knowledge packs, connectors, prompts, and deployment configs in
 private repositories.
@@ -84,20 +115,22 @@ domain-aware memory applications.
 - Stores human ratings for generated outputs.
 - Exposes a FastAPI API and Typer CLI.
 - Includes an Angular mock-data workbench for the main MVP workflows.
-- Provides a `TestGenProvider` interface plus mock and JTestGen stub providers.
+- Provides a `TestGenProvider` interface plus mock and GPT-5.6-backed JTestGen
+  providers.
 
 ## What DREAM Does Not Do
 
-DREAM does not include a production test-generation engine. It provides a
-`TestGenProvider` interface so tools such as JTestGen can be connected later.
+DREAM generates reviewable JUnit 5 candidates through its JTestGen adapter. It
+does not compile, execute, or merge generated tests automatically, and it writes
+only to an isolated artifact directory rather than the target repository.
 
 The MVP also does not include real GitHub integration, real Jira integration, PR
 posting, vector search, code graph precision, model fine-tuning, generic chat,
 or enterprise security features.
 
-The Angular frontend does not implement a unit-test generation engine. Its
-TestGen page is a safe mock/stub workflow that plans and reports without
-generating tests, running external tools, or modifying repositories.
+The Angular frontend can invoke the integrated loop in deterministic demo mode
+or live GPT-5.6 mode. It never posts Jira issues, PR comments, or generated code
+to external systems automatically.
 
 ## Quickstart
 
